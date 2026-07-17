@@ -1,0 +1,11 @@
+{
+  "name": "usport-player-tracker-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for seeding and processing data",
+  "main": "generate_seed.js",
+  "dependencies": {
+    "@hono/node-server": "^2.0.10",
+    "hono": "^4.12.30",
+    "xlsx": "^0.18.5"
+  }
+}

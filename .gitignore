@@ -1,0 +1,16 @@
+# Node dependencies
+node_modules/
+npm-debug.log
+
+# Database files
+usport.db
+usport.db-journal
+
+# Environment variables
+.env
+wrangler.json
+
+# Local configurations
+.idea/
+.vscode/
+.DS_Store

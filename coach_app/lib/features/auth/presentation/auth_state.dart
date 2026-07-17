@@ -1,0 +1,137 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/storage/local_storage.dart';
+
+enum AuthStatus { unauthenticated, otpSent, authenticating, authenticated, error }
+
+class AuthState {
+  final AuthStatus status;
+  final String? email;
+  final String? errorMessage;
+  final Map<String, dynamic>? userProfile;
+
+  AuthState({
+    required this.status,
+    this.email,
+    this.errorMessage,
+    this.userProfile,
+  });
+
+  factory AuthState.initial() {
+    final token = LocalStorage.getToken();
+    final profile = LocalStorage.getUserProfile();
+    if (token != null && profile != null) {
+      return AuthState(
+        status: AuthStatus.authenticated,
+        userProfile: profile,
+      );
+    }
+    return AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  AuthState copyWith({
+    AuthStatus? status,
+    String? email,
+    String? errorMessage,
+    Map<String, dynamic>? userProfile,
+  }) {
+    return AuthState(
+      status: status ?? this.status,
+      email: email ?? this.email,
+      errorMessage: errorMessage ?? this.errorMessage,
+      userProfile: userProfile ?? this.userProfile,
+    );
+  }
+}
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  final ApiClient _apiClient;
+
+  AuthNotifier(this._apiClient) : super(AuthState.initial());
+
+  Future<bool> sendOtp(String email) async {
+    state = state.copyWith(status: AuthStatus.authenticating);
+    try {
+      final response = await _apiClient.dio.post('/api/auth/send-otp', data: {
+        'email': email.trim().toLowerCase(),
+      });
+
+      if (response.data['success'] == true) {
+        state = state.copyWith(
+          status: AuthStatus.otpSent,
+          email: email.trim().toLowerCase(),
+          errorMessage: null,
+        );
+        return true;
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: response.data['message'] ?? 'Failed to send OTP',
+        );
+        return false;
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? 'Network request failed';
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: msg,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> verifyOtp(String otp) async {
+    if (state.email == null) return false;
+    state = state.copyWith(status: AuthStatus.authenticating);
+
+    try {
+      final response = await _apiClient.dio.post('/api/auth/verify-otp', data: {
+        'email': state.email,
+        'otp': otp.trim(),
+      });
+
+      if (response.data['success'] == true) {
+        final data = response.data['data'];
+        final token = data['token'];
+        final user = data['user'];
+
+        // Save session locally using Hive storage helper
+        await LocalStorage.saveSession(token, user);
+
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          userProfile: user,
+          errorMessage: null,
+        );
+        return true;
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.otpSent, // Rollback to otpSent to let user try again
+          errorMessage: response.data['message'] ?? 'Invalid OTP code',
+        );
+        return false;
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? 'Verification failed';
+      state = state.copyWith(
+        status: AuthStatus.otpSent,
+        errorMessage: msg,
+      );
+      return false;
+    }
+  }
+
+  Future<void> logout() async {
+    await LocalStorage.clearSession();
+    state = AuthState(status: AuthStatus.unauthenticated);
+  }
+}
+
+// Riverpod Providers
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return AuthNotifier(apiClient);
+});
