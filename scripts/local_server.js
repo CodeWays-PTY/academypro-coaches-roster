@@ -140,6 +140,37 @@ app.use('*', async (c, next) => {
   await next();
 });
 
+// 5.5 Serve Web Admin Frontend pages
+app.get('/', async (c) => {
+  const filePath = path.join(__dirname, '..', 'web_admin', 'index.html');
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return c.html(content);
+  } catch (err) {
+    return c.text('Template Configurator index.html not found', 404);
+  }
+});
+
+app.get('/index.html', async (c) => {
+  const filePath = path.join(__dirname, '..', 'web_admin', 'index.html');
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return c.html(content);
+  } catch (err) {
+    return c.text('Template Configurator index.html not found', 404);
+  }
+});
+
+app.get('/uploader.html', async (c) => {
+  const filePath = path.join(__dirname, '..', 'web_admin', 'uploader.html');
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return c.html(content);
+  } catch (err) {
+    return c.text('Bulk Uploader uploader.html not found', 404);
+  }
+});
+
 // 6. Start server
 const port = 3000;
 serve({

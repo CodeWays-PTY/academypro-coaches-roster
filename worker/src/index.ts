@@ -692,4 +692,109 @@ app.get('/api/student-portal', async (c) => {
   });
 });
 
+// Route: Get all players for admin configurator
+app.get('/api/admin/all-players', async (c) => {
+  const db = getDB(c);
+  const schoolId = c.req.query('school_id') || 'OVK';
+  const query = 'SELECT id, first_name, last_name, age_group, team, position FROM players WHERE school_id = ? ORDER BY age_group, team, last_name, first_name';
+  try {
+    const { results } = await db.prepare(query).bind(schoolId).all();
+    return c.json({
+      success: true,
+      data: results.map((r: any) => ({
+        id: r.id,
+        firstName: r.first_name,
+        lastName: r.last_name,
+        ageGroup: r.age_group,
+        team: r.team,
+        position: r.position
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to retrieve players', error: err.message }, 500);
+  }
+});
+
+// Route: Bulk upload parsed athlete stats
+app.post('/api/admin/bulk-upload', async (c) => {
+  const db = getDB(c);
+  let payload;
+  try {
+    payload = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { records } = payload;
+  if (!records || !Array.isArray(records)) {
+    return c.json({ success: false, message: 'Invalid records array' }, 400);
+  }
+
+  let successCount = 0;
+  let errorCount = 0;
+  const errors: string[] = [];
+
+  for (const record of records) {
+    const { id, vertical, dash40yd, gpa } = record;
+    if (!id) {
+      errorCount++;
+      errors.push('Missing athlete ID');
+      continue;
+    }
+
+    const player_id = id.trim().startsWith('#') ? id.trim().substring(1) : id.trim();
+
+    try {
+      // Verify player exists
+      const playerExists = await db.prepare('SELECT id FROM players WHERE id = ?').bind(player_id).get();
+      if (!playerExists) {
+        errorCount++;
+        errors.push(`Athlete ID ${player_id} does not exist in roster`);
+        continue;
+      }
+
+      // 1. Upsert fitness_baselines
+      const sqlFitness = `
+        INSERT INTO fitness_baselines (player_id, vertical_jump, speed_40m, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(player_id) DO UPDATE SET
+          vertical_jump = excluded.vertical_jump,
+          speed_40m = excluded.speed_40m,
+          updated_at = CURRENT_TIMESTAMP
+      `;
+      const vertValue = vertical !== undefined && vertical !== null && vertical !== '' ? parseFloat(vertical) : null;
+      const dashValue = dash40yd !== undefined && dash40yd !== null && dash40yd !== '' ? parseFloat(dash40yd) : null;
+      await db.prepare(sqlFitness).bind(player_id, vertValue, dashValue).run();
+
+      // 2. Upsert academic_logs (Term 1)
+      const sqlAcademic = `
+        INSERT INTO academic_logs (player_id, term, grade_percentage, created_at)
+        VALUES (?, 1, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(player_id, term) DO UPDATE SET
+          grade_percentage = excluded.grade_percentage
+      `;
+      let gradePercentage = gpa !== undefined && gpa !== null && gpa !== '' ? parseFloat(gpa) : null;
+      if (gradePercentage !== null && gradePercentage <= 5.0) {
+        gradePercentage = (gradePercentage / 4.0) * 100; // convert GPA to percentage
+      }
+      await db.prepare(sqlAcademic).bind(player_id, gradePercentage).run();
+
+      successCount++;
+    } catch (err: any) {
+      errorCount++;
+      errors.push(`Failed to update ${player_id}: ${err.message}`);
+    }
+  }
+
+  return c.json({
+    success: errorCount === 0,
+    message: `Bulk upload completed. Success: ${successCount}, Errors: ${errorCount}`,
+    data: {
+      successCount,
+      errorCount,
+      errors
+    }
+  });
+});
+
 export default app;

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Training Template Configurator | AcademyPro</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <!-- Material Symbols Outlined -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#952200",
+                    "surface-container-highest": "#dae2fd",
+                    "on-secondary-fixed": "#0b1c30",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-tertiary-fixed-variant": "#891e00",
+                    "outline": "#737688",
+                    "on-surface": "#131b2e",
+                    "outline-variant": "#c3c5d9",
+                    "primary-container": "#0052ff",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "tertiary-fixed": "#ffdbd2",
+                    "surface-dim": "#d2d9f4",
+                    "error-container": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e2e7ff",
+                    "inverse-on-surface": "#eef0ff",
+                    "surface": "#faf8ff",
+                    "primary": "#003ec7",
+                    "on-tertiary-fixed": "#3c0800",
+                    "on-primary-fixed": "#001452",
+                    "on-primary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#b7c4ff",
+                    "on-error-container": "#93000a",
+                    "surface-tint": "#004ced",
+                    "surface-bright": "#faf8ff",
+                    "on-surface-variant": "#434656",
+                    "secondary-container": "#d0e1fb",
+                    "surface-container-low": "#f2f3ff",
+                    "on-primary-container": "#dfe3ff",
+                    "secondary-fixed": "#d3e4fe",
+                    "secondary": "#505f76",
+                    "surface-container": "#eaedff",
+                    "on-primary-fixed-variant": "#0038b6",
+                    "surface-variant": "#dae2fd",
+                    "background": "#faf8ff",
+                    "tertiary-fixed-dim": "#ffb4a1",
+                    "inverse-surface": "#283044",
+                    "tertiary-container": "#bf3003",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#ffddd5",
+                    "inverse-primary": "#b7c4ff",
+                    "on-background": "#131b2e",
+                    "primary-fixed": "#dde1ff",
+                    "on-secondary-container": "#54647a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "container-margin": "24px",
+                    "gutter": "16px",
+                    "base": "4px",
+                    "md": "16px",
+                    "sidebar-width": "280px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c3c5d9; border-radius: 10px; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+        }
+    </style>
+    <!-- Alpine.js Initialization -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('configurator', () => ({
+                metrics: [
+                    { key: 'tackles', label: 'Tackles', category: 'Performance', icon: 'fitness_center', checked: true },
+                    { key: 'carries', label: 'Carries', category: 'Agility', icon: 'directions_run', checked: true },
+                    { key: 'metres_gained', label: 'Metres Gained', category: 'Volume', icon: 'straighten', checked: false },
+                    { key: 'turnovers', label: 'Turnovers', category: 'Defense', icon: 'swap_horiz', checked: false },
+                    { key: 'top_speed', label: 'Top Speed', category: 'Velocity', icon: 'bolt', checked: true }
+                ],
+                squads: [
+                    { name: 'U16 Academy Elite', active: true, ageGroup: 'U16' },
+                    { name: 'U15 Development', active: true, ageGroup: 'U15' },
+                    { name: 'A-Team', active: false, ageGroup: 'U16' },
+                    { name: 'Reserves', active: false, ageGroup: 'U15' }
+                ],
+                includeId: true,
+                customMetricName: '',
+                customMetricCategory: 'Custom',
+                showCustomModal: false,
+                players: [],
+                loading: false,
+
+                async init() {
+                    try {
+                        this.loading = true;
+                        const res = await fetch('/api/admin/all-players');
+                        const json = await res.json();
+                        if (json.success) {
+                            this.players = json.data;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load roster:', e);
+                        // Local mock roster fallback
+                        this.players = [
+                            { id: 'OVK-U16-001', firstName: 'Marcus', lastName: 'Sterling', ageGroup: 'U16', team: 'A Team', position: 'Flanker' },
+                            { id: 'OVK-U16-002', firstName: 'Elena', lastName: 'Rodriguez', ageGroup: 'U16', team: 'A Team', position: 'Flyhalf' },
+                            { id: 'OVK-U15-001', firstName: 'Jonas', lastName: 'Khan', ageGroup: 'U15', team: 'B Team', position: 'Scrumhalf' }
+                        ];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                get selectedMetrics() {
+                    return this.metrics.filter(m => m.checked);
+                },
+
+                get selectedSquads() {
+                    return this.squads.filter(s => s.active);
+                },
+
+                get previewPlayers() {
+                    const activeGroups = this.selectedSquads.map(s => s.ageGroup);
+                    return this.players.filter(p => activeGroups.includes(p.ageGroup));
+                },
+
+                toggleMetric(index) {
+                    this.metrics[index].checked = !this.metrics[index].checked;
+                },
+
+                toggleSquad(index) {
+                    this.squads[index].active = !this.squads[index].active;
+                },
+
+                addCustomMetric() {
+                    if (!this.customMetricName.trim()) return;
+                    this.metrics.push({
+                        key: this.customMetricName.toLowerCase().replace(/\s+/g, '_'),
+                        label: this.customMetricName.trim(),
+                        category: this.customMetricCategory,
+                        icon: 'star',
+                        checked: true
+                    });
+                    this.customMetricName = '';
+                    this.showCustomModal = false;
+                },
+
+                generateExcel() {
+                    const activeGroups = this.selectedSquads.map(s => s.ageGroup);
+                    const targetPlayers = this.players.filter(p => activeGroups.includes(p.ageGroup));
+
+                    if (targetPlayers.length === 0) {
+                        alert('No players found in the selected squads!');
+                        return;
+                    }
+
+                    // Prepare sheet data
+                    const headers = ['#', 'Athlete Name'];
+                    if (this.includeId) {
+                        headers.push('Athlete ID');
+                    }
+                    this.selectedMetrics.forEach(m => {
+                        headers.push(`${m.label}${m.key === 'top_speed' ? ' (km/h)' : ''}`);
+                    });
+                    headers.push('Notes');
+
+                    const sheetData = [headers];
+
+                    targetPlayers.forEach((p, idx) => {
+                        const row = [idx + 1, `${p.firstName} ${p.lastName}`];
+                        if (this.includeId) {
+                            row.push(p.id);
+                        }
+                        this.selectedMetrics.forEach(() => {
+                            row.push('');
+                        });
+                        row.push(''); // Notes
+                        sheetData.push(row);
+                    });
+
+                    // Create workbook
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+                    // Set column widths
+                    const wscols = [
+                        { wch: 5 },  // #
+                        { wch: 25 }  // Athlete Name
+                    ];
+                    if (this.includeId) {
+                        wscols.push({ wch: 15 }); // Athlete ID
+                    }
+                    this.selectedMetrics.forEach(() => {
+                        wscols.push({ wch: 18 }); // Metrics
+                    });
+                    wscols.push({ wch: 30 }); // Notes
+                    ws['!cols'] = wscols;
+
+                    XLSX.utils.book_append_sheet(wb, ws, 'Roster Templates');
+                    
+                    const squadNames = this.selectedSquads.map(s => s.name.replace(/\s+/g, '_')).join('_');
+                    XLSX.writeFile(wb, `training_template_${squadNames}.xlsx`);
+                }
+            }));
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Alpine.js Plugins (Defer) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.0/dist/cdn.min.js"></script>
+    <!-- Alpine.js Core (Defer last) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden" x-data="configurator()">
+
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-surface-container flex flex-col border-r border-outline-variant shadow-sm z-50">
+    <div class="p-lg">
+        <h1 class="font-display text-headline-md font-extrabold text-primary">AcademyPro</h1>
+        <p class="font-label-md text-on-surface-variant opacity-70">Super Admin</p>
+    </div>
+    <nav class="flex-1 px-sm overflow-y-auto space-y-1">
+        <div class="px-md py-xs font-label-caps text-outline uppercase text-[10px] tracking-widest">Main Menu</div>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="#">
+            <span class="material-symbols-outlined">dashboard_customize</span>
+            <span class="font-label-md">SaaS Dashboard</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="#">
+            <span class="material-symbols-outlined">domain</span>
+            <span class="font-label-md">Tenant Manager</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-on-surface border-l-4 border-secondary font-bold hover:bg-surface-container-highest transition-colors rounded-lg" href="index.html">
+            <span class="material-symbols-outlined">settings_applications</span>
+            <span class="font-label-md">Template Configurator</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="#">
+            <span class="material-symbols-outlined">space_dashboard</span>
+            <span class="font-label-md">Dashboard</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="uploader.html">
+            <span class="material-symbols-outlined">upload_file</span>
+            <span class="font-label-md">Bulk Uploader</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="#">
+            <span class="material-symbols-outlined">groups</span>
+            <span class="font-label-md">Team Builder</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="#">
+            <span class="material-symbols-outlined">person_search</span>
+            <span class="font-label-md">Player Directory</span>
+        </a>
+        <a class="flex items-center gap-md px-md py-sm cursor-pointer active:scale-95 transition-transform text-outline hover:text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-lg" href="#">
+            <span class="material-symbols-outlined">analytics</span>
+            <span class="font-label-md">Reports</span>
+        </a>
+    </nav>
+    <div class="p-md mt-auto border-t border-outline-variant">
+        <button class="w-full bg-primary text-on-primary py-sm rounded-lg font-label-md flex items-center justify-center gap-xs hover:brightness-110 active:scale-[0.98] transition-all">
+            <span class="material-symbols-outlined text-[20px]">add_circle</span>
+            Quick Action
+        </button>
+        <div class="mt-md space-y-1">
+            <a class="flex items-center gap-md px-md py-xs text-outline hover:text-on-surface transition-colors" href="#">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="font-label-md">Settings</span>
+            </a>
+            <a class="flex items-center gap-md px-md py-xs text-outline hover:text-on-surface transition-colors" href="#">
+                <span class="material-symbols-outlined">help_outline</span>
+                <span class="font-label-md">Support</span>
+            </a>
+        </div>
+    </div>
+</aside>
+
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-sidebar-width right-0 h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-gutter z-40">
+    <div class="flex items-center gap-lg">
+        <h2 class="font-headline-sm text-headline-sm font-bold text-primary">Template Configurator</h2>
+        <div class="hidden md:flex gap-md">
+            <a class="font-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Onboard School</a>
+            <a class="font-label-caps text-on-surface-variant hover:text-primary transition-colors" href="uploader.html">Upload CSV</a>
+        </div>
+    </div>
+    <div class="flex items-center gap-md">
+        <div class="relative group">
+            <input class="bg-surface-container-low border-outline-variant rounded-full px-lg py-xs text-label-md w-64 focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Search templates..." type="text"/>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+        </div>
+        <button class="flex items-center gap-xs text-secondary hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <button class="flex items-center gap-xs text-secondary hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">help</span>
+        </button>
+        <div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcjw_YAwJqoop5BMCdZWRq-N7fUVl-noPHWahl11SlMAvPTseqT2ucg8QbUzTO6_1lgSqxIFmi-E84HPwZFrklYxpxShyocTQD_bKFlrzNQfWsrhJacE-Vl5foEpnDXb6K5uJlNRU3jpCaPDgzJn1KLmtPVoeK-6FeV0bddrJmyrRujI9-kHU68B5y2BCrX5QMLj-wUsulgpGzKe8N2-RwONVmh9fJSv-3_GdEl4gaQZgInBPI9-AqJQ"/>
+        </div>
+    </div>
+</header>
+
+<!-- Main Workspace -->
+<main class="ml-sidebar-width mt-16 p-lg h-[calc(100vh-64px)] overflow-y-auto">
+    <div class="max-w-7xl mx-auto space-y-xl">
+        <!-- Page Intro -->
+        <div class="flex justify-between items-end">
+            <div>
+                <h3 class="font-headline-lg text-headline-lg text-on-surface">Training Template Configurator</h3>
+                <p class="text-on-surface-variant flex items-center gap-xs">
+                    Create custom Excel structures for your coaching staff. 
+                    <span class="material-symbols-outlined text-[16px] text-primary" title="Optimized for Bulk CSV Uploader">info</span>
+                    <span class="text-xs font-medium text-primary">Optimized for Bulk Uploader</span>
+                </p>
+            </div>
+            <div class="flex gap-md">
+                <button class="px-lg py-sm border border-outline-variant text-secondary rounded-lg font-label-md hover:bg-surface-container transition-colors">Save as Draft</button>
+                <button class="px-lg py-sm bg-primary text-on-primary rounded-lg font-label-md shadow-sm hover:brightness-110 flex items-center gap-xs transition-all" @click="generateExcel()">
+                    <span class="material-symbols-outlined text-[20px]">download</span>
+                    Generate &amp; Download Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Bento Layout Workspace -->
+        <div class="grid grid-cols-12 gap-lg">
+            <!-- Step 1: Metric Selection -->
+            <section class="col-span-12 lg:col-span-7 space-y-md">
+                <div class="flex items-center gap-sm">
+                    <span class="step-number bg-primary text-on-primary">1</span>
+                    <h4 class="font-headline-sm text-headline-sm">Metric Selection</h4>
+                </div>
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg grid grid-cols-2 md:grid-cols-3 gap-md">
+                    <!-- Metric Cards -->
+                    <template x-for="(m, index) in metrics" :key="m.key">
+                        <label :class="m.checked ? 'border-primary bg-primary-container/5' : 'border-outline-variant'" class="group relative flex flex-col p-md border rounded-lg cursor-pointer hover:border-primary hover:bg-primary-container/5 transition-all">
+                            <input class="absolute top-3 right-3 rounded border-outline-variant text-primary focus:ring-primary h-4 w-4" type="checkbox" :checked="m.checked" @change="toggleMetric(index)"/>
+                            <span class="material-symbols-outlined text-primary mb-xs" x-text="m.icon">fitness_center</span>
+                            <span class="font-label-md text-on-surface font-bold" x-text="m.label">Tackles</span>
+                            <span class="text-[10px] text-outline uppercase tracking-tighter" x-text="m.category">Performance</span>
+                        </label>
+                    </template>
+                    <!-- Add Custom Button -->
+                    <button @click="showCustomModal = true" class="flex flex-col items-center justify-center p-md border-2 border-dashed border-outline-variant rounded-lg text-outline hover:text-primary hover:border-primary transition-all group">
+                        <span class="material-symbols-outlined mb-xs group-hover:scale-110 transition-transform">add_box</span>
+                        <span class="font-label-md">Add Custom Metric</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 2: Squad Selection -->
+            <section class="col-span-12 lg:col-span-5 space-y-md">
+                <div class="flex items-center gap-sm">
+                    <span class="step-number bg-primary text-on-primary">2</span>
+                    <h4 class="font-headline-sm text-headline-sm">Squad/Group Selection</h4>
+                </div>
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col gap-lg h-full">
+                    <p class="text-on-surface-variant text-sm">Select the squads that will be included in the rows of your exported template.</p>
+                    <div class="flex flex-wrap gap-sm">
+                        <template x-for="(s, index) in squads" :key="s.name">
+                            <button @click="toggleSquad(index)" :class="s.active ? 'bg-secondary-container text-on-secondary-container border-primary/20' : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'" class="px-md py-xs rounded-full flex items-center gap-xs font-label-md border transition-colors">
+                                <span x-text="s.name">U16 Academy Elite</span>
+                                <span class="material-symbols-outlined text-[16px]" x-text="s.active ? 'close' : 'add'">close</span>
+                            </button>
+                        </template>
+                    </div>
+                    <div class="mt-auto pt-lg border-t border-outline-variant/30">
+                        <label class="flex items-center gap-md text-on-surface-variant text-sm cursor-pointer">
+                            <input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox" x-model="includeId"/>
+                            Include Individual Athlete ID column
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 3: Template Preview -->
+            <section class="col-span-12 space-y-md">
+                <div class="flex items-center gap-sm">
+                    <span class="step-number bg-primary text-on-primary">3</span>
+                    <h4 class="font-headline-sm text-headline-sm">Template Preview &amp; Export</h4>
+                </div>
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+                    <div class="bg-surface-container-low px-lg py-sm border-b border-outline-variant flex justify-between items-center">
+                        <div class="flex gap-sm items-center">
+                            <span class="material-symbols-outlined text-outline">grid_on</span>
+                            <span class="font-label-md text-on-surface-variant">training_template_preview.xlsx</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-outline uppercase">Active Sheets: 1</span>
+                    </div>
+                    <div class="overflow-x-auto p-lg">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-surface-container">
+                                    <th class="border border-outline-variant p-sm text-left font-label-caps text-[10px] text-outline w-12">#</th>
+                                    <th class="border border-outline-variant p-sm text-left font-label-caps text-[10px] text-outline min-w-[150px]">Athlete Name</th>
+                                    <template x-if="includeId">
+                                        <th class="border border-outline-variant p-sm text-left font-label-caps text-[10px] text-outline min-w-[100px]">Athlete ID</th>
+                                    </template>
+                                    <template x-for="m in selectedMetrics" :key="m.key">
+                                        <th class="border border-outline-variant p-sm text-left font-label-caps text-[10px] text-primary bg-primary-container/10 min-w-[100px]" x-text="m.label">Tackles</th>
+                                    </template>
+                                    <th class="border border-outline-variant p-sm text-left font-label-caps text-[10px] text-outline min-w-[120px]">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white">
+                                <template x-for="(p, index) in previewPlayers.slice(0, 5)" :key="p.id">
+                                    <tr class="hover:bg-surface-container-low transition-colors">
+                                        <td class="border border-outline-variant p-sm text-xs text-outline" x-text="index + 1">1</td>
+                                        <td class="border border-outline-variant p-sm text-sm font-medium" x-text="p.firstName + ' ' + p.lastName">Marcus Sterling</td>
+                                        <template x-if="includeId">
+                                            <td class="border border-outline-variant p-sm text-sm text-outline" x-text="p.id">ID-88219</td>
+                                        </template>
+                                        <template x-for="m in selectedMetrics" :key="m.key">
+                                            <td class="border border-outline-variant p-sm bg-primary-container/5"></td>
+                                        </template>
+                                        <td class="border border-outline-variant p-sm"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Promotional Context -->
+        <div class="glass-panel p-lg rounded-xl flex items-center gap-lg">
+            <div class="bg-primary/10 p-md rounded-lg">
+                <span class="material-symbols-outlined text-primary text-[40px]">upload_file</span>
+            </div>
+            <div class="flex-1">
+                <h5 class="font-bold text-on-surface">Seamless Upload Experience</h5>
+                <p class="text-sm text-on-surface-variant max-w-2xl">This template is structurally locked to the <strong>Bulk CSV Uploader</strong>. Once your coaches fill in the data, simply drop the file into the uploader for instant metric ingestion across all selected squads.</p>
+            </div>
+            <a class="text-primary font-label-md flex items-center hover:underline" href="uploader.html">
+                View Uploader Documentation
+                <span class="material-symbols-outlined text-[16px] ml-xs">open_in_new</span>
+            </a>
+        </div>
+        <div class="pb-xl"></div>
+    </div>
+</main>
+
+<!-- Contextual FAB -->
+<div class="fixed bottom-lg right-lg z-50">
+    <button @click="generateExcel()" class="group flex items-center gap-md bg-primary text-on-primary pl-lg pr-md py-md rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
+        <span class="font-headline-sm text-[16px] tracking-wide">GENERATE &amp; DOWNLOAD</span>
+        <div class="bg-white/20 p-xs rounded-full group-hover:rotate-12 transition-transform">
+            <span class="material-symbols-outlined text-on-primary">file_download</span>
+        </div>
+    </button>
+</div>
+
+<!-- Modal: Add Custom Metric -->
+<div x-show="showCustomModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-md" x-cloak>
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full border border-outline-variant p-lg space-y-md" @click.away="showCustomModal = false">
+        <div class="flex justify-between items-center">
+            <h3 class="text-headline-sm font-bold text-on-surface">Add Custom Metric</h3>
+            <button @click="showCustomModal = false" class="text-outline hover:text-on-surface">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="space-y-sm">
+            <label class="block text-label-md text-on-surface-variant">Metric Name</label>
+            <input type="text" x-model="customMetricName" class="w-full rounded border-outline-variant focus:ring-primary focus:border-primary text-body-md" placeholder="e.g., Vertical Jump"/>
+        </div>
+        <div class="space-y-sm">
+            <label class="block text-label-md text-on-surface-variant">Category</label>
+            <select x-model="customMetricCategory" class="w-full rounded border-outline-variant focus:ring-primary focus:border-primary text-body-md">
+                <option value="Performance">Performance</option>
+                <option value="Agility">Agility</option>
+                <option value="Volume">Volume</option>
+                <option value="Velocity">Velocity</option>
+                <option value="Custom">Custom</option>
+            </select>
+        </div>
+        <div class="flex justify-end gap-sm pt-md">
+            <button @click="showCustomModal = false" class="px-md py-sm border border-outline-variant rounded-lg text-secondary font-label-md hover:bg-surface-container">Cancel</button>
+            <button @click="addCustomMetric()" class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md hover:brightness-110">Add Metric</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
