@@ -4,6 +4,8 @@ import 'core/storage/local_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/student/presentation/student_dashboard_screen.dart';
+import 'features/parent/presentation/parent_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,16 +25,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check local storage to see if coach is already authenticated
+    // Check local storage to see if user is already authenticated
     final token = LocalStorage.getToken();
     final profile = LocalStorage.getUserProfile();
     final isAuthenticated = token != null && profile != null;
 
+    Widget homeScreen = const LoginScreen();
+    if (isAuthenticated) {
+      final role = profile['role'];
+      if (role == 'Coach') {
+        homeScreen = const DashboardScreen();
+      } else if (role == 'Student') {
+        homeScreen = const StudentDashboardScreen();
+      } else if (role == 'Parent') {
+        homeScreen = const ParentDashboardScreen();
+      }
+    }
+
     return MaterialApp(
-      title: 'uSPORT Coach Command',
+      title: 'uSPORT Athlete Command',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: isAuthenticated ? const DashboardScreen() : const LoginScreen(),
+      home: homeScreen,
     );
   }
 }

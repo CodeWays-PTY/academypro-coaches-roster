@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     school_id TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT CHECK(role IN ('SuperAdmin', 'SchoolAdmin', 'Coach', 'Student')) NOT NULL,
+    role TEXT CHECK(role IN ('SuperAdmin', 'SchoolAdmin', 'Coach', 'Student', 'Parent')) NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

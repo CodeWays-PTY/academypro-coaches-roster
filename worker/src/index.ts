@@ -195,17 +195,17 @@ app.post('/api/auth/send-otp', async (c) => {
     return c.json({ success: false, message: 'Local database usport.db not found' }, 500);
   }
 
-  // Check if coach exists in database
-  const query = 'SELECT * FROM users WHERE email = ? AND role = \'Coach\'';
-  let coach;
+  // Check if user exists in database
+  const query = 'SELECT * FROM users WHERE email = ?';
+  let user;
   try {
-    coach = await db.prepare(query).bind(email.trim().toLowerCase()).get();
+    user = await db.prepare(query).bind(email.trim().toLowerCase()).get();
   } catch (err: any) {
     return c.json({ success: false, message: 'Database query failed', error: err.message }, 500);
   }
 
-  if (!coach) {
-    return c.json({ success: false, message: 'Access Denied: Coach account not found.' }, 403);
+  if (!user) {
+    return c.json({ success: false, message: 'Access Denied: Account not found.' }, 403);
   }
 
   // Generate 6-digit OTP code
@@ -557,6 +557,139 @@ app.post('/api/match-stats', async (c) => {
   } catch (err: any) {
     return c.json({ success: false, message: 'Database insert failed', error: err.message }, 500);
   }
+});
+
+// Route: Get Student Portal data (for Students and Parents)
+app.get('/api/student-portal', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
+  const token = authHeader.substring(7);
+  let jwtPayload;
+  try {
+    jwtPayload = await verify(token, getSecret(c), 'HS256') as any;
+  } catch (err) {
+    return c.json({ success: false, message: 'Invalid session token' }, 401);
+  }
+
+  const userId = jwtPayload.sub;
+  const role = jwtPayload.role;
+  const db = getDB(c);
+
+  if (!db) {
+    return c.json({ success: false, message: 'Local database not found' }, 500);
+  }
+
+  let playerQuery = '';
+  let player;
+
+  if (role === 'Student') {
+    playerQuery = 'SELECT * FROM players WHERE user_id = ?';
+    player = await db.prepare(playerQuery).bind(userId).get();
+  } else if (role === 'Parent') {
+    playerQuery = 'SELECT * FROM players WHERE parent_id = ?';
+    player = await db.prepare(playerQuery).bind(userId).get();
+  } else {
+    return c.json({ success: false, message: 'Access Denied: Role not authorized for student portal.' }, 403);
+  }
+
+  if (!player) {
+    return c.json({ success: false, message: 'Student-athlete profile not found.' }, 404);
+  }
+
+  const playerId = player.id;
+
+  // 1. Fetch Academic logs
+  const academicsQuery = 'SELECT * FROM academic_logs WHERE player_id = ? ORDER BY term ASC';
+  const { results: academics } = await db.prepare(academicsQuery).bind(playerId).all();
+
+  // 2. Fetch Fitness Baselines & Progression
+  const baselineQuery = 'SELECT * FROM fitness_baselines WHERE player_id = ?';
+  const baseline = await db.prepare(baselineQuery).bind(playerId).get();
+
+  const progressionQuery = 'SELECT * FROM fitness_progression WHERE player_id = ? ORDER BY week ASC';
+  const { results: progressions } = await db.prepare(progressionQuery).bind(playerId).all();
+
+  // 3. Fetch Match Stats History
+  const matchesQuery = 'SELECT * FROM match_stats WHERE player_id = ? ORDER BY match_date DESC';
+  const { results: matches } = await db.prepare(matchesQuery).bind(playerId).all();
+
+  // 4. Fetch Attendance Summary
+  const attendanceQuery = `
+    SELECT session_type, COUNT(*) as total, SUM(CASE WHEN att.status = 'Present' THEN 1 ELSE 0 END) as present
+    FROM attendance att
+    JOIN players p ON att.player_id = p.id
+    WHERE p.id = ?
+    GROUP BY session_type
+  `;
+  const { results: attendance } = await db.prepare(attendanceQuery).bind(playerId).all();
+
+  return c.json({
+    success: true,
+    data: {
+      profile: {
+        id: player.id,
+        firstName: player.first_name,
+        lastName: player.last_name,
+        ageGroup: player.age_group,
+        position: player.position,
+        team: player.team,
+        grade: player.grade,
+        age: player.age,
+        ugroupsActive: player.ugroups_active,
+        notes: player.notes,
+        parentName: player.parent_name,
+        parentContact: player.parent_contact
+      },
+      academics: academics.map((a: any) => ({
+        id: a.id,
+        term: a.term,
+        gradePercentage: a.grade_percentage,
+        disciplineScore: a.discipline_score
+      })),
+      fitness: {
+        baseline: baseline ? {
+          speed40m: baseline.speed_40m,
+          speed60m: baseline.speed_60m,
+          broadJump: baseline.broad_jump,
+          pushUps: baseline.push_ups,
+          pullUps: baseline.pull_ups,
+          squats40kg: baseline.squats_40kg,
+          verticalJump: baseline.vertical_jump,
+          tTest: baseline.t_test
+        } : null,
+        progressions: progressions.map((p: any) => ({
+          week: p.week,
+          speed40m: p.speed_40m,
+          strengthReps: p.strength_reps,
+          weight: p.weight,
+          gymSessionsPerWeek: p.gym_sessions_per_week
+        }))
+      },
+      matches: matches.map((m: any) => ({
+        id: m.id,
+        matchDate: m.match_date,
+        opponent: m.opponent,
+        tacklesMade: m.tackles_made,
+        tacklesMissed: m.tackles_missed,
+        carries: m.carries,
+        metresGained: m.metres_gained,
+        errors: m.errors,
+        penalties: m.penalties,
+        workRate: m.work_rate,
+        overallRating: m.overall_rating,
+        autoScore: m.auto_score,
+        tacklePercentage: m.tackle_percentage,
+        category: m.category
+      })),
+      attendance: attendance.map((a: any) => ({
+        sessionType: a.session_type,
+        total: a.total,
+        present: a.present || 0
+      }))
+    }
+  });
 });
 
 export default app;

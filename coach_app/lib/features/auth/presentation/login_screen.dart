@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_state.dart';
-import '../../dashboard/presentation/dashboard_screen.dart'; // We will build this next
+import '../../dashboard/presentation/dashboard_screen.dart';
+import '../../student/presentation/student_dashboard_screen.dart';
+import '../../parent/presentation/parent_dashboard_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -67,11 +69,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     
     final success = await ref.read(authProvider.notifier).verifyOtp(otp);
     if (success) {
-      // Upon successful authentication, route to DashboardCommandCenter
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+      final profile = ref.read(authProvider).userProfile;
+      final role = profile?['role'];
+      
+      Widget targetScreen = const LoginScreen();
+      if (role == 'Coach') {
+        targetScreen = const DashboardScreen();
+      } else if (role == 'Student') {
+        targetScreen = const StudentDashboardScreen();
+      } else if (role == 'Parent') {
+        targetScreen = const ParentDashboardScreen();
+      }
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => targetScreen),
+        );
+      }
     }
   }
 
