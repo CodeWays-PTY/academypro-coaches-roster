@@ -6,6 +6,7 @@ import { jwt, sign, verify } from 'hono/jwt';
 export interface Env {
   DB: any; // D1Database
   KV: any; // KVNamespace
+  EMAIL?: any; // Cloudflare Email Sending binding
   INTERNAL_API_KEY?: string;
   JWT_SECRET?: string;
 }
@@ -177,6 +178,78 @@ function calculateAutoScore(stats: {
   return { autoScore, tacklePercentage, category };
 }
 
+// Helper to send transactional emails
+async function sendTransactionalEmail(c: any, options: {
+  to: string;
+  fromName: string;
+  fromEmail: string;
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+}) {
+  let emailSent = false;
+  const env = c.env;
+
+  // 1. Try Cloudflare Native Email binding
+  if (env && env.EMAIL) {
+    try {
+      const { EmailMessage } = await import("cloudflare:email");
+      const mimeMessage = `From: ${options.fromName} <${options.fromEmail}>
+To: ${options.to}
+Subject: ${options.subject}
+Mime-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+${options.htmlContent}`;
+
+      const emailMessage = new EmailMessage(
+        options.fromEmail,
+        options.to,
+        mimeMessage
+      );
+
+      await env.EMAIL.send(emailMessage);
+      emailSent = true;
+      console.log(`[EMAIL] Sent native email to ${options.to}`);
+    } catch (err) {
+      console.error("[EMAIL] Cloudflare native send failed:", err);
+    }
+  }
+
+  // 2. Fallback to CodeWays Shared API Gateway
+  if (!emailSent) {
+    try {
+      const response = await fetch("https://web.codeways.co/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: options.to,
+          subject: options.subject,
+          text: options.textContent,
+          html: options.htmlContent,
+        }),
+        signal: AbortSignal.timeout(4000),
+      });
+
+      if (response.ok) {
+        emailSent = true;
+        console.log(`[EMAIL] Sent via CodeWays API gateway to ${options.to}`);
+      } else {
+        const text = await response.text();
+        console.error(`[EMAIL] CodeWays gateway failed: ${text}`);
+      }
+    } catch (err) {
+      console.error("[EMAIL] CodeWays gateway fetch failed:", err);
+    }
+  }
+
+  if (!emailSent) {
+    console.warn(`[EMAIL WARNING] Failed to deliver email to ${options.to} via all gateways. Fallback printed to console.`);
+  }
+}
+
 // ==========================================
 // AUTHENTICATION ROUTES
 // ==========================================
@@ -214,7 +287,51 @@ app.post('/api/auth/send-otp', async (c) => {
   // Save OTP to KV cache with 5-minute TTL (300s)
   await kv.put(`otp:${email.trim().toLowerCase()}`, otp, { expirationTtl: 300 });
 
-  // Simulate Sending Email (Print directly to console/observer logs for easy retrieve)
+  // 1. Build Premium Styled Email Template
+  const emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: #FAF8FF; color: #131B2E; margin: 0; padding: 20px; }
+    .container { max-width: 500px; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 32px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); }
+    .header { text-align: center; margin-bottom: 24px; }
+    .title { font-size: 26px; font-weight: 900; color: #003EC7; margin: 0; letter-spacing: -1.0px; }
+    .content { font-size: 15px; line-height: 1.5; color: #434656; margin-bottom: 24px; }
+    .code-box { background-color: #F2F3FF; border-radius: 12px; padding: 20px; text-align: center; font-size: 32px; font-weight: 900; color: #003EC7; letter-spacing: 4px; margin: 24px 0; }
+    .footer { text-align: center; font-size: 12px; color: #737688; margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">uSPORT</h1>
+    </div>
+    <div class="content">
+      <p>Hello,</p>
+      <p>Your one-time verification code to sign in to uSPORT is below. This code is valid for 5 minutes.</p>
+      <div class="code-box">${otp}</div>
+      <p>If you did not request this code, please ignore this email.</p>
+    </div>
+    <div class="footer">
+      <p>© 2026 CodeWays PTY Ltd. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const emailText = `Hello,\n\nYour one-time verification code to sign in to uSPORT is: ${otp}\n\nThis code is valid for 5 minutes.\n\n© 2026 CodeWays PTY Ltd.`;
+
+  // 2. Send email via native Cloudflare or fallback gateway
+  await sendTransactionalEmail(c, {
+    to: email.trim().toLowerCase(),
+    fromName: 'uSPORT App',
+    fromEmail: 'noreply@web.codeways.co', // Default fallback sender domain
+    subject: 'uSPORT Login OTP',
+    htmlContent: emailHtml,
+    textContent: emailText,
+  });
+
+  // Keep printing directly to console/observer logs for easy retrieve in development
   console.log(`[EMAIL SEND] To: ${email} | Subject: uSPORT Login OTP | Code: ${otp}`);
 
   // Return success status along with the code in response (Only for sandbox dev ease! We log it)
