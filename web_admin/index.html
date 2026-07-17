@@ -155,7 +155,8 @@
                 async init() {
                     try {
                         this.loading = true;
-                        const res = await fetch('/api/admin/all-players');
+                        const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
+                        const res = await fetch(`${apiBase}/api/admin/all-players`);
                         const json = await res.json();
                         if (json.success) {
                             this.players = json.data;
