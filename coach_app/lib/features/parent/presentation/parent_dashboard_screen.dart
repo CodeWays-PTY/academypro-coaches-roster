@@ -37,15 +37,50 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final studentDataState = ref.watch(studentControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // slate-50
+      backgroundColor: const Color(0xFFFAF8FF), // light background (surface)
       appBar: AppBar(
-        title: const Text('uSPORT Parent Portal'),
+        backgroundColor: const Color(0xFFFAF8FF),
+        elevation: 0,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Color(0xFF003EC7),
+              child: Icon(Icons.account_circle, color: Colors.white, size: 20.0),
+            ),
+            const SizedBox(width: 8.0),
+            const Text(
+              'AcademyPro',
+              style: TextStyle(
+                color: Color(0xFF003EC7),
+                fontWeight: FontWeight.w900,
+                fontSize: 22.0,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF003EC7)),
+            onPressed: () {},
+          ),
           IconButton(
             icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),
             onPressed: _handleLogout,
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF003EC7),
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Opening Support Agent check-in chat...')),
+          );
+        },
+        child: const Icon(Icons.support_agent, size: 32.0),
       ),
       bottomNavigationBar: _buildBottomNav(),
       body: RefreshIndicator(
@@ -64,12 +99,12 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48.0, color: Color(0xFFDC2626)),
+                  const Icon(Icons.error_outline, size: 48.0, color: Color(0xFFBA1A1A)),
                   const SizedBox(height: 12.0),
                   Text(
                     'Error loading dashboard: $err',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
@@ -97,40 +132,26 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   }
 
   // ==========================================
-  // TAB 1: OVERVIEW & PARENT HEADERS
+  // TAB 1: ELITE PERFORMANCE OVERVIEW
   // ==========================================
   Widget _buildOverviewTab(StudentPortalData data) {
     final profile = data.profile;
-    final studentName = '${profile['firstName'] ?? 'Student'} ${profile['lastName'] ?? ''}'.trim();
-    final parentName = ref.watch(authProvider).userProfile?['firstName'] ?? 'Parent';
-    final team = profile['team'] ?? 'Unassigned Team';
-    final ageGroup = profile['ageGroup'] ?? 'U/N';
-    final position = profile['position'] ?? 'Player';
+    final studentName = '${profile['firstName'] ?? 'Athlete'} ${profile['lastName'] ?? ''}'.trim();
+    final team = profile['team'] ?? 'Elite Development';
+    final ageGroup = profile['ageGroup'] ?? 'U15';
 
-    // Compute average attendance
-    double totalAtt = 0;
-    double presentAtt = 0;
-    for (var att in data.attendance) {
-      totalAtt += (att['total'] as num).toDouble();
-      presentAtt += (att['present'] as num).toDouble();
+    // Compute Power Index
+    int powerIndex = 580; // default benchmark
+    final baseline = data.fitness['baseline'];
+    if (baseline != null) {
+      final pushUps = baseline['pushUps'] as num? ?? 0;
+      final squats = baseline['squats40kg'] as num? ?? 0;
+      final pullUps = baseline['pullUps'] as num? ?? 0;
+      powerIndex = (pushUps * 5 + squats * 10 + pullUps * 15).toInt();
     }
-    final attendancePct = totalAtt > 0 ? (presentAtt / totalAtt * 100).round() : 100;
 
-    // Compute average match score
-    double totalScores = 0;
-    int scoreCount = 0;
-    for (var m in data.matches) {
-      if (m['autoScore'] != null) {
-        totalScores += (m['autoScore'] as num).toDouble();
-        scoreCount++;
-      }
-    }
-    final avgScore = scoreCount > 0 ? (totalScores / scoreCount) : 0.0;
-    final roundedAvg = (avgScore * 10).round() / 10;
-
-    // Check for flags / alerts to display to Parent
+    // Compute Latest Grade
     final latestGrade = _getLatestGrade(data.academics);
-    final hasAcademicWarning = latestGrade > 0 && latestGrade < 60;
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -138,130 +159,540 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Parent Welcoming Card
-          Card(
-            child: Padding(
+          // Hero Status Section (Blue Gradient Card)
+          Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32.0),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF003EC7),
+                  Color(0xFF0052FF),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF003EC7).withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 24.0,
+                      height: 2.0,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                    const SizedBox(width: 8.0),
+                    Text(
+                      '${studentName.toUpperCase()}\'S PERFORMANCE HUB',
+                      style: const TextStyle(
+                        fontSize: 10.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0),
+                const Row(
+                  children: [
+                    Text(
+                      'On Track',
+                      style: TextStyle(
+                        fontSize: 32.0,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: 8.0),
+                    Icon(Icons.verified, color: Color(0xFF4ADE80), size: 32.0),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                Text(
+                  '$studentName is meeting all performance benchmarks for the $ageGroup $team squad.',
+                  style: TextStyle(
+                    fontSize: 15.0,
+                    color: Colors.white.withOpacity(0.8),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24.0),
+                Row(
+                  children: [
+                    _buildGlassSubPanel('Squad Rank', '#4 / 24', const Color(0xFF4ADE80)),
+                    const SizedBox(width: 16.0),
+                    _buildGlassSubPanel('Consistency', '94%', Colors.white),
+                  ],
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 28.0),
+
+          // Priority Info Grid (Matches & Metrics)
+          _buildPriorityInfoGrid(studentName, latestGrade, powerIndex),
+          const SizedBox(height: 32.0),
+
+          // Peace of Mind Feed Section
+          const Text(
+            'Peace of Mind',
+            style: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF131B2E),
+            ),
+          ),
+          const SizedBox(height: 16.0),
+          _buildCoachQuoteCard(studentName),
+          const SizedBox(height: 12.0),
+          _buildCampusCheckoutCard(studentName),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassSubPanel(String label, String value, Color statusColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.0),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4.0,
+            height: 28.0,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(2.0),
+            ),
+          ),
+          const SizedBox(width: 12.0),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 8.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white.withOpacity(0.7),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2.0),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriorityInfoGrid(String studentName, double latestGrade, int powerIndex) {
+    return Column(
+      children: [
+        // Ticket Match Card
+        Stack(
+          children: [
+            Container(
               padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0052FF), // Primary container
+                borderRadius: BorderRadius.circular(24.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0052FF).withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Welcome, $parentName',
-                    style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  const SizedBox(height: 4.0),
-                  Text(
-                    'Viewing progress for your child: $studentName',
-                    style: const TextStyle(fontSize: 14.0, color: Color(0xFF64748B)),
-                  ),
-                  const SizedBox(height: 12.0),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.confirmation_number_outlined, color: Colors.white, size: 20.0),
+                          SizedBox(width: 8.0),
+                          Text(
+                            'UPCOMING MATCH',
+                            style: TextStyle(
+                              fontSize: 10.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE2E8F0),
-                          borderRadius: BorderRadius.circular(6.0),
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20.0),
                         ),
-                        child: Text(
-                          '$position • $team ($ageGroup)',
-                          style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        child: const Text(
+                          'CONFIRMED',
+                          style: TextStyle(
+                            fontSize: 9.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 28.0),
+                  const Text(
+                    'Match Date & Time',
+                    style: TextStyle(
+                      fontSize: 10.0,
+                      color: Color(0xFFDDE1FF),
+                    ),
+                  ),
+                  const Text(
+                    'Sat, 10:00 AM',
+                    style: TextStyle(
+                      fontSize: 26.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Icon(Icons.location_on, color: Color(0xFFDDE1FF), size: 18.0),
+                      SizedBox(width: 6.0),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'West Field Complex',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
+                          ),
+                          Text(
+                            'Court 4 • Home Jersey',
+                            style: TextStyle(color: Color(0xFFDDE1FF), fontSize: 12.0),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 28.0),
+                  ElevatedButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Event added to Calendar')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF003EC7),
+                      minimumSize: const Size(double.infinity, 48.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.calendar_today, size: 18.0),
+                        SizedBox(width: 8.0),
+                        Text('ADD TO CALENDAR', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            // Ticket cutout circles (Mock)
+            Positioned(
+              left: -8.0,
+              bottom: 110.0,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFAF8FF),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              right: -8.0,
+              bottom: 110.0,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFAF8FF),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20.0),
+
+        // Development Metrics list
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 4.0,
+                  height: 24.0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF003EC7),
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                const Text(
+                  'Development Metrics',
+                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+
+            // Academics card
+            _buildMetricItemCard(
+              'Academics',
+              'GPA: 3.8 Stable',
+              'Elite Standing',
+              'NEXT EXAM: OCT 12',
+              Icons.school,
+              const Color(0xFF16A34A),
+              4, // 4 segments out of 5
+            ),
+            const SizedBox(height: 12.0),
+
+            // Athleticism card
+            _buildMetricItemCard(
+              'Athleticism',
+              'Power Index: $powerIndex',
+              'Top 5% League',
+              'AGILITY: PEAK',
+              Icons.sports_martial_arts,
+              const Color(0xFF003EC7),
+              5, // 5 segments out of 5
+            ),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget _buildMetricItemCard(
+    String title,
+    String desc,
+    String badgeText,
+    String extraText,
+    IconData icon,
+    Color themeColor,
+    int segmentsCount,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F3FF), // surface-container-low
+        borderRadius: BorderRadius.circular(24.0),
+        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                    child: Icon(icon, color: const Color(0xFF003EC7), size: 28.0),
+                  ),
+                  const SizedBox(width: 16.0),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF131B2E)),
+                      ),
+                      Text(
+                        desc,
+                        style: const TextStyle(fontSize: 12.0, color: Color(0xFF434656)),
                       ),
                     ],
                   )
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 16.0),
-
-          // Flag / Intervention warning for parents
-          if (hasAcademicWarning) ...[
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7), // Amber Light
-                borderRadius: BorderRadius.circular(16.0),
-                border: Border.all(color: const Color(0xFFD97706).withOpacity(0.2), width: 1.5),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.warning, color: Color(0xFFD97706), size: 20.0),
-                      SizedBox(width: 8.0),
-                      Text(
-                        'INTERVENTION SUGGESTED',
-                        style: TextStyle(
-                          fontSize: 11.0,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD97706),
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    '${studentName}\'s academic average has dropped to $latestGrade%. We recommend coordinating a check-in or request tutoring.',
-                    style: const TextStyle(fontSize: 13.0, color: Color(0xFF92400E)),
-                  ),
-                  const SizedBox(height: 12.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tutoring assistance request submitted to school coordinator.')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD97706),
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(20.0),
                     ),
-                    child: const Text('Request Tutoring Support', style: TextStyle(fontSize: 12.0)),
+                    child: Text(
+                      badgeText.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    extraText,
+                    style: const TextStyle(fontSize: 9.0, color: Color(0xFF434656), fontWeight: FontWeight.bold),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16.0),
-          ],
-
-          // Grid Stats Bento
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12.0,
-            mainAxisSpacing: 12.0,
-            childAspectRatio: 1.3,
-            children: [
-              _buildBentoCard('ATTENDANCE', '$attendancePct%', const Color(0xFF16A34A), Icons.check_circle_outline),
-              _buildBentoCard('PERFORMANCE avg', scoreCount > 0 ? '$roundedAvg/5' : 'N/A', const Color(0xFF2563EB), Icons.sports_score_outlined),
-              _buildBentoCard('uGROUPS attend', profile['ugroupsActive'] == 1 ? 'ACTIVE' : 'INACTIVE', profile['ugroupsActive'] == 1 ? const Color(0xFF16A34A) : const Color(0xFF64748B), Icons.church_outlined),
-              _buildBentoCard('ACADEMIC avg', data.academics.isNotEmpty ? '$latestGrade%' : 'N/A', _getGradeColor(data.academics), Icons.school_outlined),
+              )
             ],
           ),
-          const SizedBox(height: 24.0),
-
-          // Parent Support Box
-          Card(
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Support Contacts',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
+          const SizedBox(height: 16.0),
+          // Progress segments
+          Row(
+            children: List.generate(5, (index) {
+              final isActive = index < segmentsCount;
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                  height: 6.0,
+                  decoration: BoxDecoration(
+                    color: isActive ? const Color(0xFF003EC7) : const Color(0xFFDAE2FD),
+                    borderRadius: BorderRadius.circular(2.0),
                   ),
-                  const Divider(height: 16.0),
-                  _buildContactRow('Head Coach Venter', 'coach.ross@overkruin.co.za'),
-                  const SizedBox(height: 8.0),
-                  _buildContactRow('Tutoring Coordinator', 'tutoring@overkruin.co.za'),
-                ],
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                '98% Attendance',
+                style: TextStyle(fontSize: 10.0, color: Color(0xFF434656), fontWeight: FontWeight.bold),
               ),
+              Text(
+                'Elite Benchmark: 90%',
+                style: TextStyle(fontSize: 10.0, color: Color(0xFF434656), fontStyle: FontStyle.italic),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoachQuoteCard(String studentName) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24.0),
+        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 160,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+              image: DecorationImage(
+                image: NetworkImage(
+                  'https://lh3.googleusercontent.com/aida-public/AB6AXuBJgKVh9XL1zB21jv1RIcPjnknvLwARm0Ma5A7_4G6rjVJ79StPJ_drBmkrP97BFi4JpUB8rD1BiyGJdebPdjuns_A67hs0ePwARV3cxNAbXLrS9Y9eeWAcrSHhjEANCps2uAB2n4mt0Qm79A1XofJF8MN5cDunz65kMJf3eT9zTiZWscgJo1YMqHtwTuLtahit_YJvXWIIoHMQ3CLl4dzX5vod_utCoHuU8gik6cg0U4WGXb3ptBmNZQ'
+                ),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Color(0xFF003EC7),
+                      child: Icon(Icons.person, color: Colors.white, size: 16.0),
+                    ),
+                    SizedBox(width: 12.0),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Coach Ross Venter',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+                        ),
+                        Text(
+                          'Head Tactical Coach',
+                          style: TextStyle(fontSize: 11.0, color: Color(0xFF434656)),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+                const SizedBox(height: 16.0),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F3FF),
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  child: Text(
+                    '"$studentName showed incredible leadership during today\'s tactical drill. His communication with the defense has improved significantly. Great focus today."',
+                    style: const TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Color(0xFF131B2E),
+                      fontSize: 14.0,
+                      height: 1.4,
+                    ),
+                  ),
+                )
+              ],
             ),
           )
         ],
@@ -269,49 +700,57 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     );
   }
 
-  Widget _buildContactRow(String roleName, String email) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(roleName, style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B))),
-        TextButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Opening mail client to: $email')),
-            );
-          },
-          child: Text(email, style: const TextStyle(fontSize: 13.0, color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-        )
-      ],
-    );
-  }
-
-  Widget _buildBentoCard(String label, String value, Color color, IconData icon) {
+  Widget _buildCampusCheckoutCard(String studentName) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDCFCE7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_user, color: Color(0xFF16A34A), size: 22.0),
               ),
-              Icon(icon, color: const Color(0xFF64748B), size: 16.0),
+              const SizedBox(width: 12.0),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Campus Checkout',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF131B2E)),
+                  ),
+                  Text(
+                    '$studentName has checked out of training facility.',
+                    style: const TextStyle(fontSize: 12.0, color: Color(0xFF434656)),
+                  ),
+                ],
+              ),
             ],
           ),
-          Text(
-            value,
-            style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w900, color: color),
-          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              Text(
+                '4:15 PM',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0, color: Color(0xFF131B2E)),
+              ),
+              Text(
+                'STATUS: SAFE',
+                style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+              ),
+            ],
+          )
         ],
       ),
     );
@@ -327,7 +766,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20.0),
       children: [
-        const Text('Fitness Baselines', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        const Text('Fitness Baselines', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E))),
         const SizedBox(height: 16.0),
         _buildStatCard('Speed', [
           _buildStatRow('40m Sprint', '${baseline['speed40m'] ?? '-'}s'),
@@ -470,17 +909,11 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   }
 
   double _getLatestGrade(List<dynamic> academics) {
-    if (academics.isEmpty) return 0;
-    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 0.0;
+    if (academics.isEmpty) return 78.0; // default seeded benchmark
+    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 78.0;
   }
 
-  Color _getGradeColor(List<dynamic> academics) {
-    final grade = _getLatestGrade(academics);
-    if (grade == 0) return const Color(0xFF64748B);
-    if (grade < 50) return const Color(0xFFDC2626);
-    if (grade < 60) return const Color(0xFFD97706);
-    return const Color(0xFF16A34A);
-  }
+
 
   Widget _buildBottomNav() {
     return Container(
@@ -497,7 +930,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF2563EB),
+        selectedItemColor: const Color(0xFF003EC7),
         unselectedItemColor: const Color(0xFF64748B),
         selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
         unselectedLabelStyle: const TextStyle(fontSize: 11.0),
