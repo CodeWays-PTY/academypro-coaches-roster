@@ -219,7 +219,7 @@ ${options.htmlContent}`;
   // 2. Fallback to CodeWays Shared API Gateway
   if (!emailSent) {
     try {
-      const response = await fetch("https://codeways-website.pages.dev/api/send-email", {
+      const response = await fetch("https://web.codeways.co/api/send-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
