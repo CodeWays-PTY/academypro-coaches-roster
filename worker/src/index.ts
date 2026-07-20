@@ -551,23 +551,34 @@ app.get('/api/dashboard/flags', async (c) => {
   const schoolId = jwtPayload.schoolId;
   const db = getDB(c);
 
-  // Pull academic averages and recent match statistics to calculate warning flags
-  const playersQuery = 'SELECT id, first_name, last_name, age_group, position, team FROM players WHERE school_id = ?';
-  const { results: players } = await db.prepare(playersQuery).bind(schoolId).all();
+  const query = `
+    SELECT 
+      p.id, 
+      p.first_name, 
+      p.last_name, 
+      p.age_group, 
+      p.position, 
+      p.team,
+      (SELECT AVG(al.grade_percentage) FROM academic_logs al WHERE al.player_id = p.id) as avg_grade,
+      (SELECT ms.auto_score FROM match_stats ms WHERE ms.player_id = p.id ORDER BY ms.match_date DESC LIMIT 1) as auto_score
+    FROM players p
+    WHERE p.school_id = ?
+  `;
+
+  let rows: any[] = [];
+  try {
+    const res = await db.prepare(query).bind(schoolId).all();
+    rows = res.results || [];
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Database query failed', error: err.message }, 500);
+  }
 
   const flaggedList = [];
 
-  for (const player of players) {
-    // 1. Calculate Academic Avg
-    const avgGradeQuery = 'SELECT AVG(grade_percentage) as avg FROM academic_logs WHERE player_id = ?';
-    const gradeRes = await db.prepare(avgGradeQuery).bind(player.id).first();
-    const avgGrade = gradeRes && gradeRes.avg !== null ? Math.round(gradeRes.avg * 10) / 10 : null;
+  for (const player of rows) {
+    const avgGrade = player.avg_grade !== null ? Math.round(player.avg_grade * 10) / 10 : null;
+    const latestScore = player.auto_score;
 
-    // 2. Fetch Latest Match Stats
-    const latestMatchQuery = 'SELECT auto_score, category, match_date FROM match_stats WHERE player_id = ? ORDER BY match_date DESC LIMIT 1';
-    const matchRes = await db.prepare(latestMatchQuery).bind(player.id).first();
-    
-    // 3. Check for Flags
     let isFlagged = false;
     let reason = '';
     let categoryType = 'Normal';
@@ -576,10 +587,10 @@ app.get('/api/dashboard/flags', async (c) => {
       isFlagged = true;
       categoryType = avgGrade < 50 ? 'Critical' : 'Warning';
       reason = `Academic Drop: Average grade is ${avgGrade}%. Requires tutoring check-in.`;
-    } else if (matchRes && matchRes.auto_score < 2.0) {
+    } else if (latestScore !== null && latestScore < 2.0) {
       isFlagged = true;
       categoryType = 'Warning';
-      reason = `Performance Decline: Latest Auto-Score dropped to ${matchRes.auto_score} (Developing).`;
+      reason = `Performance Decline: Latest Auto-Score dropped to ${latestScore} (Developing).`;
     }
 
     if (isFlagged) {
@@ -593,7 +604,7 @@ app.get('/api/dashboard/flags', async (c) => {
         flagReason: reason,
         severity: categoryType,
         avgGrade: avgGrade || 0,
-        latestScore: matchRes ? matchRes.auto_score : null
+        latestScore: latestScore
       });
     }
   }
