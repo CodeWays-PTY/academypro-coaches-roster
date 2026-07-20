@@ -132,19 +132,8 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('configurator', () => ({
-                metrics: [
-                    { key: 'tackles', label: 'Tackles', category: 'Performance', icon: 'fitness_center', checked: true },
-                    { key: 'carries', label: 'Carries', category: 'Agility', icon: 'directions_run', checked: true },
-                    { key: 'metres_gained', label: 'Metres Gained', category: 'Volume', icon: 'straighten', checked: false },
-                    { key: 'turnovers', label: 'Turnovers', category: 'Defense', icon: 'swap_horiz', checked: false },
-                    { key: 'top_speed', label: 'Top Speed', category: 'Velocity', icon: 'bolt', checked: true }
-                ],
-                squads: [
-                    { name: 'U16 Academy Elite', active: true, ageGroup: 'U16' },
-                    { name: 'U15 Development', active: true, ageGroup: 'U15' },
-                    { name: 'A-Team', active: false, ageGroup: 'U16' },
-                    { name: 'Reserves', active: false, ageGroup: 'U15' }
-                ],
+                metrics: [],
+                squads: [],
                 includeId: true,
                 customMetricName: '',
                 customMetricCategory: 'Custom',
@@ -156,18 +145,67 @@
                     try {
                         this.loading = true;
                         const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
+                        
+                        // 1. Fetch Roster Players
                         const res = await fetch(`${apiBase}/api/admin/all-players`);
                         const json = await res.json();
                         if (json.success) {
                             this.players = json.data;
+                        } else {
+                            throw new Error(json.message || 'Failed to load players');
                         }
+
+                        // 2. Fetch Sports Config
+                        const sportsRes = await fetch(`${apiBase}/api/admin/sports-config`);
+                        const sportsJson = await sportsRes.json();
+                        if (sportsJson.success && sportsJson.data.length > 0) {
+                            const config = sportsJson.data[0].config; // Default to first sport (Rugby)
+                            const iconMap = {
+                                counter: 'fitness_center',
+                                numeric: 'straighten',
+                                rating_1_5: 'star'
+                            };
+                            this.metrics = config.fields.map(f => ({
+                                key: f.key,
+                                label: f.label,
+                                category: f.type === 'counter' ? 'Performance' : (f.type === 'numeric' ? 'Volume' : 'Rating'),
+                                icon: iconMap[f.type] || 'bolt',
+                                checked: f.key === 'tackles_made' || f.key === 'carries' || f.key === 'metres_gained'
+                            }));
+                        } else {
+                            throw new Error(sportsJson.message || 'Failed to load sports config');
+                        }
+
+                        // 3. Dynamically build squads list from unique ageGroup and team values in players
+                        const uniqueSquadsMap = new Map();
+                        this.players.forEach(p => {
+                            const squadName = `${p.ageGroup} ${p.team || 'Squad'}`;
+                            if (!uniqueSquadsMap.has(squadName)) {
+                                uniqueSquadsMap.set(squadName, p.ageGroup);
+                            }
+                        });
+                        this.squads = Array.from(uniqueSquadsMap.entries()).map(([name, group]) => ({
+                            name: name,
+                            active: true,
+                            ageGroup: group
+                        }));
+
                     } catch (e) {
-                        console.error('Failed to load roster:', e);
-                        // Local mock roster fallback
+                        console.error('Failed to load dynamic config:', e);
+                        // Fallback configurations
                         this.players = [
                             { id: 'OVK-U16-001', firstName: 'Marcus', lastName: 'Sterling', ageGroup: 'U16', team: 'A Team', position: 'Flanker' },
                             { id: 'OVK-U16-002', firstName: 'Elena', lastName: 'Rodriguez', ageGroup: 'U16', team: 'A Team', position: 'Flyhalf' },
                             { id: 'OVK-U15-001', firstName: 'Jonas', lastName: 'Khan', ageGroup: 'U15', team: 'B Team', position: 'Scrumhalf' }
+                        ];
+                        this.squads = [
+                            { name: 'U16 A Team', active: true, ageGroup: 'U16' },
+                            { name: 'U15 B Team', active: true, ageGroup: 'U15' }
+                        ];
+                        this.metrics = [
+                            { key: 'tackles_made', label: 'Tackles Made', category: 'Performance', icon: 'fitness_center', checked: true },
+                            { key: 'carries', label: 'Carries', category: 'Agility', icon: 'directions_run', checked: true },
+                            { key: 'metres_gained', label: 'Metres Gained', category: 'Volume', icon: 'straighten', checked: false }
                         ];
                     } finally {
                         this.loading = false;

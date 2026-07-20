@@ -931,4 +931,22 @@ app.post('/api/admin/bulk-upload', async (c) => {
   });
 });
 
+// Route: Get sports metrics configuration
+app.get('/api/admin/sports-config', async (c) => {
+  const db = getDB(c);
+  try {
+    const { results } = await db.prepare('SELECT id, name, config_json FROM sports').all();
+    return c.json({
+      success: true,
+      data: results.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        config: JSON.parse(r.config_json)
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to retrieve sports config', error: err.message }, 500);
+  }
+});
+
 export default app;
