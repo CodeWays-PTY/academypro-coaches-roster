@@ -189,12 +189,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Details for "${event.title}" session'),
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        _showEventDetailsBottomSheet(context, event);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -385,5 +380,289 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
         ),
       ),
     );
+  }
+
+  void _showEventDetailsBottomSheet(BuildContext context, CoachEvent event) {
+    Color themeColor;
+    IconData typeIcon;
+    switch (event.eventType) {
+      case 'Field Session':
+        themeColor = const Color(0xFF003EC7);
+        typeIcon = Icons.sports_soccer;
+        break;
+      case 'Match Day':
+        themeColor = const Color(0xFF22C55E);
+        typeIcon = Icons.sports_score_outlined;
+        break;
+      case 'Development':
+        themeColor = const Color(0xFF952200);
+        typeIcon = Icons.meeting_room;
+        break;
+      case 'Gym Session':
+      default:
+        themeColor = const Color(0xFF505F76);
+        typeIcon = Icons.fitness_center;
+        break;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+          ),
+          padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 12.0, bottom: 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.0,
+                  height: 4.0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC3C5D9).withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24.0),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                color: themeColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6.0),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(typeIcon, color: themeColor, size: 14.0),
+                                  const SizedBox(width: 4.0),
+                                  Text(
+                                    event.eventType.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 10.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: themeColor,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (event.isImportant) ...[
+                              const SizedBox(width: 8.0),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(6.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.star, color: Color(0xFFD97706), size: 12.0),
+                                    const SizedBox(width: 2.0),
+                                    Text(
+                                      'IMPORTANT',
+                                      style: TextStyle(
+                                        fontSize: 9.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFD97706),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 12.0),
+                        Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontSize: 22.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF131B2E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Color(0xFF505F76)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20.0),
+              const Divider(color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 16.0),
+              _buildDetailRow(
+                icon: Icons.calendar_today_outlined,
+                label: 'Date',
+                value: _formatDate(event.date),
+              ),
+              const SizedBox(height: 16.0),
+              _buildDetailRow(
+                icon: Icons.access_time,
+                label: 'Time',
+                value: event.durationMins != null
+                    ? '${event.startTime} (${event.durationMins} mins)'
+                    : event.startTime,
+              ),
+              const SizedBox(height: 16.0),
+              _buildDetailRow(
+                icon: Icons.location_on_outlined,
+                label: 'Location',
+                value: event.location,
+              ),
+              if (event.eventType == 'Field Session' && event.intensity != null) ...[
+                const SizedBox(height: 16.0),
+                _buildDetailRow(
+                  icon: Icons.bolt,
+                  label: 'Intensity',
+                  value: event.intensity!,
+                  valueColor: themeColor,
+                ),
+              ],
+              if (event.eventType == 'Gym Session' && event.completionCount != null) ...[
+                const SizedBox(height: 16.0),
+                _buildDetailRow(
+                  icon: Icons.check_circle_outline,
+                  label: 'Completion Progress',
+                  customWidget: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(3, (index) {
+                      final count = event.completionCount ?? 0;
+                      final isFilled = index < count;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: Icon(
+                          Icons.circle,
+                          size: 16.0,
+                          color: isFilled ? const Color(0xFF505F76) : const Color(0xFFC3C5D9),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 32.0),
+              SizedBox(
+                width: double.infinity,
+                height: 48.0,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003EC7),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close Details',
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8.0),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    String? value,
+    Widget? customWidget,
+    Color? valueColor,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 36.0,
+          height: 36.0,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Icon(icon, color: const Color(0xFF505F76), size: 18.0),
+        ),
+        const SizedBox(width: 16.0),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11.0,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF737688),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2.0),
+              if (customWidget != null)
+                customWidget
+              else
+                Text(
+                  value ?? '',
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.w600,
+                    color: valueColor ?? const Color(0xFF131B2E),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        final year = parts[0];
+        final monthInt = int.parse(parts[1]);
+        final day = parts[2];
+        const months = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        if (monthInt >= 1 && monthInt <= 12) {
+          return '$day ${months[monthInt - 1]} $year';
+        }
+      }
+    } catch (_) {}
+    return dateStr;
   }
 }
