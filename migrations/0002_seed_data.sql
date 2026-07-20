@@ -10,6 +10,12 @@ INSERT INTO sports (id, name, config_json) VALUES ('rugby', 'Rugby', '{"sport":"
 -- Seed Coach User
 INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-COACH-1', 'OVK', 'coach.ross@overkruin.co.za', 'sha256$mockedhash', 'Coach', 'Ross', 'Venter') ON CONFLICT DO NOTHING;
 
+-- Seed Student User
+INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-STUDENT-1', 'OVK', 'student@overkruin.co.za', 'sha256$mockedhash', 'Student', 'Liam', 'Venter') ON CONFLICT DO NOTHING;
+
+-- Seed Parent User
+INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('PAR-OVK-001', 'OVK', 'parent@overkruin.co.za', 'sha256$mockedhash', 'Parent', 'Gerrit', 'Venter') ON CONFLICT DO NOTHING;
+
 -- Seed Players
 INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_contact, parent_id, ugroups_active, notes) VALUES ('OVK-U15-001', 'OVK', 'U15', 'Liam', '', NULL, NULL, NULL, NULL, 'Active', NULL, NULL, 'PAR-OVK-001', 0, NULL);
 INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_contact, parent_id, ugroups_active, notes) VALUES ('OVK-U15-002', 'OVK', 'U15', 'Alex', '', NULL, NULL, NULL, NULL, 'Active', NULL, NULL, 'PAR-OVK-002', 0, NULL);
@@ -64,6 +70,9 @@ INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age
 INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_contact, parent_id, ugroups_active, notes) VALUES ('OVK-U14-021', 'OVK', 'U14', 'Alamien', '', NULL, NULL, NULL, NULL, 'Active', NULL, NULL, 'PAR-OVK-051', 0, NULL);
 INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_contact, parent_id, ugroups_active, notes) VALUES ('OVK-U14-022', 'OVK', 'U14', 'Trey', '', NULL, NULL, NULL, NULL, 'Active', NULL, NULL, 'PAR-OVK-052', 0, NULL);
 INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_contact, parent_id, ugroups_active, notes) VALUES ('OVK-U14-023', 'OVK', 'U14', 'Leandro', '', NULL, NULL, NULL, NULL, 'Active', NULL, NULL, 'PAR-OVK-053', 0, NULL);
+
+-- Link Student User to Player
+UPDATE players SET user_id = 'USR-STUDENT-1' WHERE id = 'OVK-U15-001';
 
 -- Seed Fitness Baselines
 INSERT INTO fitness_baselines (player_id, speed_40m, speed_60m, broad_jump, push_ups, pull_ups, squats_40kg, vertical_jump, t_test) VALUES ('OVK-U15-001', 5.702, 8.37, 1.96, 25, 5, 29, 2.58, 10.66);

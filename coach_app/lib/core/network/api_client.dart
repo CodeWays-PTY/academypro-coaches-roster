@@ -2,10 +2,9 @@ import 'package:dio/dio.dart';
 import '../storage/local_storage.dart';
 
 class ApiClient {
-  static const String _localUrl = 'http://localhost:3000'; // Fallback for desktop/simulators
-  static const String _emulatorUrl = 'http://10.0.2.2:3000'; // For Android emulator
+  static const String _cloudflareUrl = 'https://academypro-api.tata-elash34.workers.dev';
   
-  static String get baseUrl => _localUrl; 
+  static String get baseUrl => _cloudflareUrl; 
 
   late final Dio dio;
 

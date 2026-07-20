@@ -46,6 +46,9 @@ app.use('*', async (c, next) => {
                   async get() {
                     return dbSync.prepare(sql).get(...params) || null;
                   },
+                  async first() {
+                    return dbSync.prepare(sql).get(...params) || null;
+                  },
                   async run() {
                     const res = dbSync.prepare(sql).run(...params);
                     return {
@@ -59,6 +62,9 @@ app.use('*', async (c, next) => {
                 };
               },
               async get() {
+                return dbSync.prepare(sql).get() || null;
+              },
+              async first() {
                 return dbSync.prepare(sql).get() || null;
               },
               async all() {
@@ -272,7 +278,7 @@ app.post('/api/auth/send-otp', async (c) => {
   const query = 'SELECT * FROM users WHERE email = ?';
   let user;
   try {
-    user = await db.prepare(query).bind(email.trim().toLowerCase()).get();
+    user = await db.prepare(query).bind(email.trim().toLowerCase()).first();
   } catch (err: any) {
     return c.json({ success: false, message: 'Database query failed', error: err.message }, 500);
   }
@@ -363,7 +369,7 @@ app.post('/api/auth/verify-otp', async (c) => {
 
   // OTP verified, fetch coach profile
   const query = 'SELECT id, email, first_name, last_name, role, school_id FROM users WHERE email = ?';
-  const user = await db.prepare(query).bind(email.trim().toLowerCase()).get();
+  const user = await db.prepare(query).bind(email.trim().toLowerCase()).first();
 
   // Delete OTP from cache
   await kv.delete(`otp:${email.trim().toLowerCase()}`);
@@ -481,12 +487,12 @@ app.get('/api/dashboard/summary', async (c) => {
 
   // Query 1: Total Players
   const totalPlayersQuery = 'SELECT COUNT(*) as count FROM players WHERE school_id = ?';
-  const totalRes = await db.prepare(totalPlayersQuery).bind(schoolId).get();
+  const totalRes = await db.prepare(totalPlayersQuery).bind(schoolId).first();
   const totalPlayers = totalRes ? totalRes.count : 0;
 
   // Query 2: Team average performance score
   const avgPerformanceQuery = 'SELECT AVG(auto_score) as avg FROM match_stats ms JOIN players p ON ms.player_id = p.id WHERE p.school_id = ?';
-  const avgRes = await db.prepare(avgPerformanceQuery).bind(schoolId).get();
+  const avgRes = await db.prepare(avgPerformanceQuery).bind(schoolId).first();
   const avgScore = avgRes && avgRes.avg ? Math.round(avgRes.avg * 10) / 10 : 0.0;
 
   // Query 3: RAG Categories count (Academics overall average mapping)
@@ -519,7 +525,7 @@ app.get('/api/dashboard/summary', async (c) => {
     JOIN players p ON att.player_id = p.id
     WHERE p.school_id = ?
   `;
-  const attRes = await db.prepare(attendanceQuery).bind(schoolId).get();
+  const attRes = await db.prepare(attendanceQuery).bind(schoolId).first();
   const attendancePercent = attRes && attRes.total > 0 ? Math.round((attRes.present / attRes.total) * 100) : 100;
 
   return c.json({
@@ -554,12 +560,12 @@ app.get('/api/dashboard/flags', async (c) => {
   for (const player of players) {
     // 1. Calculate Academic Avg
     const avgGradeQuery = 'SELECT AVG(grade_percentage) as avg FROM academic_logs WHERE player_id = ?';
-    const gradeRes = await db.prepare(avgGradeQuery).bind(player.id).get();
+    const gradeRes = await db.prepare(avgGradeQuery).bind(player.id).first();
     const avgGrade = gradeRes && gradeRes.avg !== null ? Math.round(gradeRes.avg * 10) / 10 : null;
 
     // 2. Fetch Latest Match Stats
     const latestMatchQuery = 'SELECT auto_score, category, match_date FROM match_stats WHERE player_id = ? ORDER BY match_date DESC LIMIT 1';
-    const matchRes = await db.prepare(latestMatchQuery).bind(player.id).get();
+    const matchRes = await db.prepare(latestMatchQuery).bind(player.id).first();
     
     // 3. Check for Flags
     let isFlagged = false;
@@ -703,10 +709,10 @@ app.get('/api/student-portal', async (c) => {
 
   if (role === 'Student') {
     playerQuery = 'SELECT * FROM players WHERE user_id = ?';
-    player = await db.prepare(playerQuery).bind(userId).get();
+    player = await db.prepare(playerQuery).bind(userId).first();
   } else if (role === 'Parent') {
     playerQuery = 'SELECT * FROM players WHERE parent_id = ?';
-    player = await db.prepare(playerQuery).bind(userId).get();
+    player = await db.prepare(playerQuery).bind(userId).first();
   } else {
     return c.json({ success: false, message: 'Access Denied: Role not authorized for student portal.' }, 403);
   }
@@ -723,7 +729,7 @@ app.get('/api/student-portal', async (c) => {
 
   // 2. Fetch Fitness Baselines & Progression
   const baselineQuery = 'SELECT * FROM fitness_baselines WHERE player_id = ?';
-  const baseline = await db.prepare(baselineQuery).bind(playerId).get();
+  const baseline = await db.prepare(baselineQuery).bind(playerId).first();
 
   const progressionQuery = 'SELECT * FROM fitness_progression WHERE player_id = ? ORDER BY week ASC';
   const { results: progressions } = await db.prepare(progressionQuery).bind(playerId).all();
@@ -863,7 +869,7 @@ app.post('/api/admin/bulk-upload', async (c) => {
 
     try {
       // Verify player exists
-      const playerExists = await db.prepare('SELECT id FROM players WHERE id = ?').bind(player_id).get();
+      const playerExists = await db.prepare('SELECT id FROM players WHERE id = ?').bind(player_id).first();
       if (!playerExists) {
         errorCount++;
         errors.push(`Athlete ID ${player_id} does not exist in roster`);

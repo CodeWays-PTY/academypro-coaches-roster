@@ -71,6 +71,14 @@ function start() {
   sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-COACH-1', 'OVK', 'coach.ross@overkruin.co.za', 'sha256$mockedhash', 'Coach', 'Ross', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
+  sqlStatements.push('-- Seed Student User');
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-STUDENT-1', 'OVK', 'student@overkruin.co.za', 'sha256$mockedhash', 'Student', 'Liam', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push('');
+
+  sqlStatements.push('-- Seed Parent User');
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('PAR-OVK-001', 'OVK', 'parent@overkruin.co.za', 'sha256$mockedhash', 'Parent', 'Gerrit', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push('');
+
   // 4. Parse Player Register Sheet
   const registerSheet = wb.Sheets['Player Register'];
   const registerRows = xlsx.utils.sheet_to_json(registerSheet, { header: 1 });
@@ -141,6 +149,10 @@ function start() {
 
   sqlStatements.push('-- Seed Players');
   sqlStatements.push(...playerInserts);
+  sqlStatements.push('');
+
+  sqlStatements.push('-- Link Student User to Player');
+  sqlStatements.push("UPDATE players SET user_id = 'USR-STUDENT-1' WHERE id = 'OVK-U15-001';");
   sqlStatements.push('');
 
   // Helper to resolve raw or standard player ID to normalized standard ID
