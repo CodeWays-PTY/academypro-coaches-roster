@@ -515,6 +515,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFFFAF8FF),
+      constraints: const BoxConstraints(maxWidth: double.infinity),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
@@ -588,25 +589,25 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2563EB).withOpacity(0.08),
+                                    color: const Color(0xFF0052FF),
                                     borderRadius: BorderRadius.circular(20.0),
                                   ),
-                                  child: Text(
-                                    '${player.status} Squad',
-                                    style: const TextStyle(
+                                  child: const Text(
+                                    'Active Squad',
+                                    style: TextStyle(
                                       fontSize: 10.0,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2563EB),
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 6.0),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F5F9),
+                                    color: const Color(0xFFDAE2FD),
                                     borderRadius: BorderRadius.circular(20.0),
                                   ),
                                   child: Text(
@@ -614,7 +615,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                     style: const TextStyle(
                                       fontSize: 10.0,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF475569),
+                                      color: Color(0xFF434656),
                                     ),
                                   ),
                                 ),
@@ -640,7 +641,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         style: TextStyle(
                           fontSize: 10.0,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF2563EB),
+                          color: Color(0xFF003EC7),
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -655,24 +656,24 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 12.0,
                     mainAxisSpacing: 12.0,
-                    childAspectRatio: 1.35,
+                    childAspectRatio: 1.15,
                     children: [
                       _buildBentoCard(
-                        title: 'MIND (Academic)',
+                        title: 'MIND\n(ACADEMIC)',
                         value: '$gpa%',
                         subtext: 'Term 1 Average',
                         icon: Icons.psychology,
-                        color: const Color(0xFF2563EB),
+                        color: const Color(0xFF003EC7),
                       ),
                       _buildBentoCard(
-                        title: 'BODY (Fitness)',
+                        title: 'BODY\n(FITNESS)',
                         value: '$powerIndex',
                         subtext: 'Power Index',
                         icon: Icons.fitness_center,
                         color: const Color(0xFF16A34A),
                       ),
                       _buildBentoCard(
-                        title: 'SPIRIT (uGroup)',
+                        title: 'SPIRIT\n(UGROUP)',
                         value: uGroups,
                         subtext: 'Character Dev',
                         icon: Icons.diversity_3,
@@ -680,11 +681,12 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         hasLeftBorder: true,
                       ),
                       _buildBentoCard(
-                        title: 'GYM ATTENDANCE',
+                        title: 'GYM\nATTENDANCE',
                         value: '$gymAtt%',
                         subtext: 'Facility Attendance',
                         icon: Icons.open_in_full,
                         color: const Color(0xFF64748B),
+                        valueColor: const Color(0xFF131B2E),
                       ),
                     ],
                   ),
@@ -797,10 +799,10 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     required String subtext,
     required IconData icon,
     required Color color,
+    Color? valueColor,
     bool hasLeftBorder = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
@@ -813,39 +815,35 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.0),
-        child: Stack(
-          children: [
-            if (hasLeftBorder)
-              Positioned(
-                left: -16.0,
-                top: -16.0,
-                bottom: -16.0,
-                child: Container(
-                  width: 4.0,
-                  color: color,
-                ),
-              ),
-            Padding(
-              padding: EdgeInsets.only(left: hasLeftBorder ? 8.0 : 0.0),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (hasLeftBorder)
+            Container(
+              width: 4.0,
+              color: color,
+            ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
                           title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 9.0,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF64748B),
                             letterSpacing: 0.8,
+                            height: 1.2,
                           ),
                         ),
                       ),
@@ -860,7 +858,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         style: TextStyle(
                           fontSize: 20.0,
                           fontWeight: FontWeight.bold,
-                          color: color,
+                          color: valueColor ?? color,
                         ),
                       ),
                       const SizedBox(height: 2.0),
@@ -869,7 +867,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 11.0,
+                          fontSize: 10.0,
                           color: Color(0xFF64748B),
                         ),
                       ),
@@ -878,8 +876,8 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
