@@ -351,6 +351,149 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     );
   }
 
+  Widget _buildPositionRow(BuildContext context, WidgetRef ref, RosterPlayer player) {
+    return InkWell(
+      onTap: () => _showEditPositionDialog(context, ref, player),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Position Allocation',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 14.0),
+            ),
+            Row(
+              children: [
+                Text(
+                  player.position.isNotEmpty ? player.position : 'Unassigned',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                    fontSize: 14.0,
+                  ),
+                ),
+                const SizedBox(width: 6.0),
+                const Icon(
+                  Icons.edit_outlined,
+                  size: 16.0,
+                  color: Color(0xFF2563EB),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditPositionDialog(BuildContext context, WidgetRef ref, RosterPlayer player) {
+    final controller = TextEditingController(text: player.position);
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+              title: const Text(
+                'Edit Position',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Specify the field position for ${player.firstName}:',
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 13.0),
+                  ),
+                  const SizedBox(height: 12.0),
+                  TextField(
+                    controller: controller,
+                    enabled: !saving,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Flanker / No. 8',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: saving ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                ),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          setState(() {
+                            saving = true;
+                          });
+                          final success = await ref
+                              .read(rosterProvider.notifier)
+                              .updatePlayerPosition(player, controller.text.trim());
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: success ? const Color(0xFF0F172A) : const Color(0xFFDC2626),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                content: Row(
+                                  children: [
+                                    Icon(
+                                      success ? Icons.check_circle_outline : Icons.error_outline,
+                                      color: Colors.white,
+                                      size: 20.0,
+                                    ),
+                                    const SizedBox(width: 10.0),
+                                    Text(
+                                      success
+                                          ? 'Position updated successfully'
+                                          : 'Failed to update position',
+                                      style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                  ),
+                  child: saving
+                      ? const SizedBox(
+                          width: 16.0,
+                          height: 16.0,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
+                        )
+                      : const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showPlayerProfileSheet(BuildContext context, RosterPlayer player, bool isFlagged) {
     // Generate seeded random values for player baselines and grades
     final randSeed = player.id.hashCode;
@@ -398,13 +541,27 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                   ),
                   const SizedBox(height: 20.0),
 
-                  // Athlete Header
+                  // Athlete Profile Header Section
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
-                        child: Icon(Icons.person, color: const Color(0xFF2563EB), size: 32.0),
+                      Container(
+                        width: 80.0,
+                        height: 80.0,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF), // soft blue
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(color: const Color(0xFFDBEAFE), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 4.0,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.person, color: Color(0xFF2563EB), size: 40.0),
+                        ),
                       ),
                       const SizedBox(width: 16.0),
                       Expanded(
@@ -413,90 +570,205 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                           children: [
                             Text(
                               '${player.firstName} ${player.lastName}',
-                              style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              style: const TextStyle(
+                                fontSize: 20.0,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
+                            const SizedBox(height: 2.0),
                             Text(
-                              '${player.position} • Squad: ${player.team} (${player.ageGroup})',
-                              style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+                              '${player.position.isNotEmpty ? player.position : 'Unassigned'} • ${player.team.isNotEmpty ? player.team : player.ageGroup}',
+                              style: const TextStyle(
+                                fontSize: 13.0,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6.0),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2563EB).withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(20.0),
+                                  ),
+                                  child: Text(
+                                    '${player.status} Squad',
+                                    style: const TextStyle(
+                                      fontSize: 10.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2563EB),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6.0),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(20.0),
+                                  ),
+                                  child: Text(
+                                    'ID: ${player.id}',
+                                    style: const TextStyle(
+                                      fontSize: 10.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF475569),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                        decoration: BoxDecoration(
-                          color: isFlagged ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Text(
-                          isFlagged ? 'ATTENTION REQUIRED' : 'ON TRACK',
-                          style: TextStyle(
-                            fontSize: 10.0,
-                            fontWeight: FontWeight.bold,
-                            color: isFlagged ? const Color(0xFF991B1B) : const Color(0xFF166534),
-                          ),
-                        ),
-                      )
                     ],
                   ),
                   const SizedBox(height: 24.0),
 
-                  // Development Metrics Bento grid
-                  const Text('Development Portals', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+                  // Development Portals Bento Grid
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        'Development Portals',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        'METRICS OVERVIEW',
+                        style: TextStyle(
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2563EB),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12.0),
 
-                  // Grid stats
+                  // Bento grid layout
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 12.0,
                     mainAxisSpacing: 12.0,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.35,
                     children: [
-                      _buildMetricBox('MIND (Academic)', '$gpa%', 'Term 1 Average', Icons.psychology, const Color(0xFF2563EB)),
-                      _buildMetricBox('BODY (Fitness)', '$powerIndex', 'Power Index', Icons.sports_martial_arts, const Color(0xFF16A34A)),
-                      _buildMetricBox('SPIRIT (uGroup)', uGroups, 'Character Dev', Icons.church_outlined, const Color(0xFF952200)),
-                      _buildMetricBox('GYM ATTENDANCE', '$gymAtt%', 'Facility Attendance', Icons.fitness_center_outlined, const Color(0xFF64748B)),
+                      _buildBentoCard(
+                        title: 'MIND (Academic)',
+                        value: '$gpa%',
+                        subtext: 'Term 1 Average',
+                        icon: Icons.psychology,
+                        color: const Color(0xFF2563EB),
+                      ),
+                      _buildBentoCard(
+                        title: 'BODY (Fitness)',
+                        value: '$powerIndex',
+                        subtext: 'Power Index',
+                        icon: Icons.fitness_center,
+                        color: const Color(0xFF16A34A),
+                      ),
+                      _buildBentoCard(
+                        title: 'SPIRIT (uGroup)',
+                        value: uGroups,
+                        subtext: 'Character Dev',
+                        icon: Icons.diversity_3,
+                        color: const Color(0xFF952200),
+                        hasLeftBorder: true,
+                      ),
+                      _buildBentoCard(
+                        title: 'GYM ATTENDANCE',
+                        value: '$gymAtt%',
+                        subtext: 'Facility Attendance',
+                        icon: Icons.open_in_full,
+                        color: const Color(0xFF64748B),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24.0),
 
-                  // Baselines Info
-                  const Text('Evaluation Baselines', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
-                  const Divider(height: 20.0),
-                  _buildProfileRow('Vertical Jump Baseline', '$verticalJump metres'),
-                  _buildProfileRow('40m Dash Speed', '$speed40m seconds'),
-                  _buildProfileRow('Position Allocation', player.position),
-                  _buildProfileRow('Athlete System ID', player.id),
+                  // Evaluation Baselines
+                  const Text(
+                    'Evaluation Baselines',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 12.0),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildProfileRow('Vertical Jump Baseline', '$verticalJump metres'),
+                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                        _buildProfileRow('40m Dash Speed', '$speed40m seconds'),
+                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                        _buildPositionRow(context, ref, player),
+                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                        _buildProfileRow('Athlete System ID', player.id),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24.0),
 
-                  // Intervention Resolve Button
-                  if (isFlagged) ...[
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Intervention check-in card sent to ${player.firstName}')),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFDC2626),
-                        minimumSize: const Size(double.infinity, 48.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  // Actions
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: const Color(0xFF0F172A),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
+                                  const SizedBox(width: 10.0),
+                                  Text('Intervention check-in initiated for ${player.firstName}'),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFBF3003),
+                          foregroundColor: const Color(0xFFFFDDD5),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
+                        child: const Text(
+                          'Initiate Resolve Contact',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                        ),
                       ),
-                      child: const Text('Initiate Resolve Contact', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 12.0),
-                  ],
-
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 48.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                    ),
-                    child: const Text('Close Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12.0),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF475569),
+                          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
+                        child: const Text(
+                          'Close Profile',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -509,55 +781,106 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
 
   Widget _buildProfileRow(String label, String val) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF64748B))),
-          Text(val, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 14.0)),
+          Text(val, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0)),
         ],
       ),
     );
   }
 
-  Widget _buildMetricBox(String label, String value, String sub, IconData icon, Color themeColor) {
+  Widget _buildBentoCard({
+    required String title,
+    required String value,
+    required String subtext,
+    required IconData icon,
+    required Color color,
+    bool hasLeftBorder = false,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(12.0),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
-              ),
-              Icon(icon, color: themeColor, size: 16.0),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w900, color: themeColor),
-              ),
-              Text(
-                sub,
-                style: const TextStyle(fontSize: 10.0, color: Color(0xFF64748B)),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 4.0,
+            offset: const Offset(0, 2),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.0),
+        child: Stack(
+          children: [
+            if (hasLeftBorder)
+              Positioned(
+                left: -16.0,
+                top: -16.0,
+                bottom: -16.0,
+                child: Container(
+                  width: 4.0,
+                  color: color,
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.only(left: hasLeftBorder ? 8.0 : 0.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 9.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                      Icon(icon, color: color, size: 18.0),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(height: 2.0),
+                      Text(
+                        subtext,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11.0,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
