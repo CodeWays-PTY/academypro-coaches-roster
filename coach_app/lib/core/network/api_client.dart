@@ -1,18 +1,27 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../storage/local_storage.dart';
 
 class ApiClient {
   static const String _cloudflareUrl = 'https://academypro-api.tata-elash34.workers.dev';
+  static const String _localDevUrl = 'http://localhost:3000';
   
-  static String get baseUrl => _cloudflareUrl; 
+  static String get baseUrl {
+    if (kDebugMode) {
+      if (kIsWeb && (Uri.base.host == 'localhost' || Uri.base.host == '127.0.0.1')) {
+        return _localDevUrl;
+      }
+    }
+    return _cloudflareUrl;
+  }
 
   late final Dio dio;
 
   ApiClient() {
     dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 4),
-      receiveTimeout: const Duration(seconds: 4),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
       headers: {
         'Content-Type': 'application/json',
       },

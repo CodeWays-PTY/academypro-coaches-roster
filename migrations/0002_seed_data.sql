@@ -131,11 +131,5 @@ INSERT INTO fitness_baselines (player_id, speed_40m, speed_60m, broad_jump, push
 
 -- Seed Academic Logs
 
--- Seed Events
-INSERT INTO events (school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count) VALUES ('OVK', 'Tactical Periodization', 'Field Session', '16:30', '2026-07-20', 90, 'Pitch 4', 'High', 0, NULL);
-INSERT INTO events (school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count) VALUES ('OVK', 'vs. Pretoria Boys High', 'Match Day', '10:00', '2026-07-25', NULL, 'West Field Complex', NULL, 1, NULL);
-INSERT INTO events (school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count) VALUES ('OVK', 'Spiritual Character Dev', 'Development', '18:00', '2026-07-22', NULL, 'Youth Hall', NULL, 0, NULL);
-INSERT INTO events (school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count) VALUES ('OVK', 'Strength Baselines Check', 'Gym Session', '06:00', '2026-07-27', NULL, 'High Performance Gym', NULL, 0, 2);
-
 -- Re-enable foreign keys
 PRAGMA foreign_keys = ON;
