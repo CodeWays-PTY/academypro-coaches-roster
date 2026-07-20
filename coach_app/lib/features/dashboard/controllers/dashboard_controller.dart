@@ -129,15 +129,15 @@ class FlaggedPlayer {
 
   factory FlaggedPlayer.fromJson(Map<String, dynamic> json) {
     return FlaggedPlayer(
-      id: json['id'],
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      ageGroup: json['ageGroup'],
-      position: json['position'],
-      team: json['team'],
-      flagReason: json['flagReason'],
-      severity: json['severity'],
-      avgGrade: (json['avgGrade'] as num).toDouble(),
+      id: json['id'] ?? '',
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      ageGroup: json['ageGroup'] ?? '',
+      position: json['position'] ?? '',
+      team: json['team'] ?? '',
+      flagReason: json['flagReason'] ?? '',
+      severity: json['severity'] ?? '',
+      avgGrade: (json['avgGrade'] as num?)?.toDouble() ?? 0.0,
       latestScore: (json['latestScore'] as num?)?.toDouble(),
     );
   }
