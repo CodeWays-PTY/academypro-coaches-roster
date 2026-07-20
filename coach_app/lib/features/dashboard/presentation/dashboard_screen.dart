@@ -102,10 +102,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),
-            onPressed: _handleLogout,
-          ),
           const SizedBox(width: 8.0),
         ],
       ),
