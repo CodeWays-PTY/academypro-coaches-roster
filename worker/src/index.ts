@@ -129,6 +129,16 @@ app.use('*', async (c, next) => {
   await next();
 });
 
+// 4.5 Global Error Handler
+app.onError((err, c) => {
+  console.error('[Global Error Handler] Error:', err);
+  const status = err instanceof SyntaxError ? 400 : 500;
+  return c.json({
+    success: false,
+    message: err.message || 'Internal Server Error'
+  }, status);
+});
+
 // Helper for JWT Secret Key
 const getSecret = (c: any) => c.env?.JWT_SECRET || 'usport-secret-key-928374';
 
@@ -980,6 +990,35 @@ app.get('/api/admin/sports-config', async (c) => {
     });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to retrieve sports config', error: err.message }, 500);
+  }
+});
+
+// Route: Update Player Position
+app.post('/api/players/:id/position', async (c) => {
+  const playerId = c.req.param('id');
+  const body = await c.req.json();
+  const position = body.position;
+  const db = getDB(c);
+
+  if (position === undefined || position === null) {
+    return c.json({ success: false, message: 'Position is required' }, 400);
+  }
+
+  try {
+    const query = 'UPDATE players SET position = ? WHERE id = ?';
+    await db.prepare(query).bind(position, playerId).run();
+    console.log(`[Observer Log] Updated position to '${position}' for player '${playerId}'`);
+
+    return c.json({
+      success: true,
+      message: 'Player position updated successfully'
+    });
+  } catch (err: any) {
+    return c.json({
+      success: false,
+      message: 'Failed to update player position',
+      error: err.message
+    }, 500);
   }
 });
 

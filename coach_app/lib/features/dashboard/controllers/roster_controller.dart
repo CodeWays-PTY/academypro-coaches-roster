@@ -103,6 +103,43 @@ class RosterNotifier extends StateNotifier<RosterState> {
       );
     }
   }
+
+  Future<bool> updatePlayerPosition(RosterPlayer player, String newPosition) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/api/players/${player.id}/position',
+        data: {'position': newPosition},
+      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
+        final playersList = newMap[player.ageGroup];
+        if (playersList != null) {
+          final updatedList = playersList.map((p) {
+            if (p.id == player.id) {
+              return RosterPlayer(
+                id: p.id,
+                firstName: p.firstName,
+                lastName: p.lastName,
+                ageGroup: p.ageGroup,
+                position: newPosition,
+                team: p.team,
+                status: p.status,
+                ugroupsActive: p.ugroupsActive,
+                age: p.age,
+              );
+            }
+            return p;
+          }).toList();
+          newMap[player.ageGroup] = updatedList;
+          state = state.copyWith(playersByAge: newMap);
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 final rosterProvider = StateNotifierProvider<RosterNotifier, RState>((ref) {
