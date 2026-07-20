@@ -35,24 +35,59 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final studentDataState = ref.watch(studentControllerProvider);
+    final userProfile = ref.watch(authProvider).userProfile;
+    final studentName = userProfile != null
+        ? '${userProfile['firstName']} ${userProfile['lastName']}'
+        : 'Student';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FF), // light background
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF8FF),
+        backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'AcademyPro',
-          style: TextStyle(
-            color: Color(0xFF003EC7),
-            fontWeight: FontWeight.w900,
-            fontSize: 22.0,
-            letterSpacing: -0.5,
-          ),
+        scrolledUnderElevation: 0,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
+        titleSpacing: 16.0,
+        title: Row(
+          children: [
+            Container(
+              width: 36.0,
+              height: 36.0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18.0),
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=150',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return CircleAvatar(
+                      backgroundColor: const Color(0xFF2563EB),
+                      child: Text(
+                        studentName.isNotEmpty ? studentName[0] : 'S',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 10.0),
+            const Text(
+              'AcademyPro',
+              style: TextStyle(
+                color: Color(0xFF2563EB),
+                fontWeight: FontWeight.bold,
+                fontSize: 20.0,
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF003EC7)),
+            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF64748B)),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('No new notifications')),
@@ -63,6 +98,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),
             onPressed: _handleLogout,
           ),
+          const SizedBox(width: 8.0),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),

@@ -35,40 +35,70 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final studentDataState = ref.watch(studentControllerProvider);
+    final userProfile = ref.watch(authProvider).userProfile;
+    final parentName = userProfile != null
+        ? '${userProfile['firstName']} ${userProfile['lastName']}'
+        : 'Parent';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FF), // light background (surface)
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF8FF),
+        backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
+        titleSpacing: 16.0,
         title: Row(
           children: [
-            const CircleAvatar(
-              radius: 16,
-              backgroundColor: Color(0xFF003EC7),
-              child: Icon(Icons.account_circle, color: Colors.white, size: 20.0),
+            Container(
+              width: 36.0,
+              height: 36.0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18.0),
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return CircleAvatar(
+                      backgroundColor: const Color(0xFF2563EB),
+                      child: Text(
+                        parentName.isNotEmpty ? parentName[0] : 'P',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
-            const SizedBox(width: 8.0),
+            const SizedBox(width: 10.0),
             const Text(
               'AcademyPro',
               style: TextStyle(
-                color: Color(0xFF003EC7),
-                fontWeight: FontWeight.w900,
-                fontSize: 22.0,
-                letterSpacing: -0.5,
+                color: Color(0xFF2563EB),
+                fontWeight: FontWeight.bold,
+                fontSize: 20.0,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF003EC7)),
-            onPressed: () {},
+            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF64748B)),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications panel coming soon')),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),
             onPressed: _handleLogout,
           ),
+          const SizedBox(width: 8.0),
         ],
       ),
       floatingActionButton: FloatingActionButton(

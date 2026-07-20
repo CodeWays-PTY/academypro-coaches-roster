@@ -52,23 +52,62 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // slate-50
       appBar: AppBar(
-        title: const Text('AcademyPro'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
+        titleSpacing: 16.0,
+        title: Row(
+          children: [
+            Container(
+              width: 36.0,
+              height: 36.0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18.0),
+                child: Image.network(
+                  'https://lh3.googleusercontent.com/aida-public/AB6AXuAOxTf6yJT9VQAUKIjJsBSVI_vcDQF66prXep6uRFFXRqJovnY9MTdLHo-Q_TyJJ1hYctG9JSua2UaqfhZ64axaUwPuHpfwcC9_UfhAZaReZCsEO4-tJlBVMwbQl_JhYPc8Lbf-mlbSrb2P4OmZqMjg5IGfPjpdT1laAK9SAPekd1wdwccut5w6df7KPwERCD3LxNIFvxBxORuKRN6XftZg78wCIKOSJgyMX7_7ENWMd0yi-fZz7qsa0A',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return CircleAvatar(
+                      backgroundColor: const Color(0xFF2563EB),
+                      child: Text(
+                        coachName.isNotEmpty ? coachName[0] : 'C',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 10.0),
+            const Text(
+              'AcademyPro',
+              style: TextStyle(
+                color: Color(0xFF2563EB),
+                fontWeight: FontWeight.bold,
+                fontSize: 20.0,
+              ),
+            ),
+          ],
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF64748B)),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications panel coming soon')),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),
             onPressed: _handleLogout,
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFF2563EB),
-              child: Text(
-                coachName.isNotEmpty ? coachName[0] : 'C',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-          )
+          const SizedBox(width: 8.0),
         ],
       ),
       floatingActionButton: _activeTab == 2
