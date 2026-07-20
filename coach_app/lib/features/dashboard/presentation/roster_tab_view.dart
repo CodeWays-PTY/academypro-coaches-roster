@@ -509,10 +509,12 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     final powerIndex = (520 + r.nextInt(280));
     final gymAtt = 90 + r.nextInt(10);
     final uGroups = player.ugroupsActive == 1 ? 'ACTIVE (98% attend)' : 'INACTIVE';
+    final initials = '${player.firstName.isNotEmpty ? player.firstName[0] : ''}${player.lastName.isNotEmpty ? player.lastName[0] : ''}';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: const Color(0xFFFAF8FF),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
@@ -529,18 +531,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Pull indicator
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFCBD5E1),
-                        borderRadius: BorderRadius.circular(2.0),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
+                  const SizedBox(height: 8.0),
 
                   // Athlete Profile Header Section
                   Row(
@@ -549,9 +540,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         width: 80.0,
                         height: 80.0,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF), // soft blue
+                          color: const Color(0xFFD0E1FB), // secondary-container / light blue
                           borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(color: const Color(0xFFDBEAFE), width: 1.5),
+                          border: Border.all(color: const Color(0xFFB7C8E1), width: 1.5),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.04),
@@ -560,8 +551,15 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Icon(Icons.person, color: Color(0xFF2563EB), size: 40.0),
+                        child: Center(
+                          child: Text(
+                            initials.isNotEmpty ? initials : 'P',
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24.0,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16.0),
