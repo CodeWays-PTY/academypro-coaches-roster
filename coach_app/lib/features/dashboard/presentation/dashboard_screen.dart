@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
-import '../../match/presentation/match_screen.dart';
 import 'roster_tab_view.dart';
 import 'events_tab_view.dart';
 
@@ -122,17 +121,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
               child: const Icon(Icons.add_task, size: 28.0),
             )
-          : FloatingActionButton(
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MatchScreen()),
-                );
-              },
-              child: const Icon(Icons.add_chart),
-            ),
+          : null,
       bottomNavigationBar: _buildBottomNav(context, activeIndex: _activeTab),
       body: _buildBody(summary, flagsState),
     );
