@@ -42,7 +42,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         backgroundColor: const Color(0xFFFAF8FF),
         elevation: 0,
         title: const Text(
-          'uSPORT',
+          'AcademyPro',
           style: TextStyle(
             color: Color(0xFF003EC7),
             fontWeight: FontWeight.w900,

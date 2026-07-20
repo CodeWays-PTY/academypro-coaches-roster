@@ -310,11 +310,11 @@ app.post('/api/auth/send-otp', async (c) => {
 <body>
   <div class="container">
     <div class="header">
-      <h1 class="title">uSPORT</h1>
+      <h1 class="title">AcademyPro</h1>
     </div>
     <div class="content">
       <p>Hello,</p>
-      <p>Your one-time verification code to sign in to uSPORT is below. This code is valid for 5 minutes.</p>
+      <p>Your one-time verification code to sign in to AcademyPro is below. This code is valid for 5 minutes.</p>
       <div class="code-box">${otp}</div>
       <p>If you did not request this code, please ignore this email.</p>
     </div>
@@ -325,20 +325,20 @@ app.post('/api/auth/send-otp', async (c) => {
 </body>
 </html>`;
 
-  const emailText = `Hello,\n\nYour one-time verification code to sign in to uSPORT is: ${otp}\n\nThis code is valid for 5 minutes.\n\n© 2026 CodeWays PTY Ltd.`;
+  const emailText = `Hello,\n\nYour one-time verification code to sign in to AcademyPro is: ${otp}\n\nThis code is valid for 5 minutes.\n\n© 2026 CodeWays PTY Ltd.`;
 
   // 2. Send email via native Cloudflare or fallback gateway
   await sendTransactionalEmail(c, {
     to: email.trim().toLowerCase(),
-    fromName: 'uSPORT App',
+    fromName: 'AcademyPro App',
     fromEmail: 'noreply@web.codeways.co', // Default fallback sender domain
-    subject: 'uSPORT Login OTP',
+    subject: 'AcademyPro Login OTP',
     htmlContent: emailHtml,
     textContent: emailText,
   });
 
   // Keep printing directly to console/observer logs for easy retrieve in development
-  console.log(`[EMAIL SEND] To: ${email} | Subject: uSPORT Login OTP | Code: ${otp}`);
+  console.log(`[EMAIL SEND] To: ${email} | Subject: AcademyPro Login OTP | Code: ${otp}`);
 
   // Return success status along with the code in response (Only for sandbox dev ease! We log it)
   return c.json({

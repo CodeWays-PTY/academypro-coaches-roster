@@ -51,7 +51,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // slate-50
       appBar: AppBar(
-        title: const Text('uSPORT'),
+        title: const Text('AcademyPro'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),

@@ -104,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // uSPORT Branding Logo section
+              // AcademyPro Branding Logo section
               const Icon(
                 Icons.sports_rugby,
                 size: 64.0,
@@ -112,7 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 16.0),
               const Text(
-                'uSPORT',
+                'AcademyPro',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 32.0,

@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
     }
 
     return MaterialApp(
-      title: 'uSPORT Athlete Command',
+      title: 'AcademyPro Athlete Command',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: homeScreen,
