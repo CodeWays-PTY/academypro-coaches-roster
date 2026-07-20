@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../auth/presentation/auth_state.dart';
@@ -70,18 +71,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF2563EB),
-        foregroundColor: Colors.white,
-        onPressed: () {
-          // Go to Live Match Screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MatchScreen()),
-          );
-        },
-        child: const Icon(Icons.add_chart),
-      ),
+      floatingActionButton: _activeTab == 2
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Create event session scheduler initiated')),
+                );
+              },
+              child: const Icon(Icons.add_task, size: 28.0),
+            )
+          : FloatingActionButton(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MatchScreen()),
+                );
+              },
+              child: const Icon(Icons.add_chart),
+            ),
       bottomNavigationBar: _buildBottomNav(context, activeIndex: _activeTab),
       body: _buildBody(summary, flagsState),
     );

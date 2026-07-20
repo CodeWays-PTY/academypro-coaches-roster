@@ -165,6 +165,25 @@ CREATE TABLE IF NOT EXISTS attendance (
 );
 
 -- ==========================================
+-- 10. COMMAND EVENTS (Calendar / Schedule)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    school_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    event_type TEXT CHECK(event_type IN ('Field Session', 'Match Day', 'Development', 'Gym Session')) NOT NULL,
+    start_time TEXT NOT NULL, -- e.g., "16:30"
+    date TEXT NOT NULL, -- YYYY-MM-DD
+    duration_mins INTEGER, -- e.g., 90
+    location TEXT NOT NULL,
+    intensity TEXT CHECK(intensity IN ('High', 'Medium', 'Low')),
+    is_important INTEGER DEFAULT 0, -- 0 or 1
+    completion_count INTEGER, -- e.g. 2 for gym check
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+);
+
+-- ==========================================
 -- INDEXES FOR INSTANT RETRIEVAL
 -- ==========================================
 CREATE INDEX IF NOT EXISTS idx_players_school ON players(school_id);
@@ -172,6 +191,7 @@ CREATE INDEX IF NOT EXISTS idx_players_age_group ON players(age_group);
 CREATE INDEX IF NOT EXISTS idx_match_stats_player_date ON match_stats(player_id, match_date);
 CREATE INDEX IF NOT EXISTS idx_attendance_player_date ON attendance(player_id, date);
 CREATE INDEX IF NOT EXISTS idx_academic_logs_player ON academic_logs(player_id);
+CREATE INDEX IF NOT EXISTS idx_events_school_date ON events(school_id, date);
 
 PRAGMA foreign_keys = ON;
 ```

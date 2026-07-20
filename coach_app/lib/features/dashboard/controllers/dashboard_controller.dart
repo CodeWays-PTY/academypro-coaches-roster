@@ -173,3 +173,74 @@ final dashboardFlagsProvider = StateNotifierProvider<DashboardFlagsNotifier, Asy
   final apiClient = ref.watch(apiClientProvider);
   return DashboardFlagsNotifier(apiClient);
 });
+
+class CoachEvent {
+  final int id;
+  final String schoolId;
+  final String title;
+  final String eventType;
+  final String startTime;
+  final String date;
+  final int? durationMins;
+  final String location;
+  final String? intensity;
+  final bool isImportant;
+  final int? completionCount;
+
+  CoachEvent({
+    required this.id,
+    required this.schoolId,
+    required this.title,
+    required this.eventType,
+    required this.startTime,
+    required this.date,
+    this.durationMins,
+    required this.location,
+    this.intensity,
+    required this.isImportant,
+    this.completionCount,
+  });
+
+  factory CoachEvent.fromJson(Map<String, dynamic> json) {
+    return CoachEvent(
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      schoolId: json['schoolId'] ?? '',
+      title: json['title'] ?? '',
+      eventType: json['eventType'] ?? '',
+      startTime: json['startTime'] ?? '',
+      date: json['date'] ?? '',
+      durationMins: json['durationMins'] != null ? (json['durationMins'] as num).toInt() : null,
+      location: json['location'] ?? '',
+      intensity: json['intensity'],
+      isImportant: json['isImportant'] == true,
+      completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
+    );
+  }
+}
+
+class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>> {
+  final ApiClient _apiClient;
+
+  DashboardEventsNotifier(this._apiClient) : super(const AsyncValue.loading());
+
+  Future<void> fetchEvents() async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _apiClient.getAndCache('/api/dashboard/events');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final List list = response.data['data'] ?? [];
+        final events = list.map((x) => CoachEvent.fromJson(x)).toList();
+        state = AsyncValue.data(events);
+      } else {
+        state = AsyncValue.error(response.data['message'] ?? 'Failed to fetch events', StackTrace.current);
+      }
+    } catch (err, stack) {
+      state = AsyncValue.error(err, stack);
+    }
+  }
+}
+
+final dashboardEventsProvider = StateNotifierProvider<DashboardEventsNotifier, AsyncValue<List<CoachEvent>>>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return DashboardEventsNotifier(apiClient);
+});

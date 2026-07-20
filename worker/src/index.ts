@@ -615,6 +615,39 @@ app.get('/api/dashboard/flags', async (c) => {
   });
 });
 
+// Route: Get Coach Command Events
+app.get('/api/dashboard/events', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload.schoolId;
+  const db = getDB(c);
+
+  const query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
+  try {
+    const { results } = await db.prepare(query).bind(schoolId).all();
+    
+    const events = results.map((r: any) => ({
+      id: r.id,
+      schoolId: r.school_id,
+      title: r.title,
+      eventType: r.event_type,
+      startTime: r.start_time,
+      date: r.date,
+      durationMins: r.duration_mins,
+      location: r.location,
+      intensity: r.intensity,
+      isImportant: r.is_important === 1,
+      completionCount: r.completion_count
+    }));
+
+    return c.json({
+      success: true,
+      data: events
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to retrieve events', error: err.message }, 500);
+  }
+});
+
 // Route: Log Match Statistics
 app.post('/api/match-stats', async (c) => {
   const statsInput = await c.req.json();
