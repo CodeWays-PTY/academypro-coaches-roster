@@ -454,23 +454,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () {
-                    // Action resolve hooks
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Intervention check-in initiated for ${player.firstName}')),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    foregroundColor: const Color(0xFF0F172A),
-                    padding: const EdgeInsets.symmetric(vertical: 12.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      // Action resolve hooks
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF0F172A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
+                              const SizedBox(width: 10.0),
+                              Text(
+                                'Intervention check-in initiated for ${player.firstName}',
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.forum_outlined, size: 16.0),
+                    label: const Text(
+                      'Resolve Action',
+                      style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
                     ),
                   ),
-                  child: const Text('RESOLVE ACTION', style: TextStyle(fontSize: 13.0)),
                 )
               ],
             ),
