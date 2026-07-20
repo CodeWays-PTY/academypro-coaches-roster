@@ -11,6 +11,7 @@ class RosterPlayer {
   final String team;
   final String status;
   final int ugroupsActive;
+  final int? age;
 
   RosterPlayer({
     required this.id,
@@ -21,11 +22,12 @@ class RosterPlayer {
     required this.team,
     required this.status,
     required this.ugroupsActive,
+    this.age,
   });
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
     return RosterPlayer(
-      id: json['id'],
+      id: json['id'] ?? '',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
       ageGroup: json['ageGroup'] ?? '',
@@ -33,6 +35,7 @@ class RosterPlayer {
       team: json['team'] ?? '',
       status: json['status'] ?? 'Active',
       ugroupsActive: json['ugroupsActive'] ?? 0,
+      age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
     );
   }
 }

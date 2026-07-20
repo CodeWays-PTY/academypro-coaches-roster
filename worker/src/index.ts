@@ -473,7 +473,8 @@ app.get('/api/rosters/:age_group', async (c) => {
         position: p.position,
         team: p.team,
         status: p.status,
-        ugroupsActive: p.ugroups_active
+        ugroupsActive: p.ugroups_active,
+        age: p.age
       }))
     }
   });

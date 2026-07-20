@@ -39,6 +39,54 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     super.dispose();
   }
 
+  Widget _buildSubtitle(RosterPlayer player) {
+    final parts = <String>[];
+    if (player.position.isNotEmpty) {
+      parts.add(player.position.toUpperCase());
+    }
+    if (player.team.isNotEmpty) {
+      parts.add(player.team.toUpperCase());
+    }
+    
+    if (parts.isEmpty) {
+      return Text(
+        'UNASSIGNED • ${player.ageGroup}',
+        style: const TextStyle(
+          fontSize: 11.0,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF94A3B8), // slate-400
+          letterSpacing: 0.5,
+        ),
+      );
+    }
+    
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 6.0,
+      children: [
+        for (int i = 0; i < parts.length; i++) ...[
+          Text(
+            parts[i],
+            style: const TextStyle(
+              fontSize: 11.0,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2563EB), // azure-600
+              letterSpacing: 0.8,
+            ),
+          ),
+          if (i < parts.length - 1)
+            const Text(
+              '/',
+              style: TextStyle(
+                fontSize: 11.0,
+                color: Color(0xFFCBD5E1), // slate-300
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final rosterState = ref.watch(rosterProvider);
@@ -70,6 +118,13 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.0),
                   border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 4.0,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -77,9 +132,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
                     items: const [
-                      DropdownMenuItem(value: 'U15', child: Text('U15 Academy')),
-                      DropdownMenuItem(value: 'U16', child: Text('U16 Academy')),
-                      DropdownMenuItem(value: 'U18', child: Text('U18 Premier')),
+                      DropdownMenuItem(value: 'U15', child: Text('U15 Academy Elite')),
+                      DropdownMenuItem(value: 'U16', child: Text('U16 Academy Elite')),
+                      DropdownMenuItem(value: 'U18', child: Text('U18 Premier Squad')),
                     ],
                     onChanged: _onAgeGroupChanged,
                   ),
@@ -99,10 +154,11 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
             },
             decoration: InputDecoration(
               hintText: 'Search athlete by name...',
-              prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
+              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.0),
+              prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20.0),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.close, size: 18.0),
+                      icon: const Icon(Icons.close, size: 18.0, color: Color(0xFF94A3B8)),
                       onPressed: () {
                         _searchController.clear();
                         setState(() {
@@ -111,6 +167,21 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                       },
                     )
                   : null,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+              ),
             ),
           ),
           const SizedBox(height: 20.0),
@@ -157,44 +228,119 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     orElse: () => false,
                   );
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.0),
-                      border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      leading: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: isFlagged ? const Color(0xFFFEE2E2) : const Color(0xFFE2E8F0),
-                        child: Text(
-                          initials,
-                          style: TextStyle(
-                            color: isFlagged ? const Color(0xFFDC2626) : const Color(0xFF0F172A),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                          ),
+                  return GestureDetector(
+                    onTap: () => _showPlayerProfileSheet(context, player, isFlagged),
+                    child: Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(
+                          color: isFlagged 
+                              ? const Color(0xFFFCA5A5) // red-300
+                              : const Color(0xFFE2E8F0), // slate-200
+                          width: 1.0,
                         ),
-                      ),
-                      title: Text(
-                        '${player.firstName} ${player.lastName}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      subtitle: Text(
-                        '${player.position} • ${player.team}',
-                        style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isFlagged)
-                            const Icon(Icons.warning, color: Color(0xFFDC2626), size: 20.0),
-                          const SizedBox(width: 8.0),
-                          const Icon(Icons.chevron_right, color: Color(0xFF64748B)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 4.0,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
-                      onTap: () => _showPlayerProfileSheet(context, player, isFlagged),
+                      child: Row(
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 56.0,
+                            height: 56.0,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isFlagged 
+                                  ? const Color(0xFFFEE2E2) 
+                                  : const Color(0xFFEFF6FF), // azure-50
+                              border: Border.all(
+                                color: isFlagged 
+                                    ? const Color(0xFFFCA5A5) 
+                                    : const Color(0xFFDBEAFE), // azure-100
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                initials.isNotEmpty ? initials : 'P',
+                                style: TextStyle(
+                                  color: isFlagged 
+                                      ? const Color(0xFFDC2626) 
+                                      : const Color(0xFF2563EB), // azure-600
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16.0),
+                          
+                          // Middle Text Column
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${player.firstName} ${player.lastName}'.trim(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ),
+                                    if (player.age != null && player.age! > 0) ...[
+                                      const SizedBox(width: 8.0),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9), // slate-100
+                                          borderRadius: BorderRadius.circular(6.0),
+                                        ),
+                                        child: Text(
+                                          'Age ${player.age}',
+                                          style: const TextStyle(
+                                            fontSize: 11.0,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF475569), // slate-600
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 6.0),
+                                _buildSubtitle(player),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8.0),
+                          
+                          // Trailing elements (Warning icon if flagged, and Chevron Right)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isFlagged) ...[
+                                const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 20.0),
+                                const SizedBox(width: 8.0),
+                              ],
+                              const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1), size: 22.0),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
