@@ -817,7 +817,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       },
     );
   }
-  }
 
   Widget _buildRisingStarCard(BuildContext context, RisingStarPlayer player) {
     return Container(
