@@ -6,6 +6,7 @@ import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
 import 'roster_tab_view.dart';
 import 'events_tab_view.dart';
+import 'profile_tab_view.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -49,54 +50,50 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         : 'Coach';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // slate-50
+      backgroundColor: const Color(0xFFFAF8FF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
-        titleSpacing: 16.0,
-        title: Row(
-          children: [
-            Container(
-              width: 36.0,
-              height: 36.0,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18.0),
-                child: Image.network(
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuAOxTf6yJT9VQAUKIjJsBSVI_vcDQF66prXep6uRFFXRqJovnY9MTdLHo-Q_TyJJ1hYctG9JSua2UaqfhZ64axaUwPuHpfwcC9_UfhAZaReZCsEO4-tJlBVMwbQl_JhYPc8Lbf-mlbSrb2P4OmZqMjg5IGfPjpdT1laAK9SAPekd1wdwccut5w6df7KPwERCD3LxNIFvxBxORuKRN6XftZg78wCIKOSJgyMX7_7ENWMd0yi-fZz7qsa0A',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return CircleAvatar(
-                      backgroundColor: const Color(0xFF2563EB),
-                      child: Text(
-                        coachName.isNotEmpty ? coachName[0] : 'C',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                    );
-                  },
-                ),
-              ),
+        leadingWidth: 56.0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _activeTab = 4; // Navigate to Profile tab
+              });
+            },
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFFDDE1FF),
+              child: const Icon(Icons.person, color: Color(0xFF0038B6), size: 20.0),
             ),
-            const SizedBox(width: 10.0),
-            const Text(
-              'AcademyPro',
-              style: TextStyle(
-                color: Color(0xFF2563EB),
-                fontWeight: FontWeight.bold,
-                fontSize: 20.0,
-              ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'AcademyPro',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF003EC7),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF64748B)),
+            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF434656)),
             onPressed: () {
+              HapticFeedback.lightImpact();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Notifications panel coming soon')),
               );
@@ -137,12 +134,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         );
       case 4:
-        return const Center(
-          child: Text(
-            'App Configuration & Profile Settings',
-            style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-          ),
-        );
+        return const ProfileTabView();
       case 0:
       default:
         return _buildDashboardOverview(summary, flagsState);
@@ -514,7 +506,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), label: 'Roster'),
             BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Events'),
             BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'Inbox'),
-            BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
       ),
