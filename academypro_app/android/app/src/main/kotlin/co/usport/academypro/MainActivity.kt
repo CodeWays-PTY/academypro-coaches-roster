@@ -1,4 +1,4 @@
-package co.usport.coach_app
+package co.usport.academypro
 
 import io.flutter.embedding.android.FlutterActivity
 
