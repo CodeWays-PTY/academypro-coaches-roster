@@ -493,26 +493,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
       ),
-      child: BottomNavigationBar(
-        currentIndex: activeIndex,
-        onTap: (index) {
-          setState(() {
-            _activeTab = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF2563EB),
-        unselectedItemColor: const Color(0xFF64748B),
-        selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 11.0),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), label: 'Roster'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Events'),
-          BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'Inbox'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
-        ],
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: BottomNavigationBar(
+          currentIndex: activeIndex,
+          onTap: (index) {
+            setState(() {
+              _activeTab = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF2563EB),
+          unselectedItemColor: const Color(0xFF64748B),
+          selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), label: 'Roster'),
+            BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Events'),
+            BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'Inbox'),
+            BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
+          ],
+        ),
       ),
     );
   }

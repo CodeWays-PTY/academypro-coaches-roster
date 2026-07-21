@@ -410,13 +410,20 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.5),
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) {
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
         return Container(
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
           ),
-          padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 12.0, bottom: 24.0),
+          padding: EdgeInsets.only(
+            left: 24.0,
+            right: 24.0,
+            top: 16.0,
+            bottom: 24.0 + bottomPadding,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

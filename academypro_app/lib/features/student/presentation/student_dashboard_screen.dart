@@ -824,25 +824,29 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
       ),
-      child: BottomNavigationBar(
-        currentIndex: _activeTab,
-        onTap: (index) {
-          setState(() {
-            _activeTab = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF003EC7),
-        unselectedItemColor: const Color(0xFF64748B),
-        selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 11.0),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Overview'),
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), label: 'Fitness'),
-          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Academics'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Matches'),
-        ],
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: BottomNavigationBar(
+          currentIndex: _activeTab,
+          onTap: (index) {
+            setState(() {
+              _activeTab = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF003EC7),
+          unselectedItemColor: const Color(0xFF64748B),
+          selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Overview'),
+            BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), label: 'Fitness'),
+            BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Academics'),
+            BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Matches'),
+          ],
+        ),
       ),
     );
   }
