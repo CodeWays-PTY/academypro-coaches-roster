@@ -1,4 +1,4 @@
-package co.usport.academypro
+package za.co.academypro.app
 
 import io.flutter.embedding.android.FlutterActivity
 
