@@ -10,6 +10,7 @@ import 'roster_tab_view.dart';
 import 'events_tab_view.dart';
 import 'profile_tab_view.dart';
 import 'create_event_modal.dart';
+import 'create_action_modal.dart';
 
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
@@ -28,10 +29,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch metrics summary and flags on init
     Future.microtask(() {
       ref.read(dashboardSummaryProvider.notifier).fetchSummary();
       ref.read(dashboardFlagsProvider.notifier).fetchFlags();
+      ref.read(risingStarsProvider.notifier).fetchRisingStars();
       ref.read(notificationProvider.notifier).fetchNotifications();
     });
   }
@@ -50,12 +51,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final summary = ref.watch(dashboardSummaryProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
+    final starsState = ref.watch(risingStarsProvider);
+    final coachActions = ref.watch(coachActionProvider);
     final userProfile = ref.watch(authProvider).userProfile ?? LocalStorage.getUserProfile() ?? {};
     final notifState = ref.watch(notificationProvider);
 
     final firstName = userProfile['first_name'] ?? userProfile['firstName'] ?? 'Jan-Albert';
     final lastName = userProfile['last_name'] ?? userProfile['lastName'] ?? 'Mentz';
-    final coachName = '$firstName $lastName';
     final avatarPath = userProfile['avatarUrl'] ?? userProfile['profile_pic'];
     final initials = '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}';
 
@@ -71,7 +73,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: GestureDetector(
             onTap: () {
               setState(() {
-                _activeTab = 4; // Navigate to Profile tab
+                _activeTab = 4;
               });
             },
             child: CircleAvatar(
@@ -90,22 +92,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ),
-        title: Column(
+        title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Text(
-                  'AcademyPro',
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF003EC7),
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
+            Text(
+              'AcademyPro',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF003EC7),
+                letterSpacing: -0.5,
+              ),
             ),
           ],
         ),
@@ -165,11 +163,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             )
           : null,
       bottomNavigationBar: _buildBottomNav(context, activeIndex: _activeTab),
-      body: _buildBody(summary, flagsState),
+      body: _buildBody(summary, flagsState, starsState, coachActions),
     );
   }
 
-  Widget _buildBody(DashboardSummaryState summary, AsyncValue<List<FlaggedPlayer>> flagsState) {
+  Widget _buildBody(
+    DashboardSummaryState summary,
+    AsyncValue<List<FlaggedPlayer>> flagsState,
+    AsyncValue<List<RisingStarPlayer>> starsState,
+    List<CoachActionItem> coachActions,
+  ) {
     switch (_activeTab) {
       case 1:
         return const RosterTabView();
@@ -186,15 +189,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return const ProfileTabView();
       case 0:
       default:
-        return _buildDashboardOverview(summary, flagsState);
+        return _buildDashboardOverview(summary, flagsState, starsState, coachActions);
     }
   }
 
-  Widget _buildDashboardOverview(DashboardSummaryState summary, AsyncValue<List<FlaggedPlayer>> flagsState) {
+  Widget _buildDashboardOverview(
+    DashboardSummaryState summary,
+    AsyncValue<List<FlaggedPlayer>> flagsState,
+    AsyncValue<List<RisingStarPlayer>> starsState,
+    List<CoachActionItem> coachActions,
+  ) {
     return RefreshIndicator(
       onRefresh: () async {
         await ref.read(dashboardSummaryProvider.notifier).fetchSummary();
         await ref.read(dashboardFlagsProvider.notifier).fetchFlags();
+        await ref.read(risingStarsProvider.notifier).fetchRisingStars();
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -235,7 +244,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       setState(() {
                         _selectedAgeGroup = newAge;
                       });
-                      // If we are filtering, update data
                     }
                   },
                 ),
@@ -281,14 +289,115 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 28.0),
 
-            // Requires Attention title
+            // ===================================================================
+            // SECTION 1: RISING STARS (5-WEEK CONSISTENCY CLUB)
+            // Strict Qualification Rule: ONLY displayed if Grades UP + Attendance UP + 5-Wk Gym Consistency
+            // ===================================================================
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.workspace_premium, color: Color(0xFF10B981), size: 22.0),
+                    SizedBox(width: 8.0),
+                    Text(
+                      'Rising Stars (5-Wk Consistency)',
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5),
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: const Text(
+                    '5 WKS CONSISTENT',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF065F46),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4.0),
+            const Text(
+              'Only displayed when grades are up, attendance is up, and gym progress is consistent for 5+ weeks.',
+              style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 14.0),
+
+            starsState.when(
+              data: (players) {
+                // APPLY STRICT QUALIFICATION FILTER HERE
+                final qualifiedStars = players.where((p) => p.isQualifiedForRisingStar).toList();
+
+                if (qualifiedStars.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: const [
+                        Icon(Icons.military_tech_outlined, color: Color(0xFF94A3B8), size: 36.0),
+                        SizedBox(height: 8.0),
+                        Text(
+                          'No Athletes Currently Qualify for Rising Stars',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569), fontSize: 14.0),
+                        ),
+                        SizedBox(height: 4.0),
+                        Text(
+                          'Athletes require 5 consecutive weeks of simultaneous improvement across Grades, Attendance, and Gym performance.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return SizedBox(
+                  height: 195.0,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: qualifiedStars.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 14.0),
+                    itemBuilder: (context, index) {
+                      return _buildRisingStarCard(context, qualifiedStars[index]);
+                    },
+                  ),
+                );
+              },
+              loading: () => const SizedBox(
+                height: 100,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, __) => const SizedBox(),
+            ),
+
+            const SizedBox(height: 28.0),
+
+            // ===================================================================
+            // SECTION 2: REQUIRES ATTENTION (FLAGS & AT-RISK ATHLETES)
+            // ===================================================================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Requires Attention',
                   style: TextStyle(
-                    fontSize: 20.0,
+                    fontSize: 18.0,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF0F172A),
                   ),
@@ -314,9 +423,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 14.0),
 
-            // RAG Flags List
             flagsState.when(
               data: (list) {
                 if (list.isEmpty) {
@@ -325,7 +433,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       padding: EdgeInsets.all(24.0),
                       child: Center(
                         child: Text(
-                          'No critical demerits or warning flags detected today.',
+                          'No critical warning flags detected today.',
                           style: TextStyle(color: Color(0xFF64748B)),
                         ),
                       ),
@@ -351,9 +459,237 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Text('Error loading warnings: $err', style: const TextStyle(color: Color(0xFFDC2626))),
               )),
             ),
+
+            const SizedBox(height: 28.0),
+
+            // ===================================================================
+            // SECTION 3: COACH CUSTOM ACTION TASKS BOARD
+            // ===================================================================
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.task_alt, color: Color(0xFF2563EB), size: 22.0),
+                    SizedBox(width: 8.0),
+                    Text(
+                      'Coach Action Tasks',
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${coachActions.where((a) => !a.isCompleted).length} Open',
+                  style: const TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12.0),
+
+            if (coachActions.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Center(
+                  child: Text(
+                    'No open action tasks. Use "Set Action Plan" on any player to define custom tasks.',
+                    style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: coachActions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8.0),
+                itemBuilder: (context, index) {
+                  final item = coachActions[index];
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14.0),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(coachActionProvider.notifier).toggleAction(item.id);
+                          },
+                          child: Icon(
+                            item.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                            color: item.isCompleted ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            size: 22.0,
+                          ),
+                        ),
+                        const SizedBox(width: 12.0),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: item.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
+                                  decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                                ),
+                              ),
+                              const SizedBox(height: 2.0),
+                              Text(
+                                '${item.playerName} • Added ${item.dateAdded}',
+                                style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            item.category,
+                            style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildRisingStarCard(BuildContext context, RisingStarPlayer player) {
+    return Container(
+      width: 260.0,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF065F46), Color(0xFF047857)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2010B981),
+            blurRadius: 12.0,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.white24,
+                    child: Text(
+                      player.firstName.isNotEmpty ? player.firstName[0] : 'S',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                  const SizedBox(width: 10.0),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${player.firstName} ${player.lastName}',
+                        style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 14.0),
+                      ),
+                      Text(
+                        '${player.position} • ${player.ageGroup}',
+                        style: const TextStyle(fontSize: 11.0, color: Color(0xFFA7F3D0)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14.0),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+            decoration: BoxDecoration(
+              color: Colors.black26,
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.local_fire_department, color: Color(0xFFFBBF24), size: 16.0),
+                    SizedBox(width: 4.0),
+                    Text(
+                      'STREAK',
+                      style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Colors.white70),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${player.gymConsistencyWeeks} WKS CONSISTENT',
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStarMetricPill('GRADES', '+${player.gradeImprovement}%', Icons.school),
+              _buildStarMetricPill('ATTEND', '${player.attendancePercent}%', Icons.event_available),
+              _buildStarMetricPill('GYM', '+${player.gymProgressPercent}%', Icons.fitness_center),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStarMetricPill(String label, String val, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: const Color(0xFFA7F3D0), size: 14.0),
+        const SizedBox(height: 2.0),
+        Text(
+          val,
+          style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w900, color: Colors.white),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 8.5, color: Color(0xFFA7F3D0), fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 
@@ -398,6 +734,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildFlagItem(BuildContext context, FlaggedPlayer player) {
     Color leftBorderColor = const Color(0xFFDC2626);
     Color cardBgColor = const Color(0xFFFEF2F2);
+
     if (player.severity == 'Warning') {
       leftBorderColor = const Color(0xFFD97706);
       cardBgColor = const Color(0xFFFFFBEB);
@@ -485,28 +822,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      // Action resolve hooks
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: const Color(0xFF0F172A),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
-                              const SizedBox(width: 10.0),
-                              Text(
-                                'Intervention check-in initiated for ${player.firstName}',
-                                style: const TextStyle(fontWeight: FontWeight.w500),
-                              ),
-                            ],
-                          ),
-                        ),
+                      // Open Custom Coach Action modal
+                      CreateActionModal.show(
+                        context,
+                        playerId: player.id,
+                        playerName: '${player.firstName} ${player.lastName}',
                       );
                     },
-                    icon: const Icon(Icons.forum_outlined, size: 16.0),
+                    icon: const Icon(Icons.assignment_add, size: 16.0),
                     label: const Text(
-                      'Resolve Action',
+                      'Set Action Plan',
                       style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
