@@ -1,12 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/storage/local_storage.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
 import 'roster_tab_view.dart';
 import 'events_tab_view.dart';
 import 'profile_tab_view.dart';
+
+import '../../notifications/controllers/notification_controller.dart';
+import '../../notifications/presentation/notifications_panel.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -26,6 +31,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     Future.microtask(() {
       ref.read(dashboardSummaryProvider.notifier).fetchSummary();
       ref.read(dashboardFlagsProvider.notifier).fetchFlags();
+      ref.read(notificationProvider.notifier).fetchNotifications();
     });
   }
 
@@ -43,11 +49,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final summary = ref.watch(dashboardSummaryProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
-    final userProfile = ref.watch(authProvider).userProfile;
+    final userProfile = ref.watch(authProvider).userProfile ?? LocalStorage.getUserProfile() ?? {};
+    final notifState = ref.watch(notificationProvider);
 
-    final coachName = userProfile != null 
-        ? '${userProfile['firstName']} ${userProfile['lastName']}'
-        : 'Coach';
+    final firstName = userProfile['first_name'] ?? userProfile['firstName'] ?? 'Jan-Albert';
+    final lastName = userProfile['last_name'] ?? userProfile['lastName'] ?? 'Mentz';
+    final coachName = '$firstName $lastName';
+    final avatarPath = userProfile['avatarUrl'] ?? userProfile['profile_pic'];
+    final initials = '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FF),
@@ -65,8 +74,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               });
             },
             child: CircleAvatar(
-              backgroundColor: const Color(0xFFDDE1FF),
-              child: const Icon(Icons.person, color: Color(0xFF0038B6), size: 20.0),
+              backgroundColor: const Color(0xFF003EC7),
+              child: avatarPath != null && avatarPath.toString().isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(20.0),
+                      child: avatarPath.toString().startsWith('http')
+                          ? Image.network(avatarPath.toString(), fit: BoxFit.cover, width: 40, height: 40)
+                          : Image.file(File(avatarPath.toString()), fit: BoxFit.cover, width: 40, height: 40),
+                    )
+                  : Text(
+                      initials,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.0),
+                    ),
             ),
           ),
         ),
@@ -90,14 +109,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF434656)),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications panel coming soon')),
-              );
-            },
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF434656)),
+                onPressed: () {
+                  NotificationsPanel.show(context);
+                },
+              ),
+              if (notifState.unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4.0),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${notifState.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 8.0),
         ],

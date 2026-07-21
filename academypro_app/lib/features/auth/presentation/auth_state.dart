@@ -122,6 +122,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> updateUserProfile(Map<String, dynamic> updatedFields) async {
+    final currentProfile = state.userProfile ?? LocalStorage.getUserProfile() ?? {};
+    final newProfile = Map<String, dynamic>.from(currentProfile)..addAll(updatedFields);
+
+    final token = LocalStorage.getToken() ?? '';
+    await LocalStorage.saveSession(token, newProfile);
+
+    state = state.copyWith(userProfile: newProfile);
+
+    try {
+      await _apiClient.dio.post('/api/auth/profile', data: updatedFields);
+    } catch (e) {
+      print('Online profile sync deferred: $e');
+    }
+  }
+
   Future<void> logout() async {
     await LocalStorage.clearSession();
     state = AuthState(status: AuthStatus.unauthenticated);

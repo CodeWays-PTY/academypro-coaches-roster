@@ -76,4 +76,9 @@ class ApiClient {
     }
     return response;
   }
+
+  // Helper method for POST requests
+  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return await dio.post(path, data: data, queryParameters: queryParameters);
+  }
 }

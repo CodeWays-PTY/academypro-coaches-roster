@@ -377,9 +377,15 @@ app.post('/api/auth/verify-otp', async (c) => {
     return c.json({ success: false, message: 'Invalid OTP code. Access Denied.' }, 401);
   }
 
-  // OTP verified, fetch coach profile
-  const query = 'SELECT id, email, first_name, last_name, role, school_id FROM users WHERE email = ?';
-  const user = await db.prepare(query).bind(email.trim().toLowerCase()).first();
+  // OTP verified, fetch coach profile with school name
+  const query = 'SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.school_id, s.name as school_name FROM users u LEFT JOIN schools s ON u.school_id = s.id WHERE u.email = ?';
+  let user = await db.prepare(query).bind(email.trim().toLowerCase()).first();
+
+  if (!user) {
+    // Fallback if not joined or missing
+    const altUser = await db.prepare('SELECT id, email, first_name, last_name, role, school_id FROM users WHERE email = ?').bind(email.trim().toLowerCase()).first();
+    user = { ...altUser, school_name: 'Hoërskool Overkruin' };
+  }
 
   // Delete OTP from cache
   await kv.delete(`otp:${email.trim().toLowerCase()}`);
@@ -404,10 +410,38 @@ app.post('/api/auth/verify-otp', async (c) => {
         email: user.email,
         role: user.role,
         schoolId: user.school_id,
+        schoolName: user.school_name || 'Hoërskool Overkruin',
         firstName: user.first_name,
-        lastName: user.last_name
+        lastName: user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name
       }
     }
+  });
+});
+
+app.post('/api/auth/profile', async (c) => {
+  const db = getDB(c);
+  const body = await c.req.json();
+  const { email, firstName, first_name, lastName, last_name } = body;
+
+  const userEmail = (email || '').trim().toLowerCase();
+  const fName = firstName || first_name;
+  const lName = lastName || last_name;
+
+  if (userEmail && (fName || lName)) {
+    if (fName && lName) {
+      await db.prepare('UPDATE users SET first_name = ?, last_name = ? WHERE email = ?').bind(fName, lName, userEmail).run();
+    } else if (fName) {
+      await db.prepare('UPDATE users SET first_name = ? WHERE email = ?').bind(fName, userEmail).run();
+    } else if (lName) {
+      await db.prepare('UPDATE users SET last_name = ? WHERE email = ?').bind(lName, userEmail).run();
+    }
+  }
+
+  return c.json({
+    success: true,
+    message: 'Profile updated successfully'
   });
 });
 
@@ -629,7 +663,7 @@ app.get('/api/dashboard/flags', async (c) => {
 // Route: Get Coach Command Events
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload.schoolId;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
   const query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
@@ -656,6 +690,81 @@ app.get('/api/dashboard/events', async (c) => {
     });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to retrieve events', error: err.message }, 500);
+  }
+});
+
+// Route: Create Coach Command Event
+app.post('/api/dashboard/events', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const db = getDB(c);
+
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { title, eventType, startTime, date, durationMins, location, intensity, isImportant } = body;
+
+  if (!title || !eventType || !startTime || !date || !location) {
+    return c.json({
+      success: false,
+      message: 'Title, eventType, startTime, date, and location are required fields.'
+    }, 400);
+  }
+
+  const query = `
+    INSERT INTO events (
+      school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  try {
+    const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
+    const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
+    const compCountVal = eventType === 'Gym Session' ? 0 : null;
+
+    const res = await db.prepare(query).bind(
+      schoolId,
+      title.trim(),
+      eventType.trim(),
+      startTime.trim(),
+      date.trim(),
+      durMinsVal,
+      location.trim(),
+      intensity ? intensity.trim() : null,
+      isImpVal,
+      compCountVal
+    ).run();
+
+    console.log(`[API LOG] Event created successfully: "${title}" (${eventType}) for school ${schoolId}`);
+
+    return c.json({
+      success: true,
+      message: 'Event created successfully',
+      data: {
+        id: res.meta?.last_row_id || Date.now(),
+        schoolId,
+        title,
+        eventType,
+        startTime,
+        date,
+        durationMins: durMinsVal,
+        location,
+        intensity: intensity || null,
+        isImportant: isImpVal === 1,
+        completionCount: compCountVal
+      }
+    }, 201);
+  } catch (err: any) {
+    console.error('[API LOG] Create Event database error:', err);
+    return c.json({ success: false, message: 'Failed to create event', error: err.message }, 500);
   }
 });
 
@@ -1022,4 +1131,149 @@ app.post('/api/players/:id/position', async (c) => {
   }
 });
 
+// ==========================================
+// NOTIFICATIONS API ENDPOINTS
+// ==========================================
+
+// Route: Get Notifications List
+app.get('/api/notifications', async (c) => {
+  const db = getDB(c);
+  let userId = 'USR-10928'; // default fallback for coach dev view
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await verify(token, getSecret(c), 'HS256') as any;
+      if (payload && payload.sub) {
+        userId = payload.sub;
+      }
+    } catch (e) {
+      console.warn('[Observer Log] JWT verification optional for notifications list:', e);
+    }
+  }
+
+  try {
+    const query = `
+      SELECT id, user_id, title, body, type, is_read, action_route, created_at
+      FROM notifications
+      WHERE user_id = ? OR user_id = 'USR-10928' OR user_id = 'ALL'
+      ORDER BY created_at DESC
+    `;
+    const { results } = await db.prepare(query).bind(userId).all();
+    const notifications = results || [];
+
+    const unreadCount = notifications.filter((n: any) => n.is_read === 0).length;
+
+    console.log(`[Observer Log] Fetched ${notifications.length} notifications for user '${userId}' (Unread: ${unreadCount})`);
+
+    return c.json({
+      success: true,
+      data: {
+        notifications: notifications.map((n: any) => ({
+          id: n.id,
+          userId: n.user_id,
+          title: n.title,
+          body: n.body,
+          type: n.type,
+          isRead: Boolean(n.is_read),
+          actionRoute: n.action_route || null,
+          createdAt: n.created_at
+        })),
+        unreadCount
+      }
+    });
+  } catch (err: any) {
+    console.error('[Observer Error] Failed to fetch notifications:', err);
+    return c.json({ success: false, message: 'Failed to retrieve notifications', error: err.message }, 500);
+  }
+});
+
+// Route: Mark Single Notification as Read
+app.post('/api/notifications/:id/read', async (c) => {
+  const id = c.req.param('id');
+  const db = getDB(c);
+
+  try {
+    await db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ?').bind(id).run();
+    console.log(`[Observer Log] Marked notification ${id} as read`);
+    return c.json({ success: true, message: 'Notification marked as read' });
+  } catch (err: any) {
+    console.error('[Observer Error] Mark read failed:', err);
+    return c.json({ success: false, message: 'Failed to update notification', error: err.message }, 500);
+  }
+});
+
+// Route: Mark All Notifications as Read
+app.post('/api/notifications/read-all', async (c) => {
+  const db = getDB(c);
+  try {
+    await db.prepare('UPDATE notifications SET is_read = 1').run();
+    console.log('[Observer Log] Marked all notifications as read');
+    return c.json({ success: true, message: 'All notifications marked as read' });
+  } catch (err: any) {
+    console.error('[Observer Error] Mark all read failed:', err);
+    return c.json({ success: false, message: 'Failed to update notifications', error: err.message }, 500);
+  }
+});
+
+// Route: Delete Notification
+app.delete('/api/notifications/:id', async (c) => {
+  const id = c.req.param('id');
+  const db = getDB(c);
+
+  try {
+    await db.prepare('DELETE FROM notifications WHERE id = ?').bind(id).run();
+    console.log(`[Observer Log] Deleted notification ${id}`);
+    return c.json({ success: true, message: 'Notification deleted' });
+  } catch (err: any) {
+    console.error('[Observer Error] Delete notification failed:', err);
+    return c.json({ success: false, message: 'Failed to delete notification', error: err.message }, 500);
+  }
+});
+
+// Route: Send / Create New Notification
+app.post('/api/notifications/send', async (c) => {
+  const db = getDB(c);
+  let body;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { title, text, type, userId } = body;
+  if (!title || !text) {
+    return c.json({ success: false, message: 'Title and body text are required' }, 400);
+  }
+
+  const targetUser = userId || 'USR-10928';
+  const notifType = type || 'general';
+
+  try {
+    const res = await db.prepare(`
+      INSERT INTO notifications (user_id, title, body, type, is_read, created_at)
+      VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
+    `).bind(targetUser, title, text, notifType).run();
+
+    console.log(`[Observer Log] Created new notification '${title}' for user '${targetUser}'`);
+
+    return c.json({
+      success: true,
+      message: 'Notification sent successfully',
+      data: {
+        id: res.meta?.last_row_id || Date.now(),
+        userId: targetUser,
+        title,
+        body: text,
+        type: notifType,
+        isRead: false
+      }
+    });
+  } catch (err: any) {
+    console.error('[Observer Error] Send notification failed:', err);
+    return c.json({ success: false, message: 'Failed to send notification', error: err.message }, 500);
+  }
+});
+
 export default app;
+

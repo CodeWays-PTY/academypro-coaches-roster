@@ -238,6 +238,40 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       state = AsyncValue.error(err, stack);
     }
   }
+
+  Future<bool> createEvent({
+    required String title,
+    required String eventType,
+    required String startTime,
+    required String date,
+    required String location,
+    int? durationMins,
+    String? intensity,
+    bool isImportant = false,
+  }) async {
+    try {
+      final response = await _apiClient.post('/api/dashboard/events', data: {
+        'title': title,
+        'eventType': eventType,
+        'startTime': startTime,
+        'date': date,
+        'location': location,
+        'durationMins': durationMins,
+        'intensity': intensity,
+        'isImportant': isImportant,
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data['success'] == true) {
+          await fetchEvents();
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  }
 }
 
 final dashboardEventsProvider = StateNotifierProvider<DashboardEventsNotifier, AsyncValue<List<CoachEvent>>>((ref) {

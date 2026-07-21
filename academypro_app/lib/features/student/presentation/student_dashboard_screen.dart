@@ -4,6 +4,9 @@ import '../controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
 
+import '../../notifications/controllers/notification_controller.dart';
+import '../../notifications/presentation/notifications_panel.dart';
+
 class StudentDashboardScreen extends ConsumerStatefulWidget {
   const StudentDashboardScreen({Key? key}) : super(key: key);
 
@@ -19,6 +22,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     super.initState();
     Future.microtask(() {
       ref.read(studentControllerProvider.notifier).fetchStudentData();
+      ref.read(notificationProvider.notifier).fetchNotifications();
     });
   }
 
@@ -36,6 +40,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   Widget build(BuildContext context) {
     final studentDataState = ref.watch(studentControllerProvider);
     final userProfile = ref.watch(authProvider).userProfile;
+    final notifState = ref.watch(notificationProvider);
     final studentName = userProfile != null
         ? '${userProfile['firstName']} ${userProfile['lastName']}'
         : 'Student';
@@ -86,13 +91,41 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF64748B)),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new notifications')),
-              );
-            },
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF64748B)),
+                onPressed: () {
+                  NotificationsPanel.show(context);
+                },
+              ),
+              if (notifState.unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4.0),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${notifState.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B)),
