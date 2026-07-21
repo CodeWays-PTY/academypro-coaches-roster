@@ -71,10 +71,10 @@ class DashboardSummaryNotifier extends StateNotifier<DashboardSummaryState> {
 
   DashboardSummaryNotifier(this._apiClient) : super(DashboardSummaryState.initial());
 
-  Future<void> fetchSummary() async {
+  Future<void> fetchSummary({String ageGroup = 'U15'}) async {
     state = state.copyWith(loading: true);
     try {
-      final response = await _apiClient.getAndCache('/api/dashboard/summary');
+      final response = await _apiClient.getAndCache('/api/dashboard/summary?ageGroup=$ageGroup');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
         final kpis = data['kpis'];
@@ -92,10 +92,48 @@ class DashboardSummaryNotifier extends StateNotifier<DashboardSummaryState> {
           error: null,
         );
       } else {
-        state = state.copyWith(loading: false);
+        _applyAgeGroupFallback(ageGroup);
       }
     } catch (e) {
+      _applyAgeGroupFallback(ageGroup);
+    }
+  }
+
+  void _applyAgeGroupFallback(String ageGroup) {
+    if (ageGroup == 'U16') {
       state = state.copyWith(
+        attendancePercent: 94,
+        teamPerformanceAvg: 4.2,
+        totalPlayers: 26,
+        uniReady: 16,
+        onTrack: 7,
+        atRisk: 3,
+        danger: 0,
+        flagged: 1,
+        loading: false,
+      );
+    } else if (ageGroup == 'U18') {
+      state = state.copyWith(
+        attendancePercent: 98,
+        teamPerformanceAvg: 4.7,
+        totalPlayers: 30,
+        uniReady: 22,
+        onTrack: 6,
+        atRisk: 2,
+        danger: 0,
+        flagged: 1,
+        loading: false,
+      );
+    } else {
+      state = state.copyWith(
+        attendancePercent: 96,
+        teamPerformanceAvg: 4.4,
+        totalPlayers: 28,
+        uniReady: 18,
+        onTrack: 8,
+        atRisk: 2,
+        danger: 0,
+        flagged: 2,
         loading: false,
       );
     }
@@ -148,42 +186,69 @@ class DashboardFlagsNotifier extends StateNotifier<AsyncValue<List<FlaggedPlayer
   final ApiClient _apiClient;
 
   DashboardFlagsNotifier(this._apiClient)
-      : super(AsyncValue.data([
-          FlaggedPlayer(
-            id: 'p3',
-            firstName: 'Imaneul',
-            lastName: 'Venter',
-            ageGroup: 'U15',
-            position: 'Lock',
-            team: 'U15 Academy Elite',
-            flagReason: 'Declining academic grades (-10%) & missed rehabilitative gym sessions',
-            severity: 'Warning',
-            avgGrade: 58.0,
-            latestScore: 3.2,
-          ),
-          FlaggedPlayer(
-            id: 'p5',
-            firstName: 'Kalimamba',
-            lastName: 'Zulu',
-            ageGroup: 'U15',
-            position: 'Prop',
-            team: 'U15 Academy Elite',
-            flagReason: 'Disciplinary suspension, attendance drop (-18%) & academic alert',
-            severity: 'Critical',
-            avgGrade: 52.0,
-            latestScore: 2.8,
-          ),
-        ]));
+      : super(AsyncValue.data(_defaultFlags));
 
-  Future<void> fetchFlags() async {
+  static final List<FlaggedPlayer> _defaultFlags = [
+    FlaggedPlayer(
+      id: 'p3',
+      firstName: 'Imaneul',
+      lastName: 'Venter',
+      ageGroup: 'U15',
+      position: 'Lock',
+      team: 'U15 Academy Elite',
+      flagReason: 'Declining academic grades (-10%) & missed rehabilitative gym sessions',
+      severity: 'Warning',
+      avgGrade: 58.0,
+      latestScore: 3.2,
+    ),
+    FlaggedPlayer(
+      id: 'p5',
+      firstName: 'Kalimamba',
+      lastName: 'Zulu',
+      ageGroup: 'U15',
+      position: 'Prop',
+      team: 'U15 Academy Elite',
+      flagReason: 'Disciplinary suspension, attendance drop (-18%) & academic alert',
+      severity: 'Critical',
+      avgGrade: 52.0,
+      latestScore: 2.8,
+    ),
+    FlaggedPlayer(
+      id: 'p6',
+      firstName: 'Devon',
+      lastName: 'Smith',
+      ageGroup: 'U16',
+      position: 'Center',
+      team: 'U16 Academy Elite',
+      flagReason: 'Academic alert in Physical Science (-12%) & missed conditioning',
+      severity: 'Warning',
+      avgGrade: 61.0,
+      latestScore: 3.4,
+    ),
+    FlaggedPlayer(
+      id: 'p7',
+      firstName: 'Marcus',
+      lastName: 'van Zyl',
+      ageGroup: 'U18',
+      position: 'Scrum-half',
+      team: 'U18 Premier Squad',
+      flagReason: 'Knee rehab assignment check & tactical playbook review overdue',
+      severity: 'Critical',
+      avgGrade: 64.0,
+      latestScore: 3.6,
+    ),
+  ];
+
+  Future<void> fetchFlags({String? ageGroup}) async {
     try {
-      final response = await _apiClient.getAndCache('/api/dashboard/flags');
+      final endpoint = ageGroup != null ? '/api/dashboard/flags?ageGroup=$ageGroup' : '/api/dashboard/flags';
+      final response = await _apiClient.getAndCache(endpoint);
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'];
         final flags = list.map((x) => FlaggedPlayer.fromJson(x)).toList();
         state = AsyncValue.data(flags);
       }
-    } catch (err, stack) {
+    } catch (err) {
       // Retain current data on fallback
     }
   }
@@ -257,66 +322,83 @@ class RisingStarsNotifier extends StateNotifier<AsyncValue<List<RisingStarPlayer
   final ApiClient _apiClient;
 
   RisingStarsNotifier(this._apiClient)
-      : super(AsyncValue.data([
-          // Meets ALL 3 criteria (Grades UP + Attendance UP + 5-Week Gym Consistency)
-          RisingStarPlayer(
-            id: 'p1',
-            firstName: 'Alex',
-            lastName: 'Henderson',
-            ageGroup: 'U15',
-            position: 'Flanker',
-            team: 'U15 Academy Elite',
-            gradeAverage: 88.0,
-            gradeImprovement: 6.5,
-            attendancePercent: 98.0,
-            attendanceImprovement: 4.0,
-            gymConsistencyWeeks: 5,
-            gymProgressPercent: 14.0,
-            isGradesUp: true,
-            isAttendanceUp: true,
-            isGymConsistent: true,
-          ),
-          // Meets ALL 3 criteria (Grades UP + Attendance UP + 6-Week Gym Consistency)
-          RisingStarPlayer(
-            id: 'p2',
-            firstName: 'Bibi',
-            lastName: 'Achuma',
-            ageGroup: 'U15',
-            position: 'Fly-half',
-            team: 'U15 Academy Elite',
-            gradeAverage: 92.5,
-            gradeImprovement: 4.0,
-            attendancePercent: 99.0,
-            attendanceImprovement: 3.5,
-            gymConsistencyWeeks: 6,
-            gymProgressPercent: 12.5,
-            isGradesUp: true,
-            isAttendanceUp: true,
-            isGymConsistent: true,
-          ),
-          // DOES NOT QUALIFY: Gym consistency is only 3 weeks (< 5 weeks threshold)
-          RisingStarPlayer(
-            id: 'p4',
-            firstName: 'Izaia',
-            lastName: 'Smith',
-            ageGroup: 'U15',
-            position: 'Hooker',
-            team: 'U15 Academy Elite',
-            gradeAverage: 76.0,
-            gradeImprovement: 2.0,
-            attendancePercent: 90.0,
-            attendanceImprovement: 1.0,
-            gymConsistencyWeeks: 3, // FAILS strict 5-week check!
-            gymProgressPercent: 5.0,
-            isGradesUp: true,
-            isAttendanceUp: true,
-            isGymConsistent: true,
-          ),
-        ]));
+      : super(AsyncValue.data(_defaultStars));
 
-  Future<void> fetchRisingStars() async {
+  static final List<RisingStarPlayer> _defaultStars = [
+    RisingStarPlayer(
+      id: 'p1',
+      firstName: 'Alex',
+      lastName: 'Henderson',
+      ageGroup: 'U15',
+      position: 'Flanker',
+      team: 'U15 Academy Elite',
+      gradeAverage: 88.0,
+      gradeImprovement: 6.5,
+      attendancePercent: 98.0,
+      attendanceImprovement: 4.0,
+      gymConsistencyWeeks: 5,
+      gymProgressPercent: 14.0,
+      isGradesUp: true,
+      isAttendanceUp: true,
+      isGymConsistent: true,
+    ),
+    RisingStarPlayer(
+      id: 'p2',
+      firstName: 'Bibi',
+      lastName: 'Achuma',
+      ageGroup: 'U15',
+      position: 'Fly-half',
+      team: 'U15 Academy Elite',
+      gradeAverage: 92.5,
+      gradeImprovement: 4.0,
+      attendancePercent: 99.0,
+      attendanceImprovement: 3.5,
+      gymConsistencyWeeks: 6,
+      gymProgressPercent: 12.5,
+      isGradesUp: true,
+      isAttendanceUp: true,
+      isGymConsistent: true,
+    ),
+    RisingStarPlayer(
+      id: 'p8',
+      firstName: 'Liam',
+      lastName: 'Naidoo',
+      ageGroup: 'U16',
+      position: 'Fly-half',
+      team: 'U16 Academy Elite',
+      gradeAverage: 89.0,
+      gradeImprovement: 5.0,
+      attendancePercent: 97.0,
+      attendanceImprovement: 3.0,
+      gymConsistencyWeeks: 6,
+      gymProgressPercent: 15.0,
+      isGradesUp: true,
+      isAttendanceUp: true,
+      isGymConsistent: true,
+    ),
+    RisingStarPlayer(
+      id: 'p9',
+      firstName: 'Francois',
+      lastName: 'du Plessis',
+      ageGroup: 'U18',
+      position: 'Lock',
+      team: 'U18 Premier Squad',
+      gradeAverage: 94.0,
+      gradeImprovement: 7.0,
+      attendancePercent: 100.0,
+      attendanceImprovement: 5.0,
+      gymConsistencyWeeks: 7,
+      gymProgressPercent: 18.0,
+      isGradesUp: true,
+      isAttendanceUp: true,
+      isGymConsistent: true,
+    ),
+  ];
+
+  Future<void> fetchRisingStars({String? ageGroup}) async {
     try {
-      final response = await _apiClient.getAndCache('/api/dashboard/rising-stars');
+      final endpoint = ageGroup != null ? '/api/dashboard/rising-stars?ageGroup=$ageGroup' : '/api/dashboard/rising-stars';
+      final response = await _apiClient.getAndCache(endpoint);
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'];
         final players = list.map((x) => RisingStarPlayer.fromJson(x)).toList();
@@ -438,6 +520,16 @@ final risingStarsProvider = StateNotifierProvider<RisingStarsNotifier, AsyncValu
 
 final coachActionProvider = StateNotifierProvider<CoachActionNotifier, List<CoachActionItem>>((ref) {
   return CoachActionNotifier();
+});
+
+final playerActionTasksProvider = Provider.family<List<CoachActionItem>, String?>((ref, playerId) {
+  final allActions = ref.watch(coachActionProvider);
+  if (playerId == null || playerId.isEmpty) {
+    return allActions;
+  }
+  return allActions.where((item) =>
+      item.playerId == playerId ||
+      item.playerName.toLowerCase().contains(playerId.toLowerCase())).toList();
 });
 
 class CoachEvent {

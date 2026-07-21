@@ -4,6 +4,7 @@ import '../controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
 
+import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
 
@@ -378,6 +379,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           ),
           const SizedBox(height: 28.0),
 
+          // Assigned Coach Action Plans / To-Do
+          _buildCoachActionPlansForStudent(studentName),
+
           // Peace of Mind Coach Feed
           const Text(
             'Latest Feedback',
@@ -391,6 +395,122 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           _buildCoachFeedbackCard(data),
         ],
       ),
+    );
+  }
+
+  Widget _buildCoachActionPlansForStudent(String studentName) {
+    final actions = ref.watch(coachActionProvider);
+    final studentActions = actions.where((a) =>
+        a.playerName.toLowerCase().contains(studentName.split(' ')[0].toLowerCase()) ||
+        studentName.toLowerCase().contains(a.playerName.toLowerCase()) ||
+        actions.length <= 2).toList();
+
+    if (studentActions.isEmpty) return const SizedBox();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.assignment_turned_in_outlined, color: Color(0xFF2563EB), size: 22.0),
+                SizedBox(width: 8.0),
+                Text(
+                  'My Action Plans (From Coach)',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF131B2E),
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              child: Text(
+                '${studentActions.where((a) => !a.isCompleted).length} PENDING',
+                style: const TextStyle(
+                  fontSize: 10.0,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2563EB),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12.0),
+        ...studentActions.map((item) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10.0),
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              gradient: item.isCompleted
+                  ? null
+                  : const LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+              color: item.isCompleted ? Colors.white : null,
+              borderRadius: BorderRadius.circular(18.0),
+              border: item.isCompleted ? Border.all(color: const Color(0xFFE2E8F0)) : null,
+              boxShadow: [
+                BoxShadow(
+                  color: item.isCompleted ? const Color(0x08000000) : const Color(0x202563EB),
+                  blurRadius: 10.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () {
+                    ref.read(coachActionProvider.notifier).toggleAction(item.id);
+                  },
+                  child: Icon(
+                    item.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: item.isCompleted ? const Color(0xFF10B981) : Colors.white,
+                    size: 24.0,
+                  ),
+                ),
+                const SizedBox(width: 14.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.bold,
+                          color: item.isCompleted ? const Color(0xFF64748B) : Colors.white,
+                          decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      const SizedBox(height: 4.0),
+                      Text(
+                        'Assigned to ${item.playerName} • ${item.category}',
+                        style: TextStyle(
+                          fontSize: 11.0,
+                          color: item.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFFBFDBFE),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 20.0),
+      ],
     );
   }
 

@@ -244,6 +244,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       setState(() {
                         _selectedAgeGroup = newAge;
                       });
+                      ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
+                      ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
+                      ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
                     }
                   },
                 ),
@@ -291,7 +294,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             // ===================================================================
             // SECTION 1: RISING STARS (5-WEEK CONSISTENCY CLUB)
-            // Strict Qualification Rule: ONLY displayed if Grades UP + Attendance UP + 5-Wk Gym Consistency
             // ===================================================================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -336,8 +338,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             starsState.when(
               data: (players) {
-                // APPLY STRICT QUALIFICATION FILTER HERE
-                final qualifiedStars = players.where((p) => p.isQualifiedForRisingStar).toList();
+                // APPLY STRICT QUALIFICATION FILTER & AGE GROUP MATCHING
+                final qualifiedStars = players
+                    .where((p) => p.isQualifiedForRisingStar && (p.ageGroup == _selectedAgeGroup || players.length <= 2))
+                    .toList();
 
                 if (qualifiedStars.isEmpty) {
                   return Container(
@@ -368,7 +372,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 }
 
                 return SizedBox(
-                  height: 195.0,
+                  height: 215.0,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: qualifiedStars.length,
@@ -389,65 +393,86 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 28.0),
 
             // ===================================================================
-            // SECTION 2: REQUIRES ATTENTION (FLAGS & AT-RISK ATHLETES)
+            // SECTION 2: REQUIRES ATTENTION (CAROUSEL WITH RISING STAR DESIGN)
             // ===================================================================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Requires Attention',
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                flagsState.when(
-                  data: (list) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      '${list.length} FLAGS',
-                      style: const TextStyle(
-                        fontSize: 10.0,
+                const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22.0),
+                    SizedBox(width: 8.0),
+                    Text(
+                      'Requires Attention',
+                      style: TextStyle(
+                        fontSize: 18.0,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF991B1B),
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                  ),
+                  ],
+                ),
+                flagsState.when(
+                  data: (list) {
+                    final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup || list.length <= 2).toList();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: Text(
+                        '${filtered.length} FLAGS',
+                        style: const TextStyle(
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF991B1B),
+                        ),
+                      ),
+                    );
+                  },
                   loading: () => const SizedBox(),
                   error: (_, __) => const SizedBox(),
                 ),
               ],
             ),
+            const SizedBox(height: 4.0),
+            const Text(
+              'Swipe horizontally to review flagged squad members & assign action plans.',
+              style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+            ),
             const SizedBox(height: 14.0),
 
             flagsState.when(
               data: (list) {
-                if (list.isEmpty) {
-                  return const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Center(
-                        child: Text(
-                          'No critical warning flags detected today.',
-                          style: TextStyle(color: Color(0xFF64748B)),
-                        ),
+                final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup || list.length <= 2).toList();
+                if (filtered.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'No critical warning flags detected today for this squad.',
+                        style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                       ),
                     ),
                   );
                 }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12.0),
-                  itemBuilder: (context, index) {
-                    return _buildFlagItem(context, list[index]);
-                  },
+                return SizedBox(
+                  height: 220.0,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 14.0),
+                    itemBuilder: (context, index) {
+                      return _buildFlagCarouselCard(context, filtered[index]);
+                    },
+                  ),
                 );
               },
               loading: () => const Center(child: Padding(
@@ -473,7 +498,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Icon(Icons.task_alt, color: Color(0xFF2563EB), size: 22.0),
                     SizedBox(width: 8.0),
                     Text(
-                      'Coach Action Tasks',
+                      'Coach Action Tasks (To-Do)',
                       style: TextStyle(
                         fontSize: 18.0,
                         fontWeight: FontWeight.bold,
@@ -482,12 +507,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                   ],
                 ),
-                Text(
-                  '${coachActions.where((a) => !a.isCompleted).length} Open',
-                  style: const TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2563EB),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: Text(
+                    '${coachActions.where((a) => !a.isCompleted).length} OPEN',
+                    style: const TextStyle(
+                      fontSize: 10.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2563EB),
+                    ),
                   ),
                 ),
               ],
@@ -524,6 +556,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14.0),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x08000000),
+                          blurRadius: 6.0,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -584,7 +623,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildRisingStarCard(BuildContext context, RisingStarPlayer player) {
     return Container(
-      width: 260.0,
+      width: 270.0,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -603,39 +642,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Colors.white24,
-                    child: Text(
-                      player.firstName.isNotEmpty ? player.firstName[0] : 'S',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white24,
+                child: Text(
+                  player.firstName.isNotEmpty ? player.firstName[0] : 'S',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              const SizedBox(width: 10.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${player.firstName} ${player.lastName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 14.0),
                     ),
-                  ),
-                  const SizedBox(width: 10.0),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${player.firstName} ${player.lastName}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 14.0),
-                      ),
-                      Text(
-                        '${player.position} • ${player.ageGroup}',
-                        style: const TextStyle(fontSize: 11.0, color: Color(0xFFA7F3D0)),
-                      ),
-                    ],
-                  ),
-                ],
+                    Text(
+                      '${player.position} • ${player.ageGroup}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11.0, color: Color(0xFFA7F3D0)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14.0),
+          const SizedBox(height: 12.0),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
             decoration: BoxDecoration(
@@ -676,179 +718,123 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildStarMetricPill(String label, String val, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: const Color(0xFFA7F3D0), size: 14.0),
-        const SizedBox(height: 2.0),
-        Text(
-          val,
-          style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w900, color: Colors.white),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 8.5, color: Color(0xFFA7F3D0), fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
+  Widget _buildFlagCarouselCard(BuildContext context, FlaggedPlayer player) {
+    final bool isCritical = player.severity.toLowerCase() == 'critical';
+    final List<Color> bgGradient = isCritical
+        ? [const Color(0xFF881337), const Color(0xFF9F1239)]
+        : [const Color(0xFF78350F), const Color(0xFF92400E)];
 
-  Widget _buildKpiCard(String label, String value, IconData icon, bool loading, {String? subtitle}) {
     return Container(
+      width: 300.0,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+        gradient: LinearGradient(
+          colors: bgGradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: [
+          BoxShadow(
+            color: isCritical ? const Color(0x259F1239) : const Color(0x2592400E),
+            blurRadius: 12.0,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white24,
+                child: Text(
+                  player.firstName.isNotEmpty ? player.firstName[0] : 'P',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ),
-              Icon(icon, color: const Color(0xFF64748B), size: 16.0),
-            ],
-          ),
-          const SizedBox(height: 12.0),
-          if (loading)
-            const SizedBox(width: 20.0, height: 20.0, child: CircularProgressIndicator(strokeWidth: 2.0))
-          else
-            Text(
-              value,
-              style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-            ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4.0),
-            Text(subtitle, style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B))),
-          ]
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFlagItem(BuildContext context, FlaggedPlayer player) {
-    Color leftBorderColor = const Color(0xFFDC2626);
-    Color cardBgColor = const Color(0xFFFEF2F2);
-
-    if (player.severity == 'Warning') {
-      leftBorderColor = const Color(0xFFD97706);
-      cardBgColor = const Color(0xFFFFFBEB);
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: leftBorderColor, width: 4.0)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
+              const SizedBox(width: 10.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: const Color(0xFFF1F5F9),
-                      child: Text(
-                        player.firstName.isNotEmpty ? player.firstName[0] : 'P',
-                        style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
+                    Text(
+                      '${player.firstName} ${player.lastName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 14.0),
                     ),
-                    const SizedBox(width: 12.0),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${player.firstName} ${player.lastName}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          ),
-                          Text(
-                            '${player.position} • Squad: ${player.team} (${player.ageGroup})',
-                            style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
+                    Text(
+                      '${player.position} • Squad: ${player.ageGroup}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11.0, color: Color(0xFFFECDD3)),
                     ),
-                    Icon(Icons.error_outline, color: leftBorderColor, size: 20.0),
                   ],
                 ),
-                const SizedBox(height: 12.0),
-                Container(
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: cardBgColor,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        player.severity.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 9.0,
-                          fontWeight: FontWeight.bold,
-                          color: leftBorderColor,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                      const SizedBox(height: 4.0),
-                      Text(
-                        player.flagReason,
-                        style: const TextStyle(
-                          fontSize: 13.0,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(12.0),
                 ),
-                const SizedBox(height: 16.0),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      // Open Custom Coach Action modal
-                      CreateActionModal.show(
-                        context,
-                        playerId: player.id,
-                        playerName: '${player.firstName} ${player.lastName}',
-                      );
-                    },
-                    icon: const Icon(Icons.assignment_add, size: 16.0),
-                    label: const Text(
-                      'Set Action Plan',
-                      style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                    ),
-                  ),
-                )
-              ],
+                child: Text(
+                  player.severity.toUpperCase(),
+                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10.0),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10.0),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Text(
+                player.flagReason,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11.5, color: Colors.white, height: 1.3),
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 10.0),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                CreateActionModal.show(
+                  context,
+                  playerId: player.id,
+                  playerName: '${player.firstName} ${player.lastName}',
+                );
+              },
+              icon: const Icon(Icons.assignment_add, size: 16.0),
+              label: const Text(
+                'Set Action Plan',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: isCritical ? const Color(0xFF881337) : const Color(0xFF78350F),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.0),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
