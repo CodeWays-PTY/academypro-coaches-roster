@@ -16,7 +16,6 @@ class ProfileTabView extends ConsumerStatefulWidget {
 
 class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
   late bool _pushNotifications;
-  bool _emailAlerts = true;
   bool _offlineDataMode = true;
   final ImagePicker _picker = ImagePicker();
 
@@ -689,16 +688,6 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                 subtitle: 'Receive match alerts and attendance nudges',
                 value: _pushNotifications,
                 onChanged: (val) => _handlePushToggle(val),
-              ),
-              const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              _buildSwitchTile(
-                icon: Icons.mail_outline,
-                title: 'Email Digest Reports',
-                subtitle: 'Weekly summary of player evaluations',
-                value: _emailAlerts,
-                onChanged: (val) {
-                  setState(() => _emailAlerts = val);
-                },
               ),
               const Divider(height: 1, color: Color(0xFFF1F5F9)),
               _buildSwitchTile(

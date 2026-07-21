@@ -21,16 +21,18 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(rosterProvider.notifier).fetchRoster(_selectedAgeGroup);
+      final currentAge = ref.read(selectedAgeGroupProvider);
+      ref.read(rosterProvider.notifier).fetchRoster(currentAge);
     });
   }
 
   void _onAgeGroupChanged(String? newAge) {
     if (newAge != null) {
-      setState(() {
-        _selectedAgeGroup = newAge;
-      });
+      ref.read(selectedAgeGroupProvider.notifier).state = newAge;
       ref.read(rosterProvider.notifier).fetchRoster(newAge);
+      ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
+      ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
+      ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
     }
   }
 
@@ -90,10 +92,11 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
     final rosterState = ref.watch(rosterProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
 
-    final players = rosterState.playersByAge[_selectedAgeGroup] ?? [];
+    final players = rosterState.playersByAge[selectedAgeGroup] ?? [];
     final filteredPlayers = players.where((p) {
       final fullName = '${p.firstName} ${p.lastName}'.toLowerCase();
       return fullName.contains(_searchQuery.toLowerCase());
@@ -129,7 +132,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _selectedAgeGroup,
+                    value: selectedAgeGroup,
                     icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
                     items: const [

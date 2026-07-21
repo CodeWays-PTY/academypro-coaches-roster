@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
@@ -446,71 +447,269 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ),
         const SizedBox(height: 12.0),
         ...studentActions.map((item) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10.0),
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              gradient: item.isCompleted
-                  ? null
-                  : const LinearGradient(
-                      colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showActionItemDetailsModal(context, item);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10.0),
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                gradient: item.isCompleted
+                    ? null
+                    : const LinearGradient(
+                        colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                color: item.isCompleted ? Colors.white : null,
+                borderRadius: BorderRadius.circular(18.0),
+                border: item.isCompleted ? Border.all(color: const Color(0xFFE2E8F0)) : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: item.isCompleted ? const Color(0x08000000) : const Color(0x202563EB),
+                    blurRadius: 10.0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      ref.read(coachActionProvider.notifier).toggleAction(item.id);
+                    },
+                    child: Icon(
+                      item.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: item.isCompleted ? const Color(0xFF10B981) : Colors.white,
+                      size: 24.0,
                     ),
-              color: item.isCompleted ? Colors.white : null,
-              borderRadius: BorderRadius.circular(18.0),
-              border: item.isCompleted ? Border.all(color: const Color(0xFFE2E8F0)) : null,
-              boxShadow: [
-                BoxShadow(
-                  color: item.isCompleted ? const Color(0x08000000) : const Color(0x202563EB),
-                  blurRadius: 10.0,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () {
-                    ref.read(coachActionProvider.notifier).toggleAction(item.id);
-                  },
-                  child: Icon(
-                    item.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                    color: item.isCompleted ? const Color(0xFF10B981) : Colors.white,
-                    size: 24.0,
                   ),
-                ),
-                const SizedBox(width: 14.0),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.bold,
-                          color: item.isCompleted ? const Color(0xFF64748B) : Colors.white,
-                          decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                  const SizedBox(width: 14.0),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                            color: item.isCompleted ? const Color(0xFF64748B) : Colors.white,
+                            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4.0),
-                      Text(
-                        'Assigned to ${item.playerName} • ${item.category}',
-                        style: TextStyle(
-                          fontSize: 11.0,
-                          color: item.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFFBFDBFE),
+                        const SizedBox(height: 4.0),
+                        Text(
+                          'Assigned to ${item.playerName} • ${item.category}',
+                          style: TextStyle(
+                            fontSize: 11.0,
+                            color: item.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFFBFDBFE),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }),
         const SizedBox(height: 20.0),
       ],
+    );
+  }
+
+  void _showActionItemDetailsModal(BuildContext context, CoachActionItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24.0,
+            right: 24.0,
+            top: 16.0,
+            bottom: 24.0 + bottomPadding,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.0,
+                  height: 4.0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC3C5D9).withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20.0),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Text(
+                      item.category.toUpperCase(),
+                      style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12.0),
+              Text(
+                item.title,
+                style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 6.0),
+              Text(
+                'Assigned Player: ${item.playerName} • Added ${item.dateAdded}',
+                style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20.0),
+              const Divider(color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 16.0),
+
+              // Parent & Guardian Contact Section
+              const Text(
+                'PARENT / GUARDIAN CONTACT',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 10.0),
+              Container(
+                padding: const EdgeInsets.all(14.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.person, color: Color(0xFF2563EB), size: 18.0),
+                        const SizedBox(width: 10.0),
+                        Expanded(
+                          child: Text(
+                            item.parentName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
+                        const SizedBox(width: 10.0),
+                        Text(
+                          item.parentPhone,
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
+                        const SizedBox(width: 10.0),
+                        Text(
+                          item.parentEmail,
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+
+              // Player Direct Contact
+              const Text(
+                'PLAYER DIRECT CONTACT',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 10.0),
+              Container(
+                padding: const EdgeInsets.all(14.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.smartphone, color: Color(0xFF003EC7), size: 18.0),
+                    const SizedBox(width: 10.0),
+                    Text(
+                      '${item.playerName}: ${item.playerPhone}',
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+
+              // Plan Guidance & Notes
+              const Text(
+                'ACTION PLAN DETAILS & GUIDANCE',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                item.notes,
+                style: const TextStyle(fontSize: 13.0, color: Color(0xFF334155), height: 1.4),
+              ),
+              const SizedBox(height: 24.0),
+
+              // Toggle Action Button
+              SizedBox(
+                width: double.infinity,
+                height: 48.0,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    ref.read(coachActionProvider.notifier).toggleAction(item.id);
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(item.isCompleted ? Icons.undo : Icons.check_circle, size: 18.0),
+                  label: Text(
+                    item.isCompleted ? 'Mark as Pending' : 'Mark Task Completed',
+                    style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: item.isCompleted ? const Color(0xFF64748B) : const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -419,6 +419,11 @@ class CoachActionItem {
   final String category;
   final String dateAdded;
   final bool isCompleted;
+  final String parentName;
+  final String parentPhone;
+  final String parentEmail;
+  final String playerPhone;
+  final String notes;
 
   CoachActionItem({
     required this.id,
@@ -428,6 +433,11 @@ class CoachActionItem {
     required this.category,
     required this.dateAdded,
     this.isCompleted = false,
+    this.parentName = 'Parent / Guardian',
+    this.parentPhone = '+27 82 987 6543',
+    this.parentEmail = 'parent@family.co.za',
+    this.playerPhone = '+27 72 123 4567',
+    this.notes = 'Individual athletic development plan & progress tracking.',
   });
 
   CoachActionItem copyWith({
@@ -438,6 +448,11 @@ class CoachActionItem {
     String? category,
     String? dateAdded,
     bool? isCompleted,
+    String? parentName,
+    String? parentPhone,
+    String? parentEmail,
+    String? playerPhone,
+    String? notes,
   }) {
     return CoachActionItem(
       id: id ?? this.id,
@@ -447,6 +462,11 @@ class CoachActionItem {
       category: category ?? this.category,
       dateAdded: dateAdded ?? this.dateAdded,
       isCompleted: isCompleted ?? this.isCompleted,
+      parentName: parentName ?? this.parentName,
+      parentPhone: parentPhone ?? this.parentPhone,
+      parentEmail: parentEmail ?? this.parentEmail,
+      playerPhone: playerPhone ?? this.playerPhone,
+      notes: notes ?? this.notes,
     );
   }
 }
@@ -458,19 +478,29 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
             id: 'act1',
             playerId: 'p3',
             playerName: 'Imaneul Venter',
-            title: 'Arrange 1-on-1 Science Tutor & Rehab Progress Review',
-            category: 'School & Rehab',
+            title: 'Arrange 1-on-1 Athletic & Rehab Progress Review',
+            category: 'Rehab & Wellness',
             dateAdded: '2026-07-18',
             isCompleted: false,
+            parentName: 'Hendrik Venter',
+            parentPhone: '+27 82 491 0023',
+            parentEmail: 'hendrik.venter@gmail.com',
+            playerPhone: '+27 79 382 9102',
+            notes: 'Coordinate physical therapy exercises and monitor knee recovery before derby match.',
           ),
           CoachActionItem(
             id: 'act2',
             playerId: 'p5',
             playerName: 'Kalimamba Zulu',
-            title: 'Parent Conference & Study Hall Attendance Check',
+            title: 'Parent Conference & Training Schedule Check',
             category: 'Parent Consultation',
             dateAdded: '2026-07-20',
             isCompleted: false,
+            parentName: 'Sipho Zulu',
+            parentPhone: '+27 83 294 8810',
+            parentEmail: 'szulu@mweb.co.za',
+            playerPhone: '+27 71 509 2241',
+            notes: 'Review weekly nutrition plan and confirm attendance for high-performance gym sessions.',
           ),
         ]);
 
@@ -503,6 +533,8 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
 }
 
 // Providers
+final selectedAgeGroupProvider = StateProvider<String>((ref) => 'U15');
+
 final dashboardSummaryProvider = StateNotifierProvider<DashboardSummaryNotifier, DashboardSummaryState>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return DashboardSummaryNotifier(apiClient);

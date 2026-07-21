@@ -49,6 +49,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
     final summary = ref.watch(dashboardSummaryProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
     final starsState = ref.watch(risingStarsProvider);
@@ -231,7 +232,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: _selectedAgeGroup,
+                  value: ref.watch(selectedAgeGroupProvider),
                   icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                   style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 15.0),
                   items: const [
@@ -241,9 +242,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ],
                   onChanged: (newAge) {
                     if (newAge != null) {
-                      setState(() {
-                        _selectedAgeGroup = newAge;
-                      });
+                      ref.read(selectedAgeGroupProvider.notifier).state = newAge;
                       ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
                       ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
                       ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
@@ -550,67 +549,73 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 separatorBuilder: (_, __) => const SizedBox(height: 8.0),
                 itemBuilder: (context, index) {
                   final item = coachActions[index];
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14.0),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x08000000),
-                          blurRadius: 6.0,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(coachActionProvider.notifier).toggleAction(item.id);
-                          },
-                          child: Icon(
-                            item.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                            color: item.isCompleted ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
-                            size: 22.0,
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _showActionItemDetailsModal(context, item);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x08000000),
+                            blurRadius: 6.0,
+                            offset: Offset(0, 2),
                           ),
-                        ),
-                        const SizedBox(width: 12.0),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: item.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
-                                  decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(coachActionProvider.notifier).toggleAction(item.id);
+                            },
+                            child: Icon(
+                              item.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                              color: item.isCompleted ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                              size: 22.0,
+                            ),
+                          ),
+                          const SizedBox(width: 12.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.title,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: item.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
+                                    decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2.0),
-                              Text(
-                                '${item.playerName} • Added ${item.dateAdded}',
-                                style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
-                              ),
-                            ],
+                                const SizedBox(height: 2.0),
+                                Text(
+                                  '${item.playerName} • Added ${item.dateAdded}',
+                                  style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(8.0),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Text(
+                              item.category,
+                              style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                            ),
                           ),
-                          child: Text(
-                            item.category,
-                            style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -619,6 +624,199 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  void _showActionItemDetailsModal(BuildContext context, CoachActionItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24.0,
+            right: 24.0,
+            top: 16.0,
+            bottom: 24.0 + bottomPadding,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.0,
+                  height: 4.0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC3C5D9).withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20.0),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Text(
+                      item.category.toUpperCase(),
+                      style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12.0),
+              Text(
+                item.title,
+                style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 6.0),
+              Text(
+                'Assigned Player: ${item.playerName} • Added ${item.dateAdded}',
+                style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20.0),
+              const Divider(color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 16.0),
+
+              // Parent & Guardian Contact Section
+              const Text(
+                'PARENT / GUARDIAN CONTACT',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 10.0),
+              Container(
+                padding: const EdgeInsets.all(14.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.person, color: Color(0xFF2563EB), size: 18.0),
+                        const SizedBox(width: 10.0),
+                        Expanded(
+                          child: Text(
+                            item.parentName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
+                        const SizedBox(width: 10.0),
+                        Text(
+                          item.parentPhone,
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
+                        const SizedBox(width: 10.0),
+                        Text(
+                          item.parentEmail,
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+
+              // Player Direct Contact
+              const Text(
+                'PLAYER DIRECT CONTACT',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 10.0),
+              Container(
+                padding: const EdgeInsets.all(14.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.smartphone, color: Color(0xFF003EC7), size: 18.0),
+                    const SizedBox(width: 10.0),
+                    Text(
+                      '${item.playerName}: ${item.playerPhone}',
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+
+              // Plan Guidance & Notes
+              const Text(
+                'ACTION PLAN DETAILS & GUIDANCE',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                item.notes,
+                style: const TextStyle(fontSize: 13.0, color: Color(0xFF334155), height: 1.4),
+              ),
+              const SizedBox(height: 24.0),
+
+              // Toggle Action Button
+              SizedBox(
+                width: double.infinity,
+                height: 48.0,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    ref.read(coachActionProvider.notifier).toggleAction(item.id);
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(item.isCompleted ? Icons.undo : Icons.check_circle, size: 18.0),
+                  label: Text(
+                    item.isCompleted ? 'Mark as Pending' : 'Mark Task Completed',
+                    style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: item.isCompleted ? const Color(0xFF64748B) : const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
   }
 
   Widget _buildRisingStarCard(BuildContext context, RisingStarPlayer player) {
