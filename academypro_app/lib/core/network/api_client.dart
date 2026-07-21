@@ -8,8 +8,12 @@ class ApiClient {
   
   static String get baseUrl {
     if (kDebugMode) {
-      if (kIsWeb && (Uri.base.host == 'localhost' || Uri.base.host == '127.0.0.1')) {
-        return _localDevUrl;
+      if (kIsWeb) {
+        final host = Uri.base.host;
+        if (host == 'localhost' || host == '127.0.0.1' || host == '0.0.0.0') {
+          // Dynamically matches whatever port localhost is running on
+          return Uri.base.origin;
+        }
       }
     }
     return _cloudflareUrl;
