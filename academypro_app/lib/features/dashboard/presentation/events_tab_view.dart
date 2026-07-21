@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../controllers/dashboard_controller.dart';
+import 'create_event_modal.dart';
 
 class EventsTabView extends ConsumerStatefulWidget {
   const EventsTabView({Key? key}) : super(key: key);
@@ -45,21 +46,56 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Headline Section
-                  const Text(
-                    'Command Events',
-                    style: TextStyle(
-                      fontSize: 24.0,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF131B2E),
-                    ),
-                  ),
-                  const SizedBox(height: 4.0),
-                  const Text(
-                    'Schedule and periodization training calendar.',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Color(0xFF434656),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Command Events',
+                              style: TextStyle(
+                                fontSize: 24.0,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF131B2E),
+                              ),
+                            ),
+                            SizedBox(height: 4.0),
+                            Text(
+                              'Schedule and periodization training calendar.',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                color: Color(0xFF434656),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12.0),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          CreateEventModal.show(context);
+                        },
+                        icon: const Icon(Icons.add, size: 18.0),
+                        label: const Text('Add Event'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003EC7),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24.0),
 

@@ -9,6 +9,7 @@ import '../../auth/presentation/login_screen.dart';
 import 'roster_tab_view.dart';
 import 'events_tab_view.dart';
 import 'profile_tab_view.dart';
+import 'create_event_modal.dart';
 
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
@@ -149,16 +150,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       floatingActionButton: _activeTab == 2
-          ? FloatingActionButton(
-              backgroundColor: const Color(0xFF2563EB),
+          ? FloatingActionButton.extended(
+              backgroundColor: const Color(0xFF003EC7),
               foregroundColor: Colors.white,
               onPressed: () {
                 HapticFeedback.mediumImpact();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Create event session scheduler initiated')),
-                );
+                CreateEventModal.show(context);
               },
-              child: const Icon(Icons.add_task, size: 28.0),
+              icon: const Icon(Icons.add, size: 22.0),
+              label: const Text(
+                'Create Event',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
+              ),
             )
           : null,
       bottomNavigationBar: _buildBottomNav(context, activeIndex: _activeTab),
