@@ -4,16 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/dashboard_controller.dart';
 
 class CreateEventModal extends ConsumerStatefulWidget {
-  const CreateEventModal({Key? key}) : super(key: key);
+  final CoachEvent? eventToEdit;
 
-  static Future<void> show(BuildContext context) async {
+  const CreateEventModal({Key? key, this.eventToEdit}) : super(key: key);
+
+  static Future<void> show(BuildContext context, {CoachEvent? eventToEdit}) async {
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.5),
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => const CreateEventModal(),
+      builder: (context) => CreateEventModal(eventToEdit: eventToEdit),
     );
   }
 
@@ -31,6 +33,8 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 16, minute: 30);
   String _selectedIntensity = 'High';
+  String _selectedRecurrence = 'Does Not Repeat';
+  Set<int> _selectedDays = {1, 3, 5}; // Default Monday, Wednesday, Friday
   bool _isImportant = false;
   bool _isSubmitting = false;
 
@@ -42,6 +46,49 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   ];
 
   final List<String> _intensityLevels = ['Low', 'Medium', 'High'];
+
+  final List<String> _recurrenceRules = [
+    'Does Not Repeat',
+    'Every Day',
+    'Every Week',
+    'Every 2 Weeks',
+    'Every Month',
+  ];
+
+  final List<Map<String, dynamic>> _weekDays = [
+    {'id': 1, 'label': 'Mon'},
+    {'id': 2, 'label': 'Tue'},
+    {'id': 3, 'label': 'Wed'},
+    {'id': 4, 'label': 'Thu'},
+    {'id': 5, 'label': 'Fri'},
+    {'id': 6, 'label': 'Sat'},
+    {'id': 7, 'label': 'Sun'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.eventToEdit != null) {
+      final e = widget.eventToEdit!;
+      _titleController.text = e.title;
+      _locationController.text = e.location;
+      _durationController.text = (e.durationMins ?? 90).toString();
+      _selectedEventType = e.eventType;
+      _selectedIntensity = e.intensity ?? 'High';
+      _isImportant = e.isImportant;
+      _selectedRecurrence = e.recurrenceRule;
+      if (e.date.isNotEmpty) {
+        _selectedDate = DateTime.tryParse(e.date) ?? DateTime.now();
+      }
+      if (e.startTime.isNotEmpty && e.startTime.contains(':')) {
+        final parts = e.startTime.split(':');
+        _selectedTime = TimeOfDay(
+          hour: int.tryParse(parts[0]) ?? 16,
+          minute: int.tryParse(parts[1]) ?? 30,
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -55,7 +102,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
@@ -131,16 +178,35 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     final dateStr = _formatDateStr(_selectedDate);
     final timeStr = _formatTimeStr(_selectedTime);
 
-    final success = await ref.read(dashboardEventsProvider.notifier).createEvent(
-          title: title,
-          eventType: _selectedEventType,
-          startTime: timeStr,
-          date: dateStr,
-          location: location,
-          durationMins: durationMins,
-          intensity: _selectedIntensity,
-          isImportant: _isImportant,
-        );
+    bool success = false;
+
+    if (widget.eventToEdit != null) {
+      final updated = widget.eventToEdit!.copyWith(
+        title: title,
+        eventType: _selectedEventType,
+        startTime: timeStr,
+        date: dateStr,
+        location: location,
+        durationMins: durationMins,
+        intensity: _selectedIntensity,
+        isImportant: _isImportant,
+        recurrenceRule: _selectedRecurrence,
+      );
+      success = await ref.read(dashboardEventsProvider.notifier).updateEvent(updated);
+    } else {
+      success = await ref.read(dashboardEventsProvider.notifier).createEvent(
+            title: title,
+            eventType: _selectedEventType,
+            startTime: timeStr,
+            date: dateStr,
+            location: location,
+            durationMins: durationMins,
+            intensity: _selectedIntensity,
+            isImportant: _isImportant,
+            recurrenceRule: _selectedRecurrence,
+            repeatDaysOfWeek: _selectedRecurrence != 'Does Not Repeat' ? _selectedDays.toList() : null,
+          );
+    }
 
     if (mounted) {
       setState(() {
@@ -482,6 +548,85 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 16.0),
+
+              // Recurrence Rule Selector
+              _buildLabel('RECURRENCE RULE'),
+              const SizedBox(height: 6.0),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12.0),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedRecurrence,
+                    isExpanded: true,
+                    icon: const Icon(Icons.repeat, color: Color(0xFF003EC7)),
+                    style: const TextStyle(fontSize: 14.0, color: Color(0xFF131B2E), fontWeight: FontWeight.w600),
+                    items: _recurrenceRules.map((rule) {
+                      return DropdownMenuItem(value: rule, child: Text(rule));
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedRecurrence = val;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (_selectedRecurrence != 'Does Not Repeat') ...[
+                const SizedBox(height: 12.0),
+                _buildLabel('REPEAT ON DAYS'),
+                const SizedBox(height: 8.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: _weekDays.map((day) {
+                    final int dayId = day['id'] as int;
+                    final String label = day['label'] as String;
+                    final bool isSelected = _selectedDays.contains(dayId);
+                    return Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                if (_selectedDays.length > 1) {
+                                  _selectedDays.remove(dayId);
+                                }
+                              } else {
+                                _selectedDays.add(dayId);
+                              }
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10.0),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF003EC7) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? Colors.white : const Color(0xFF505F76),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
               const SizedBox(height: 16.0),
 
               // Important Flag Switch

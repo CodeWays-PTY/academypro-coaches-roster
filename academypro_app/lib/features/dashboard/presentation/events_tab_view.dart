@@ -297,6 +297,17 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                   ),
                 ),
                 const SizedBox(height: 10.0),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, color: Color(0xFF505F76), size: 13.0),
+                    const SizedBox(width: 4.0),
+                    Text(
+                      '${_formatDate(event.date)}  •  ${event.startTime}',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF505F76)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
                 if (event.eventType == 'Field Session') ...[
                   Row(
                     children: [
@@ -307,7 +318,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                             const SizedBox(width: 4.0),
                             Expanded(
                               child: Text(
-                                '${event.location}  •  ${event.startTime}',
+                                event.location,
                                 style: const TextStyle(fontSize: 12.0, color: Color(0xFF505F76)),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -398,14 +409,6 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                             style: const TextStyle(fontSize: 12.0, color: Color(0xFF505F76)),
                           ),
                         ],
-                      ),
-                      Text(
-                        event.startTime,
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: leftBorderColor,
-                        ),
                       ),
                     ],
                   ),
@@ -576,6 +579,15 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                 label: 'Location',
                 value: event.location,
               ),
+              if (event.recurrenceRule != 'Does Not Repeat') ...[
+                const SizedBox(height: 16.0),
+                _buildDetailRow(
+                  icon: Icons.repeat,
+                  label: 'Recurrence',
+                  value: event.recurrenceRule,
+                  valueColor: const Color(0xFF003EC7),
+                ),
+              ],
               if (event.eventType == 'Field Session' && event.intensity != null) ...[
                 const SizedBox(height: 16.0),
                 _buildDetailRow(
@@ -585,50 +597,88 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                   valueColor: themeColor,
                 ),
               ],
-              if (event.eventType == 'Gym Session' && event.completionCount != null) ...[
-                const SizedBox(height: 16.0),
-                _buildDetailRow(
-                  icon: Icons.check_circle_outline,
-                  label: 'Completion Progress',
-                  customWidget: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(3, (index) {
-                      final count = event.completionCount ?? 0;
-                      final isFilled = index < count;
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 4.0),
-                        child: Icon(
-                          Icons.circle,
-                          size: 16.0,
-                          color: isFilled ? const Color(0xFF505F76) : const Color(0xFFC3C5D9),
+              const SizedBox(height: 24.0),
+
+              // Coach Edit & Delete Action Buttons Row
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        CreateEventModal.show(context, eventToEdit: event);
+                      },
+                      icon: const Icon(Icons.edit_outlined, size: 18.0),
+                      label: const Text(
+                        'Edit Event',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003EC7),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
-                      );
-                    }),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 32.0),
-              SizedBox(
-                width: double.infinity,
-                height: 48.0,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003EC7),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'Close Details',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 12.0),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        HapticFeedback.mediumImpact();
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete Event?'),
+                            content: Text('Are you sure you want to remove "${event.title}" from the calendar?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: TextButton.styleFrom(foregroundColor: const Color(0xFFDC2626)),
+                                child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          await ref.read(dashboardEventsProvider.notifier).deleteEvent(event.id);
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Event removed from calendar'),
+                                backgroundColor: const Color(0xFF0F172A),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.delete_outline, size: 18.0),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFDC2626),
+                        side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 8.0),
             ],
@@ -692,18 +742,13 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
 
   String _formatDate(String dateStr) {
     try {
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        final year = parts[0];
-        final monthInt = int.parse(parts[1]);
-        final day = parts[2];
-        const months = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        if (monthInt >= 1 && monthInt <= 12) {
-          return '$day ${months[monthInt - 1]} $year';
-        }
+      final dt = DateTime.tryParse(dateStr);
+      if (dt != null) {
+        const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        final w = weekdays[dt.weekday - 1];
+        final m = months[dt.month - 1];
+        return '$w, ${dt.day} $m ${dt.year}';
       }
     } catch (_) {}
     return dateStr;

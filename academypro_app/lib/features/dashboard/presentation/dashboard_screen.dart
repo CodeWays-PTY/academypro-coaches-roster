@@ -718,6 +718,61 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildStarMetricPill(String label, String val, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: const Color(0xFFA7F3D0), size: 14.0),
+        const SizedBox(height: 2.0),
+        Text(
+          val,
+          style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w900, color: Colors.white),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 8.5, color: Color(0xFFA7F3D0), fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKpiCard(String label, String value, IconData icon, bool loading, {String? subtitle}) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+              ),
+              Icon(icon, color: const Color(0xFF64748B), size: 16.0),
+            ],
+          ),
+          const SizedBox(height: 12.0),
+          if (loading)
+            const SizedBox(width: 20.0, height: 20.0, child: CircularProgressIndicator(strokeWidth: 2.0))
+          else
+            Text(
+              value,
+              style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4.0),
+            Text(subtitle, style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B))),
+          ]
+        ],
+      ),
+    );
+  }
+
   Widget _buildFlagCarouselCard(BuildContext context, FlaggedPlayer player) {
     final bool isCritical = player.severity.toLowerCase() == 'critical';
     final List<Color> bgGradient = isCritical
