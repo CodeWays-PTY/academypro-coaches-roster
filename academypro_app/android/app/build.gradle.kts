@@ -14,7 +14,7 @@ plugins {
 }
 
 android {
-    namespace = "za.co.academypro.app"
+    namespace = "za.co.codeways.academypro"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "za.co.academypro.app"
+        applicationId = "za.co.codeways.academypro"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
