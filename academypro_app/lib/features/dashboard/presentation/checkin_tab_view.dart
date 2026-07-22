@@ -38,6 +38,79 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
     }
   }
 
+  void _showMandatoryEventPickerDialog(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      builder: (ctx) {
+        final eventsState = ref.watch(dashboardEventsProvider);
+        final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        final todayEvents = eventsState.maybeWhen(
+          data: (list) => list.where((e) => e.date == nowStr || e.date == '2026-07-22').toList(),
+          orElse: () => <CoachEvent>[],
+        );
+        todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.event_available, color: Color(0xFF003EC7), size: 24.0),
+                  SizedBox(width: 10.0),
+                  Text(
+                    'Select Event First',
+                    style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6.0),
+              const Text(
+                'Please select which scheduled session you are taking attendance for before marking players.',
+                style: TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16.0),
+              if (todayEvents.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  child: Text('No scheduled events found for today. Please create an event first.', style: TextStyle(color: Color(0xFF64748B))),
+                )
+              else
+                Column(
+                  children: todayEvents.map((event) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        tileColor: const Color(0xFFF8FAFC),
+                        leading: const Icon(Icons.sports_soccer, color: Color(0xFF003EC7)),
+                        title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
+                        subtitle: Text('${event.startTime} • ${event.location}', style: const TextStyle(fontSize: 12.0)),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14.0, color: Color(0xFF003EC7)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          ref.read(checkInProvider.notifier).selectEvent(event);
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -223,8 +296,12 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          QrScannerModal.show(context);
+                          if (checkInState.selectedEvent == null) {
+                            _showMandatoryEventPickerDialog(context);
+                          } else {
+                            HapticFeedback.mediumImpact();
+                            QrScannerModal.show(context);
+                          }
                         },
                         icon: const Icon(Icons.camera_alt_outlined, size: 18.0),
                         label: const Text(
@@ -247,7 +324,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 20.0),
 
               // ===================================================================
-              // 3. SCHEDULED EVENTS SELECTOR CAROUSEL (Filter: TODAY'S EVENTS ONLY)
+              // 3. SCHEDULED EVENTS SELECTOR CAROUSEL (SORTED BY TIME)
               // ===================================================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -269,6 +346,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                 data: (allEvents) {
                   // Filter strictly for today's date (or seeded date 2026-07-22)
                   final todayEvents = allEvents.where((e) => e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21').toList();
+                  
+                  // Sort chronologically by startTime
+                  todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
 
                   if (todayEvents.isEmpty) {
                     return Container(
@@ -285,7 +365,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           SizedBox(width: 10.0),
                           Expanded(
                             child: Text(
-                              'General Practice Session (No special event today)',
+                              'No scheduled events for today',
                               style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                           ),
@@ -306,12 +386,15 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
                         IconData eventIcon = Icons.sports_soccer;
                         Color accentColor = const Color(0xFF003EC7);
-                        if (event.eventType == 'Gym Session') {
+                        if (event.eventType == 'Gym') {
                           eventIcon = Icons.fitness_center;
                           accentColor = const Color(0xFF7C3AED);
-                        } else if (event.eventType == 'Match Day') {
+                        } else if (event.eventType == 'Match') {
                           eventIcon = Icons.sports_score;
                           accentColor = const Color(0xFF166534);
+                        } else if (event.eventType == 'Test Day') {
+                          eventIcon = Icons.timer_outlined;
+                          accentColor = const Color(0xFFD97706);
                         }
 
                         return InkWell(
@@ -398,7 +481,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 18.0),
 
               // ===================================================================
-              // 4. ATTENDANCE PROGRESS STATS CARD (Static choice chips REMOVED)
+              // 4. ATTENDANCE PROGRESS STATS CARD
               // ===================================================================
               Container(
                 padding: const EdgeInsets.all(16.0),
@@ -463,19 +546,19 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         ),
                       ),
                     ),
-                    if (checkInState.selectedEvent != null) ...[
-                      const SizedBox(height: 10.0),
-                      Text(
-                        'Active Session: ${checkInState.selectedEvent!.title}',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2563EB),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 10.0),
+                    Text(
+                      checkInState.selectedEvent != null
+                          ? 'Active Session: ${checkInState.selectedEvent!.title}'
+                          : '⚠️ Please select a scheduled event above to start check-in',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: checkInState.selectedEvent != null ? const Color(0xFF2563EB) : const Color(0xFFB45309),
                       ),
-                    ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -528,7 +611,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 16.0),
 
               // ===================================================================
-              // 6. ROSTER LIST (MANUAL CHECK-IN BY NAME - ALWAYS INTERACTIVE & UNLOCKED)
+              // 6. ROSTER LIST (MANUAL CHECK-IN BY NAME - WITH EVENT CHECK)
               // ===================================================================
               if (filteredRecords.isEmpty)
                 Container(
@@ -559,8 +642,11 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
                     return InkWell(
                       onTap: () {
-                        // Always interactive (allows checking in late arrivals anytime)
-                        ref.read(checkInProvider.notifier).toggleCheckIn(player.id);
+                        if (checkInState.selectedEvent == null) {
+                          _showMandatoryEventPickerDialog(context);
+                        } else {
+                          ref.read(checkInProvider.notifier).toggleCheckIn(player.id);
+                        }
                       },
                       borderRadius: BorderRadius.circular(16.0),
                       child: AnimatedContainer(
@@ -686,6 +772,10 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                   onPressed: checkInState.loading
                       ? null
                       : () async {
+                          if (checkInState.selectedEvent == null) {
+                            _showMandatoryEventPickerDialog(context);
+                            return;
+                          }
                           HapticFeedback.mediumImpact();
                           final success = await ref.read(checkInProvider.notifier).submitAttendance();
                           if (mounted) {

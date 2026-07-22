@@ -41,6 +41,9 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
             final todayEvents = events.where((e) => e.date == todayStr || e.date == '2026-07-22').toList();
             final upcomingEvents = events.where((e) => e.date != todayStr && e.date != '2026-07-22').toList();
 
+            todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+            upcomingEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),

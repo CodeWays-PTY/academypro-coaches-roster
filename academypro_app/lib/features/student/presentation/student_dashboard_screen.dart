@@ -8,6 +8,7 @@ import '../../auth/presentation/login_screen.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StudentDashboardScreen extends ConsumerStatefulWidget {
   const StudentDashboardScreen({Key? key}) : super(key: key);
@@ -620,26 +621,47 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       ],
                     ),
                     const SizedBox(height: 8.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
-                        const SizedBox(width: 10.0),
-                        Text(
-                          item.parentPhone,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
-                        ),
-                      ],
+                    InkWell(
+                      onTap: () {
+                        final cleanPhone = item.parentPhone.replaceAll(RegExp(r'[^\d+]'), '');
+                        launchUrl(Uri.parse('tel:$cleanPhone'));
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
+                          const SizedBox(width: 10.0),
+                          Text(
+                            item.parentPhone,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2563EB),
+                              fontSize: 13.0,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
-                        const SizedBox(width: 10.0),
-                        Text(
-                          item.parentEmail,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
-                        ),
-                      ],
+                    InkWell(
+                      onTap: () {
+                        launchUrl(Uri.parse('mailto:${item.parentEmail}'));
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
+                          const SizedBox(width: 10.0),
+                          Text(
+                            item.parentEmail,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2563EB),
+                              fontSize: 13.0,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -652,22 +674,34 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
               ),
               const SizedBox(height: 10.0),
-              Container(
-                padding: const EdgeInsets.all(14.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14.0),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.smartphone, color: Color(0xFF003EC7), size: 18.0),
-                    const SizedBox(width: 10.0),
-                    Text(
-                      '${item.playerName}: ${item.playerPhone}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
-                    ),
-                  ],
+              InkWell(
+                onTap: () {
+                  final cleanPhone = item.playerPhone.replaceAll(RegExp(r'[^\d+]'), '');
+                  launchUrl(Uri.parse('tel:$cleanPhone'));
+                },
+                borderRadius: BorderRadius.circular(14.0),
+                child: Container(
+                  padding: const EdgeInsets.all(14.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14.0),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.smartphone, color: Color(0xFF003EC7), size: 18.0),
+                      const SizedBox(width: 10.0),
+                      Text(
+                        '${item.playerName}: ${item.playerPhone}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2563EB),
+                          fontSize: 13.0,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16.0),

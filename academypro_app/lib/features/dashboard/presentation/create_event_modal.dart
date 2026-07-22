@@ -371,6 +371,11 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                                 HapticFeedback.selectionClick();
                                 setState(() {
                                   _selectedEventType = type;
+                                  if (type == 'Match' || type == 'Test Day') {
+                                    _isImportant = true;
+                                  } else {
+                                    _isImportant = false;
+                                  }
                                 });
                               },
                               borderRadius: BorderRadius.circular(12.0),
@@ -751,6 +756,35 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                             ),
                           ],
                         ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16.0),
+
+                    // IMPORTANT / HIGH PRIORITY SWITCH TILE
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: _isImportant ? const Color(0xFFFEF3C7) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: Border.all(color: _isImportant ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0)),
+                      ),
+                      child: SwitchListTile(
+                        value: _isImportant,
+                        onChanged: (val) {
+                          setState(() {
+                            _isImportant = val;
+                          });
+                        },
+                        activeColor: const Color(0xFFD97706),
+                        title: const Text(
+                          'Mark as High Priority / Important',
+                          style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        subtitle: const Text(
+                          'Flags this session with a star badge on player dashboards',
+                          style: TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
+                        ),
                       ),
                     ),
 
