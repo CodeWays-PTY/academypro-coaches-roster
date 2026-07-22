@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/dashboard_controller.dart';
 
 class CreateEventModal extends ConsumerStatefulWidget {
@@ -31,13 +32,14 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   final _durationController = TextEditingController(text: '90');
 
   String _selectedEventType = 'Field';
-  String _selectedSquad = 'All Squads';
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 16, minute: 30);
   String _selectedRecurrence = 'Does Not Repeat';
   bool _isImportant = false;
   bool _isSubmitting = false;
   String? _attachedWorkoutName;
+
+  Map<String, List<String>> _userLocationHistory = {};
 
   final List<String> _eventTypes = [
     'Field',
@@ -46,29 +48,13 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     'Match',
   ];
 
-  final List<String> _squads = ['All Squads', 'U15', 'U16', 'U18'];
-
-  // Smart location suggestions by training type
-  final Map<String, List<String>> _smartLocationMap = {
-    'Field': ['Field A', 'Field B', 'Krieket Field', 'Practice Pitch 1'],
-    'Gym': ['Gym Facility', 'High Performance Center', 'Weight Room'],
-    'Test Day': ['Testing Lab', 'Sprint Track', 'Fitness Field'],
-    'Match': ['Main Stadium', 'A-Field Stadium', 'Away Pitch'],
-  };
-
   final List<int> _durationOptions = [30, 45, 60, 90, 120];
-
-  final List<String> _recurrenceRules = [
-    'Does Not Repeat',
-    'Every Day',
-    'Every Week',
-    'Every 2 Weeks',
-    'Every Month',
-  ];
 
   @override
   void initState() {
     super.initState();
+    _loadLocationHistory();
+
     if (widget.eventToEdit != null) {
       final e = widget.eventToEdit!;
       _titleController.text = e.title;
@@ -88,6 +74,32 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
           minute: int.tryParse(parts[1]) ?? 30,
         );
       }
+    }
+  }
+
+  Future<void> _loadLocationHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyMap = <String, List<String>>{};
+    for (final type in _eventTypes) {
+      final saved = prefs.getStringList('user_locations_$type') ?? [];
+      historyMap[type] = saved;
+    }
+    if (mounted) {
+      setState(() {
+        _userLocationHistory = historyMap;
+      });
+    }
+  }
+
+  Future<void> _saveLocationToHistory(String type, String loc) async {
+    final cleanLoc = loc.trim();
+    if (cleanLoc.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getStringList('user_locations_$type') ?? [];
+    if (!current.contains(cleanLoc)) {
+      final updated = [cleanLoc, ...current].take(8).toList();
+      await prefs.setStringList('user_locations_$type', updated);
     }
   }
 
@@ -194,6 +206,9 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     final dateStr = _formatDateStr(_selectedDate);
     final timeStr = _formatTimeStr(_selectedTime);
 
+    // Save location to user history for this training type
+    await _saveLocationToHistory(_selectedEventType, location);
+
     bool success = false;
 
     if (widget.eventToEdit != null) {
@@ -256,7 +271,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final smartLocations = _smartLocationMap[_selectedEventType] ?? ['Field A', 'Field B', 'Krieket Field'];
+    final userLocations = _userLocationHistory[_selectedEventType] ?? [];
 
     return Container(
       constraints: BoxConstraints(
@@ -356,7 +371,6 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                                 HapticFeedback.selectionClick();
                                 setState(() {
                                   _selectedEventType = type;
-                                  // Auto clear or suggestion update
                                 });
                               },
                               borderRadius: BorderRadius.circular(12.0),
@@ -406,7 +420,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                     TextFormField(
                       controller: _titleController,
                       decoration: InputDecoration(
-                        hintText: 'e.g. Speed & Tactical Offload Session',
+                        hintText: 'Enter event title...',
                         hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.0),
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
@@ -434,7 +448,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
                     const SizedBox(height: 20.0),
 
-                    // 3. LOCATION INPUT WITH SMART AUTO-FILL SUGGESTIONS
+                    // 3. LOCATION INPUT WITH USER-ENTERED HISTORY MEMORY
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
@@ -447,17 +461,13 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                             letterSpacing: 1.0,
                           ),
                         ),
-                        Text(
-                          'Smart Auto-Fill',
-                          style: TextStyle(fontSize: 11.0, color: Color(0xFF003EC7), fontWeight: FontWeight.w600),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 8.0),
                     TextFormField(
                       controller: _locationController,
                       decoration: InputDecoration(
-                        hintText: 'e.g. Field A, Field B or Krieket Field',
+                        hintText: 'Enter location...',
                         hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.0),
                         prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF64748B), size: 20.0),
                         filled: true,
@@ -485,26 +495,33 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                     ),
                     const SizedBox(height: 8.0),
 
-                    // Smart Auto-Fill Chips tailored to selected training type
-                    Wrap(
-                      spacing: 6.0,
-                      runSpacing: 6.0,
-                      children: smartLocations.map((loc) {
-                        return ActionChip(
-                          avatar: const Icon(Icons.place, size: 14.0, color: Color(0xFF003EC7)),
-                          label: Text(loc),
-                          backgroundColor: const Color(0xFFEFF6FF),
-                          labelStyle: const TextStyle(color: Color(0xFF003EC7), fontSize: 11.5, fontWeight: FontWeight.w600),
-                          side: const BorderSide(color: Color(0xFFBFDBFE)),
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              _locationController.text = loc;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
+                    // Displays ONLY user's previously entered locations for this training type
+                    if (userLocations.isNotEmpty) ...[
+                      const Text(
+                        'Recent Locations:',
+                        style: TextStyle(fontSize: 11.0, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 4.0),
+                      Wrap(
+                        spacing: 6.0,
+                        runSpacing: 6.0,
+                        children: userLocations.map((loc) {
+                          return ActionChip(
+                            avatar: const Icon(Icons.history, size: 13.0, color: Color(0xFF003EC7)),
+                            label: Text(loc),
+                            backgroundColor: const Color(0xFFEFF6FF),
+                            labelStyle: const TextStyle(color: Color(0xFF003EC7), fontSize: 11.5, fontWeight: FontWeight.w600),
+                            side: const BorderSide(color: Color(0xFFBFDBFE)),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _locationController.text = loc;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
 
                     const SizedBox(height: 20.0),
 
