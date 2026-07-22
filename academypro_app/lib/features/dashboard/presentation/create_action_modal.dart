@@ -18,7 +18,7 @@ class CreateActionModal extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       builder: (context) => CreateActionModal(playerId: playerId, playerName: playerName),
     );
   }
@@ -99,7 +99,7 @@ class _CreateActionModalState extends ConsumerState<CreateActionModal> {
           top: false,
           bottom: true,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 24.0),
+            padding: EdgeInsets.fromLTRB(20.0, 16.0, 20.0, MediaQuery.of(context).padding.bottom + 24.0),
             child: Form(
               key: _formKey,
               child: Column(
