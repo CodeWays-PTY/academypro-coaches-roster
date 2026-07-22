@@ -365,9 +365,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     );
   }
 
-  Widget _buildPositionRow(BuildContext context, WidgetRef ref, RosterPlayer player) {
+  Widget _buildPositionRow(BuildContext context, WidgetRef ref, RosterPlayer player, [VoidCallback? onUpdated]) {
     return InkWell(
-      onTap: () => _showEditPositionDialog(context, ref, player),
+      onTap: () => _showEditPositionDialog(context, ref, player, onUpdated),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
         child: Row(
@@ -401,7 +401,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     );
   }
 
-  void _showEditPositionDialog(BuildContext context, WidgetRef ref, RosterPlayer player) {
+  void _showEditPositionDialog(BuildContext context, WidgetRef ref, RosterPlayer player, [VoidCallback? onUpdated]) {
     final controller = TextEditingController(text: player.position);
     showDialog(
       context: context,
@@ -457,9 +457,14 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                           setState(() {
                             saving = true;
                           });
+                          final newPos = controller.text.trim();
                           final success = await ref
                               .read(rosterProvider.notifier)
-                              .updatePlayerPosition(player, controller.text.trim());
+                              .updatePlayerPosition(player, newPos);
+                          if (success) {
+                            player.position = newPos;
+                            onUpdated?.call();
+                          }
                           if (context.mounted) {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -535,7 +540,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
       ),
       builder: (context) {
         final bottomInset = MediaQuery.of(context).padding.bottom;
-        return DraggableScrollableSheet(
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return DraggableScrollableSheet(
           initialChildSize: 0.85,
           minChildSize: 0.5,
           maxChildSize: 0.95,
@@ -731,7 +738,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
                         _buildProfileRow('40m Dash Speed', '$speed40m seconds'),
                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
-                        _buildPositionRow(context, ref, player),
+                        _buildPositionRow(context, ref, player, () => setSheetState(() {})),
                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
                         _buildProfileRow('Athlete System ID', player.id),
                       ],
@@ -851,7 +858,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
         );
       },
     );
-  }
+  },
+);
+}
 
   Widget _buildProfileRow(String label, String val) {
     return Padding(

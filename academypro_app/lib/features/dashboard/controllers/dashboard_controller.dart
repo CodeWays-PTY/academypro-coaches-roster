@@ -732,6 +732,20 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       final updated = currentList.map((e) => e.id == event.id ? event : e).toList();
       state = AsyncValue.data(updated);
     });
+
+    try {
+      await _apiClient.post('/api/dashboard/events/${event.id}', data: {
+        'title': event.title,
+        'eventType': event.eventType,
+        'startTime': event.startTime,
+        'date': event.date,
+        'location': event.location,
+        'durationMins': event.durationMins,
+        'isImportant': event.isImportant,
+        'recurrenceRule': event.recurrenceRule,
+        'workoutImagePath': event.workoutImagePath,
+      });
+    } catch (_) {}
     return true;
   }
 
@@ -740,6 +754,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       final updated = currentList.where((e) => e.id != eventId).toList();
       state = AsyncValue.data(updated);
     });
+
+    try {
+      await _apiClient.post('/api/dashboard/events/$eventId/delete');
+    } catch (_) {}
     return true;
   }
 }

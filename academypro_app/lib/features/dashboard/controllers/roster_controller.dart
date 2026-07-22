@@ -7,7 +7,7 @@ class RosterPlayer {
   final String firstName;
   final String lastName;
   final String ageGroup;
-  final String position;
+  String position;
   final String team;
   final String status;
   final int ugroupsActive;
