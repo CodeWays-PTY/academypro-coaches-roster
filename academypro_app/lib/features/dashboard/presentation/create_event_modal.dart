@@ -39,6 +39,14 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   bool _isImportant = false;
   bool _isSubmitting = false;
   String? _attachedImagePath;
+  String _selectedTeam = 'U15 Academy Elite';
+
+  final List<String> _teamOptions = [
+    'U15 Academy Elite',
+    'U15 B Team',
+    'U16 Academy Elite',
+    'U18 Premier Squad',
+  ];
 
   Map<String, List<String>> _userLocationHistory = {};
 
@@ -65,6 +73,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       _isImportant = e.isImportant;
       _selectedRecurrence = e.recurrenceRule;
       _attachedImagePath = e.workoutImagePath;
+      _selectedTeam = e.team.isNotEmpty ? e.team : 'U15 Academy Elite';
       if (e.date.isNotEmpty) {
         _selectedDate = DateTime.tryParse(e.date) ?? DateTime.now();
       }
@@ -286,6 +295,8 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
         isImportant: _isImportant,
         recurrenceRule: _selectedRecurrence,
         workoutImagePath: imagePathToSave,
+        team: _selectedTeam,
+        ageGroup: activeAge,
       );
       success = await ref.read(dashboardEventsProvider.notifier).updateEvent(updated);
     } else {
@@ -300,6 +311,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
             recurrenceRule: _selectedRecurrence,
             workoutImagePath: imagePathToSave,
             ageGroup: activeAge,
+            team: _selectedTeam,
           );
     }
 
@@ -412,6 +424,52 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 0. ASSIGNED TEAM SELECTOR
+                    const Text(
+                      'ASSIGNED TEAM',
+                      style: TextStyle(
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _teamOptions.contains(_selectedTeam) ? _selectedTeam : _teamOptions.first,
+                          isExpanded: true,
+                          icon: const Icon(Icons.groups_outlined, color: Color(0xFF003EC7)),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedTeam = val);
+                            }
+                          },
+                          items: _teamOptions.map((t) {
+                            return DropdownMenuItem<String>(
+                              value: t,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.shield_outlined, size: 16.0, color: Color(0xFF2563EB)),
+                                  const SizedBox(width: 8.0),
+                                  Text(t),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20.0),
+
                     // 1. TRAINING TYPE SELECTOR
                     const Text(
                       'TYPE OF TRAINING',

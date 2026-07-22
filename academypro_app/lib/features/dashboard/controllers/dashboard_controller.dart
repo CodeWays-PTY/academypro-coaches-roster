@@ -591,7 +591,7 @@ final playerActionTasksProvider = Provider.family<List<CoachActionItem>, String?
 });
 
 class CoachEvent {
-  final int id;
+  final String id;
   final String schoolId;
   final String title;
   final String eventType;
@@ -603,6 +603,8 @@ class CoachEvent {
   final int? completionCount;
   final String recurrenceRule;
   final String? workoutImagePath;
+  final String team;
+  final String ageGroup;
 
   CoachEvent({
     required this.id,
@@ -617,10 +619,12 @@ class CoachEvent {
     this.completionCount,
     this.recurrenceRule = 'Does Not Repeat',
     this.workoutImagePath,
+    this.team = 'U15 Academy Elite',
+    this.ageGroup = 'U15',
   });
 
   CoachEvent copyWith({
-    int? id,
+    String? id,
     String? schoolId,
     String? title,
     String? eventType,
@@ -632,6 +636,8 @@ class CoachEvent {
     int? completionCount,
     String? recurrenceRule,
     String? workoutImagePath,
+    String? team,
+    String? ageGroup,
   }) {
     return CoachEvent(
       id: id ?? this.id,
@@ -646,12 +652,14 @@ class CoachEvent {
       completionCount: completionCount ?? this.completionCount,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
       workoutImagePath: workoutImagePath ?? this.workoutImagePath,
+      team: team ?? this.team,
+      ageGroup: ageGroup ?? this.ageGroup,
     );
   }
 
   factory CoachEvent.fromJson(Map<String, dynamic> json) {
     return CoachEvent(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] != null ? json['id'].toString() : 'EVT-${DateTime.now().millisecondsSinceEpoch}',
       schoolId: json['schoolId'] ?? '',
       title: json['title'] ?? '',
       eventType: json['eventType'] ?? 'Field',
@@ -663,6 +671,8 @@ class CoachEvent {
       completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
       recurrenceRule: json['recurrenceRule'] ?? 'Does Not Repeat',
       workoutImagePath: json['workoutImagePath'] ?? json['workoutAttachmentName'],
+      team: json['team'] ?? 'U15 Academy Elite',
+      ageGroup: json['ageGroup'] ?? json['age_group'] ?? 'U15',
     );
   }
 }
@@ -670,12 +680,9 @@ class CoachEvent {
 class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>> {
   final ApiClient _apiClient;
 
-  DashboardEventsNotifier(this._apiClient)
-      : super(AsyncValue.data(_defaultEvents));
-
   static final List<CoachEvent> _defaultEvents = [
     CoachEvent(
-      id: 101,
+      id: '101',
       schoolId: 'sch1',
       title: 'Tactical & Offload Drills',
       eventType: 'Field',
@@ -685,9 +692,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       location: 'Field A',
       isImportant: false,
       completionCount: 2,
+      team: 'U15 Academy Elite',
+      ageGroup: 'U15',
     ),
     CoachEvent(
-      id: 102,
+      id: '102',
       schoolId: 'sch1',
       title: 'Power Hypertrophy & Core Conditioning',
       eventType: 'Gym',
@@ -697,9 +706,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       location: 'Gym Facility',
       isImportant: false,
       completionCount: 3,
+      team: 'U15 Academy Elite',
+      ageGroup: 'U15',
     ),
     CoachEvent(
-      id: 103,
+      id: '103',
       schoolId: 'sch1',
       title: 'Quarterly Fitness Testing Day',
       eventType: 'Test Day',
@@ -708,9 +719,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       durationMins: 45,
       location: 'Krieket Field',
       isImportant: true,
+      team: 'U16 Academy Elite',
+      ageGroup: 'U16',
     ),
     CoachEvent(
-      id: 104,
+      id: '104',
       schoolId: 'sch1',
       title: 'Premier Derby Match',
       eventType: 'Match',
@@ -719,8 +732,15 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       durationMins: 120,
       location: 'Main Stadium',
       isImportant: true,
+      team: 'U18 Premier Squad',
+      ageGroup: 'U18',
     ),
   ];
+
+  DashboardEventsNotifier(this._apiClient)
+      : super(AsyncValue.data(_defaultEvents)) {
+    fetchEvents();
+  }
 
   Future<void> fetchEvents({String? ageGroup}) async {
     try {
@@ -729,12 +749,12 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'] ?? [];
         final events = list.map((x) => CoachEvent.fromJson(x)).toList();
-        state = AsyncValue.data(events.isNotEmpty ? events : _defaultEvents);
+        state = AsyncValue.data(events);
       } else {
-        state = AsyncValue.data(_defaultEvents);
+        state = AsyncValue.data([]);
       }
     } catch (e) {
-      state = AsyncValue.data(_defaultEvents);
+      state = AsyncValue.data([]);
     }
   }
 
@@ -749,9 +769,12 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     String recurrenceRule = 'Does Not Repeat',
     String? workoutImagePath,
     String? ageGroup,
+    String? team,
   }) async {
+    final eventId = 'EVT-${DateTime.now().millisecondsSinceEpoch}';
+    final assignedTeam = team ?? 'U15 Academy Elite';
     final newEvent = CoachEvent(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: eventId,
       schoolId: 'sch1',
       title: title,
       eventType: eventType,
@@ -762,6 +785,8 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       isImportant: isImportant,
       recurrenceRule: recurrenceRule,
       workoutImagePath: workoutImagePath,
+      team: assignedTeam,
+      ageGroup: ageGroup ?? 'U15',
     );
 
     state.whenData((currentList) {
@@ -770,6 +795,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
 
     try {
       await _apiClient.post('/api/dashboard/events', data: {
+        'id': eventId,
         'title': title,
         'eventType': eventType,
         'startTime': startTime,
@@ -780,6 +806,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'recurrenceRule': recurrenceRule,
         'workoutImagePath': workoutImagePath,
         'ageGroup': ageGroup ?? 'U15',
+        'team': assignedTeam,
       });
     } catch (_) {}
     return true;
@@ -787,7 +814,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
 
   Future<bool> updateEvent(CoachEvent event) async {
     state.whenData((currentList) {
-      final updated = currentList.map((e) => e.id == event.id ? event : e).toList();
+      final updated = currentList.map((e) => e.id.toString() == event.id.toString() ? event : e).toList();
       state = AsyncValue.data(updated);
     });
 
@@ -802,19 +829,22 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'isImportant': event.isImportant,
         'recurrenceRule': event.recurrenceRule,
         'workoutImagePath': event.workoutImagePath,
+        'ageGroup': event.ageGroup,
+        'team': event.team,
       });
     } catch (_) {}
     return true;
   }
 
-  Future<bool> deleteEvent(int eventId) async {
+  Future<bool> deleteEvent(dynamic eventId) async {
+    final targetIdStr = eventId.toString();
     state.whenData((currentList) {
-      final updated = currentList.where((e) => e.id != eventId).toList();
+      final updated = currentList.where((e) => e.id.toString() != targetIdStr).toList();
       state = AsyncValue.data(updated);
     });
 
     try {
-      await _apiClient.post('/api/dashboard/events/$eventId/delete');
+      await _apiClient.post('/api/dashboard/events/$targetIdStr/delete');
     } catch (_) {}
     return true;
   }

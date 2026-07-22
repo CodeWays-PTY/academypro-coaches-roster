@@ -302,27 +302,51 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Category Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                            decoration: BoxDecoration(
-                              color: badgeBgColor,
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(iconData, size: 13.0, color: badgeTextColor),
-                                const SizedBox(width: 4.0),
-                                Text(
-                                  badgeText.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 11.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: badgeTextColor,
-                                  ),
+                          Row(
+                            children: [
+                              // Category Badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                decoration: BoxDecoration(
+                                  color: badgeBgColor,
+                                  borderRadius: BorderRadius.circular(8.0),
                                 ),
-                              ],
-                            ),
+                                child: Row(
+                                  children: [
+                                    Icon(iconData, size: 13.0, color: badgeTextColor),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      badgeText.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 11.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: badgeTextColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6.0),
+                              // Team Badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.shield_outlined, size: 12.0, color: Color(0xFF003EC7)),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      event.team,
+                                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                           Row(
                             children: [

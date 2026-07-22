@@ -717,6 +717,7 @@ app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
+  const team = c.req.query('team');
   const db = getDB(c);
 
   let query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
@@ -729,8 +730,8 @@ app.get('/api/dashboard/events', async (c) => {
   try {
     const { results } = await db.prepare(query).bind(...params).all();
     
-    const events = results.map((r: any) => ({
-      id: r.id,
+    let events = (results || []).map((r: any) => ({
+      id: r.id?.toString() || '',
       schoolId: r.school_id,
       title: r.title,
       eventType: r.event_type,
@@ -742,8 +743,13 @@ app.get('/api/dashboard/events', async (c) => {
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
       ageGroup: r.age_group || 'U15',
+      team: r.team || 'U15 Academy Elite',
       workoutImagePath: r.workout_image_path
     }));
+
+    if (team) {
+      events = events.filter((e: any) => e.team.toLowerCase().trim() === team.toLowerCase().trim());
+    }
 
     return c.json({
       success: true,
@@ -771,7 +777,7 @@ app.post('/api/dashboard/events', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { id, title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, workoutImagePath } = body;
+  const { id, title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
 
   if (!title || !eventType || !startTime || !date || !location) {
     return c.json({
@@ -781,11 +787,12 @@ app.post('/api/dashboard/events', async (c) => {
   }
 
   const eventId = id ? id.toString() : `EVT-${Date.now()}`;
+  const assignedTeam = team || 'U15 Academy Elite';
 
   const query = `
     INSERT INTO events (
-      id, school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count, age_group, workout_image_path
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count, age_group, team, workout_image_path
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   try {
@@ -806,6 +813,7 @@ app.post('/api/dashboard/events', async (c) => {
       isImpVal,
       compCountVal,
       ageGroup || 'U15',
+      assignedTeam,
       workoutImagePath || null
     ).run();
 
@@ -825,6 +833,7 @@ app.post('/api/dashboard/events', async (c) => {
         isImportant: isImpVal === 1,
         completionCount: compCountVal,
         ageGroup: ageGroup || 'U15',
+        team: assignedTeam,
         workoutImagePath: workoutImagePath || null
       }
     }, 201);
@@ -848,7 +857,7 @@ app.post('/api/dashboard/events/:id', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, workoutImagePath } = body;
+  const { title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
   const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
   const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
 
@@ -856,13 +865,13 @@ app.post('/api/dashboard/events/:id', async (c) => {
     const query = `
       UPDATE events SET 
         title = ?, event_type = ?, start_time = ?, date = ?, duration_mins = ?, 
-        location = ?, intensity = ?, is_important = ?, age_group = ?, workout_image_path = ?
-      WHERE id = ? OR id = CAST(? AS INTEGER)
+        location = ?, intensity = ?, is_important = ?, age_group = ?, team = ?, workout_image_path = ?
+      WHERE CAST(id AS TEXT) = ? OR id = ?
     `;
     await db.prepare(query).bind(
       title.trim(), eventType.trim(), startTime.trim(), date.trim(), durMinsVal,
       location.trim(), intensity ? intensity.trim() : null, isImpVal, ageGroup || 'U15',
-      workoutImagePath || null, id, id
+      team || 'U15 Academy Elite', workoutImagePath || null, id.toString(), id.toString()
     ).run();
 
     return c.json({ success: true, message: 'Event updated successfully' });
@@ -876,7 +885,7 @@ app.delete('/api/dashboard/events/:id', async (c) => {
   const id = c.req.param('id');
   const db = getDB(c);
   try {
-    await db.prepare('DELETE FROM events WHERE id = ? OR id = CAST(? AS INTEGER)').bind(id, id).run();
+    await db.prepare('DELETE FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(id.toString(), id.toString()).run();
     return c.json({ success: true, message: 'Event deleted successfully' });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to delete event', error: err.message }, 500);
@@ -887,7 +896,7 @@ app.post('/api/dashboard/events/:id/delete', async (c) => {
   const id = c.req.param('id');
   const db = getDB(c);
   try {
-    await db.prepare('DELETE FROM events WHERE id = ? OR id = CAST(? AS INTEGER)').bind(id, id).run();
+    await db.prepare('DELETE FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(id.toString(), id.toString()).run();
     return c.json({ success: true, message: 'Event deleted successfully' });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to delete event', error: err.message }, 500);
@@ -1648,7 +1657,21 @@ app.delete('/api/notifications/:id', async (c) => {
   const db = getDB(c);
 
   try {
-    await db.prepare('DELETE FROM notifications WHERE id = ?').bind(id).run();
+    await db.prepare('DELETE FROM notifications WHERE id = ? OR CAST(id AS TEXT) = ?').bind(id, id.toString()).run();
+    console.log(`[Observer Log] Deleted notification ${id}`);
+    return c.json({ success: true, message: 'Notification deleted' });
+  } catch (err: any) {
+    console.error('[Observer Error] Delete notification failed:', err);
+    return c.json({ success: false, message: 'Failed to delete notification', error: err.message }, 500);
+  }
+});
+
+app.post('/api/notifications/:id/delete', async (c) => {
+  const id = c.req.param('id');
+  const db = getDB(c);
+
+  try {
+    await db.prepare('DELETE FROM notifications WHERE id = ? OR CAST(id AS TEXT) = ?').bind(id, id.toString()).run();
     console.log(`[Observer Log] Deleted notification ${id}`);
     return c.json({ success: true, message: 'Notification deleted' });
   } catch (err: any) {

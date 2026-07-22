@@ -71,58 +71,11 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           loading: false,
         );
       } else {
-        _useFallbackData();
+        state = state.copyWith(notifications: [], unreadCount: 0, loading: false);
       }
     } catch (e) {
-      _useFallbackData();
+      state = state.copyWith(notifications: [], unreadCount: 0, loading: false);
     }
-  }
-
-  void _useFallbackData() {
-    final fallbackList = [
-      NotificationItem(
-        id: 1,
-        userId: 'USR-10928',
-        title: '⚠️ Academic Risk Alert: Liam Venter',
-        body: 'Term 2 Grade dropped to 64.0%. Academic warning triggered.',
-        type: 'academic_flag',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 25)).toIso8601String(),
-      ),
-      NotificationItem(
-        id: 2,
-        userId: 'USR-10928',
-        title: '🏉 Match Strategy Ready vs Menlopark',
-        body: 'Auto-Score breakdown generated for U15 A Team match.',
-        type: 'match_update',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-      ),
-      NotificationItem(
-        id: 3,
-        userId: 'USR-10928',
-        title: '🏋️ Field Session Scheduled',
-        body: 'High intensity tackle session set for Thursday 16:30 at Overkruin Main Field.',
-        type: 'event_schedule',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 24)).toIso8601String(),
-      ),
-      NotificationItem(
-        id: 4,
-        userId: 'USR-10928',
-        title: '📲 Push Notification Active',
-        body: 'Your device is registered for Overkruin Academy push alerts.',
-        type: 'system',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-      ),
-    ];
-
-    state = state.copyWith(
-      notifications: fallbackList,
-      unreadCount: fallbackList.where((n) => !n.isRead).length,
-      loading: false,
-    );
   }
 
   void setFilter(String filter) {
@@ -164,9 +117,11 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     state = state.copyWith(notifications: updatedList, unreadCount: newUnread);
 
     try {
-      await _apiClient.dio.delete('/api/notifications/$id');
+      await _apiClient.dio.post('/api/notifications/$id/delete');
     } catch (_) {
-      // Handled silently
+      try {
+        await _apiClient.dio.delete('/api/notifications/$id');
+      } catch (_) {}
     }
   }
 
