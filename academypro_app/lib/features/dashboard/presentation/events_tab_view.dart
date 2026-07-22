@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -5,7 +6,6 @@ import 'package:intl/intl.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/checkin_controller.dart';
 import 'create_event_modal.dart';
-import 'octiv_workout_viewer_modal.dart';
 
 class EventsTabView extends ConsumerStatefulWidget {
   const EventsTabView({Key? key}) : super(key: key);
@@ -51,30 +51,32 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Headline Section
+                  // ===================================================================
+                  // 1. CLEAN HEADER (Fixed layout, no text collision)
+                  // ===================================================================
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Command Events',
+                              'Events & Schedule',
                               style: TextStyle(
-                                fontSize: 24.0,
+                                fontSize: 22.0,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF131B2E),
+                                color: Color(0xFF0F172A),
                               ),
                             ),
-                            SizedBox(height: 4.0),
+                            SizedBox(height: 2.0),
                             Text(
-                              'Schedule and periodization training calendar.',
+                              'Manage training sessions, gym tests & matches',
                               style: TextStyle(
-                                fontSize: 14.0,
-                                color: Color(0xFF434656),
+                                fontSize: 12.5,
+                                color: Color(0xFF64748B),
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -86,29 +88,25 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                           CreateEventModal.show(context);
                         },
                         icon: const Icon(Icons.add, size: 18.0),
-                        label: const Text('Add Event'),
+                        label: const Text('Add Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF003EC7),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13.0,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 24.0),
+                  const SizedBox(height: 20.0),
 
-                  // Today's Events Section
+                  // ===================================================================
+                  // 2. TODAY'S EVENTS SECTION
+                  // ===================================================================
                   const Text(
-                    "TODAY'S SCHEDULED EVENTS",
+                    "TODAY'S SCHEDULE",
                     style: TextStyle(
                       fontSize: 11.0,
                       fontWeight: FontWeight.bold,
@@ -116,7 +114,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                       letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 12.0),
+                  const SizedBox(height: 10.0),
 
                   if (todayEvents.isEmpty)
                     Container(
@@ -129,11 +127,11 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                       ),
                       child: const Column(
                         children: [
-                          Icon(Icons.event_available, color: Color(0xFF64748B), size: 36.0),
+                          Icon(Icons.event_busy, color: Color(0xFF94A3B8), size: 36.0),
                           SizedBox(height: 8.0),
                           Text(
-                            'No scheduled events for today',
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14.0, fontWeight: FontWeight.w500),
+                            'No sessions scheduled for today',
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 13.5, fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -144,31 +142,53 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: todayEvents.length,
                       separatorBuilder: (ctx, i) => const SizedBox(height: 12.0),
-                      itemBuilder: (ctx, i) => _buildEventCard(context, todayEvents[i]),
+                      itemBuilder: (context, index) {
+                        return _buildEventCard(context, todayEvents[index]);
+                      },
                     ),
 
-                  const SizedBox(height: 28.0),
+                  const SizedBox(height: 24.0),
 
-                  // Upcoming Events Section
-                  if (upcomingEvents.isNotEmpty) ...[
-                    const Text(
-                      'UPCOMING EVENTS',
-                      style: TextStyle(
-                        fontSize: 11.0,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF64748B),
-                        letterSpacing: 1.2,
+                  // ===================================================================
+                  // 3. UPCOMING EVENTS SECTION
+                  // ===================================================================
+                  const Text(
+                    'UPCOMING SESSIONS',
+                    style: TextStyle(
+                      fontSize: 11.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 10.0),
+
+                  if (upcomingEvents.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                    ),
-                    const SizedBox(height: 12.0),
+                      child: const Center(
+                        child: Text(
+                          'No upcoming events scheduled',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 13.5, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    )
+                  else
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: upcomingEvents.length,
                       separatorBuilder: (ctx, i) => const SizedBox(height: 12.0),
-                      itemBuilder: (ctx, i) => _buildEventCard(context, upcomingEvents[i]),
+                      itemBuilder: (context, index) {
+                        return _buildEventCard(context, upcomingEvents[index]);
+                      },
                     ),
-                  ],
 
                   const SizedBox(height: 32.0),
                 ],
@@ -250,105 +270,134 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: leftBorderColor, width: 5.0)),
-            ),
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                      decoration: BoxDecoration(
-                        color: badgeBgColor,
-                        borderRadius: BorderRadius.circular(999.0),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Left Category Indicator Accent Bar
+              Container(
+                width: 6.0,
+                decoration: BoxDecoration(
+                  color: leftBorderColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16.0),
+                    bottomLeft: Radius.circular(16.0),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(iconData, color: badgeTextColor, size: 13.0),
-                          const SizedBox(width: 4.0),
+                          // Category Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                            decoration: BoxDecoration(
+                              color: badgeBgColor,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(iconData, size: 13.0, color: badgeTextColor),
+                                const SizedBox(width: 4.0),
+                                Text(
+                                  badgeText.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: badgeTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              if (event.isImportant)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  margin: const EdgeInsets.only(right: 6.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF3C7),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.star, color: Color(0xFFD97706), size: 12.0),
+                                      SizedBox(width: 4.0),
+                                      Text(
+                                        'IMPORTANT',
+                                        style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              const Icon(Icons.arrow_forward_ios, size: 14.0, color: Color(0xFF94A3B8)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10.0),
+                      Text(
+                        event.title,
+                        style: const TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 6.0),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 14.0, color: Color(0xFF64748B)),
+                          const SizedBox(width: 6.0),
                           Text(
-                            badgeText.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10.0,
-                              fontWeight: FontWeight.bold,
-                              color: badgeTextColor,
-                              letterSpacing: 0.5,
+                            '${event.startTime} • ${event.date} (${event.durationMins ?? 60}m)',
+                            style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(width: 12.0),
+                          const Icon(Icons.location_on_outlined, size: 14.0, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4.0),
+                          Expanded(
+                            child: Text(
+                              event.location,
+                              style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, color: leftBorderColor, size: 14.0),
-                        const SizedBox(width: 4.0),
-                        Text(
-                          '${event.startTime} (${event.durationMins ?? 90}m)',
-                          style: TextStyle(
-                            fontSize: 13.0,
-                            fontWeight: FontWeight.bold,
-                            color: leftBorderColor,
+                      if (event.workoutImagePath != null && event.eventType != 'Match') ...[
+                        const SizedBox(height: 10.0),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.photo, color: Color(0xFF166534), size: 13.0),
+                              SizedBox(width: 6.0),
+                              Text(
+                                'Workout Photo Attached',
+                                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10.0),
-                Text(
-                  event.title,
-                  style: const TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6.0),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, color: Color(0xFF64748B), size: 14.0),
-                    const SizedBox(width: 4.0),
-                    Expanded(
-                      child: Text(
-                        event.location,
-                        style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                if (event.workoutAttachmentName != null) ...[
-                  const SizedBox(height: 10.0),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.attachment, color: Color(0xFF2563EB), size: 13.0),
-                        const SizedBox(width: 6.0),
-                        Text(
-                          event.workoutAttachmentName!,
-                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -358,108 +407,153 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
   void _showEventDetailsBottomSheet(BuildContext context, CoachEvent event) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24.0),
+      builder: (ctx) => SafeArea(
+        top: false,
+        bottom: true,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24.0, 20.0, 24.0, MediaQuery.of(context).padding.bottom + 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      event.title,
+                      style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                '${event.eventType} • ${event.startTime} • ${event.location}',
+                style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20.0),
+
+              // View Workout Photo Button (Only when photo exists and NOT on Match Days)
+              if (event.workoutImagePath != null && event.eventType != 'Match') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showWorkoutImageDialog(context, event.workoutImagePath!);
+                    },
+                    icon: const Icon(Icons.photo, size: 18.0),
+                    label: const Text('View Workout Routine Photo', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10.0),
+              ],
+
+              // Start Practice Check-In CTA Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ref.read(checkInProvider.notifier).selectEvent(event);
+                  },
+                  icon: const Icon(Icons.qr_code_scanner, size: 18.0),
+                  label: const Text('Start Practice Check-In For This Event', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003EC7),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14.0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10.0),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        CreateEventModal.show(context, eventToEdit: event);
+                      },
+                      icon: const Icon(Icons.edit, size: 16.0),
+                      label: const Text('Edit Event'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10.0),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ref.read(dashboardEventsProvider.notifier).deleteEvent(event.id);
+                      },
+                      icon: const Icon(Icons.delete, size: 16.0, color: Color(0xFFEF4444)),
+                      label: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        side: const BorderSide(color: Color(0xFFFECACA)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showWorkoutImageDialog(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  event.title,
-                  style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8.0),
-            Text(
-              '${event.eventType} • ${event.startTime} • ${event.location}',
-              style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 20.0),
-
-            // View Octiv Workout Routine Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  OctivWorkoutViewerModal.show(context, event);
-                },
-                icon: const Icon(Icons.fitness_center, size: 18.0),
-                label: const Text('View Octiv Workout Routine', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Workout Routine Photo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
               ),
             ),
-            const SizedBox(height: 10.0),
-
-            // Start Practice Check-In CTA Button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ref.read(checkInProvider.notifier).selectEvent(event);
-                },
-                icon: const Icon(Icons.qr_code_scanner, size: 18.0),
-                label: const Text('Start Practice Check-In For This Event'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF003EC7),
-                  padding: const EdgeInsets.symmetric(vertical: 14.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                  side: const BorderSide(color: Color(0xFFBFDBFE)),
-                ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12.0),
+                child: imagePath.startsWith('assets/')
+                    ? Image.asset(imagePath, fit: BoxFit.contain)
+                    : Image.file(File(imagePath), fit: BoxFit.contain),
               ),
-            ),
-            const SizedBox(height: 10.0),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      CreateEventModal.show(context, eventToEdit: event);
-                    },
-                    icon: const Icon(Icons.edit, size: 16.0),
-                    label: const Text('Edit Event'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10.0),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ref.read(dashboardEventsProvider.notifier).deleteEvent(event.id);
-                    },
-                    icon: const Icon(Icons.delete, size: 16.0, color: Color(0xFFEF4444)),
-                    label: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      side: const BorderSide(color: Color(0xFFFECACA)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

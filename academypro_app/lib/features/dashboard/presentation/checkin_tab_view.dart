@@ -42,6 +42,8 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
@@ -54,57 +56,63 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
         );
         todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
 
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  Icon(Icons.event_available, color: Color(0xFF003EC7), size: 24.0),
-                  SizedBox(width: 10.0),
-                  Text(
-                    'Select Event First',
-                    style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+        return SafeArea(
+          top: false,
+          bottom: true,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24.0, 20.0, 24.0, MediaQuery.of(context).padding.bottom + 24.0),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.event_available, color: Color(0xFF003EC7), size: 24.0),
+                      SizedBox(width: 10.0),
+                      Text(
+                        'Select Event First',
+                        style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 6.0),
+                  const Text(
+                    'Please select which scheduled session you are taking attendance for before marking players.',
+                    style: TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 16.0),
+                  if (todayEvents.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text('No scheduled events found for today. Please create an event first.', style: TextStyle(color: Color(0xFF64748B))),
+                    )
+                  else
+                    Column(
+                      children: todayEvents.map((event) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            tileColor: const Color(0xFFF8FAFC),
+                            leading: const Icon(Icons.sports_soccer, color: Color(0xFF003EC7)),
+                            title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
+                            subtitle: Text('${event.startTime} • ${event.location}', style: const TextStyle(fontSize: 12.0)),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 14.0, color: Color(0xFF003EC7)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              ref.read(checkInProvider.notifier).selectEvent(event);
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
                 ],
               ),
-              const SizedBox(height: 6.0),
-              const Text(
-                'Please select which scheduled session you are taking attendance for before marking players.',
-                style: TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 16.0),
-              if (todayEvents.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Text('No scheduled events found for today. Please create an event first.', style: TextStyle(color: Color(0xFF64748B))),
-                )
-              else
-                Column(
-                  children: todayEvents.map((event) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        tileColor: const Color(0xFFF8FAFC),
-                        leading: const Icon(Icons.sports_soccer, color: Color(0xFF003EC7)),
-                        title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
-                        subtitle: Text('${event.startTime} • ${event.location}', style: const TextStyle(fontSize: 12.0)),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 14.0, color: Color(0xFF003EC7)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          ref.read(checkInProvider.notifier).selectEvent(event);
-                        },
-                      ),
-                    );
-                  }).toList(),
-                ),
-            ],
+            ),
           ),
         );
       },

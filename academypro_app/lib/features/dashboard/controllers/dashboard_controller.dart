@@ -544,8 +544,7 @@ class CoachEvent {
   final bool isImportant;
   final int? completionCount;
   final String recurrenceRule;
-  final String? workoutAttachmentName;
-  final String? workoutText;
+  final String? workoutImagePath;
 
   CoachEvent({
     required this.id,
@@ -559,8 +558,7 @@ class CoachEvent {
     required this.isImportant,
     this.completionCount,
     this.recurrenceRule = 'Does Not Repeat',
-    this.workoutAttachmentName,
-    this.workoutText,
+    this.workoutImagePath,
   });
 
   CoachEvent copyWith({
@@ -575,8 +573,7 @@ class CoachEvent {
     bool? isImportant,
     int? completionCount,
     String? recurrenceRule,
-    String? workoutAttachmentName,
-    String? workoutText,
+    String? workoutImagePath,
   }) {
     return CoachEvent(
       id: id ?? this.id,
@@ -590,8 +587,7 @@ class CoachEvent {
       isImportant: isImportant ?? this.isImportant,
       completionCount: completionCount ?? this.completionCount,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
-      workoutAttachmentName: workoutAttachmentName ?? this.workoutAttachmentName,
-      workoutText: workoutText ?? this.workoutText,
+      workoutImagePath: workoutImagePath ?? this.workoutImagePath,
     );
   }
 
@@ -608,8 +604,7 @@ class CoachEvent {
       isImportant: json['isImportant'] == true,
       completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
       recurrenceRule: json['recurrenceRule'] ?? 'Does Not Repeat',
-      workoutAttachmentName: json['workoutAttachmentName'],
-      workoutText: json['workoutText'],
+      workoutImagePath: json['workoutImagePath'] ?? json['workoutAttachmentName'],
     );
   }
 }
@@ -632,7 +627,6 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       location: 'Field A',
       isImportant: false,
       completionCount: 2,
-      workoutAttachmentName: 'Field_Session_Drills.pdf',
     ),
     CoachEvent(
       id: 102,
@@ -645,29 +639,6 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       location: 'Gym Facility',
       isImportant: false,
       completionCount: 3,
-      workoutAttachmentName: 'LowerBody_Power_Routine.png',
-      workoutText: '''Part A:
-EFFORT
-Measure: Time (Speed)
-IN PAIRS:
-
-200/150 | 250/200 | 300/250 Calorie Machine
-
-Into
-
-10 Rounds | You Go I Go (5 each)
-3-5 Devils Press
-6-10 Box Step or Jump Overs
-
-Into
-
-8 Rounds | You Go, I Go (4 each)
-8-12 Dumbbell Push Press
-6-12 Shuttle Runs (7.5m)
-
-(Cap: 40 Minutes)
-
-*single or dual dumbbell Devils Press & Push Press''',
     ),
     CoachEvent(
       id: 103,
@@ -717,8 +688,7 @@ Into
     int? durationMins,
     bool isImportant = false,
     String recurrenceRule = 'Does Not Repeat',
-    String? workoutAttachmentName,
-    String? workoutText,
+    String? workoutImagePath,
   }) async {
     final newEvent = CoachEvent(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -731,8 +701,7 @@ Into
       location: location,
       isImportant: isImportant,
       recurrenceRule: recurrenceRule,
-      workoutAttachmentName: workoutAttachmentName,
-      workoutText: workoutText,
+      workoutImagePath: workoutImagePath,
     );
 
     state.whenData((currentList) {
@@ -749,8 +718,7 @@ Into
         'durationMins': durationMins,
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
-        'workoutAttachmentName': workoutAttachmentName,
-        'workoutText': workoutText,
+        'workoutImagePath': workoutImagePath,
       });
     } catch (_) {}
     return true;

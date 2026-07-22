@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,6 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
   final _durationController = TextEditingController(text: '90');
-  final _workoutTextController = TextEditingController();
 
   String _selectedEventType = 'Field';
   DateTime _selectedDate = DateTime.now();
@@ -38,7 +38,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   String _selectedRecurrence = 'Does Not Repeat';
   bool _isImportant = false;
   bool _isSubmitting = false;
-  String? _attachedWorkoutName;
+  String? _attachedImagePath;
 
   Map<String, List<String>> _userLocationHistory = {};
 
@@ -50,29 +50,6 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   ];
 
   final List<int> _durationOptions = [30, 45, 60, 90, 120];
-
-  static const String _sampleOctivRoutine = '''Part A:
-EFFORT
-Measure: Time (Speed)
-IN PAIRS:
-
-200/150 | 250/200 | 300/250 Calorie Machine
-
-Into
-
-10 Rounds | You Go I Go (5 each)
-3-5 Devils Press
-6-10 Box Step or Jump Overs
-
-Into
-
-8 Rounds | You Go, I Go (4 each)
-8-12 Dumbbell Push Press
-6-12 Shuttle Runs (7.5m)
-
-(Cap: 40 Minutes)
-
-*single or dual dumbbell Devils Press & Push Press''';
 
   @override
   void initState() {
@@ -87,8 +64,7 @@ Into
       _selectedEventType = e.eventType;
       _isImportant = e.isImportant;
       _selectedRecurrence = e.recurrenceRule;
-      _attachedWorkoutName = e.workoutAttachmentName;
-      _workoutTextController.text = e.workoutText ?? '';
+      _attachedImagePath = e.workoutImagePath;
       if (e.date.isNotEmpty) {
         _selectedDate = DateTime.tryParse(e.date) ?? DateTime.now();
       }
@@ -128,37 +104,77 @@ Into
     }
   }
 
-  Future<void> _pasteFromClipboard() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data != null && data.text != null && data.text!.isNotEmpty) {
-      HapticFeedback.lightImpact();
-      setState(() {
-        _workoutTextController.text = data.text!;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF0F172A),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-            content: const Row(
-              children: [
-                Icon(Icons.assignment_turned_in, color: Color(0xFF22C55E), size: 18.0),
-                SizedBox(width: 8.0),
-                Text('Pasted workout text from clipboard!'),
-              ],
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  void _insertSampleOctivRoutine() {
+  Future<void> _pickWorkoutImage() async {
     HapticFeedback.lightImpact();
-    setState(() {
-      _workoutTextController.text = _sampleOctivRoutine;
-    });
+
+    // Show source choice modal (Camera or Gallery)
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (ctx) => SafeArea(
+        top: false,
+        bottom: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Upload Workout Routine Picture',
+                style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 16.0),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF003EC7)),
+                title: const Text('Take Photo With Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF003EC7)),
+                title: const Text('Choose From Photo Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final picker = ImagePicker();
+      final XFile? file = await picker.pickImage(source: source, imageQuality: 85);
+
+      // Only update state if a picture was ACTUALLY chosen
+      if (file != null) {
+        setState(() {
+          _attachedImagePath = file.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF0F172A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 18.0),
+                  SizedBox(width: 8.0),
+                  Text('Workout routine photo added successfully!'),
+                ],
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Ignore cancelled or unsupported camera errors silently
+    }
   }
 
   @override
@@ -166,7 +182,6 @@ Into
     _titleController.dispose();
     _locationController.dispose();
     _durationController.dispose();
-    _workoutTextController.dispose();
     super.dispose();
   }
 
@@ -222,21 +237,6 @@ Into
     }
   }
 
-  Future<void> _pickWorkoutFile() async {
-    HapticFeedback.lightImpact();
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    if (file != null) {
-      setState(() {
-        _attachedWorkoutName = file.name;
-      });
-    } else {
-      setState(() {
-        _attachedWorkoutName = 'Workout_Program_${_selectedEventType}_Session.pdf';
-      });
-    }
-  }
-
   String _formatDateStr(DateTime dt) {
     final year = dt.year;
     final month = dt.month.toString().padLeft(2, '0');
@@ -264,12 +264,14 @@ Into
     final durationMins = int.tryParse(_durationController.text.trim()) ?? 90;
     final dateStr = _formatDateStr(_selectedDate);
     final timeStr = _formatTimeStr(_selectedTime);
-    final workoutText = _workoutTextController.text.trim();
 
     // Save location to user history for this training type
     await _saveLocationToHistory(_selectedEventType, location);
 
     bool success = false;
+
+    // Match Days never store workout images
+    final imagePathToSave = _selectedEventType == 'Match' ? null : _attachedImagePath;
 
     if (widget.eventToEdit != null) {
       final updated = widget.eventToEdit!.copyWith(
@@ -281,8 +283,7 @@ Into
         durationMins: durationMins,
         isImportant: _isImportant,
         recurrenceRule: _selectedRecurrence,
-        workoutAttachmentName: _attachedWorkoutName,
-        workoutText: workoutText.isNotEmpty ? workoutText : null,
+        workoutImagePath: imagePathToSave,
       );
       success = await ref.read(dashboardEventsProvider.notifier).updateEvent(updated);
     } else {
@@ -295,8 +296,7 @@ Into
             durationMins: durationMins,
             isImportant: _isImportant,
             recurrenceRule: _selectedRecurrence,
-            workoutAttachmentName: _attachedWorkoutName,
-            workoutText: workoutText.isNotEmpty ? workoutText : null,
+            workoutImagePath: imagePathToSave,
           );
     }
 
@@ -761,80 +761,117 @@ Into
 
                     const SizedBox(height: 20.0),
 
-                    // 5. OCTIV-STYLE WORKOUT ROUTINE TEXT INPUT (NO PDF REQUIRED)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'WORKOUT ROUTINE TEXT (OCTIV VIEW)',
-                          style: TextStyle(
-                            fontSize: 11.0,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF64748B),
-                            letterSpacing: 1.0,
-                          ),
+                    // 5. WORKOUT ROUTINE PICTURE UPLOAD (HIDDEN ON MATCH DAYS)
+                    if (_selectedEventType != 'Match') ...[
+                      Container(
+                        padding: const EdgeInsets.all(14.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14.0),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            InkWell(
-                              onTap: _pasteFromClipboard,
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.content_paste, size: 12.0, color: Color(0xFF003EC7)),
-                                    SizedBox(width: 4.0),
-                                    Text('Paste', style: TextStyle(fontSize: 11.0, color: Color(0xFF003EC7), fontWeight: FontWeight.bold)),
-                                  ],
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: const Icon(Icons.add_a_photo, color: Color(0xFF003EC7), size: 18.0),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 8.0),
-                            InkWell(
-                              onTap: _insertSampleOctivRoutine,
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.auto_fix_high, size: 12.0, color: Color(0xFF10B981)),
-                                    SizedBox(width: 4.0),
-                                    Text('Sample', style: TextStyle(fontSize: 11.0, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
-                                  ],
+                                const SizedBox(width: 12.0),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'WORKOUT ROUTINE PHOTO',
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF475569),
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2.0),
+                                      Text(
+                                        _attachedImagePath != null ? 'Photo attached & saved' : 'Optional picture upload for athletes',
+                                        style: TextStyle(
+                                          fontSize: 12.0,
+                                          color: _attachedImagePath != null ? const Color(0xFF166534) : const Color(0xFF94A3B8),
+                                          fontWeight: _attachedImagePath != null ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 8.0),
+                                OutlinedButton.icon(
+                                  onPressed: _pickWorkoutImage,
+                                  icon: Icon(_attachedImagePath != null ? Icons.edit : Icons.camera_alt, size: 14.0),
+                                  label: Text(_attachedImagePath != null ? 'Change' : 'Upload'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF003EC7),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                                    side: const BorderSide(color: Color(0xFFBFDBFE)),
+                                  ),
+                                ),
+                              ],
                             ),
+
+                            // Thumbnail preview if image was ACTUALLY chosen
+                            if (_attachedImagePath != null) ...[
+                              const SizedBox(height: 12.0),
+                              Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    child: Container(
+                                      height: 140.0,
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black12,
+                                        borderRadius: BorderRadius.circular(12.0),
+                                      ),
+                                      child: _attachedImagePath!.startsWith('assets/')
+                                          ? Image.asset(_attachedImagePath!, fit: BoxFit.cover)
+                                          : Image.file(File(_attachedImagePath!), fit: BoxFit.cover),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8.0,
+                                    right: 8.0,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _attachedImagePath = null;
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6.0),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close, color: Colors.white, size: 16.0),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    TextFormField(
-                      controller: _workoutTextController,
-                      minLines: 4,
-                      maxLines: 8,
-                      style: const TextStyle(fontSize: 13.0, fontFamily: 'monospace', color: Color(0xFF0F172A), height: 1.4),
-                      decoration: InputDecoration(
-                        hintText: 'Paste or type workout details here...\ne.g.\nPart A: EFFORT\n10 Rounds | You Go I Go\n3-5 Devils Press',
-                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        contentPadding: const EdgeInsets.all(14.0),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14.0),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14.0),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14.0),
-                          borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5),
-                        ),
                       ),
-                    ),
-
-                    const SizedBox(height: 16.0),
+                      const SizedBox(height: 16.0),
+                    ],
 
                     // IMPORTANT / HIGH PRIORITY SWITCH TILE
                     Container(
@@ -865,7 +902,7 @@ Into
 
                     const SizedBox(height: 24.0),
 
-                    // SUBMIT EVENT BUTTON (SAFEAREA AWARE)
+                    // SUBMIT EVENT BUTTON (SAFEAREA AWARE WITH SOLID BACKGROUND PADDING)
                     SafeArea(
                       top: false,
                       bottom: true,
