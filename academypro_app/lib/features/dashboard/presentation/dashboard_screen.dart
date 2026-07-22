@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/local_storage.dart';
+import '../../../core/utils/phone_utils.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/roster_controller.dart';
 import '../../auth/presentation/auth_state.dart';
@@ -739,7 +740,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               launchUrl(Uri.parse('tel:$clean'));
                             },
                             child: Text(
-                              item.parentPhone,
+                              PhoneUtils.formatRSAPhone(item.parentPhone),
                               style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
                             ),
                           ),
@@ -829,7 +830,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           launchUrl(Uri.parse('tel:$clean'));
                         },
                         child: Text(
-                          '${item.playerName}: ${item.playerPhone}',
+                          '${item.playerName}: ${PhoneUtils.formatRSAPhone(item.playerPhone)}',
                           style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
                         ),
                       ),

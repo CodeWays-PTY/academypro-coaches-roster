@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/utils/phone_utils.dart';
 
 class ProfileTabView extends ConsumerStatefulWidget {
   const ProfileTabView({Key? key}) : super(key: key);
@@ -238,7 +239,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     final apiClient = ref.read(apiClientProvider);
     apiClient.post(
       '/api/sms/send-verification',
-      data: {'phone': phone, 'name': name},
+      data: {'phone': PhoneUtils.toCleanRSAPhone(phone), 'name': name},
     ).catchError((_) {});
 
     showModalBottomSheet(
@@ -518,7 +519,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                   child: ElevatedButton(
                     onPressed: () async {
                       HapticFeedback.mediumImpact();
-                      final newPhone = phoneController.text.trim();
+                      final newPhone = PhoneUtils.formatRSAPhone(phoneController.text.trim());
                       final oldPhone = currentProfile['phone'] ?? '';
                       final isPhoneChanged = newPhone != oldPhone || currentProfile['phoneVerified'] != true;
 
@@ -608,7 +609,24 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
           keyboardType: keyboardType,
           style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 15.0),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: const Color(0xFF2563EB), size: 20.0),
+            prefixIcon: keyboardType == TextInputType.phone
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 12.0, right: 8.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text('🇿🇦', style: TextStyle(fontSize: 16.0)),
+                        SizedBox(width: 4.0),
+                        Text(
+                          '+27',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003EC7), fontSize: 14.0),
+                        ),
+                        SizedBox(width: 6.0),
+                        Icon(Icons.phone_outlined, color: Color(0xFF2563EB), size: 18.0),
+                      ],
+                    ),
+                  )
+                : Icon(icon, color: const Color(0xFF2563EB), size: 20.0),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),

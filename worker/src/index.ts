@@ -1716,7 +1716,12 @@ app.post('/api/sms/send-verification', async (c) => {
   }
 
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const cleanPhone = phone.replace(/[^\d+]/g, '');
+  let cleanPhone = phone.replace(/[^\d+]/g, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '+27' + cleanPhone.slice(1);
+  } else if (!cleanPhone.startsWith('+')) {
+    cleanPhone = '+27' + cleanPhone;
+  }
   const apiKey = c.env.INTERNAL_API_KEY || 'agua_internal_secret_key_102938';
 
   try {

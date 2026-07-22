@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
-import '../../auth/presentation/auth_state.dart';
+import '../../../core/utils/phone_utils.dart';
 
 class RosterPlayer {
   final String id;
@@ -25,7 +25,7 @@ class RosterPlayer {
     required this.ugroupsActive,
     this.age,
     String? parentPhone,
-  }) : parentPhone = parentPhone ?? '0821234567';
+  }) : parentPhone = PhoneUtils.formatRSAPhone(parentPhone ?? '+27 82 123 4567');
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
     return RosterPlayer(
@@ -38,7 +38,7 @@ class RosterPlayer {
       status: json['status'] ?? 'Active',
       ugroupsActive: json['ugroupsActive'] ?? 0,
       age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
-      parentPhone: json['parentPhone'] ?? json['parentContact'] ?? '0821234567',
+      parentPhone: PhoneUtils.formatRSAPhone(json['parentPhone'] ?? json['parentContact'] ?? '+27 82 123 4567'),
     );
   }
 }
