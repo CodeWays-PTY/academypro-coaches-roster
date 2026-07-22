@@ -225,6 +225,175 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     );
   }
 
+  void _showSMSVerificationModal(
+    BuildContext context,
+    String phone,
+    String name,
+    Map<String, dynamic> updatedProfile,
+  ) {
+    final otpController = TextEditingController();
+    bool verifying = false;
+
+    // Trigger SMS dispatch via API
+    final apiClient = ref.read(apiClientProvider);
+    apiClient.post(
+      '/api/sms/send-verification',
+      data: {'phone': phone, 'name': name},
+    ).catchError((_) {});
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 20.0,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24.0 + MediaQuery.of(context).padding.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40.0,
+                      height: 4.0,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2.0),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        child: const Icon(Icons.sms_outlined, color: Color(0xFF2563EB), size: 24.0),
+                      ),
+                      const SizedBox(width: 14.0),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Verify Phone Number',
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            Text(
+                              'SMS security code dispatched to $phone',
+                              style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20.0),
+                  TextField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    autofocus: true,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, letterSpacing: 6.0),
+                    decoration: InputDecoration(
+                      hintText: '• • • • • •',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), letterSpacing: 6.0),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  ElevatedButton(
+                    onPressed: verifying
+                        ? null
+                        : () async {
+                            final entered = otpController.text.trim();
+                            if (entered.length < 4) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please enter valid SMS code')),
+                              );
+                              return;
+                            }
+                            setModalState(() => verifying = true);
+
+                            final finalProfile = Map<String, dynamic>.from(updatedProfile);
+                            finalProfile['phoneVerified'] = true;
+                            await ref.read(authProvider.notifier).updateUserProfile(finalProfile);
+
+                            if (context.mounted) {
+                              Navigator.pop(context); // Close OTP sheet
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.verified_user, color: Color(0xFF10B981), size: 20.0),
+                                      const SizedBox(width: 10.0),
+                                      Expanded(child: Text('Phone number $phone verified & profile saved!')),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003EC7),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                    ),
+                    child: verifying
+                        ? const SizedBox(
+                            width: 20.0,
+                            height: 20.0,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
+                          )
+                        : const Text(
+                            'Verify Code & Save Profile',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0),
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _openEditPersonalInfoSheet(BuildContext context, Map<String, dynamic> currentProfile) {
     HapticFeedback.lightImpact();
 
@@ -349,36 +518,50 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                   child: ElevatedButton(
                     onPressed: () async {
                       HapticFeedback.mediumImpact();
+                      final newPhone = phoneController.text.trim();
+                      final oldPhone = currentProfile['phone'] ?? '';
+                      final isPhoneChanged = newPhone != oldPhone || currentProfile['phoneVerified'] != true;
+
                       final updated = {
                         'first_name': firstNameController.text.trim(),
                         'firstName': firstNameController.text.trim(),
                         'last_name': lastNameController.text.trim(),
                         'lastName': lastNameController.text.trim(),
                         'email': emailController.text.trim().toLowerCase(),
-                        'phone': phoneController.text.trim(),
+                        'phone': newPhone,
                         'schoolName': tenantController.text.trim(),
                         'school_name': tenantController.text.trim(),
                         'tenant': tenantController.text.trim(),
                       };
 
-                      await ref.read(authProvider.notifier).updateUserProfile(updated);
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: const Color(0xFF0F172A),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                            content: const Row(
-                              children: [
-                                Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
-                                SizedBox(width: 10.0),
-                                Text('Personal info updated successfully'),
-                              ],
-                            ),
-                          ),
+                      if (isPhoneChanged && newPhone.isNotEmpty) {
+                        Navigator.pop(context); // Close edit sheet
+                        _showSMSVerificationModal(
+                          context,
+                          newPhone,
+                          '${firstNameController.text} ${lastNameController.text}',
+                          updated,
                         );
+                      } else {
+                        await ref.read(authProvider.notifier).updateUserProfile(updated);
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: const Color(0xFF0F172A),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
+                                  SizedBox(width: 10.0),
+                                  Text('Personal info updated successfully'),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(

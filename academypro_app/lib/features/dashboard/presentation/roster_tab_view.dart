@@ -774,67 +774,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         ),
                       ),
                       const SizedBox(height: 10.0),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          HapticFeedback.mediumImpact();
-                          final apiClient = ref.read(apiClientProvider);
-                          final playerName = '${player.firstName} ${player.lastName}';
-                          try {
-                            final res = await apiClient.post(
-                              '/api/sms/send-verification',
-                              data: {
-                                'phone': player.parentPhone,
-                                'name': playerName,
-                              },
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF0F172A),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                  content: Row(
-                                    children: [
-                                      const Icon(Icons.sms, color: Color(0xFF10B981), size: 20.0),
-                                      const SizedBox(width: 10.0),
-                                      Expanded(
-                                        child: Text(
-                                          res.data != null && res.data['success'] == true
-                                              ? 'Verification SMS dispatched to ${player.parentPhone}'
-                                              : 'SMS verification sent to parent contact!',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF0F172A),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                  content: Text('Verification SMS sent to ${player.parentPhone}'),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.sms, size: 18.0),
-                        label: const Text(
-                          'Verify Contact via SMS',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF003EC7),
-                          side: const BorderSide(color: Color(0xFFBFDBFE)),
-                          padding: const EdgeInsets.symmetric(vertical: 14.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                        ),
-                      ),
-                      const SizedBox(height: 10.0),
                       OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(

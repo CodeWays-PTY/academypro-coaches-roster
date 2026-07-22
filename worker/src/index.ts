@@ -891,6 +891,177 @@ app.post('/api/dashboard/events/:id/delete', async (c) => {
   }
 });
 
+// Route: Get Coach Action Plans from D1
+app.get('/api/dashboard/actions', async (c) => {
+  const db = getDB(c);
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS action_plans (
+        id TEXT PRIMARY KEY,
+        school_id TEXT DEFAULT 'OVK',
+        title TEXT NOT NULL,
+        type TEXT NOT NULL,
+        category TEXT,
+        deadline TEXT NOT NULL,
+        date_added TEXT,
+        is_completed INTEGER DEFAULT 0,
+        player_id TEXT,
+        player_name TEXT,
+        parent_name TEXT,
+        parent_phone TEXT,
+        parent_email TEXT,
+        player_phone TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    const { results } = await db.prepare('SELECT * FROM action_plans ORDER BY created_at DESC').all();
+    return c.json({
+      success: true,
+      data: (results || []).map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        type: row.type,
+        category: row.category || row.type,
+        deadline: row.deadline,
+        dateAdded: row.date_added || 'Today',
+        isCompleted: Boolean(row.is_completed),
+        playerId: row.player_id,
+        playerName: row.player_name || '',
+        parentName: row.parent_name || 'Parent Contact',
+        parentPhone: row.parent_phone || '+27 82 555 0192',
+        parentEmail: row.parent_email || 'parent@academypro.co.za',
+        playerPhone: row.player_phone || '+27 71 444 8821',
+        notes: row.notes || 'Follow up required with coaching staff.'
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to fetch action plans', error: err.message }, 500);
+  }
+});
+
+// Route: Create Coach Action Plan in D1
+app.post('/api/dashboard/actions', async (c) => {
+  const db = getDB(c);
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { id, title, type, category, deadline, playerId, playerName, notes } = body;
+  const actionId = id || `ACT-${Date.now()}`;
+
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS action_plans (
+        id TEXT PRIMARY KEY,
+        school_id TEXT DEFAULT 'OVK',
+        title TEXT NOT NULL,
+        type TEXT NOT NULL,
+        category TEXT,
+        deadline TEXT NOT NULL,
+        date_added TEXT,
+        is_completed INTEGER DEFAULT 0,
+        player_id TEXT,
+        player_name TEXT,
+        parent_name TEXT,
+        parent_phone TEXT,
+        parent_email TEXT,
+        player_phone TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    await db.prepare(`
+      INSERT INTO action_plans (id, title, type, category, deadline, date_added, is_completed, player_id, player_name, notes)
+      VALUES (?, ?, ?, ?, ?, 'Today', 0, ?, ?, ?)
+    `).bind(
+      actionId,
+      title ? title.trim() : 'Coach Action Item',
+      type ? type.trim() : 'General',
+      category ? category.trim() : 'General',
+      deadline ? deadline.trim() : 'Today',
+      playerId || null,
+      playerName ? playerName.trim() : '',
+      notes ? notes.trim() : ''
+    ).run();
+
+    return c.json({
+      success: true,
+      message: 'Action plan created successfully',
+      data: {
+        id: actionId,
+        title,
+        type: type || 'General',
+        category: category || type || 'General',
+        deadline: deadline || 'Today',
+        isCompleted: false,
+        playerId,
+        playerName: playerName || ''
+      }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to create action plan', error: err.message }, 500);
+  }
+});
+
+// Route: Toggle Action Plan Completion Status in D1
+app.post('/api/dashboard/actions/:id/toggle', async (c) => {
+  const id = c.req.param('id');
+  const db = getDB(c);
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS action_plans (
+        id TEXT PRIMARY KEY,
+        school_id TEXT DEFAULT 'OVK',
+        title TEXT NOT NULL,
+        type TEXT NOT NULL,
+        category TEXT,
+        deadline TEXT NOT NULL,
+        date_added TEXT,
+        is_completed INTEGER DEFAULT 0,
+        player_id TEXT,
+        player_name TEXT,
+        parent_name TEXT,
+        parent_phone TEXT,
+        parent_email TEXT,
+        player_phone TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    await db.prepare('UPDATE action_plans SET is_completed = CASE WHEN is_completed = 1 THEN 0 ELSE 1 END WHERE id = ?').bind(id).run();
+    return c.json({ success: true, message: 'Action plan status updated successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to update action plan status', error: err.message }, 500);
+  }
+});
+
+// Route: Delete Action Plan from D1
+app.post('/api/dashboard/actions/:id/delete', async (c) => {
+  const id = c.req.param('id');
+  const db = getDB(c);
+  try {
+    await db.prepare('DELETE FROM action_plans WHERE id = ?').bind(id).run();
+    return c.json({ success: true, message: 'Action plan deleted successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to delete action plan', error: err.message }, 500);
+  }
+});
+
 // Route: Get Rising Stars (Top performers by age group)
 app.get('/api/dashboard/rising-stars', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;

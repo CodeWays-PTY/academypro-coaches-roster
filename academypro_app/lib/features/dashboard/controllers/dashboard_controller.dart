@@ -439,7 +439,11 @@ class CoachActionItem {
 }
 
 class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
-  CoachActionNotifier() : super(_defaultActions);
+  final ApiClient _apiClient;
+
+  CoachActionNotifier(this._apiClient) : super(_defaultActions) {
+    fetchActions();
+  }
 
   static final List<CoachActionItem> _defaultActions = [
     CoachActionItem(
@@ -469,16 +473,45 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
     ),
   ];
 
-  void addAction({
+  Future<void> fetchActions() async {
+    try {
+      final res = await _apiClient.getAndCache('/api/dashboard/actions');
+      if (res.statusCode == 200 && res.data['success'] == true) {
+        final List list = res.data['data'] ?? [];
+        if (list.isNotEmpty) {
+          final items = list.map((x) => CoachActionItem(
+            id: x['id'].toString(),
+            title: x['title'] ?? '',
+            type: x['type'] ?? 'General',
+            category: x['category'] ?? 'General',
+            deadline: x['deadline'] ?? 'Today',
+            dateAdded: x['dateAdded'] ?? 'Today',
+            isCompleted: x['isCompleted'] == true,
+            playerId: x['playerId'],
+            playerName: x['playerName'] ?? '',
+            parentName: x['parentName'] ?? 'Parent Contact',
+            parentPhone: x['parentPhone'] ?? '+27 82 555 0192',
+            parentEmail: x['parentEmail'] ?? 'parent@academypro.co.za',
+            playerPhone: x['playerPhone'] ?? '+27 71 444 8821',
+            notes: x['notes'] ?? 'Follow up required with coaching staff.',
+          )).toList();
+          state = items;
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> addAction({
     String? playerId,
     String playerName = '',
     required String title,
     String category = 'General',
     String type = 'General',
     String deadline = 'Today, 17:00',
-  }) {
+  }) async {
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
     final newItem = CoachActionItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: newId,
       title: title,
       type: type,
       category: category,
@@ -488,15 +521,32 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
       isCompleted: false,
     );
     state = [newItem, ...state];
+
+    try {
+      await _apiClient.post('/api/dashboard/actions', data: {
+        'id': newId,
+        'title': title,
+        'type': type,
+        'category': category,
+        'deadline': deadline,
+        'playerId': playerId,
+        'playerName': playerName,
+      });
+      fetchActions();
+    } catch (_) {}
   }
 
-  void toggleAction(String actionId) {
+  Future<void> toggleAction(String actionId) async {
     state = state.map((item) {
       if (item.id == actionId) {
         return item.copyWith(isCompleted: !item.isCompleted);
       }
       return item;
     }).toList();
+
+    try {
+      await _apiClient.post('/api/dashboard/actions/$actionId/toggle');
+    } catch (_) {}
   }
 }
 
@@ -519,7 +569,8 @@ final risingStarsProvider = StateNotifierProvider<RisingStarsNotifier, AsyncValu
 });
 
 final coachActionProvider = StateNotifierProvider<CoachActionNotifier, List<CoachActionItem>>((ref) {
-  return CoachActionNotifier();
+  final apiClient = ref.watch(apiClientProvider);
+  return CoachActionNotifier(apiClient);
 });
 
 final playerActionTasksProvider = Provider.family<List<CoachActionItem>, String?>((ref, playerId) {
