@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../core/services/notification_service.dart';
@@ -17,6 +18,7 @@ class ProfileTabView extends ConsumerStatefulWidget {
 class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
   late bool _pushNotifications;
   bool _offlineDataMode = true;
+  String _appVersion = '1.0.0';
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -25,6 +27,18 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     // Load push notification setting from local storage
     final savedPush = LocalStorage.getCachedData('push_notifications_enabled');
     _pushNotifications = savedPush is bool ? savedPush : true;
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted && info.version.isNotEmpty) {
+        setState(() {
+          _appVersion = info.version;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _handlePushToggle(bool enabled) async {
@@ -702,27 +716,17 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
             ]),
             const SizedBox(height: 24.0),
 
-            // Section 3: App Info & Help
-            _buildSectionTitle('SYSTEM & SUPPORT'),
+            // Section 3: App Info
+            _buildSectionTitle('SYSTEM INFO'),
             const SizedBox(height: 10.0),
             _buildCardGroup([
               _buildSettingTile(
-                icon: Icons.help_outline,
-                title: 'Help & Knowledge Base',
-                subtitle: 'User manuals, scoring guides & video tutorials',
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  _showInfoDialog(context, 'Support', 'Contact CodeWays support at support@codeways.co.za');
-                },
-              ),
-              const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              _buildSettingTile(
                 icon: Icons.info_outline,
                 title: 'About AcademyPro',
-                subtitle: 'Version 1.0.0+4 (Build 4) • Cloudflare D1',
-                trailing: const Text(
-                  'v1.0.0',
-                  style: TextStyle(
+                subtitle: 'High-Performance Sports & Academic Management System',
+                trailing: Text(
+                  'v$_appVersion',
+                  style: const TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF737688),
