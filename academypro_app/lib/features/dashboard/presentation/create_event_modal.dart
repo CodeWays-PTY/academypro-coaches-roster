@@ -30,6 +30,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   final _durationController = TextEditingController(text: '90');
 
   String _selectedEventType = 'Field Session';
+  String _selectedSquad = 'All Squads';
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 16, minute: 30);
   String _selectedIntensity = 'High';
@@ -44,6 +45,64 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     'Development',
     'Gym Session',
   ];
+
+  final List<String> _squads = ['All Squads', 'U15', 'U16', 'U18'];
+
+  final List<Map<String, dynamic>> _quickTemplates = [
+    {
+      'label': '⚽ Field Practice',
+      'title': 'High-Intensity Tactical & Offload Drills',
+      'eventType': 'Field Session',
+      'time': const TimeOfDay(hour: 16, minute: 30),
+      'duration': '90',
+      'location': 'Primary Oval Field 1',
+      'intensity': 'High',
+      'isImportant': false,
+    },
+    {
+      'label': '🏋️ Gym Strength',
+      'title': 'Power Weight Training & Core Conditioning',
+      'eventType': 'Gym Session',
+      'time': const TimeOfDay(hour: 07, minute: 00),
+      'duration': '60',
+      'location': 'High Performance Center',
+      'intensity': 'Medium',
+      'isImportant': false,
+    },
+    {
+      'label': '🤝 uGroup Mentor',
+      'title': 'uGroup Character & Spirit Meeting',
+      'eventType': 'Development',
+      'time': const TimeOfDay(hour: 15, minute: 00),
+      'duration': '45',
+      'location': 'Seminar Room 1',
+      'intensity': 'Low',
+      'isImportant': false,
+    },
+    {
+      'label': '🏟️ Match Day',
+      'title': 'Premier Derby Match',
+      'eventType': 'Match Day',
+      'time': const TimeOfDay(hour: 14, minute: 00),
+      'duration': '120',
+      'location': 'Main Stadium Pitch',
+      'intensity': 'High',
+      'isImportant': true,
+    },
+  ];
+
+  void _applyQuickTemplate(Map<String, dynamic> template) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _titleController.text = template['title'];
+      _selectedEventType = template['eventType'];
+      _selectedTime = template['time'];
+      _durationController.text = template['duration'];
+      _locationController.text = template['location'];
+      _selectedIntensity = template['intensity'];
+      _isImportant = template['isImportant'];
+    });
+  }
 
   final List<String> _intensityLevels = ['Low', 'Medium', 'High'];
 
@@ -305,7 +364,31 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                 style: TextStyle(fontSize: 13.0, color: Color(0xFF737688)),
               ),
               const SizedBox(height: 20.0),
-              const Divider(color: Color(0xFFE2E8F0)),
+              // Quick Preset Templates Banner (uRun Style)
+              _buildLabel('1-TAP QUICK TEMPLATES'),
+              const SizedBox(height: 8.0),
+              SizedBox(
+                height: 38.0,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _quickTemplates.length,
+                  separatorBuilder: (ctx, i) => const SizedBox(width: 8.0),
+                  itemBuilder: (context, index) {
+                    final tmpl = _quickTemplates[index];
+                    return ActionChip(
+                      label: Text(tmpl['label']),
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      labelStyle: const TextStyle(
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF003EC7),
+                      ),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      onPressed: () => _applyQuickTemplate(tmpl),
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 16.0),
 
               // Event Title

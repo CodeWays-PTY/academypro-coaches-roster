@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../controllers/dashboard_controller.dart';
+import '../controllers/checkin_controller.dart';
 import 'create_event_modal.dart';
 
 class EventsTabView extends ConsumerStatefulWidget {
@@ -599,24 +600,66 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
               ],
               const SizedBox(height: 24.0),
 
-              // Coach Edit & Delete Action Buttons Row
+              // Primary Check-In CTA Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    final sessionType = event.eventType == 'Field Session'
+                        ? 'Field Practice'
+                        : (event.eventType == 'Gym Session' ? 'Gym Session' : 'uGroup Session');
+                    ref.read(checkInProvider.notifier).changeSessionType(sessionType);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.qr_code_scanner, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Session ready for check-in: ${event.title}'),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF003EC7),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.qr_code_scanner, size: 20.0),
+                  label: const Text(
+                    'Start Practice Check-In',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF166534),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12.0),
+
+              // Action Buttons Row: Edit, Duplicate, Delete
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
                         CreateEventModal.show(context, eventToEdit: event);
                       },
-                      icon: const Icon(Icons.edit_outlined, size: 18.0),
+                      icon: const Icon(Icons.edit_outlined, size: 16.0),
                       label: const Text(
-                        'Edit Event',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                        'Edit',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003EC7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF003EC7),
+                        side: const BorderSide(color: Color(0xFF93C5FD), width: 1.5),
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
@@ -624,7 +667,58 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12.0),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        HapticFeedback.lightImpact();
+                        final tom = DateTime.now().add(const Duration(days: 1));
+                        final tomStr =
+                            "${tom.year}-${tom.month.toString().padLeft(2, '0')}-${tom.day.toString().padLeft(2, '0')}";
+                        await ref.read(dashboardEventsProvider.notifier).createEvent(
+                              title: '${event.title} (Copy)',
+                              eventType: event.eventType,
+                              startTime: event.startTime,
+                              date: tomStr,
+                              location: event.location,
+                              durationMins: event.durationMins,
+                              intensity: event.intensity,
+                              isImportant: event.isImportant,
+                            );
+                        if (mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: const [
+                                  Icon(Icons.copy, color: Colors.white, size: 18),
+                                  SizedBox(width: 8),
+                                  Text('Event duplicated to tomorrow!'),
+                                ],
+                              ),
+                              backgroundColor: const Color(0xFF0F172A),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy_outlined, size: 16.0),
+                      label: const Text(
+                        'Duplicate',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF475569),
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
@@ -663,10 +757,10 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                           }
                         }
                       },
-                      icon: const Icon(Icons.delete_outline, size: 18.0),
+                      icon: const Icon(Icons.delete_outline, size: 16.0),
                       label: const Text(
                         'Delete',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFDC2626),
