@@ -545,6 +545,7 @@ class CoachEvent {
   final int? completionCount;
   final String recurrenceRule;
   final String? workoutAttachmentName;
+  final String? workoutText;
 
   CoachEvent({
     required this.id,
@@ -559,6 +560,7 @@ class CoachEvent {
     this.completionCount,
     this.recurrenceRule = 'Does Not Repeat',
     this.workoutAttachmentName,
+    this.workoutText,
   });
 
   CoachEvent copyWith({
@@ -574,6 +576,7 @@ class CoachEvent {
     int? completionCount,
     String? recurrenceRule,
     String? workoutAttachmentName,
+    String? workoutText,
   }) {
     return CoachEvent(
       id: id ?? this.id,
@@ -588,6 +591,7 @@ class CoachEvent {
       completionCount: completionCount ?? this.completionCount,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
       workoutAttachmentName: workoutAttachmentName ?? this.workoutAttachmentName,
+      workoutText: workoutText ?? this.workoutText,
     );
   }
 
@@ -605,6 +609,7 @@ class CoachEvent {
       completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
       recurrenceRule: json['recurrenceRule'] ?? 'Does Not Repeat',
       workoutAttachmentName: json['workoutAttachmentName'],
+      workoutText: json['workoutText'],
     );
   }
 }
@@ -641,6 +646,28 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       isImportant: false,
       completionCount: 3,
       workoutAttachmentName: 'LowerBody_Power_Routine.png',
+      workoutText: '''Part A:
+EFFORT
+Measure: Time (Speed)
+IN PAIRS:
+
+200/150 | 250/200 | 300/250 Calorie Machine
+
+Into
+
+10 Rounds | You Go I Go (5 each)
+3-5 Devils Press
+6-10 Box Step or Jump Overs
+
+Into
+
+8 Rounds | You Go, I Go (4 each)
+8-12 Dumbbell Push Press
+6-12 Shuttle Runs (7.5m)
+
+(Cap: 40 Minutes)
+
+*single or dual dumbbell Devils Press & Push Press''',
     ),
     CoachEvent(
       id: 103,
@@ -651,7 +678,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       date: '2026-07-22',
       durationMins: 45,
       location: 'Krieket Field',
-      isImportant: false,
+      isImportant: true,
     ),
     CoachEvent(
       id: 104,
@@ -691,6 +718,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     bool isImportant = false,
     String recurrenceRule = 'Does Not Repeat',
     String? workoutAttachmentName,
+    String? workoutText,
   }) async {
     final newEvent = CoachEvent(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -704,6 +732,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       isImportant: isImportant,
       recurrenceRule: recurrenceRule,
       workoutAttachmentName: workoutAttachmentName,
+      workoutText: workoutText,
     );
 
     state.whenData((currentList) {
@@ -721,6 +750,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
         'workoutAttachmentName': workoutAttachmentName,
+        'workoutText': workoutText,
       });
     } catch (_) {}
     return true;

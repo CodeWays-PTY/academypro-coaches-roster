@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/checkin_controller.dart';
 import 'create_event_modal.dart';
+import 'octiv_workout_viewer_modal.dart';
 
 class EventsTabView extends ConsumerStatefulWidget {
   const EventsTabView({Key? key}) : super(key: key);
@@ -386,21 +387,41 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
             ),
             const SizedBox(height: 20.0),
 
-            // Start Practice Check-In CTA Button
+            // View Octiv Workout Routine Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  OctivWorkoutViewerModal.show(context, event);
+                },
+                icon: const Icon(Icons.fitness_center, size: 18.0),
+                label: const Text('View Octiv Workout Routine', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14.0),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10.0),
+
+            // Start Practice Check-In CTA Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pop(ctx);
                   ref.read(checkInProvider.notifier).selectEvent(event);
                 },
                 icon: const Icon(Icons.qr_code_scanner, size: 18.0),
                 label: const Text('Start Practice Check-In For This Event'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF003EC7),
-                  foregroundColor: Colors.white,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF003EC7),
                   padding: const EdgeInsets.symmetric(vertical: 14.0),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  side: const BorderSide(color: Color(0xFFBFDBFE)),
                 ),
               ),
             ),

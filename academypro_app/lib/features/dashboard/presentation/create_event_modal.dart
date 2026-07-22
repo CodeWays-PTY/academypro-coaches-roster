@@ -30,6 +30,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
   final _durationController = TextEditingController(text: '90');
+  final _workoutTextController = TextEditingController();
 
   String _selectedEventType = 'Field';
   DateTime _selectedDate = DateTime.now();
@@ -50,6 +51,29 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
   final List<int> _durationOptions = [30, 45, 60, 90, 120];
 
+  static const String _sampleOctivRoutine = '''Part A:
+EFFORT
+Measure: Time (Speed)
+IN PAIRS:
+
+200/150 | 250/200 | 300/250 Calorie Machine
+
+Into
+
+10 Rounds | You Go I Go (5 each)
+3-5 Devils Press
+6-10 Box Step or Jump Overs
+
+Into
+
+8 Rounds | You Go, I Go (4 each)
+8-12 Dumbbell Push Press
+6-12 Shuttle Runs (7.5m)
+
+(Cap: 40 Minutes)
+
+*single or dual dumbbell Devils Press & Push Press''';
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +88,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       _isImportant = e.isImportant;
       _selectedRecurrence = e.recurrenceRule;
       _attachedWorkoutName = e.workoutAttachmentName;
+      _workoutTextController.text = e.workoutText ?? '';
       if (e.date.isNotEmpty) {
         _selectedDate = DateTime.tryParse(e.date) ?? DateTime.now();
       }
@@ -103,11 +128,45 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     }
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data != null && data.text != null && data.text!.isNotEmpty) {
+      HapticFeedback.lightImpact();
+      setState(() {
+        _workoutTextController.text = data.text!;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF0F172A),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+            content: const Row(
+              children: [
+                Icon(Icons.assignment_turned_in, color: Color(0xFF22C55E), size: 18.0),
+                SizedBox(width: 8.0),
+                Text('Pasted workout text from clipboard!'),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _insertSampleOctivRoutine() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _workoutTextController.text = _sampleOctivRoutine;
+    });
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
     _locationController.dispose();
     _durationController.dispose();
+    _workoutTextController.dispose();
     super.dispose();
   }
 
@@ -205,6 +264,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     final durationMins = int.tryParse(_durationController.text.trim()) ?? 90;
     final dateStr = _formatDateStr(_selectedDate);
     final timeStr = _formatTimeStr(_selectedTime);
+    final workoutText = _workoutTextController.text.trim();
 
     // Save location to user history for this training type
     await _saveLocationToHistory(_selectedEventType, location);
@@ -222,6 +282,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
         isImportant: _isImportant,
         recurrenceRule: _selectedRecurrence,
         workoutAttachmentName: _attachedWorkoutName,
+        workoutText: workoutText.isNotEmpty ? workoutText : null,
       );
       success = await ref.read(dashboardEventsProvider.notifier).updateEvent(updated);
     } else {
@@ -235,6 +296,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
             isImportant: _isImportant,
             recurrenceRule: _selectedRecurrence,
             workoutAttachmentName: _attachedWorkoutName,
+            workoutText: workoutText.isNotEmpty ? workoutText : null,
           );
     }
 
@@ -699,70 +761,76 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
                     const SizedBox(height: 20.0),
 
-                    // 5. OPTIONAL WORKOUT ATTACHMENT CARD (POLISHED ALIGNMENT & PADDING)
-                    Container(
-                      padding: const EdgeInsets.all(14.0),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(14.0),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEFF6FF),
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
-                                child: const Icon(Icons.attachment, color: Color(0xFF003EC7), size: 18.0),
-                              ),
-                              const SizedBox(width: 12.0),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                    // 5. OCTIV-STYLE WORKOUT ROUTINE TEXT INPUT (NO PDF REQUIRED)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'WORKOUT ROUTINE TEXT (OCTIV VIEW)',
+                          style: TextStyle(
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: _pasteFromClipboard,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                                child: Row(
                                   children: [
-                                    const Text(
-                                      'WORKOUT PROGRAM',
-                                      style: TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF475569),
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2.0),
-                                    Text(
-                                      _attachedWorkoutName ?? 'Optional PDF / Image routine',
-                                      style: TextStyle(
-                                        fontSize: 12.0,
-                                        color: _attachedWorkoutName != null ? const Color(0xFF166534) : const Color(0xFF94A3B8),
-                                        fontWeight: _attachedWorkoutName != null ? FontWeight.bold : FontWeight.normal,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                    Icon(Icons.content_paste, size: 12.0, color: Color(0xFF003EC7)),
+                                    SizedBox(width: 4.0),
+                                    Text('Paste', style: TextStyle(fontSize: 11.0, color: Color(0xFF003EC7), fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8.0),
-                              OutlinedButton.icon(
-                                onPressed: _pickWorkoutFile,
-                                icon: Icon(_attachedWorkoutName != null ? Icons.edit : Icons.upload_file, size: 14.0),
-                                label: Text(_attachedWorkoutName != null ? 'Change' : 'Upload'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF003EC7),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-                                  side: const BorderSide(color: Color(0xFFBFDBFE)),
+                            ),
+                            const SizedBox(width: 8.0),
+                            InkWell(
+                              onTap: _insertSampleOctivRoutine,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.auto_fix_high, size: 12.0, color: Color(0xFF10B981)),
+                                    SizedBox(width: 4.0),
+                                    Text('Sample', style: TextStyle(fontSize: 11.0, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextFormField(
+                      controller: _workoutTextController,
+                      minLines: 4,
+                      maxLines: 8,
+                      style: const TextStyle(fontSize: 13.0, fontFamily: 'monospace', color: Color(0xFF0F172A), height: 1.4),
+                      decoration: InputDecoration(
+                        hintText: 'Paste or type workout details here...\ne.g.\nPart A: EFFORT\n10 Rounds | You Go I Go\n3-5 Devils Press',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.all(14.0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14.0),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14.0),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14.0),
+                          borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5),
+                        ),
                       ),
                     ),
 
