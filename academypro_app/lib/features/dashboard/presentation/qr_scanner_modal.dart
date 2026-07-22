@@ -188,7 +188,9 @@ class _QrScannerModalState extends ConsumerState<QrScannerModal> with SingleTick
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),
                               itemBuilder: (context, index) => Container(
-                                decoration: Border.all(color: Colors.cyan.withOpacity(0.2), width: 0.5),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.cyan.withOpacity(0.2), width: 0.5),
+                                ),
                               ),
                             ),
                           ),
