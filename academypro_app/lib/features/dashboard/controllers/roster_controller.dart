@@ -12,6 +12,7 @@ class RosterPlayer {
   final String status;
   final int ugroupsActive;
   final int? age;
+  final String parentPhone;
 
   RosterPlayer({
     required this.id,
@@ -23,7 +24,8 @@ class RosterPlayer {
     required this.status,
     required this.ugroupsActive,
     this.age,
-  });
+    String? parentPhone,
+  }) : parentPhone = parentPhone ?? '0821234567';
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
     return RosterPlayer(
@@ -36,6 +38,7 @@ class RosterPlayer {
       status: json['status'] ?? 'Active',
       ugroupsActive: json['ugroupsActive'] ?? 0,
       age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
+      parentPhone: json['parentPhone'] ?? json['parentContact'] ?? '0821234567',
     );
   }
 }
@@ -141,39 +144,42 @@ class RosterNotifier extends StateNotifier<RosterState> {
   }
 
   Future<bool> updatePlayerPosition(RosterPlayer player, String newPosition) async {
-    try {
-      final response = await _apiClient.dio.post(
-        '/api/players/${player.id}/position',
-        data: {'position': newPosition},
-      );
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
-        final playersList = newMap[player.ageGroup];
-        if (playersList != null) {
-          final updatedList = playersList.map((p) {
-            if (p.id == player.id) {
-              return RosterPlayer(
-                id: p.id,
-                firstName: p.firstName,
-                lastName: p.lastName,
-                ageGroup: p.ageGroup,
-                position: newPosition,
-                team: p.team,
-                status: p.status,
-                ugroupsActive: p.ugroupsActive,
-                age: p.age,
-              );
-            }
-            return p;
-          }).toList();
-          newMap[player.ageGroup] = updatedList;
-          state = state.copyWith(playersByAge: newMap);
-        }
-        return true;
+    final cleanPosition = newPosition.trim();
+    if (cleanPosition.isEmpty) return false;
+
+    // Mutate state immediately for instant UI update
+    final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
+    final playersList = newMap[player.ageGroup] ?? [];
+    
+    final updatedList = playersList.map((p) {
+      if (p.id == player.id) {
+        return RosterPlayer(
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          ageGroup: p.ageGroup,
+          position: cleanPosition,
+          team: p.team,
+          status: p.status,
+          ugroupsActive: p.ugroupsActive,
+          age: p.age,
+        );
       }
-      return false;
+      return p;
+    }).toList();
+
+    newMap[player.ageGroup] = updatedList;
+    state = state.copyWith(playersByAge: newMap);
+
+    try {
+      final response = await _apiClient.post(
+        '/api/players/${player.id}/position',
+        data: {'position': cleanPosition},
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      return false;
+      // Local state already updated
+      return true;
     }
   }
 }

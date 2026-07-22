@@ -664,9 +664,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     ),
   ];
 
-  Future<void> fetchEvents() async {
+  Future<void> fetchEvents({String? ageGroup}) async {
     try {
-      final response = await _apiClient.getAndCache('/api/dashboard/events');
+      final query = ageGroup != null ? '?ageGroup=$ageGroup' : '';
+      final response = await _apiClient.getAndCache('/api/dashboard/events$query');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'] ?? [];
         final events = list.map((x) => CoachEvent.fromJson(x)).toList();
@@ -689,6 +690,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     bool isImportant = false,
     String recurrenceRule = 'Does Not Repeat',
     String? workoutImagePath,
+    String? ageGroup,
   }) async {
     final newEvent = CoachEvent(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -719,6 +721,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
         'workoutImagePath': workoutImagePath,
+        'ageGroup': ageGroup ?? 'U15',
       });
     } catch (_) {}
     return true;

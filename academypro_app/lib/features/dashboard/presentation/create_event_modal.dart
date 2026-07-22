@@ -273,6 +273,8 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     // Match Days never store workout images
     final imagePathToSave = _selectedEventType == 'Match' ? null : _attachedImagePath;
 
+    final activeAge = ref.read(selectedAgeGroupProvider);
+
     if (widget.eventToEdit != null) {
       final updated = widget.eventToEdit!.copyWith(
         title: title,
@@ -297,8 +299,11 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
             isImportant: _isImportant,
             recurrenceRule: _selectedRecurrence,
             workoutImagePath: imagePathToSave,
+            ageGroup: activeAge,
           );
     }
+
+    await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: activeAge);
 
     if (mounted) {
       setState(() {

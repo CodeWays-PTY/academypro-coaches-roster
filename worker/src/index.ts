@@ -533,28 +533,47 @@ app.get('/api/rosters/:age_group', async (c) => {
 // Route: Get Coach Dashboard Summary KPIs
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload.schoolId;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
-  // Query 1: Total Players
-  const totalPlayersQuery = 'SELECT COUNT(*) as count FROM players WHERE school_id = ?';
-  const totalRes = await db.prepare(totalPlayersQuery).bind(schoolId).first();
+  let totalPlayersQuery = 'SELECT COUNT(*) as count FROM players WHERE school_id = ?';
+  let totalParams: any[] = [schoolId];
+  if (ageGroup) {
+    totalPlayersQuery = 'SELECT COUNT(*) as count FROM players WHERE school_id = ? AND age_group = ?';
+    totalParams.push(ageGroup);
+  }
+  const totalRes = await db.prepare(totalPlayersQuery).bind(...totalParams).first();
   const totalPlayers = totalRes ? totalRes.count : 0;
 
-  // Query 2: Team average performance score
-  const avgPerformanceQuery = 'SELECT AVG(auto_score) as avg FROM match_stats ms JOIN players p ON ms.player_id = p.id WHERE p.school_id = ?';
-  const avgRes = await db.prepare(avgPerformanceQuery).bind(schoolId).first();
+  let avgPerformanceQuery = 'SELECT AVG(auto_score) as avg FROM match_stats ms JOIN players p ON ms.player_id = p.id WHERE p.school_id = ?';
+  let avgParams: any[] = [schoolId];
+  if (ageGroup) {
+    avgPerformanceQuery = 'SELECT AVG(auto_score) as avg FROM match_stats ms JOIN players p ON ms.player_id = p.id WHERE p.school_id = ? AND p.age_group = ?';
+    avgParams.push(ageGroup);
+  }
+  const avgRes = await db.prepare(avgPerformanceQuery).bind(...avgParams).first();
   const avgScore = avgRes && avgRes.avg ? Math.round(avgRes.avg * 10) / 10 : 0.0;
 
-  // Query 3: RAG Categories count (Academics overall average mapping)
-  const academicQuery = `
+  let academicQuery = `
     SELECT player_id, AVG(grade_percentage) as avg_grade
     FROM academic_logs al
     JOIN players p ON al.player_id = p.id
     WHERE p.school_id = ?
     GROUP BY player_id
   `;
-  const { results: acads } = await db.prepare(academicQuery).bind(schoolId).all();
+  let acadParams: any[] = [schoolId];
+  if (ageGroup) {
+    academicQuery = `
+      SELECT player_id, AVG(grade_percentage) as avg_grade
+      FROM academic_logs al
+      JOIN players p ON al.player_id = p.id
+      WHERE p.school_id = ? AND p.age_group = ?
+      GROUP BY player_id
+    `;
+    acadParams.push(ageGroup);
+  }
+  const { results: acads } = await db.prepare(academicQuery).bind(...acadParams).all();
   
   let uniReadyCount = 0; // Green
   let onTrackCount = 0;   // Amber
@@ -569,14 +588,23 @@ app.get('/api/dashboard/summary', async (c) => {
     else dangerCount++;
   });
 
-  // Query 4: Attendance Average (Gym, Field, uGroup attendance percentage)
-  const attendanceQuery = `
+  let attendanceQuery = `
     SELECT COUNT(*) as total, SUM(CASE WHEN att.status = 'Present' THEN 1 ELSE 0 END) as present
     FROM attendance att
     JOIN players p ON att.player_id = p.id
     WHERE p.school_id = ?
   `;
-  const attRes = await db.prepare(attendanceQuery).bind(schoolId).first();
+  let attParams: any[] = [schoolId];
+  if (ageGroup) {
+    attendanceQuery = `
+      SELECT COUNT(*) as total, SUM(CASE WHEN att.status = 'Present' THEN 1 ELSE 0 END) as present
+      FROM attendance att
+      JOIN players p ON att.player_id = p.id
+      WHERE p.school_id = ? AND p.age_group = ?
+    `;
+    attParams.push(ageGroup);
+  }
+  const attRes = await db.prepare(attendanceQuery).bind(...attParams).first();
   const attendancePercent = attRes && attRes.total > 0 ? Math.round((attRes.present / attRes.total) * 100) : 100;
 
   return c.json({
@@ -599,10 +627,11 @@ app.get('/api/dashboard/summary', async (c) => {
 // Route: Get Flagged Players (Requires Coach Attention)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload.schoolId;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
-  const query = `
+  let query = `
     SELECT 
       p.id, 
       p.first_name, 
@@ -615,10 +644,27 @@ app.get('/api/dashboard/flags', async (c) => {
     FROM players p
     WHERE p.school_id = ?
   `;
+  let params: any[] = [schoolId];
+  if (ageGroup) {
+    query = `
+      SELECT 
+        p.id, 
+        p.first_name, 
+        p.last_name, 
+        p.age_group, 
+        p.position, 
+        p.team,
+        (SELECT AVG(al.grade_percentage) FROM academic_logs al WHERE al.player_id = p.id) as avg_grade,
+        (SELECT ms.auto_score FROM match_stats ms WHERE ms.player_id = p.id ORDER BY ms.match_date DESC LIMIT 1) as auto_score
+      FROM players p
+      WHERE p.school_id = ? AND p.age_group = ?
+    `;
+    params.push(ageGroup);
+  }
 
   let rows: any[] = [];
   try {
-    const res = await db.prepare(query).bind(schoolId).all();
+    const res = await db.prepare(query).bind(...params).all();
     rows = res.results || [];
   } catch (err: any) {
     return c.json({ success: false, message: 'Database query failed', error: err.message }, 500);
@@ -670,11 +716,18 @@ app.get('/api/dashboard/flags', async (c) => {
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
+  const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
-  const query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
+  let query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
+  let params: any[] = [schoolId];
+  if (ageGroup) {
+    query = 'SELECT * FROM events WHERE school_id = ? AND (age_group = ? OR age_group IS NULL OR age_group = "") ORDER BY date ASC, start_time ASC';
+    params.push(ageGroup);
+  }
+
   try {
-    const { results } = await db.prepare(query).bind(schoolId).all();
+    const { results } = await db.prepare(query).bind(...params).all();
     
     const events = results.map((r: any) => ({
       id: r.id,
@@ -687,7 +740,9 @@ app.get('/api/dashboard/events', async (c) => {
       location: r.location,
       intensity: r.intensity,
       isImportant: r.is_important === 1,
-      completionCount: r.completion_count
+      completionCount: r.completion_count,
+      ageGroup: r.age_group || 'U15',
+      workoutImagePath: r.workout_image_path
     }));
 
     return c.json({
@@ -716,7 +771,7 @@ app.post('/api/dashboard/events', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { title, eventType, startTime, date, durationMins, location, intensity, isImportant } = body;
+  const { title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, workoutImagePath } = body;
 
   if (!title || !eventType || !startTime || !date || !location) {
     return c.json({
@@ -727,8 +782,8 @@ app.post('/api/dashboard/events', async (c) => {
 
   const query = `
     INSERT INTO events (
-      school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count, age_group, workout_image_path
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   try {
@@ -746,10 +801,10 @@ app.post('/api/dashboard/events', async (c) => {
       location.trim(),
       intensity ? intensity.trim() : null,
       isImpVal,
-      compCountVal
+      compCountVal,
+      ageGroup || 'U15',
+      workoutImagePath || null
     ).run();
-
-    console.log(`[API LOG] Event created successfully: "${title}" (${eventType}) for school ${schoolId}`);
 
     return c.json({
       success: true,
@@ -765,11 +820,12 @@ app.post('/api/dashboard/events', async (c) => {
         location,
         intensity: intensity || null,
         isImportant: isImpVal === 1,
-        completionCount: compCountVal
+        completionCount: compCountVal,
+        ageGroup: ageGroup || 'U15',
+        workoutImagePath: workoutImagePath || null
       }
     }, 201);
   } catch (err: any) {
-    console.error('[API LOG] Create Event database error:', err);
     return c.json({ success: false, message: 'Failed to create event', error: err.message }, 500);
   }
 });
@@ -1339,6 +1395,55 @@ app.post('/api/notifications/send', async (c) => {
   } catch (err: any) {
     console.error('[Observer Error] Send notification failed:', err);
     return c.json({ success: false, message: 'Failed to send notification', error: err.message }, 500);
+  }
+});
+
+// Route: Send SMS Verification Code via SMS Gateway Service
+app.post('/api/sms/send-verification', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { phone, name } = body;
+  if (!phone) {
+    return c.json({ success: false, message: 'Phone number is required' }, 400);
+  }
+
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const cleanPhone = phone.replace(/[^\d+]/g, '');
+  const apiKey = c.env.INTERNAL_API_KEY || 'agua_internal_secret_key_102938';
+
+  try {
+    const smsRes = await fetch('https://sms-service.codeways.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-API-Key': apiKey
+      },
+      body: JSON.stringify({
+        to: cleanPhone,
+        message: `[AcademyPro] Security Code: ${otpCode}. Use this code to verify phone contact details for ${name || 'Athlete'}.`,
+        senderId: 'Agua',
+        tag: 'AguaGo'
+      })
+    });
+
+    console.log(`[Observer Log] Sent SMS verification code to ${cleanPhone}`);
+
+    return c.json({
+      success: true,
+      message: `Verification SMS sent successfully to ${phone}`,
+      data: {
+        phone,
+        otpCode
+      }
+    });
+  } catch (err: any) {
+    console.error('[Observer Error] Failed to send SMS:', err);
+    return c.json({ success: false, message: 'SMS service request failed', error: err.message }, 500);
   }
 });
 

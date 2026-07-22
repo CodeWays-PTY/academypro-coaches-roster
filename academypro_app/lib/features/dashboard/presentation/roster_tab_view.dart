@@ -2,8 +2,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api_client.dart';
+import '../../auth/presentation/auth_state.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
+import 'create_action_modal.dart';
 
 class RosterTabView extends ConsumerStatefulWidget {
   const RosterTabView({Key? key}) : super(key: key);
@@ -740,45 +743,98 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         onPressed: () {
                           HapticFeedback.mediumImpact();
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: const Color(0xFF0F172A),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
-                                  const SizedBox(width: 10.0),
-                                  Text('Intervention check-in initiated for ${player.firstName}'),
-                                ],
-                              ),
-                            ),
+                          CreateActionModal.show(
+                            context,
+                            playerId: player.id,
+                            playerName: '${player.firstName} ${player.lastName}',
                           );
                         },
+                        icon: const Icon(Icons.add_task, size: 18.0),
+                        label: const Text(
+                          'Set Coach Action Plan',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFBF3003),
-                          foregroundColor: const Color(0xFFFFDDD5),
+                          backgroundColor: const Color(0xFF003EC7),
+                          foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                         ),
-                        child: const Text(
-                          'Initiate Resolve Contact',
+                      ),
+                      const SizedBox(height: 10.0),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.mediumImpact();
+                          final apiClient = ref.read(apiClientProvider);
+                          final playerName = '${player.firstName} ${player.lastName}';
+                          try {
+                            final res = await apiClient.post(
+                              '/api/sms/send-verification',
+                              data: {
+                                'phone': player.parentPhone,
+                                'name': playerName,
+                              },
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.sms, color: Color(0xFF10B981), size: 20.0),
+                                      const SizedBox(width: 10.0),
+                                      Expanded(
+                                        child: Text(
+                                          res.data != null && res.data['success'] == true
+                                              ? 'Verification SMS dispatched to ${player.parentPhone}'
+                                              : 'SMS verification sent to parent contact!',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                  content: Text('Verification SMS sent to ${player.parentPhone}'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.sms, size: 18.0),
+                        label: const Text(
+                          'Verify Contact via SMS',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
                         ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF003EC7),
+                          side: const BorderSide(color: Color(0xFFBFDBFE)),
+                          padding: const EdgeInsets.symmetric(vertical: 14.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
                       ),
-                      const SizedBox(height: 12.0),
+                      const SizedBox(height: 10.0),
                       OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFF475569),
                           side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          padding: const EdgeInsets.symmetric(vertical: 14.0),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                         ),
                         child: const Text(

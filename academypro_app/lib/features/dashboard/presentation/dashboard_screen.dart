@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/local_storage.dart';
 import '../controllers/dashboard_controller.dart';
+import '../controllers/roster_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
 import 'roster_tab_view.dart';
@@ -243,6 +244,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
                       ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
                       ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
+                      ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: newAge);
+                      ref.read(rosterProvider.notifier).fetchRoster(newAge);
                     }
                   },
                 ),

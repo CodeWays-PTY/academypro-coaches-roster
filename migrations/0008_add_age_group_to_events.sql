@@ -1,0 +1,1 @@
+ALTER TABLE events ADD COLUMN age_group TEXT DEFAULT 'U15';
