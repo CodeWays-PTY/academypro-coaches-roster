@@ -257,27 +257,32 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
     state = state.copyWith(loading: true);
     try {
       final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      final recordsPayload = state.playerRecords.values.map((r) => {
-            'playerId': r.player.id,
-            'status': r.isCheckedIn ? 'Present' : 'Absent',
-            'checkInTime': r.checkInTime?.toIso8601String(),
-          }).toList();
+      final checkedInIds = state.playerRecords.values
+          .where((r) => r.isCheckedIn)
+          .map((r) => r.player.id)
+          .toList();
 
       final payload = {
         'eventId': state.selectedEvent?.id,
         'eventTitle': state.selectedEvent?.title,
-        'sessionType': state.sessionType == 'Field Practice' ? 'Field' : 'Gym',
-        'date': nowStr,
+        'sessionType': state.selectedEvent?.eventType ?? (state.sessionType == 'Field Practice' ? 'Field' : 'Gym'),
+        'date': state.selectedEvent?.date ?? nowStr,
         'ageGroup': state.activeAgeGroup,
-        'records': recordsPayload,
+        'checkedInPlayerIds': checkedInIds,
       };
 
-      final res = await _apiClient.post('/api/attendance', data: payload);
+      final res = await _apiClient.post('/api/dashboard/checkin', data: payload);
       state = state.copyWith(loading: false);
-      return res.statusCode == 200 || res.statusCode == 201;
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        // Refresh dashboard summary KPI attendance percentage
+        _ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: state.activeAgeGroup);
+        return true;
+      }
+      return false;
     } catch (e) {
-      state = state.copyWith(loading: false, error: 'Attendance logged locally');
-      return true;
+      state = state.copyWith(loading: false, error: 'Failed to record server attendance: $e');
+      return false;
     }
   }
 }

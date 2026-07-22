@@ -93,6 +93,13 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
   @override
   Widget build(BuildContext context) {
     final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
+
+    ref.listen<String>(selectedAgeGroupProvider, (previous, next) {
+      if (previous != next) {
+        ref.read(rosterProvider.notifier).fetchRoster(next);
+      }
+    });
+
     final rosterState = ref.watch(rosterProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
 
