@@ -156,8 +156,6 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
   }
 }
 
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
-
 final notificationProvider =
     StateNotifierProvider<NotificationNotifier, NotificationState>((ref) {
   final apiClient = ref.watch(apiClientProvider);

@@ -145,8 +145,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 // Riverpod Providers
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
-
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return AuthNotifier(apiClient);

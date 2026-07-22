@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../auth/presentation/auth_state.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/utils/phone_utils.dart';

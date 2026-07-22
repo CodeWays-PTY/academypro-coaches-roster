@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../storage/local_storage.dart';
 
@@ -71,3 +72,5 @@ class ApiClient {
     return await dio.post(path, data: data, queryParameters: queryParameters);
   }
 }
+
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
