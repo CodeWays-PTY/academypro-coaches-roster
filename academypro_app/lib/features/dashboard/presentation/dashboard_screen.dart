@@ -15,6 +15,7 @@ import 'create_action_modal.dart';
 
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -725,9 +726,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: [
                         const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
                         const SizedBox(width: 10.0),
-                        Text(
-                          item.parentPhone,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              final clean = item.parentPhone.replaceAll(RegExp(r'[^\d+]'), '');
+                              launchUrl(Uri.parse('tel:$clean'));
+                            },
+                            child: Text(
+                              item.parentPhone,
+                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 16.0, color: Color(0xFF003EC7)),
+                          tooltip: 'Copy Phone Number',
+                          padding: const EdgeInsets.all(4.0),
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: item.parentPhone));
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                content: Text('Copied parent phone (${item.parentPhone}) to clipboard!'),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -736,9 +763,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: [
                         const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
                         const SizedBox(width: 10.0),
-                        Text(
-                          item.parentEmail,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              launchUrl(Uri.parse('mailto:${item.parentEmail}'));
+                            },
+                            child: Text(
+                              item.parentEmail,
+                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 16.0, color: Color(0xFF003EC7)),
+                          tooltip: 'Copy Email Address',
+                          padding: const EdgeInsets.all(4.0),
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: item.parentEmail));
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                content: Text('Copied parent email (${item.parentEmail}) to clipboard!'),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -764,9 +816,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   children: [
                     const Icon(Icons.smartphone, color: Color(0xFF003EC7), size: 18.0),
                     const SizedBox(width: 10.0),
-                    Text(
-                      '${item.playerName}: ${item.playerPhone}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          final clean = item.playerPhone.replaceAll(RegExp(r'[^\d+]'), '');
+                          launchUrl(Uri.parse('tel:$clean'));
+                        },
+                        child: Text(
+                          '${item.playerName}: ${item.playerPhone}',
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 16.0, color: Color(0xFF003EC7)),
+                      tooltip: 'Copy Player Phone Number',
+                      padding: const EdgeInsets.all(4.0),
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: item.playerPhone));
+                        HapticFeedback.lightImpact();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: const Color(0xFF0F172A),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                            content: Text('Copied player phone (${item.playerPhone}) to clipboard!'),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
