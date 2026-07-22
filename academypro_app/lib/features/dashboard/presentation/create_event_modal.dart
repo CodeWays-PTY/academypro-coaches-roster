@@ -70,16 +70,6 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       'isImportant': false,
     },
     {
-      'label': '🤝 uGroup Mentor',
-      'title': 'uGroup Character & Spirit Meeting',
-      'eventType': 'Development',
-      'time': const TimeOfDay(hour: 15, minute: 00),
-      'duration': '45',
-      'location': 'Seminar Room 1',
-      'intensity': 'Low',
-      'isImportant': false,
-    },
-    {
       'label': '🏟️ Match Day',
       'title': 'Premier Derby Match',
       'eventType': 'Match Day',
