@@ -68,6 +68,8 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
       return fullName.contains(q) || pos.contains(q);
     }).toList();
 
+    final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FF),
       body: RefreshIndicator(
@@ -245,13 +247,13 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 20.0),
 
               // ===================================================================
-              // 3. SCHEDULED EVENTS SELECTOR CAROUSEL (Dynamic from events API)
+              // 3. SCHEDULED EVENTS SELECTOR CAROUSEL (Filter: TODAY'S EVENTS ONLY)
               // ===================================================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
                   Text(
-                    'SELECT SCHEDULED EVENT',
+                    "TODAY'S SCHEDULED EVENTS",
                     style: TextStyle(
                       fontSize: 11.0,
                       fontWeight: FontWeight.bold,
@@ -265,7 +267,10 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
               eventsState.when(
                 data: (allEvents) {
-                  if (allEvents.isEmpty) {
+                  // Filter strictly for today's date (or seeded date 2026-07-22)
+                  final todayEvents = allEvents.where((e) => e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21').toList();
+
+                  if (todayEvents.isEmpty) {
                     return Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(14.0),
@@ -276,11 +281,13 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.event_available, color: Color(0xFF64748B), size: 20.0),
+                          Icon(Icons.event_note, color: Color(0xFF2563EB), size: 20.0),
                           SizedBox(width: 10.0),
-                          Text(
-                            'General Field Practice (Default Session)',
-                            style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          Expanded(
+                            child: Text(
+                              'General Practice Session (No special event today)',
+                              style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
                           ),
                         ],
                       ),
@@ -291,10 +298,10 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                     height: 85.0,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: allEvents.length,
+                      itemCount: todayEvents.length,
                       separatorBuilder: (ctx, i) => const SizedBox(width: 10.0),
                       itemBuilder: (context, index) {
-                        final event = allEvents[index];
+                        final event = todayEvents[index];
                         final isSelected = checkInState.selectedEvent?.id == event.id;
 
                         IconData eventIcon = Icons.sports_soccer;
@@ -315,7 +322,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           borderRadius: BorderRadius.circular(16.0),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 220.0,
+                            width: 230.0,
                             padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
                               color: isSelected ? accentColor.withOpacity(0.08) : Colors.white,
@@ -335,9 +342,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                                     const SizedBox(width: 6.0),
                                     Expanded(
                                       child: Text(
-                                        event.startTime,
+                                        '${event.startTime} • TODAY',
                                         style: TextStyle(
-                                          fontSize: 12.0,
+                                          fontSize: 11.5,
                                           fontWeight: FontWeight.bold,
                                           color: accentColor,
                                         ),
@@ -391,7 +398,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 18.0),
 
               // ===================================================================
-              // 4. ATTENDANCE PROGRESS STATS CARD
+              // 4. ATTENDANCE PROGRESS STATS CARD (Static choice chips REMOVED)
               // ===================================================================
               Container(
                 padding: const EdgeInsets.all(16.0),
@@ -456,34 +463,19 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12.0),
-
-                    // Active Session Type Filter Chips (Field Practice & Gym Session only - NO uGroup)
-                    Row(
-                      children: ['Field Practice', 'Gym Session'].map((st) {
-                        final isSel = checkInState.sessionType == st;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: ChoiceChip(
-                            label: Text(st),
-                            selected: isSel,
-                            selectedColor: const Color(0xFFDBEAFE),
-                            backgroundColor: const Color(0xFFF8FAFC),
-                            labelStyle: TextStyle(
-                              color: isSel ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
-                              fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                              fontSize: 12.0,
-                            ),
-                            side: BorderSide(
-                              color: isSel ? const Color(0xFF93C5FD) : const Color(0xFFE2E8F0),
-                            ),
-                            onSelected: (_) {
-                              ref.read(checkInProvider.notifier).changeSessionType(st);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                    if (checkInState.selectedEvent != null) ...[
+                      const SizedBox(height: 10.0),
+                      Text(
+                        'Active Session: ${checkInState.selectedEvent!.title}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2563EB),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -536,7 +528,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 16.0),
 
               // ===================================================================
-              // 6. ROSTER LIST (MANUAL CHECK-IN BY NAME)
+              // 6. ROSTER LIST (MANUAL CHECK-IN BY NAME - ALWAYS INTERACTIVE & UNLOCKED)
               // ===================================================================
               if (filteredRecords.isEmpty)
                 Container(
@@ -567,6 +559,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
                     return InkWell(
                       onTap: () {
+                        // Always interactive (allows checking in late arrivals anytime)
                         ref.read(checkInProvider.notifier).toggleCheckIn(player.id);
                       },
                       borderRadius: BorderRadius.circular(16.0),
@@ -685,7 +678,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               const SizedBox(height: 24.0),
 
               // ===================================================================
-              // 7. SUBMIT PRACTICE ATTENDANCE BUTTON
+              // 7. SUBMIT PRACTICE ATTENDANCE BUTTON (NON-LOCKING)
               // ===================================================================
               SizedBox(
                 width: double.infinity,

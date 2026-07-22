@@ -298,7 +298,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Icon(Icons.workspace_premium, color: Color(0xFF10B981), size: 22.0),
                     SizedBox(width: 8.0),
                     Text(
-                      'Rising Stars (5-Wk Consistency)',
+                      'Rising Stars',
                       style: TextStyle(
                         fontSize: 18.0,
                         fontWeight: FontWeight.bold,
