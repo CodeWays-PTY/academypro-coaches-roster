@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
 import '../../auth/presentation/auth_state.dart';
 import 'roster_controller.dart';
+import 'dashboard_controller.dart';
 
 class CheckInPlayerRecord {
   final RosterPlayer player;
@@ -45,6 +46,7 @@ class CheckInScanResult {
 class CheckInState {
   final String activeAgeGroup;
   final String sessionType;
+  final CoachEvent? selectedEvent;
   final Map<String, CheckInPlayerRecord> playerRecords;
   final bool loading;
   final String? error;
@@ -53,6 +55,7 @@ class CheckInState {
   CheckInState({
     required this.activeAgeGroup,
     required this.sessionType,
+    this.selectedEvent,
     required this.playerRecords,
     required this.loading,
     this.error,
@@ -62,6 +65,7 @@ class CheckInState {
   factory CheckInState.initial() => CheckInState(
         activeAgeGroup: 'U15',
         sessionType: 'Field Practice',
+        selectedEvent: null,
         playerRecords: {},
         loading: false,
       );
@@ -69,6 +73,7 @@ class CheckInState {
   CheckInState copyWith({
     String? activeAgeGroup,
     String? sessionType,
+    CoachEvent? selectedEvent,
     Map<String, CheckInPlayerRecord>? playerRecords,
     bool? loading,
     String? error,
@@ -77,6 +82,7 @@ class CheckInState {
     return CheckInState(
       activeAgeGroup: activeAgeGroup ?? this.activeAgeGroup,
       sessionType: sessionType ?? this.sessionType,
+      selectedEvent: selectedEvent ?? this.selectedEvent,
       playerRecords: playerRecords ?? this.playerRecords,
       loading: loading ?? this.loading,
       error: error,
@@ -98,11 +104,10 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
   void initRoster(String ageGroup, List<RosterPlayer> roster) {
     final newMap = <String, CheckInPlayerRecord>{};
     for (final player in roster) {
-      // Preserve existing check-in status if already in state
       final existing = state.playerRecords[player.id];
       newMap[player.id] = CheckInPlayerRecord(
         player: player,
-        isCheckedIn: existing?.isCheckedIn ?? false, // Default ALL to unchecked (uRun style)
+        isCheckedIn: existing?.isCheckedIn ?? false,
         checkInTime: existing?.checkInTime,
       );
     }
@@ -119,6 +124,17 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
 
   void changeSessionType(String sessionType) {
     state = state.copyWith(sessionType: sessionType);
+  }
+
+  void selectEvent(CoachEvent event) {
+    final sessionType = event.eventType == 'Field Session'
+        ? 'Field Practice'
+        : (event.eventType == 'Gym Session' ? 'Gym Session' : 'Match Session');
+
+    state = state.copyWith(
+      selectedEvent: event,
+      sessionType: sessionType,
+    );
   }
 
   CheckInScanResult toggleCheckIn(String playerId) {
@@ -153,7 +169,6 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
   }
 
   CheckInScanResult processQRScan(String rawQrData) {
-    // Parse QR payload (could be raw ID "OVK-U15-001" or JSON)
     String cleanId = rawQrData.trim();
     if (cleanId.contains('"playerId"')) {
       final match = RegExp(r'"playerId"\s*:\s*"([^"]+)"').firstMatch(cleanId);
@@ -164,7 +179,6 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
 
     final record = state.playerRecords[cleanId];
     if (record == null) {
-      // Look for player by partial ID match or name match
       final match = state.playerRecords.values.firstWhere(
         (r) => r.player.id.toLowerCase() == cleanId.toLowerCase(),
         orElse: () => CheckInPlayerRecord(
@@ -207,7 +221,6 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
       return res;
     }
 
-    // Successfully check in
     final now = DateTime.now();
     final updatedMap = Map<String, CheckInPlayerRecord>.from(state.playerRecords);
     updatedMap[cleanId] = target.copyWith(
@@ -251,7 +264,9 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
           }).toList();
 
       final payload = {
-        'sessionType': state.sessionType == 'Field Practice' ? 'Field' : (state.sessionType == 'Gym Session' ? 'Gym' : 'uGroup'),
+        'eventId': state.selectedEvent?.id,
+        'eventTitle': state.selectedEvent?.title,
+        'sessionType': state.sessionType == 'Field Practice' ? 'Field' : 'Gym',
         'date': nowStr,
         'ageGroup': state.activeAgeGroup,
         'records': recordsPayload,
@@ -262,7 +277,7 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
       return res.statusCode == 200 || res.statusCode == 201;
     } catch (e) {
       state = state.copyWith(loading: false, error: 'Attendance logged locally');
-      return true; // Fallback success for offline/cached mode
+      return true;
     }
   }
 }

@@ -24,14 +24,18 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
     Future.microtask(() {
       final selectedAge = ref.read(selectedAgeGroupProvider);
       ref.read(rosterProvider.notifier).fetchRoster(selectedAge);
-      _syncRosterToCheckIn(selectedAge);
+      ref.read(dashboardEventsProvider.notifier).fetchEvents();
+      _ensureRosterInitialized();
     });
   }
 
-  void _syncRosterToCheckIn(String ageGroup) {
+  void _ensureRosterInitialized() {
+    final selectedAge = ref.read(selectedAgeGroupProvider);
     final rosterState = ref.read(rosterProvider);
-    final players = rosterState.playersByAge[ageGroup] ?? [];
-    ref.read(checkInProvider.notifier).initRoster(ageGroup, players);
+    final players = rosterState.playersByAge[selectedAge] ?? [];
+    if (players.isNotEmpty) {
+      ref.read(checkInProvider.notifier).initRoster(selectedAge, players);
+    }
   }
 
   @override
@@ -44,15 +48,17 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
   Widget build(BuildContext context) {
     final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
     final rosterState = ref.watch(rosterProvider);
+    final eventsState = ref.watch(dashboardEventsProvider);
     final checkInState = ref.watch(checkInProvider);
 
-    // Sync roster data whenever roster updates for current age group
-    ref.listen<RosterState>(rosterProvider, (previous, next) {
-      final players = next.playersByAge[selectedAgeGroup] ?? [];
-      if (players.isNotEmpty && checkInState.totalCount == 0) {
+    final players = rosterState.playersByAge[selectedAgeGroup] ?? [];
+
+    // Automatically sync roster to check-in state whenever roster updates
+    if (players.isNotEmpty && checkInState.totalCount == 0) {
+      Future.microtask(() {
         ref.read(checkInProvider.notifier).initRoster(selectedAgeGroup, players);
-      }
-    });
+      });
+    }
 
     final recordsList = checkInState.playerRecords.values.toList();
     final filteredRecords = recordsList.where((r) {
@@ -67,8 +73,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(rosterProvider.notifier).fetchRoster(selectedAgeGroup);
-          final players = ref.read(rosterProvider).playersByAge[selectedAgeGroup] ?? [];
-          ref.read(checkInProvider.notifier).initRoster(selectedAgeGroup, players);
+          await ref.read(dashboardEventsProvider.notifier).fetchEvents();
+          final updatedPlayers = ref.read(rosterProvider).playersByAge[selectedAgeGroup] ?? [];
+          ref.read(checkInProvider.notifier).initRoster(selectedAgeGroup, updatedPlayers);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -76,45 +83,58 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Section
+              // ===================================================================
+              // 1. CLEAN HEADER (Fixed layout, no text collision)
+              // ===================================================================
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Practice Check-In',
-                        style: TextStyle(
-                          fontSize: 24.0,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Practice Check-In',
+                          style: TextStyle(
+                            fontSize: 22.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4.0),
-                      Text(
-                        'Mark attendance by name or scan QR badges',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: Color(0xFF64748B),
+                        SizedBox(height: 2.0),
+                        Text(
+                          'Mark attendance by name or scan QR badges',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF64748B),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12.0),
 
-                  // Age Group Dropdown Selector
+                  // Age Group Dropdown Selector Button
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12.0),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedAgeGroup,
                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.5),
                         items: const [
                           DropdownMenuItem(value: 'U15', child: Text('U15')),
                           DropdownMenuItem(value: 'U16', child: Text('U16')),
@@ -124,8 +144,8 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           if (newAge != null) {
                             ref.read(selectedAgeGroupProvider.notifier).state = newAge;
                             ref.read(rosterProvider.notifier).fetchRoster(newAge);
-                            final players = ref.read(rosterProvider).playersByAge[newAge] ?? [];
-                            ref.read(checkInProvider.notifier).changeAgeGroup(newAge, players);
+                            final updated = ref.read(rosterProvider).playersByAge[newAge] ?? [];
+                            ref.read(checkInProvider.notifier).changeAgeGroup(newAge, updated);
                           }
                         },
                       ),
@@ -133,9 +153,12 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20.0),
 
-              // CONTINUOUS QR SCANNER ACTION CARD
+              const SizedBox(height: 18.0),
+
+              // ===================================================================
+              // 2. CONTINUOUS QR SCANNER CARD (Polished alignment)
+              // ===================================================================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16.0),
@@ -148,61 +171,71 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                   borderRadius: BorderRadius.circular(20.0),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF003EC7).withOpacity(0.3),
-                      blurRadius: 12,
+                      color: const Color(0xFF003EC7).withOpacity(0.25),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(14.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
-                      child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 32.0),
-                    ),
-                    const SizedBox(width: 14.0),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Continuous QR Scanner',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17.0,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(14.0),
                           ),
-                          SizedBox(height: 2.0),
-                          Text(
-                            'Keep camera open to scan athlete badges back-to-back',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12.0,
-                            ),
+                          child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28.0),
+                        ),
+                        const SizedBox(width: 12.0),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Continuous QR Scanner',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 2.0),
+                              Text(
+                                'Keep camera open to scan athlete badges back-to-back',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11.5,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        QrScannerModal.show(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF003EC7),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                      ),
-                      child: const Text(
-                        'Open Scanner',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
+                    const SizedBox(height: 14.0),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          QrScannerModal.show(context);
+                        },
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18.0),
+                        label: const Text(
+                          'Open Live Scanner Mode',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF003EC7),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
                       ),
                     ),
                   ],
@@ -211,7 +244,155 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
               const SizedBox(height: 20.0),
 
-              // ATTENDANCE PROGRESS STATS CARD
+              // ===================================================================
+              // 3. SCHEDULED EVENTS SELECTOR CAROUSEL (Dynamic from events API)
+              // ===================================================================
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    'SELECT SCHEDULED EVENT',
+                    style: TextStyle(
+                      fontSize: 11.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8.0),
+
+              eventsState.when(
+                data: (allEvents) {
+                  if (allEvents.isEmpty) {
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.event_available, color: Color(0xFF64748B), size: 20.0),
+                          SizedBox(width: 10.0),
+                          Text(
+                            'General Field Practice (Default Session)',
+                            style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    height: 85.0,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: allEvents.length,
+                      separatorBuilder: (ctx, i) => const SizedBox(width: 10.0),
+                      itemBuilder: (context, index) {
+                        final event = allEvents[index];
+                        final isSelected = checkInState.selectedEvent?.id == event.id;
+
+                        IconData eventIcon = Icons.sports_soccer;
+                        Color accentColor = const Color(0xFF003EC7);
+                        if (event.eventType == 'Gym Session') {
+                          eventIcon = Icons.fitness_center;
+                          accentColor = const Color(0xFF7C3AED);
+                        } else if (event.eventType == 'Match Day') {
+                          eventIcon = Icons.sports_score;
+                          accentColor = const Color(0xFF166534);
+                        }
+
+                        return InkWell(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(checkInProvider.notifier).selectEvent(event);
+                          },
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 220.0,
+                            padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                              color: isSelected ? accentColor.withOpacity(0.08) : Colors.white,
+                              borderRadius: BorderRadius.circular(16.0),
+                              border: Border.all(
+                                color: isSelected ? accentColor : const Color(0xFFE2E8F0),
+                                width: isSelected ? 2.0 : 1.0,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(eventIcon, color: accentColor, size: 16.0),
+                                    const SizedBox(width: 6.0),
+                                    Expanded(
+                                      child: Text(
+                                        event.startTime,
+                                        style: TextStyle(
+                                          fontSize: 12.0,
+                                          fontWeight: FontWeight.bold,
+                                          color: accentColor,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Icon(Icons.check_circle, color: accentColor, size: 16.0),
+                                  ],
+                                ),
+                                const SizedBox(height: 4.0),
+                                Text(
+                                  event.title,
+                                  style: const TextStyle(
+                                    fontSize: 13.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2.0),
+                                Text(
+                                  event.location,
+                                  style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                loading: () => const SizedBox(
+                  height: 60.0,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2.0)),
+                ),
+                error: (_, __) => Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Text('General Field Practice Session', style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold)),
+                ),
+              ),
+
+              const SizedBox(height: 18.0),
+
+              // ===================================================================
+              // 4. ATTENDANCE PROGRESS STATS CARD
+              // ===================================================================
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
@@ -277,9 +458,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                     ),
                     const SizedBox(height: 12.0),
 
-                    // Session Type Tabs Selector
+                    // Active Session Type Filter Chips (Field Practice & Gym Session only - NO uGroup)
                     Row(
-                      children: ['Field Practice', 'Gym Session', 'uGroup Session'].map((st) {
+                      children: ['Field Practice', 'Gym Session'].map((st) {
                         final isSel = checkInState.sessionType == st;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
@@ -291,7 +472,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                             labelStyle: TextStyle(
                               color: isSel ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
                               fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                              fontSize: 11.5,
+                              fontSize: 12.0,
                             ),
                             side: BorderSide(
                               color: isSel ? const Color(0xFF93C5FD) : const Color(0xFFE2E8F0),
@@ -307,9 +488,11 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                 ),
               ),
 
-              const SizedBox(height: 20.0),
+              const SizedBox(height: 18.0),
 
-              // SEARCH INPUT BAR WITH 'X' CLEAR BUTTON
+              // ===================================================================
+              // 5. SEARCH INPUT BAR WITH 'X' CLEAR BUTTON
+              // ===================================================================
               TextField(
                 controller: _searchController,
                 onChanged: (val) {
@@ -352,7 +535,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
               const SizedBox(height: 16.0),
 
-              // ROSTER LIST (MANUAL CHECK-IN BY NAME)
+              // ===================================================================
+              // 6. ROSTER LIST (MANUAL CHECK-IN BY NAME)
+              // ===================================================================
               if (filteredRecords.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(32.0),
@@ -362,7 +547,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                       Icon(Icons.person_search_outlined, color: Color(0xFF94A3B8), size: 48.0),
                       SizedBox(height: 12.0),
                       Text(
-                        'No roster players match search filter',
+                        'No roster players found for selected team',
                         style: TextStyle(color: Color(0xFF64748B), fontSize: 14.0, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -499,7 +684,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
               const SizedBox(height: 24.0),
 
-              // SUBMIT PRACTICE ATTENDANCE BUTTON
+              // ===================================================================
+              // 7. SUBMIT PRACTICE ATTENDANCE BUTTON
+              // ===================================================================
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
