@@ -74,6 +74,7 @@ class CheckInState {
     String? activeAgeGroup,
     String? sessionType,
     CoachEvent? selectedEvent,
+    bool clearSelectedEvent = false,
     Map<String, CheckInPlayerRecord>? playerRecords,
     bool? loading,
     String? error,
@@ -82,7 +83,7 @@ class CheckInState {
     return CheckInState(
       activeAgeGroup: activeAgeGroup ?? this.activeAgeGroup,
       sessionType: sessionType ?? this.sessionType,
-      selectedEvent: selectedEvent ?? this.selectedEvent,
+      selectedEvent: clearSelectedEvent ? null : (selectedEvent ?? this.selectedEvent),
       playerRecords: playerRecords ?? this.playerRecords,
       loading: loading ?? this.loading,
       error: error,
@@ -118,8 +119,21 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
     );
   }
 
+  void clearSelectedEvent() {
+    state = state.copyWith(clearSelectedEvent: true);
+  }
+
   void changeAgeGroup(String ageGroup, List<RosterPlayer> roster) {
     initRoster(ageGroup, roster);
+    if (state.selectedEvent != null) {
+      final currentEvent = state.selectedEvent!;
+      final matchesNewAge = ageGroup == 'All' ||
+          currentEvent.ageGroup.toLowerCase() == ageGroup.toLowerCase() ||
+          currentEvent.team.toLowerCase().contains(ageGroup.toLowerCase());
+      if (!matchesNewAge) {
+        clearSelectedEvent();
+      }
+    }
   }
 
   void changeSessionType(String sessionType) {

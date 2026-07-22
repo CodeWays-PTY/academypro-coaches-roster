@@ -24,7 +24,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
     Future.microtask(() {
       final selectedAge = ref.read(selectedAgeGroupProvider);
       ref.read(rosterProvider.notifier).fetchRoster(selectedAge);
-      ref.read(dashboardEventsProvider.notifier).fetchEvents();
+      ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);
       _ensureRosterInitialized();
     });
   }
@@ -48,10 +48,17 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
       builder: (ctx) {
+        final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
         final eventsState = ref.watch(dashboardEventsProvider);
         final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final todayEvents = eventsState.maybeWhen(
-          data: (list) => list.where((e) => e.date == nowStr || e.date == '2026-07-22').toList(),
+          data: (list) => list.where((e) {
+            final matchesDate = e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21';
+            final matchesTeam = selectedAgeGroup == 'All' ||
+                e.ageGroup.toLowerCase().trim() == selectedAgeGroup.toLowerCase().trim() ||
+                e.team.toLowerCase().trim().contains(selectedAgeGroup.toLowerCase().trim());
+            return matchesDate && matchesTeam;
+          }).toList(),
           orElse: () => <CoachEvent>[],
         );
         todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -128,6 +135,22 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
   @override
   Widget build(BuildContext context) {
     final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
+
+    ref.listen<String>(selectedAgeGroupProvider, (previous, next) {
+      if (previous != next) {
+        ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: next);
+        final currentEvent = ref.read(checkInProvider).selectedEvent;
+        if (currentEvent != null) {
+          final matchesNewTeam = next == 'All' ||
+              currentEvent.ageGroup.toLowerCase().trim() == next.toLowerCase().trim() ||
+              currentEvent.team.toLowerCase().trim().contains(next.toLowerCase().trim());
+          if (!matchesNewTeam) {
+            ref.read(checkInProvider.notifier).clearSelectedEvent();
+          }
+        }
+      }
+    });
+
     final rosterState = ref.watch(rosterProvider);
     final eventsState = ref.watch(dashboardEventsProvider);
     final checkInState = ref.watch(checkInProvider);
@@ -156,7 +179,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(rosterProvider.notifier).fetchRoster(selectedAgeGroup);
-          await ref.read(dashboardEventsProvider.notifier).fetchEvents();
+          await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAgeGroup);
           final updatedPlayers = ref.read(rosterProvider).playersByAge[selectedAgeGroup] ?? [];
           ref.read(checkInProvider.notifier).initRoster(selectedAgeGroup, updatedPlayers);
         },
@@ -352,8 +375,14 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
               eventsState.when(
                 data: (allEvents) {
-                  // Filter strictly for today's date (or seeded date 2026-07-22)
-                  final todayEvents = allEvents.where((e) => e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21').toList();
+                  // Filter strictly for today's date and the selected age group / team
+                  final todayEvents = allEvents.where((e) {
+                    final matchesDate = e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21';
+                    final matchesTeam = selectedAgeGroup == 'All' ||
+                        e.ageGroup.toLowerCase().trim() == selectedAgeGroup.toLowerCase().trim() ||
+                        e.team.toLowerCase().trim().contains(selectedAgeGroup.toLowerCase().trim());
+                    return matchesDate && matchesTeam;
+                  }).toList();
                   
                   // Sort chronologically by startTime
                   todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
