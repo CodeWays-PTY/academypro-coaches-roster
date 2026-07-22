@@ -287,25 +287,29 @@ class _QrScannerModalState extends ConsumerState<QrScannerModal> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003EC7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 14.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                      ),
-                      child: const Text(
-                        'Done Scanning',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+              child: SafeArea(
+                top: false,
+                bottom: true,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003EC7),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
+                        child: const Text(
+                          'Done Scanning',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

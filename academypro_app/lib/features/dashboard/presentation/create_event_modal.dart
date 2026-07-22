@@ -13,7 +13,7 @@ class CreateEventModal extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context, {CoachEvent? eventToEdit}) async {
     await showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       barrierColor: Colors.black.withOpacity(0.5),
       isScrollControlled: true,
       useSafeArea: true,
@@ -271,11 +271,12 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
     final userLocations = _userLocationHistory[_selectedEventType] ?? [];
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
+        maxHeight: MediaQuery.of(context).size.height * 0.92,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -338,7 +339,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
           // Scrollable Form Content
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, bottomInset + 24.0),
+              padding: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, bottomInset + bottomSafeArea + 32.0),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -634,7 +635,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
                     const SizedBox(height: 16.0),
 
-                    // DURATION SELECTOR CHIPS
+                    // DURATION SELECTOR (FIXED: CUSTOM SEGMENTED BUTTONS, ZERO TEXT CUTOFF)
                     const Text(
                       'DURATION (MINS)',
                       style: TextStyle(
@@ -650,25 +651,46 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         final isSel = _durationController.text == dur.toString();
                         return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                            child: ChoiceChip(
-                              label: Text('${dur}m'),
-                              selected: isSel,
-                              selectedColor: const Color(0xFFDBEAFE),
-                              backgroundColor: const Color(0xFFF8FAFC),
-                              labelStyle: TextStyle(
-                                color: isSel ? const Color(0xFF003EC7) : const Color(0xFF64748B),
-                                fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 12.0,
-                              ),
-                              side: BorderSide(
-                                color: isSel ? const Color(0xFF93C5FD) : const Color(0xFFE2E8F0),
-                              ),
-                              onSelected: (_) {
+                            padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
                                 setState(() {
                                   _durationController.text = dur.toString();
                                 });
                               },
+                              borderRadius: BorderRadius.circular(10.0),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(vertical: 11.0),
+                                decoration: BoxDecoration(
+                                  color: isSel ? const Color(0xFF003EC7) : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  border: Border.all(
+                                    color: isSel ? const Color(0xFF003EC7) : const Color(0xFFE2E8F0),
+                                    width: isSel ? 1.5 : 1.0,
+                                  ),
+                                  boxShadow: isSel
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(0xFF003EC7).withOpacity(0.2),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${dur}m',
+                                    style: TextStyle(
+                                      color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                      fontSize: 13.0,
+                                      fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         );
@@ -677,7 +699,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
                     const SizedBox(height: 20.0),
 
-                    // 5. OPTIONAL WORKOUT ATTACHMENT
+                    // 5. OPTIONAL WORKOUT ATTACHMENT CARD (POLISHED ALIGNMENT & PADDING)
                     Container(
                       padding: const EdgeInsets.all(14.0),
                       decoration: BoxDecoration(
@@ -689,72 +711,57 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.attachment, color: Color(0xFF003EC7), size: 18.0),
-                                  SizedBox(width: 8.0),
-                                  Text(
-                                    'WORKOUT PROGRAM (OPTIONAL)',
-                                    style: TextStyle(
-                                      fontSize: 11.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF475569),
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              OutlinedButton.icon(
-                                onPressed: _pickWorkoutFile,
-                                icon: const Icon(Icons.upload_file, size: 14.0),
-                                label: Text(_attachedWorkoutName != null ? 'Change' : 'Upload'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF003EC7),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                                  visualDensity: VisualDensity.compact,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                              Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(10.0),
                                 ),
+                                child: const Icon(Icons.attachment, color: Color(0xFF003EC7), size: 18.0),
                               ),
-                            ],
-                          ),
-                          if (_attachedWorkoutName != null) ...[
-                            const SizedBox(height: 8.0),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFDCFCE7),
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.description, color: Color(0xFF166534), size: 14.0),
-                                  const SizedBox(width: 6.0),
-                                  Expanded(
-                                    child: Text(
-                                      _attachedWorkoutName!,
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
+                              const SizedBox(width: 12.0),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'WORKOUT PROGRAM',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF166534),
+                                        color: Color(0xFF475569),
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2.0),
+                                    Text(
+                                      _attachedWorkoutName ?? 'Optional PDF / Image routine',
+                                      style: TextStyle(
+                                        fontSize: 12.0,
+                                        color: _attachedWorkoutName != null ? const Color(0xFF166534) : const Color(0xFF94A3B8),
+                                        fontWeight: _attachedWorkoutName != null ? FontWeight.bold : FontWeight.normal,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        _attachedWorkoutName = null;
-                                      });
-                                    },
-                                    child: const Icon(Icons.close, color: Color(0xFF166534), size: 14.0),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8.0),
+                              OutlinedButton.icon(
+                                onPressed: _pickWorkoutFile,
+                                icon: Icon(_attachedWorkoutName != null ? Icons.edit : Icons.upload_file, size: 14.0),
+                                label: Text(_attachedWorkoutName != null ? 'Change' : 'Upload'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF003EC7),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                                  side: const BorderSide(color: Color(0xFFBFDBFE)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -790,28 +797,32 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
                     const SizedBox(height: 24.0),
 
-                    // SUBMIT EVENT BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF003EC7),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                    // SUBMIT EVENT BUTTON (SAFEAREA AWARE)
+                    SafeArea(
+                      top: false,
+                      bottom: true,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF003EC7),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
+                                )
+                              : Text(
+                                  widget.eventToEdit != null ? 'Update Event Details' : 'Create Event',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                                ),
                         ),
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
-                              )
-                            : Text(
-                                widget.eventToEdit != null ? 'Update Event Details' : 'Create Event',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                              ),
                       ),
                     ),
                   ],
