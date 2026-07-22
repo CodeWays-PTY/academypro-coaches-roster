@@ -30,7 +30,10 @@ app.use('*', async (c, next) => {
       const path = await import('path');
       const fs = await import('fs');
 
-      const dbPath = path.join(process.cwd(), 'usport.db');
+      let dbPath = path.join(process.cwd(), 'academypro.db');
+      if (!fs.existsSync(dbPath)) {
+        dbPath = path.join(process.cwd(), 'usport.db');
+      }
       if (fs.existsSync(dbPath)) {
         const dbSync = new DatabaseSync(dbPath);
 
