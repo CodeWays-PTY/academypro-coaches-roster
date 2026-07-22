@@ -7,6 +7,7 @@ import '../controllers/dashboard_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
 import 'roster_tab_view.dart';
+import 'checkin_tab_view.dart';
 import 'events_tab_view.dart';
 import 'profile_tab_view.dart';
 import 'create_event_modal.dart';
@@ -148,7 +149,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(width: 8.0),
         ],
       ),
-      floatingActionButton: _activeTab == 2
+      floatingActionButton: _activeTab == 3
           ? FloatingActionButton.extended(
               backgroundColor: const Color(0xFF003EC7),
               foregroundColor: Colors.white,
@@ -178,14 +179,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       case 1:
         return const RosterTabView();
       case 2:
-        return const EventsTabView();
+        return const CheckInTabView();
       case 3:
-        return const Center(
-          child: Text(
-            'Messages & Inbox coming soon',
-            style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-          ),
-        );
+        return const EventsTabView();
       case 4:
         return const ProfileTabView();
       case 0:
@@ -1116,8 +1112,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
             BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), label: 'Roster'),
+            BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner_outlined), activeIcon: Icon(Icons.qr_code_scanner), label: 'Check-In'),
             BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Events'),
-            BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'Inbox'),
             BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
