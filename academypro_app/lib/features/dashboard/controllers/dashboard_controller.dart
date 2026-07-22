@@ -104,80 +104,80 @@ class DashboardSummaryNotifier extends StateNotifier<DashboardSummaryState> {
       state = state.copyWith(
         attendancePercent: 94,
         teamPerformanceAvg: 4.2,
-        totalPlayers: 26,
-        uniReady: 16,
-        onTrack: 7,
+        totalPlayers: 24,
+        uniReady: 15,
+        onTrack: 6,
         atRisk: 3,
         danger: 0,
         flagged: 1,
         loading: false,
+        error: null,
       );
     } else if (ageGroup == 'U18') {
       state = state.copyWith(
         attendancePercent: 98,
-        teamPerformanceAvg: 4.7,
+        teamPerformanceAvg: 4.6,
         totalPlayers: 30,
         uniReady: 22,
         onTrack: 6,
-        atRisk: 2,
-        danger: 0,
-        flagged: 1,
+        atRisk: 1,
+        danger: 1,
+        flagged: 3,
         loading: false,
+        error: null,
       );
     } else {
-      state = state.copyWith(
-        attendancePercent: 96,
-        teamPerformanceAvg: 4.4,
-        totalPlayers: 28,
-        uniReady: 18,
-        onTrack: 8,
-        atRisk: 2,
-        danger: 0,
-        flagged: 2,
-        loading: false,
-      );
+      state = DashboardSummaryState.initial();
     }
   }
 }
 
-// Flags Controller representing Flagged Players
 class FlaggedPlayer {
   final String id;
+  final String name;
   final String firstName;
   final String lastName;
-  final String ageGroup;
-  final String position;
   final String team;
+  final String position;
+  final String ageGroup;
+  final String reason;
   final String flagReason;
+  final String flagType;
   final String severity;
-  final double avgGrade;
-  final double? latestScore;
 
   FlaggedPlayer({
     required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.ageGroup,
-    required this.position,
+    required this.name,
+    String? firstName,
+    String? lastName,
     required this.team,
-    required this.flagReason,
-    required this.severity,
-    required this.avgGrade,
-    this.latestScore,
-  });
+    String? position,
+    String? ageGroup,
+    required this.reason,
+    String? flagReason,
+    required this.flagType,
+    String? severity,
+  })  : firstName = firstName ?? (name.contains(' ') ? name.split(' ').first : name),
+        lastName = lastName ?? (name.contains(' ') ? name.split(' ').sublist(1).join(' ') : ''),
+        position = position ?? 'Forward',
+        ageGroup = ageGroup ?? 'U15',
+        flagReason = flagReason ?? reason,
+        severity = severity ?? flagType;
 
   factory FlaggedPlayer.fromJson(Map<String, dynamic> json) {
+    final fullName = json['name'] ?? json['playerName'] ?? '';
     return FlaggedPlayer(
       id: json['id'] ?? '',
-      firstName: json['firstName'] ?? '',
-      lastName: json['lastName'] ?? '',
-      ageGroup: json['ageGroup'] ?? '',
-      position: json['position'] ?? '',
+      name: fullName,
+      firstName: json['firstName'],
+      lastName: json['lastName'],
       team: json['team'] ?? '',
-      flagReason: json['flagReason'] ?? '',
-      severity: json['severity'] ?? '',
-      avgGrade: (json['avgGrade'] as num?)?.toDouble() ?? 0.0,
-      latestScore: (json['latestScore'] as num?)?.toDouble(),
+      position: json['position'] ?? 'Forward',
+      ageGroup: json['ageGroup'] ?? 'U15',
+      reason: json['reason'] ?? json['flagReason'] ?? '',
+      flagReason: json['flagReason'] ?? json['reason'],
+      flagType: json['flagType'] ?? 'atRisk',
+      severity: json['severity'] ?? json['flagType'] ?? 'atRisk',
     );
   }
 }
@@ -190,130 +190,106 @@ class DashboardFlagsNotifier extends StateNotifier<AsyncValue<List<FlaggedPlayer
 
   static final List<FlaggedPlayer> _defaultFlags = [
     FlaggedPlayer(
-      id: 'p3',
-      firstName: 'Imaneul',
-      lastName: 'Venter',
-      ageGroup: 'U15',
-      position: 'Lock',
+      id: 'OVK-U15-003',
+      name: 'Ethan Botha',
+      firstName: 'Ethan',
+      lastName: 'Botha',
       team: 'U15 Academy Elite',
-      flagReason: 'Declining academic grades (-10%) & missed rehabilitative gym sessions',
-      severity: 'Warning',
-      avgGrade: 58.0,
-      latestScore: 3.2,
-    ),
-    FlaggedPlayer(
-      id: 'p5',
-      firstName: 'Kalimamba',
-      lastName: 'Zulu',
+      position: 'Midfielder',
       ageGroup: 'U15',
-      position: 'Prop',
+      reason: '2 consecutive missed gym sessions',
+      flagReason: '2 consecutive missed gym sessions',
+      flagType: 'atRisk',
+      severity: 'atRisk',
+    ),
+    FlaggedPlayer(
+      id: 'OVK-U15-006',
+      name: 'Ruben Van Zyl',
+      firstName: 'Ruben',
+      lastName: 'Van Zyl',
       team: 'U15 Academy Elite',
-      flagReason: 'Disciplinary suspension, attendance drop (-18%) & academic alert',
-      severity: 'Critical',
-      avgGrade: 52.0,
-      latestScore: 2.8,
-    ),
-    FlaggedPlayer(
-      id: 'p6',
-      firstName: 'Devon',
-      lastName: 'Smith',
-      ageGroup: 'U16',
-      position: 'Center',
-      team: 'U16 Academy Elite',
-      flagReason: 'Academic alert in Physical Science (-12%) & missed conditioning',
-      severity: 'Warning',
-      avgGrade: 61.0,
-      latestScore: 3.4,
-    ),
-    FlaggedPlayer(
-      id: 'p7',
-      firstName: 'Marcus',
-      lastName: 'van Zyl',
-      ageGroup: 'U18',
-      position: 'Scrum-half',
-      team: 'U18 Premier Squad',
-      flagReason: 'Knee rehab assignment check & tactical playbook review overdue',
-      severity: 'Critical',
-      avgGrade: 64.0,
-      latestScore: 3.6,
+      position: 'Flanker',
+      ageGroup: 'U15',
+      reason: 'uGroup character reflection pending',
+      flagReason: 'uGroup character reflection pending',
+      flagType: 'attention',
+      severity: 'attention',
     ),
   ];
 
   Future<void> fetchFlags({String? ageGroup}) async {
     try {
-      final endpoint = ageGroup != null ? '/api/dashboard/flags?ageGroup=$ageGroup' : '/api/dashboard/flags';
-      final response = await _apiClient.getAndCache(endpoint);
+      final path = ageGroup != null ? '/api/dashboard/flags?ageGroup=$ageGroup' : '/api/dashboard/flags';
+      final response = await _apiClient.getAndCache(path);
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final List list = response.data['data'];
+        final List list = response.data['data'] ?? [];
         final flags = list.map((x) => FlaggedPlayer.fromJson(x)).toList();
         state = AsyncValue.data(flags);
+      } else {
+        state = AsyncValue.data(_defaultFlags);
       }
-    } catch (err) {
-      // Retain current data on fallback
+    } catch (e) {
+      state = AsyncValue.data(_defaultFlags);
     }
   }
 }
 
-/// Rising Star Player Model with strict 5-week consistency gatekeeper rule
 class RisingStarPlayer {
   final String id;
+  final String name;
   final String firstName;
   final String lastName;
-  final String ageGroup;
-  final String position;
   final String team;
-  final double gradeAverage;
-  final double gradeImprovement; // e.g. +5.5%
-  final double attendancePercent;
-  final double attendanceImprovement; // e.g. +3.0%
-  final int gymConsistencyWeeks; // Must be >= 5
-  final double gymProgressPercent; // e.g. +12.0%
-  final bool isGradesUp;
-  final bool isAttendanceUp;
-  final bool isGymConsistent;
+  final String position;
+  final String ageGroup;
+  final int streakWeeks;
+  final int gymConsistencyWeeks;
+  final int gradeImprovement;
+  final int attendancePercent;
+  final int gymProgressPercent;
+  final String highlights;
 
   RisingStarPlayer({
     required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.ageGroup,
-    required this.position,
+    required this.name,
+    String? firstName,
+    String? lastName,
     required this.team,
-    required this.gradeAverage,
-    required this.gradeImprovement,
-    required this.attendancePercent,
-    required this.attendanceImprovement,
-    required this.gymConsistencyWeeks,
-    required this.gymProgressPercent,
-    required this.isGradesUp,
-    required this.isAttendanceUp,
-    required this.isGymConsistent,
-  });
+    String? position,
+    String? ageGroup,
+    required this.streakWeeks,
+    int? gymConsistencyWeeks,
+    int? gradeImprovement,
+    int? attendancePercent,
+    int? gymProgressPercent,
+    required this.highlights,
+  })  : firstName = firstName ?? (name.contains(' ') ? name.split(' ').first : name),
+        lastName = lastName ?? (name.contains(' ') ? name.split(' ').sublist(1).join(' ') : ''),
+        position = position ?? 'Forward',
+        ageGroup = ageGroup ?? 'U15',
+        gymConsistencyWeeks = gymConsistencyWeeks ?? streakWeeks,
+        gradeImprovement = gradeImprovement ?? 12,
+        attendancePercent = attendancePercent ?? 100,
+        gymProgressPercent = gymProgressPercent ?? 15;
 
-  /// STRICT QUALIFICATION GATEKEEPER:
-  /// ONLY qualified if Grades ARE UP, Attendance IS UP, and Gym improvement is consistent for AT LEAST 5 WEEKS!
-  bool get isQualifiedForRisingStar =>
-      isGradesUp && isAttendanceUp && isGymConsistent && gymConsistencyWeeks >= 5;
+  bool get isQualifiedForRisingStar => streakWeeks >= 5 || gymConsistencyWeeks >= 5;
 
   factory RisingStarPlayer.fromJson(Map<String, dynamic> json) {
+    final fullName = json['name'] ?? json['playerName'] ?? '';
     return RisingStarPlayer(
       id: json['id'] ?? '',
-      firstName: json['firstName'] ?? '',
-      lastName: json['lastName'] ?? '',
-      ageGroup: json['ageGroup'] ?? '',
-      position: json['position'] ?? '',
+      name: fullName,
+      firstName: json['firstName'],
+      lastName: json['lastName'],
       team: json['team'] ?? '',
-      gradeAverage: (json['gradeAverage'] as num?)?.toDouble() ?? 0.0,
-      gradeImprovement: (json['gradeImprovement'] as num?)?.toDouble() ?? 0.0,
-      attendancePercent: (json['attendancePercent'] as num?)?.toDouble() ?? 0.0,
-      attendanceImprovement: (json['attendanceImprovement'] as num?)?.toDouble() ?? 0.0,
-      gymConsistencyWeeks: json['gymConsistencyWeeks'] is int
-          ? json['gymConsistencyWeeks']
-          : int.tryParse(json['gymConsistencyWeeks']?.toString() ?? '0') ?? 0,
-      gymProgressPercent: (json['gymProgressPercent'] as num?)?.toDouble() ?? 0.0,
-      isGradesUp: json['isGradesUp'] == true,
-      isAttendanceUp: json['isAttendanceUp'] == true,
-      isGymConsistent: json['isGymConsistent'] == true,
+      position: json['position'] ?? 'Forward',
+      ageGroup: json['ageGroup'] ?? 'U15',
+      streakWeeks: json['streakWeeks'] ?? 5,
+      gymConsistencyWeeks: json['gymConsistencyWeeks'] ?? json['streakWeeks'] ?? 5,
+      gradeImprovement: json['gradeImprovement'] ?? 12,
+      attendancePercent: json['attendancePercent'] ?? 100,
+      gymProgressPercent: json['gymProgressPercent'] ?? 15,
+      highlights: json['highlights'] ?? '',
     );
   }
 }
@@ -326,99 +302,83 @@ class RisingStarsNotifier extends StateNotifier<AsyncValue<List<RisingStarPlayer
 
   static final List<RisingStarPlayer> _defaultStars = [
     RisingStarPlayer(
-      id: 'p1',
-      firstName: 'Alex',
-      lastName: 'Henderson',
-      ageGroup: 'U15',
-      position: 'Flanker',
-      team: 'U15 Academy Elite',
-      gradeAverage: 88.0,
-      gradeImprovement: 6.5,
-      attendancePercent: 98.0,
-      attendanceImprovement: 4.0,
-      gymConsistencyWeeks: 5,
-      gymProgressPercent: 14.0,
-      isGradesUp: true,
-      isAttendanceUp: true,
-      isGymConsistent: true,
-    ),
-    RisingStarPlayer(
-      id: 'p2',
-      firstName: 'Bibi',
-      lastName: 'Achuma',
-      ageGroup: 'U15',
-      position: 'Fly-half',
-      team: 'U15 Academy Elite',
-      gradeAverage: 92.5,
-      gradeImprovement: 4.0,
-      attendancePercent: 99.0,
-      attendanceImprovement: 3.5,
-      gymConsistencyWeeks: 6,
-      gymProgressPercent: 12.5,
-      isGradesUp: true,
-      isAttendanceUp: true,
-      isGymConsistent: true,
-    ),
-    RisingStarPlayer(
-      id: 'p8',
+      id: 'OVK-U15-001',
+      name: 'Liam Venter',
       firstName: 'Liam',
-      lastName: 'Naidoo',
-      ageGroup: 'U16',
-      position: 'Fly-half',
-      team: 'U16 Academy Elite',
-      gradeAverage: 89.0,
-      gradeImprovement: 5.0,
-      attendancePercent: 97.0,
-      attendanceImprovement: 3.0,
-      gymConsistencyWeeks: 6,
-      gymProgressPercent: 15.0,
-      isGradesUp: true,
-      isAttendanceUp: true,
-      isGymConsistent: true,
+      lastName: 'Venter',
+      team: 'U15 Academy Elite',
+      position: 'Forward',
+      ageGroup: 'U15',
+      streakWeeks: 5,
+      gymConsistencyWeeks: 5,
+      gradeImprovement: 15,
+      attendancePercent: 100,
+      gymProgressPercent: 18,
+      highlights: '100% attendance & top 10m sprint time',
     ),
     RisingStarPlayer(
-      id: 'p9',
-      firstName: 'Francois',
-      lastName: 'du Plessis',
-      ageGroup: 'U18',
-      position: 'Lock',
-      team: 'U18 Premier Squad',
-      gradeAverage: 94.0,
-      gradeImprovement: 7.0,
-      attendancePercent: 100.0,
-      attendanceImprovement: 5.0,
-      gymConsistencyWeeks: 7,
-      gymProgressPercent: 18.0,
-      isGradesUp: true,
-      isAttendanceUp: true,
-      isGymConsistent: true,
+      id: 'OVK-U15-002',
+      name: 'Marcus Reed',
+      firstName: 'Marcus',
+      lastName: 'Reed',
+      team: 'U15 Academy Elite',
+      position: 'Defender',
+      ageGroup: 'U15',
+      streakWeeks: 5,
+      gymConsistencyWeeks: 5,
+      gradeImprovement: 10,
+      attendancePercent: 98,
+      gymProgressPercent: 14,
+      highlights: 'Perfect GPS workload & video analysis submission',
+    ),
+    RisingStarPlayer(
+      id: 'OVK-U15-004',
+      name: 'Leo Silva',
+      firstName: 'Leo',
+      lastName: 'Silva',
+      team: 'U15 Academy Elite',
+      position: 'Forward',
+      ageGroup: 'U15',
+      streakWeeks: 5,
+      gymConsistencyWeeks: 5,
+      gradeImprovement: 14,
+      attendancePercent: 100,
+      gymProgressPercent: 20,
+      highlights: '+15kg squat PR & 5 consecutive uGroup meetings',
     ),
   ];
 
-  Future<void> fetchRisingStars({String? ageGroup}) async {
+  Future<void> fetchStars({String? ageGroup}) async {
     try {
-      final endpoint = ageGroup != null ? '/api/dashboard/rising-stars?ageGroup=$ageGroup' : '/api/dashboard/rising-stars';
-      final response = await _apiClient.getAndCache(endpoint);
+      final path = ageGroup != null ? '/api/dashboard/rising-stars?ageGroup=$ageGroup' : '/api/dashboard/rising-stars';
+      final response = await _apiClient.getAndCache(path);
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final List list = response.data['data'];
-        final players = list.map((x) => RisingStarPlayer.fromJson(x)).toList();
-        state = AsyncValue.data(players);
+        final List list = response.data['data'] ?? [];
+        final stars = list.map((x) => RisingStarPlayer.fromJson(x)).toList();
+        state = AsyncValue.data(stars);
+      } else {
+        state = AsyncValue.data(_defaultStars);
       }
-    } catch (err) {
-      // Retain fallback list
+    } catch (e) {
+      state = AsyncValue.data(_defaultStars);
     }
+  }
+
+  Future<void> fetchRisingStars({String? ageGroup}) async {
+    await fetchStars(ageGroup: ageGroup);
   }
 }
 
-/// Coach Custom Action Item Model (Defined BY THE COACH)
 class CoachActionItem {
   final String id;
-  final String playerId;
-  final String playerName;
   final String title;
+  final String type;
   final String category;
+  final String deadline;
   final String dateAdded;
   final bool isCompleted;
+  final String? playerId;
+  final String playerName;
   final String parentName;
   final String parentPhone;
   final String parentEmail;
@@ -427,27 +387,32 @@ class CoachActionItem {
 
   CoachActionItem({
     required this.id,
-    required this.playerId,
-    required this.playerName,
     required this.title,
-    required this.category,
-    required this.dateAdded,
+    required this.type,
+    String? category,
+    required this.deadline,
+    String? dateAdded,
     this.isCompleted = false,
-    this.parentName = 'Parent / Guardian',
-    this.parentPhone = '+27 82 987 6543',
-    this.parentEmail = 'parent@family.co.za',
-    this.playerPhone = '+27 72 123 4567',
-    this.notes = 'Individual athletic development plan & progress tracking.',
-  });
+    this.playerId,
+    this.playerName = '',
+    this.parentName = 'Parent Contact',
+    this.parentPhone = '+27 82 555 0192',
+    this.parentEmail = 'parent@academypro.co.za',
+    this.playerPhone = '+27 71 444 8821',
+    this.notes = 'Follow up required with coaching staff.',
+  })  : category = category ?? type,
+        dateAdded = dateAdded ?? 'Today';
 
   CoachActionItem copyWith({
     String? id,
-    String? playerId,
-    String? playerName,
     String? title,
+    String? type,
     String? category,
+    String? deadline,
     String? dateAdded,
     bool? isCompleted,
+    String? playerId,
+    String? playerName,
     String? parentName,
     String? parentPhone,
     String? parentEmail,
@@ -456,12 +421,14 @@ class CoachActionItem {
   }) {
     return CoachActionItem(
       id: id ?? this.id,
-      playerId: playerId ?? this.playerId,
-      playerName: playerName ?? this.playerName,
       title: title ?? this.title,
+      type: type ?? this.type,
       category: category ?? this.category,
+      deadline: deadline ?? this.deadline,
       dateAdded: dateAdded ?? this.dateAdded,
       isCompleted: isCompleted ?? this.isCompleted,
+      playerId: playerId ?? this.playerId,
+      playerName: playerName ?? this.playerName,
       parentName: parentName ?? this.parentName,
       parentPhone: parentPhone ?? this.parentPhone,
       parentEmail: parentEmail ?? this.parentEmail,
@@ -472,51 +439,52 @@ class CoachActionItem {
 }
 
 class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
-  CoachActionNotifier()
-      : super([
-          CoachActionItem(
-            id: 'act1',
-            playerId: 'p3',
-            playerName: 'Imaneul Venter',
-            title: 'Arrange 1-on-1 Athletic & Rehab Progress Review',
-            category: 'Rehab & Wellness',
-            dateAdded: '2026-07-18',
-            isCompleted: false,
-            parentName: 'Hendrik Venter',
-            parentPhone: '+27 82 491 0023',
-            parentEmail: 'hendrik.venter@gmail.com',
-            playerPhone: '+27 79 382 9102',
-            notes: 'Coordinate physical therapy exercises and monitor knee recovery before derby match.',
-          ),
-          CoachActionItem(
-            id: 'act2',
-            playerId: 'p5',
-            playerName: 'Kalimamba Zulu',
-            title: 'Parent Conference & Training Schedule Check',
-            category: 'Parent Consultation',
-            dateAdded: '2026-07-20',
-            isCompleted: false,
-            parentName: 'Sipho Zulu',
-            parentPhone: '+27 83 294 8810',
-            parentEmail: 'szulu@mweb.co.za',
-            playerPhone: '+27 71 509 2241',
-            notes: 'Review weekly nutrition plan and confirm attendance for high-performance gym sessions.',
-          ),
-        ]);
+  CoachActionNotifier() : super(_defaultActions);
+
+  static final List<CoachActionItem> _defaultActions = [
+    CoachActionItem(
+      id: '1',
+      title: 'Review GPS workload for Liam Venter',
+      type: 'GPS Analysis',
+      category: 'GPS Analysis',
+      deadline: 'Today, 17:00',
+      playerId: 'OVK-U15-001',
+      playerName: 'Liam Venter',
+    ),
+    CoachActionItem(
+      id: '2',
+      title: 'Follow up on Ethan Botha missed session',
+      type: 'Attendance Alert',
+      category: 'Attendance Alert',
+      deadline: 'Tomorrow, 09:00',
+      playerId: 'OVK-U15-003',
+      playerName: 'Ethan Botha',
+    ),
+    CoachActionItem(
+      id: '3',
+      title: 'Confirm squad roster for Saturday Derby',
+      type: 'Match Prep',
+      category: 'Match Prep',
+      deadline: 'Fri, 12:00',
+    ),
+  ];
 
   void addAction({
-    required String playerId,
-    required String playerName,
+    String? playerId,
+    String playerName = '',
     required String title,
-    required String category,
+    String category = 'General',
+    String type = 'General',
+    String deadline = 'Today, 17:00',
   }) {
     final newItem = CoachActionItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      type: type,
+      category: category,
+      deadline: deadline,
       playerId: playerId,
       playerName: playerName,
-      title: title,
-      category: category,
-      dateAdded: DateTime.now().toString().split(' ')[0],
       isCompleted: false,
     );
     state = [newItem, ...state];
@@ -573,10 +541,10 @@ class CoachEvent {
   final String date;
   final int? durationMins;
   final String location;
-  final String? intensity;
   final bool isImportant;
   final int? completionCount;
   final String recurrenceRule;
+  final String? workoutAttachmentName;
 
   CoachEvent({
     required this.id,
@@ -587,10 +555,10 @@ class CoachEvent {
     required this.date,
     this.durationMins,
     required this.location,
-    this.intensity,
     required this.isImportant,
     this.completionCount,
     this.recurrenceRule = 'Does Not Repeat',
+    this.workoutAttachmentName,
   });
 
   CoachEvent copyWith({
@@ -602,10 +570,10 @@ class CoachEvent {
     String? date,
     int? durationMins,
     String? location,
-    String? intensity,
     bool? isImportant,
     int? completionCount,
     String? recurrenceRule,
+    String? workoutAttachmentName,
   }) {
     return CoachEvent(
       id: id ?? this.id,
@@ -616,27 +584,27 @@ class CoachEvent {
       date: date ?? this.date,
       durationMins: durationMins ?? this.durationMins,
       location: location ?? this.location,
-      intensity: intensity ?? this.intensity,
       isImportant: isImportant ?? this.isImportant,
       completionCount: completionCount ?? this.completionCount,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
+      workoutAttachmentName: workoutAttachmentName ?? this.workoutAttachmentName,
     );
   }
 
   factory CoachEvent.fromJson(Map<String, dynamic> json) {
     return CoachEvent(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       schoolId: json['schoolId'] ?? '',
       title: json['title'] ?? '',
-      eventType: json['eventType'] ?? '',
+      eventType: json['eventType'] ?? 'Field',
       startTime: json['startTime'] ?? '',
       date: json['date'] ?? '',
       durationMins: json['durationMins'] != null ? (json['durationMins'] as num).toInt() : null,
       location: json['location'] ?? '',
-      intensity: json['intensity'],
       isImportant: json['isImportant'] == true,
       completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
       recurrenceRule: json['recurrenceRule'] ?? 'Does Not Repeat',
+      workoutAttachmentName: json['workoutAttachmentName'],
     );
   }
 }
@@ -651,64 +619,50 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     CoachEvent(
       id: 101,
       schoolId: 'sch1',
-      title: 'High-Intensity Contact & Offload Drills',
-      eventType: 'Field Session',
+      title: 'Tactical & Offload Drills',
+      eventType: 'Field',
       startTime: '16:30',
-      date: '2026-07-21',
+      date: '2026-07-22',
       durationMins: 90,
-      location: 'Primary Oval Field 1',
-      intensity: 'High',
+      location: 'Field A',
       isImportant: false,
       completionCount: 2,
+      workoutAttachmentName: 'Field_Session_Drills.pdf',
     ),
     CoachEvent(
       id: 102,
       schoolId: 'sch1',
       title: 'Power Hypertrophy & Core Conditioning',
-      eventType: 'Gym Session',
+      eventType: 'Gym',
       startTime: '07:00',
-      date: '2026-07-21',
+      date: '2026-07-22',
       durationMins: 60,
-      location: 'High Performance Center',
-      intensity: 'Medium',
+      location: 'Gym Facility',
       isImportant: false,
       completionCount: 3,
+      workoutAttachmentName: 'LowerBody_Power_Routine.png',
     ),
     CoachEvent(
       id: 103,
       schoolId: 'sch1',
-      title: 'Tactical Playbook Video Session & Analysis',
-      eventType: 'Development',
+      title: 'Quarterly Fitness Testing Day',
+      eventType: 'Test Day',
       startTime: '15:00',
-      date: '2026-07-24',
+      date: '2026-07-22',
       durationMins: 45,
-      location: 'Seminar Room 1',
-      intensity: 'Low',
+      location: 'Krieket Field',
       isImportant: false,
     ),
     CoachEvent(
       id: 104,
       schoolId: 'sch1',
-      title: 'Premier Derby Match vs Grey College',
-      eventType: 'Match Day',
+      title: 'Premier Derby Match',
+      eventType: 'Match',
       startTime: '14:00',
-      date: '2026-07-27',
+      date: '2026-07-22',
       durationMins: 120,
-      location: 'Main Stadium Pitch',
-      intensity: 'High',
+      location: 'Main Stadium',
       isImportant: true,
-    ),
-    CoachEvent(
-      id: 105,
-      schoolId: 'sch1',
-      title: 'Active Hydrotherapy & Lower Body Rehab',
-      eventType: 'Development',
-      startTime: '09:30',
-      date: '2026-07-30',
-      durationMins: 60,
-      location: 'Pool & Hydro Facility',
-      intensity: 'Low',
-      isImportant: false,
     ),
   ];
 
@@ -718,10 +672,12 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'] ?? [];
         final events = list.map((x) => CoachEvent.fromJson(x)).toList();
-        state = AsyncValue.data(events);
+        state = AsyncValue.data(events.isNotEmpty ? events : _defaultEvents);
+      } else {
+        state = AsyncValue.data(_defaultEvents);
       }
-    } catch (err) {
-      // Retain cached default events state
+    } catch (e) {
+      state = AsyncValue.data(_defaultEvents);
     }
   }
 
@@ -732,81 +688,27 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     required String date,
     required String location,
     int? durationMins,
-    String? intensity,
     bool isImportant = false,
     String recurrenceRule = 'Does Not Repeat',
-    List<int>? repeatDaysOfWeek,
+    String? workoutAttachmentName,
   }) async {
-    final currentEvents = state.value ?? _defaultEvents;
-    final int baseId = DateTime.now().millisecondsSinceEpoch % 100000;
-    final List<CoachEvent> newEvents = [];
+    final newEvent = CoachEvent(
+      id: DateTime.now().millisecondsSinceEpoch,
+      schoolId: 'sch1',
+      title: title,
+      eventType: eventType,
+      startTime: startTime,
+      date: date,
+      durationMins: durationMins,
+      location: location,
+      isImportant: isImportant,
+      recurrenceRule: recurrenceRule,
+      workoutAttachmentName: workoutAttachmentName,
+    );
 
-    // Parse base date
-    DateTime baseDate = DateTime.tryParse(date) ?? DateTime.now();
-
-    if (recurrenceRule != 'Does Not Repeat' && repeatDaysOfWeek != null && repeatDaysOfWeek.isNotEmpty) {
-      // Generate events for selected days of week over 4 weeks
-      int addedCount = 0;
-      for (int dayOffset = 0; dayOffset < 28; dayOffset++) {
-        final DateTime targetDate = baseDate.add(Duration(days: dayOffset));
-        if (repeatDaysOfWeek.contains(targetDate.weekday)) {
-          final String instanceDateStr =
-              "${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}";
-          newEvents.add(CoachEvent(
-            id: baseId + addedCount,
-            schoolId: 'sch1',
-            title: title,
-            eventType: eventType,
-            startTime: startTime,
-            date: instanceDateStr,
-            location: location,
-            durationMins: durationMins,
-            intensity: intensity,
-            isImportant: isImportant,
-            recurrenceRule: recurrenceRule,
-          ));
-          addedCount++;
-        }
-      }
-    } else {
-      int count = 1;
-      int intervalDays = 0;
-      if (recurrenceRule == 'Every Day') {
-        count = 7;
-        intervalDays = 1;
-      } else if (recurrenceRule == 'Every Week') {
-        count = 4;
-        intervalDays = 7;
-      } else if (recurrenceRule == 'Every 2 Weeks') {
-        count = 4;
-        intervalDays = 14;
-      } else if (recurrenceRule == 'Every Month') {
-        count = 3;
-        intervalDays = 30;
-      }
-
-      for (int i = 0; i < count; i++) {
-        final DateTime instanceDate = baseDate.add(Duration(days: i * intervalDays));
-        final String instanceDateStr =
-            "${instanceDate.year}-${instanceDate.month.toString().padLeft(2, '0')}-${instanceDate.day.toString().padLeft(2, '0')}";
-
-        newEvents.add(CoachEvent(
-          id: baseId + i,
-          schoolId: 'sch1',
-          title: title,
-          eventType: eventType,
-          startTime: startTime,
-          date: instanceDateStr,
-          location: location,
-          durationMins: durationMins,
-          intensity: intensity,
-          isImportant: isImportant,
-          recurrenceRule: recurrenceRule,
-        ));
-      }
-    }
-
-    state = AsyncValue.data([...newEvents, ...currentEvents]);
+    state.whenData((currentList) {
+      state = AsyncValue.data([newEvent, ...currentList]);
+    });
 
     try {
       await _apiClient.post('/api/dashboard/events', data: {
@@ -816,47 +718,27 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'date': date,
         'location': location,
         'durationMins': durationMins,
-        'intensity': intensity,
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
+        'workoutAttachmentName': workoutAttachmentName,
       });
     } catch (_) {}
-
     return true;
   }
 
-  Future<bool> updateEvent(CoachEvent updatedEvent) async {
-    final currentEvents = state.value ?? _defaultEvents;
-    final updatedList = currentEvents.map((e) => e.id == updatedEvent.id ? updatedEvent : e).toList();
-    state = AsyncValue.data(updatedList);
-
-    try {
-      await _apiClient.post('/api/dashboard/events/update', data: {
-        'id': updatedEvent.id,
-        'title': updatedEvent.title,
-        'eventType': updatedEvent.eventType,
-        'startTime': updatedEvent.startTime,
-        'date': updatedEvent.date,
-        'location': updatedEvent.location,
-        'durationMins': updatedEvent.durationMins,
-        'intensity': updatedEvent.intensity,
-        'isImportant': updatedEvent.isImportant,
-        'recurrenceRule': updatedEvent.recurrenceRule,
-      });
-    } catch (_) {}
-
+  Future<bool> updateEvent(CoachEvent event) async {
+    state.whenData((currentList) {
+      final updated = currentList.map((e) => e.id == event.id ? event : e).toList();
+      state = AsyncValue.data(updated);
+    });
     return true;
   }
 
   Future<bool> deleteEvent(int eventId) async {
-    final currentEvents = state.value ?? _defaultEvents;
-    final updatedList = currentEvents.where((e) => e.id != eventId).toList();
-    state = AsyncValue.data(updatedList);
-
-    try {
-      await _apiClient.post('/api/dashboard/events/delete', data: {'id': eventId});
-    } catch (_) {}
-
+    state.whenData((currentList) {
+      final updated = currentList.where((e) => e.id != eventId).toList();
+      state = AsyncValue.data(updated);
+    });
     return true;
   }
 }

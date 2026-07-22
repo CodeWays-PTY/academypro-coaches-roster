@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../controllers/dashboard_controller.dart';
 
 class CreateEventModal extends ConsumerStatefulWidget {
@@ -29,72 +30,33 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   final _locationController = TextEditingController();
   final _durationController = TextEditingController(text: '90');
 
-  String _selectedEventType = 'Field Session';
+  String _selectedEventType = 'Field';
   String _selectedSquad = 'All Squads';
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 16, minute: 30);
-  String _selectedIntensity = 'High';
   String _selectedRecurrence = 'Does Not Repeat';
-  Set<int> _selectedDays = {1, 3, 5}; // Default Monday, Wednesday, Friday
   bool _isImportant = false;
   bool _isSubmitting = false;
+  String? _attachedWorkoutName;
 
   final List<String> _eventTypes = [
-    'Field Session',
-    'Match Day',
-    'Development',
-    'Gym Session',
+    'Field',
+    'Test Day',
+    'Gym',
+    'Match',
   ];
 
   final List<String> _squads = ['All Squads', 'U15', 'U16', 'U18'];
 
-  final List<Map<String, dynamic>> _quickTemplates = [
-    {
-      'label': '⚽ Field Practice',
-      'title': 'High-Intensity Tactical & Offload Drills',
-      'eventType': 'Field Session',
-      'time': const TimeOfDay(hour: 16, minute: 30),
-      'duration': '90',
-      'location': 'Primary Oval Field 1',
-      'intensity': 'High',
-      'isImportant': false,
-    },
-    {
-      'label': '🏋️ Gym Strength',
-      'title': 'Power Weight Training & Core Conditioning',
-      'eventType': 'Gym Session',
-      'time': const TimeOfDay(hour: 07, minute: 00),
-      'duration': '60',
-      'location': 'High Performance Center',
-      'intensity': 'Medium',
-      'isImportant': false,
-    },
-    {
-      'label': '🏟️ Match Day',
-      'title': 'Premier Derby Match',
-      'eventType': 'Match Day',
-      'time': const TimeOfDay(hour: 14, minute: 00),
-      'duration': '120',
-      'location': 'Main Stadium Pitch',
-      'intensity': 'High',
-      'isImportant': true,
-    },
-  ];
+  // Smart location suggestions by training type
+  final Map<String, List<String>> _smartLocationMap = {
+    'Field': ['Field A', 'Field B', 'Krieket Field', 'Practice Pitch 1'],
+    'Gym': ['Gym Facility', 'High Performance Center', 'Weight Room'],
+    'Test Day': ['Testing Lab', 'Sprint Track', 'Fitness Field'],
+    'Match': ['Main Stadium', 'A-Field Stadium', 'Away Pitch'],
+  };
 
-  void _applyQuickTemplate(Map<String, dynamic> template) {
-    HapticFeedback.lightImpact();
-    setState(() {
-      _titleController.text = template['title'];
-      _selectedEventType = template['eventType'];
-      _selectedTime = template['time'];
-      _durationController.text = template['duration'];
-      _locationController.text = template['location'];
-      _selectedIntensity = template['intensity'];
-      _isImportant = template['isImportant'];
-    });
-  }
-
-  final List<String> _intensityLevels = ['Low', 'Medium', 'High'];
+  final List<int> _durationOptions = [30, 45, 60, 90, 120];
 
   final List<String> _recurrenceRules = [
     'Does Not Repeat',
@@ -102,16 +64,6 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     'Every Week',
     'Every 2 Weeks',
     'Every Month',
-  ];
-
-  final List<Map<String, dynamic>> _weekDays = [
-    {'id': 1, 'label': 'Mon'},
-    {'id': 2, 'label': 'Tue'},
-    {'id': 3, 'label': 'Wed'},
-    {'id': 4, 'label': 'Thu'},
-    {'id': 5, 'label': 'Fri'},
-    {'id': 6, 'label': 'Sat'},
-    {'id': 7, 'label': 'Sun'},
   ];
 
   @override
@@ -123,9 +75,9 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       _locationController.text = e.location;
       _durationController.text = (e.durationMins ?? 90).toString();
       _selectedEventType = e.eventType;
-      _selectedIntensity = e.intensity ?? 'High';
       _isImportant = e.isImportant;
       _selectedRecurrence = e.recurrenceRule;
+      _attachedWorkoutName = e.workoutAttachmentName;
       if (e.date.isNotEmpty) {
         _selectedDate = DateTime.tryParse(e.date) ?? DateTime.now();
       }
@@ -199,6 +151,21 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     }
   }
 
+  Future<void> _pickWorkoutFile() async {
+    HapticFeedback.lightImpact();
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery);
+    if (file != null) {
+      setState(() {
+        _attachedWorkoutName = file.name;
+      });
+    } else {
+      setState(() {
+        _attachedWorkoutName = 'Workout_Program_${_selectedEventType}_Session.pdf';
+      });
+    }
+  }
+
   String _formatDateStr(DateTime dt) {
     final year = dt.year;
     final month = dt.month.toString().padLeft(2, '0');
@@ -237,9 +204,9 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
         date: dateStr,
         location: location,
         durationMins: durationMins,
-        intensity: _selectedIntensity,
         isImportant: _isImportant,
         recurrenceRule: _selectedRecurrence,
+        workoutAttachmentName: _attachedWorkoutName,
       );
       success = await ref.read(dashboardEventsProvider.notifier).updateEvent(updated);
     } else {
@@ -250,10 +217,9 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
             date: dateStr,
             location: location,
             durationMins: durationMins,
-            intensity: _selectedIntensity,
             isImportant: _isImportant,
             recurrenceRule: _selectedRecurrence,
-            repeatDaysOfWeek: _selectedRecurrence != 'Does Not Repeat' ? _selectedDays.toList() : null,
+            workoutAttachmentName: _attachedWorkoutName,
           );
     }
 
@@ -263,29 +229,24 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       });
 
       if (success) {
-        HapticFeedback.lightImpact();
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF0F172A),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
             content: Row(
-              children: const [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Event successfully created & added to calendar'),
+              children: [
+                const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 20.0),
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: Text(
+                    widget.eventToEdit != null ? 'Event updated successfully' : 'Event created successfully!',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
               ],
             ),
-            backgroundColor: const Color(0xFF166534),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to create event. Please try again.'),
-            backgroundColor: const Color(0xFFBA1A1A),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -295,530 +256,519 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final smartLocations = _smartLocationMap[_selectedEventType] ?? ['Field A', 'Field B', 'Krieket Field'];
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.90,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
-      padding: EdgeInsets.only(
-        left: 24.0,
-        right: 24.0,
-        top: 16.0,
-        bottom: 24.0 + bottomPadding + bottomInset,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 40.0,
-                  height: 4.0,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFC3C5D9).withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(2.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header Drag Handle & Title Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24.0, 16.0, 16.0, 12.0),
+            child: Column(
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.0,
+                    height: 4.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(999.0),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20.0),
-
-              // Title Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Create Event Session',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF131B2E),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Color(0xFF505F76)),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4.0),
-              const Text(
-                'Schedule a new training session or match for the team calendar.',
-                style: TextStyle(fontSize: 13.0, color: Color(0xFF737688)),
-              ),
-              const SizedBox(height: 20.0),
-              // Quick Preset Templates Banner (uRun Style)
-              _buildLabel('1-TAP QUICK TEMPLATES'),
-              const SizedBox(height: 8.0),
-              SizedBox(
-                height: 38.0,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _quickTemplates.length,
-                  separatorBuilder: (ctx, i) => const SizedBox(width: 8.0),
-                  itemBuilder: (context, index) {
-                    final tmpl = _quickTemplates[index];
-                    return ActionChip(
-                      label: Text(tmpl['label']),
-                      backgroundColor: const Color(0xFFF1F5F9),
-                      labelStyle: const TextStyle(
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF003EC7),
-                      ),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      onPressed: () => _applyQuickTemplate(tmpl),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16.0),
-
-              // Event Title
-              _buildLabel('EVENT TITLE'),
-              const SizedBox(height: 6.0),
-              TextFormField(
-                controller: _titleController,
-                style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF131B2E)),
-                decoration: _inputDecoration('e.g. Field Session A (Tactical & Set Pieces)', Icons.event_note),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter an event title';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-
-              // Event Type Selector
-              _buildLabel('EVENT CATEGORY'),
-              const SizedBox(height: 8.0),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: _eventTypes.map((type) {
-                  final isSelected = _selectedEventType == type;
-                  return ChoiceChip(
-                    label: Text(type),
-                    selected: isSelected,
-                    selectedColor: const Color(0xFFDDE1FF),
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    labelStyle: TextStyle(
-                      fontSize: 12.0,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? const Color(0xFF0038B6) : const Color(0xFF505F76),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                      side: BorderSide(
-                        color: isSelected ? const Color(0xFF0038B6) : Colors.transparent,
-                      ),
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedEventType = type;
-                        });
-                      }
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16.0),
-
-              // Date & Time Row
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 14.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        _buildLabel('DATE'),
-                        const SizedBox(height: 6.0),
-                        InkWell(
-                          onTap: _pickDate,
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 14.0),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.calendar_month, color: Color(0xFF003EC7), size: 18.0),
-                                const SizedBox(width: 8.0),
-                                Expanded(
-                                  child: Text(
-                                    _formatDateStr(_selectedDate),
-                                    style: const TextStyle(
-                                      fontSize: 13.0,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF131B2E),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12.0),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel('START TIME'),
-                        const SizedBox(height: 6.0),
-                        InkWell(
-                          onTap: _pickTime,
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 14.0),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.access_time, color: Color(0xFF003EC7), size: 18.0),
-                                const SizedBox(width: 8.0),
-                                Expanded(
-                                  child: Text(
-                                    _formatTimeStr(_selectedTime),
-                                    style: const TextStyle(
-                                      fontSize: 13.0,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF131B2E),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-
-              // Location & Duration Row
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel('LOCATION'),
-                        const SizedBox(height: 6.0),
-                        TextFormField(
-                          controller: _locationController,
-                          style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF131B2E)),
-                          decoration: _inputDecoration('e.g. Overkruin Field A', Icons.location_on_outlined),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Location required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12.0),
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel('DURATION (MIN)'),
-                        const SizedBox(height: 6.0),
-                        TextFormField(
-                          controller: _durationController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF131B2E)),
-                          decoration: _inputDecoration('90', Icons.timer_outlined),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-
-              // Intensity Level
-              _buildLabel('INTENSITY LEVEL'),
-              const SizedBox(height: 8.0),
-              Row(
-                children: _intensityLevels.map((lvl) {
-                  final isSelected = _selectedIntensity == lvl;
-                  Color activeColor;
-                  switch (lvl) {
-                    case 'Low':
-                      activeColor = const Color(0xFF22C55E);
-                      break;
-                    case 'Medium':
-                      activeColor = const Color(0xFFF59E0B);
-                      break;
-                    case 'High':
-                    default:
-                      activeColor = const Color(0xFFEF4444);
-                      break;
-                  }
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedIntensity = lvl;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(10.0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        Container(
+                          padding: const EdgeInsets.all(8.0),
                           decoration: BoxDecoration(
-                            color: isSelected ? activeColor.withOpacity(0.15) : const Color(0xFFF1F5F9),
-                            border: Border.all(
-                              color: isSelected ? activeColor : Colors.transparent,
-                              width: 1.5,
-                            ),
+                            color: const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(10.0),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: const Icon(Icons.event_note, color: Color(0xFF003EC7), size: 20.0),
+                        ),
+                        const SizedBox(width: 10.0),
+                        Text(
+                          widget.eventToEdit != null ? 'Edit Event' : 'Create Event',
+                          style: const TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Scrollable Form Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, bottomInset + 24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. TRAINING TYPE SELECTOR
+                    const Text(
+                      'TYPE OF TRAINING',
+                      style: TextStyle(
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: _eventTypes.map((type) {
+                        final isSel = _selectedEventType == type;
+                        IconData typeIcon = Icons.sports_soccer;
+                        if (type == 'Gym') typeIcon = Icons.fitness_center;
+                        if (type == 'Test Day') typeIcon = Icons.timer_outlined;
+                        if (type == 'Match') typeIcon = Icons.emoji_events_outlined;
+
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _selectedEventType = type;
+                                  // Auto clear or suggestion update
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12.0),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                                decoration: BoxDecoration(
+                                  color: isSel ? const Color(0xFF003EC7) : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  border: Border.all(
+                                    color: isSel ? const Color(0xFF003EC7) : const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(typeIcon, color: isSel ? Colors.white : const Color(0xFF64748B), size: 18.0),
+                                    const SizedBox(height: 4.0),
+                                    Text(
+                                      type,
+                                      style: TextStyle(
+                                        color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                        fontSize: 11.5,
+                                        fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 20.0),
+
+                    // 2. EVENT TITLE (BLANK BY DEFAULT - CUSTOM USER INPUT)
+                    const Text(
+                      'EVENT TITLE',
+                      style: TextStyle(
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Speed & Tactical Offload Session',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.0),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5),
+                        ),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Please enter an event title';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 20.0),
+
+                    // 3. LOCATION INPUT WITH SMART AUTO-FILL SUGGESTIONS
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Text(
+                          'LOCATION',
+                          style: TextStyle(
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        Text(
+                          'Smart Auto-Fill',
+                          style: TextStyle(fontSize: 11.0, color: Color(0xFF003EC7), fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextFormField(
+                      controller: _locationController,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Field A, Field B or Krieket Field',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.0),
+                        prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF64748B), size: 20.0),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5),
+                        ),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Please specify the event location';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 8.0),
+
+                    // Smart Auto-Fill Chips tailored to selected training type
+                    Wrap(
+                      spacing: 6.0,
+                      runSpacing: 6.0,
+                      children: smartLocations.map((loc) {
+                        return ActionChip(
+                          avatar: const Icon(Icons.place, size: 14.0, color: Color(0xFF003EC7)),
+                          label: Text(loc),
+                          backgroundColor: const Color(0xFFEFF6FF),
+                          labelStyle: const TextStyle(color: Color(0xFF003EC7), fontSize: 11.5, fontWeight: FontWeight.w600),
+                          side: const BorderSide(color: Color(0xFFBFDBFE)),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              _locationController.text = loc;
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 20.0),
+
+                    // 4. DATE, TIME & DURATION (CRITICAL FIELDS)
+                    Row(
+                      children: [
+                        // DATE PICKER
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.bolt, color: isSelected ? activeColor : const Color(0xFF64748B), size: 16.0),
-                              const SizedBox(width: 4.0),
-                              Text(
-                                lvl,
+                              const Text(
+                                'DATE',
                                 style: TextStyle(
-                                  fontSize: 12.0,
+                                  fontSize: 11.0,
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected ? activeColor : const Color(0xFF505F76),
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              const SizedBox(height: 8.0),
+                              InkWell(
+                                onTap: _pickDate,
+                                borderRadius: BorderRadius.circular(12.0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today, size: 16.0, color: Color(0xFF003EC7)),
+                                      const SizedBox(width: 8.0),
+                                      Expanded(
+                                        child: Text(
+                                          _formatDateStr(_selectedDate),
+                                          style: const TextStyle(
+                                            fontSize: 13.0,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16.0),
+                        const SizedBox(width: 10.0),
 
-              // Recurrence Rule Selector
-              _buildLabel('RECURRENCE RULE'),
-              const SizedBox(height: 6.0),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedRecurrence,
-                    isExpanded: true,
-                    icon: const Icon(Icons.repeat, color: Color(0xFF003EC7)),
-                    style: const TextStyle(fontSize: 14.0, color: Color(0xFF131B2E), fontWeight: FontWeight.w600),
-                    items: _recurrenceRules.map((rule) {
-                      return DropdownMenuItem(value: rule, child: Text(rule));
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedRecurrence = val;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ),
-              if (_selectedRecurrence != 'Does Not Repeat') ...[
-                const SizedBox(height: 12.0),
-                _buildLabel('REPEAT ON DAYS'),
-                const SizedBox(height: 8.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: _weekDays.map((day) {
-                    final int dayId = day['id'] as int;
-                    final String label = day['label'] as String;
-                    final bool isSelected = _selectedDays.contains(dayId);
-                    return Flexible(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              if (isSelected) {
-                                if (_selectedDays.length > 1) {
-                                  _selectedDays.remove(dayId);
-                                }
-                              } else {
-                                _selectedDays.add(dayId);
-                              }
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFF003EC7) : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              label,
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : const Color(0xFF505F76),
+                        // TIME PICKER
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'START TIME',
+                                style: TextStyle(
+                                  fontSize: 11.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 1.0,
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 8.0),
+                              InkWell(
+                                onTap: _pickTime,
+                                borderRadius: BorderRadius.circular(12.0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.access_time, size: 16.0, color: Color(0xFF003EC7)),
+                                      const SizedBox(width: 6.0),
+                                      Text(
+                                        _formatTimeStr(_selectedTime),
+                                        style: const TextStyle(
+                                          fontSize: 13.0,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-              const SizedBox(height: 16.0),
+                      ],
+                    ),
 
-              // Important Flag Switch
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.star, color: Color(0xFFD97706), size: 20.0),
-                    const SizedBox(width: 12.0),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Mark as High Priority / Important',
-                            style: TextStyle(
-                              fontSize: 13.0,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF92400E),
+                    const SizedBox(height: 16.0),
+
+                    // DURATION SELECTOR CHIPS
+                    const Text(
+                      'DURATION (MINS)',
+                      style: TextStyle(
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: _durationOptions.map((dur) {
+                        final isSel = _durationController.text == dur.toString();
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                            child: ChoiceChip(
+                              label: Text('${dur}m'),
+                              selected: isSel,
+                              selectedColor: const Color(0xFFDBEAFE),
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              labelStyle: TextStyle(
+                                color: isSel ? const Color(0xFF003EC7) : const Color(0xFF64748B),
+                                fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                                fontSize: 12.0,
+                              ),
+                              side: BorderSide(
+                                color: isSel ? const Color(0xFF93C5FD) : const Color(0xFFE2E8F0),
+                              ),
+                              onSelected: (_) {
+                                setState(() {
+                                  _durationController.text = dur.toString();
+                                });
+                              },
                             ),
                           ),
-                          Text(
-                            'Highlights session in golden star badge',
-                            style: TextStyle(fontSize: 11.0, color: Color(0xFFB45309)),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 20.0),
+
+                    // 5. OPTIONAL WORKOUT ATTACHMENT
+                    Container(
+                      padding: const EdgeInsets.all(14.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.attachment, color: Color(0xFF003EC7), size: 18.0),
+                                  SizedBox(width: 8.0),
+                                  Text(
+                                    'WORKOUT PROGRAM (OPTIONAL)',
+                                    style: TextStyle(
+                                      fontSize: 11.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF475569),
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: _pickWorkoutFile,
+                                icon: const Icon(Icons.upload_file, size: 14.0),
+                                label: Text(_attachedWorkoutName != null ? 'Change' : 'Upload'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF003EC7),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                ),
+                              ),
+                            ],
                           ),
+                          if (_attachedWorkoutName != null) ...[
+                            const SizedBox(height: 8.0),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.description, color: Color(0xFF166534), size: 14.0),
+                                  const SizedBox(width: 6.0),
+                                  Expanded(
+                                    child: Text(
+                                      _attachedWorkoutName!,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF166534),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _attachedWorkoutName = null;
+                                      });
+                                    },
+                                    child: const Icon(Icons.close, color: Color(0xFF166534), size: 14.0),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    Switch.adaptive(
-                      value: _isImportant,
-                      activeColor: const Color(0xFFD97706),
-                      onChanged: (val) {
-                        setState(() {
-                          _isImportant = val;
-                        });
-                      },
+
+                    const SizedBox(height: 24.0),
+
+                    // SUBMIT EVENT BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003EC7),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
+                              )
+                            : Text(
+                                widget.eventToEdit != null ? 'Update Event Details' : 'Create Event',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                              ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24.0),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 50.0,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003EC7),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                        )
-                      : const Text(
-                          'Publish & Create Event',
-                          style: TextStyle(
-                            fontSize: 15.0,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10.5,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF737688),
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.0, fontWeight: FontWeight.normal),
-      prefixIcon: Icon(icon, color: const Color(0xFF505F76), size: 18.0),
-      filled: true,
-      fillColor: const Color(0xFFF8FAFC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 14.0),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.0),
-        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.0),
-        borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.8),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.0),
-        borderSide: const BorderSide(color: Color(0xFFBA1A1A)),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.0),
-        borderSide: const BorderSide(color: Color(0xFFBA1A1A), width: 1.8),
+        ],
       ),
     );
   }
