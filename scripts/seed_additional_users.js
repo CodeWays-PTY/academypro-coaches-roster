@@ -38,11 +38,10 @@ db.exec(`
 
 // 5. Insert Coach Users for Jan-Albert and JRobertse
 db.exec(`
-  INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name)
+  INSERT OR REPLACE INTO users (id, school_id, email, password_hash, role, first_name, last_name)
   VALUES 
     ('USR-COACH-JAN', 'OVK', 'janmen777@gmail.com', 'sha256$mockedhash', 'Coach', 'Jan-Albert', 'Mentz'),
-    ('USR-COACH-JROB', 'OVK', 'jrobertse1@gmail.com', 'sha256$mockedhash', 'Coach', 'J', 'Robertse')
-  ON CONFLICT(id) DO UPDATE SET email=excluded.email;
+    ('USR-COACH-JROB', 'OVK', 'jrobertse1@gmail.com', 'sha256$mockedhash', 'Coach', 'J', 'Robertse');
 `);
 
 console.log('Successfully seeded additional Student, Parent, and Coach users linked to player OVK-U15-001.');

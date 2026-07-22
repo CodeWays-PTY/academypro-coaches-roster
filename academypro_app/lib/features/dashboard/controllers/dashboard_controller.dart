@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/local_storage.dart';
 import '../../auth/presentation/auth_state.dart';
 
 class DashboardSummaryState {
@@ -551,7 +552,13 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
 }
 
 // Providers
-final selectedAgeGroupProvider = StateProvider<String>((ref) => 'U15');
+final selectedAgeGroupProvider = StateProvider<String>((ref) {
+  final cached = LocalStorage.getCachedData('selected_age_group');
+  if (cached is String && cached.isNotEmpty) {
+    return cached;
+  }
+  return 'U15';
+});
 
 final dashboardSummaryProvider = StateNotifierProvider<DashboardSummaryNotifier, DashboardSummaryState>((ref) {
   final apiClient = ref.watch(apiClientProvider);

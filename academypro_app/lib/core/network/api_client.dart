@@ -6,18 +6,7 @@ class ApiClient {
   static const String _cloudflareUrl = 'https://academypro-api.tata-elash34.workers.dev';
   static const String _localDevUrl = 'http://localhost:3000';
   
-  static String get baseUrl {
-    if (kDebugMode) {
-      if (kIsWeb) {
-        final host = Uri.base.host;
-        if (host == 'localhost' || host == '127.0.0.1' || host == '0.0.0.0') {
-          // Dynamically matches whatever port localhost is running on
-          return Uri.base.origin;
-        }
-      }
-    }
-    return _cloudflareUrl;
-  }
+  static String get baseUrl => _cloudflareUrl;
 
   late final Dio dio;
 

@@ -33,9 +33,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(dashboardSummaryProvider.notifier).fetchSummary();
-      ref.read(dashboardFlagsProvider.notifier).fetchFlags();
-      ref.read(risingStarsProvider.notifier).fetchRisingStars();
+      final activeGroup = ref.read(selectedAgeGroupProvider);
+      ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: activeGroup);
+      ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: activeGroup);
+      ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: activeGroup);
       ref.read(notificationProvider.notifier).fetchNotifications();
     });
   }
@@ -200,9 +201,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   ) {
     return RefreshIndicator(
       onRefresh: () async {
-        await ref.read(dashboardSummaryProvider.notifier).fetchSummary();
-        await ref.read(dashboardFlagsProvider.notifier).fetchFlags();
-        await ref.read(risingStarsProvider.notifier).fetchRisingStars();
+        final activeGroup = ref.read(selectedAgeGroupProvider);
+        await ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: activeGroup);
+        await ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: activeGroup);
+        await ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: activeGroup);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -241,6 +243,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   onChanged: (newAge) {
                     if (newAge != null) {
                       ref.read(selectedAgeGroupProvider.notifier).state = newAge;
+                      LocalStorage.cacheData('selected_age_group', newAge);
                       ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
                       ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
                       ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
