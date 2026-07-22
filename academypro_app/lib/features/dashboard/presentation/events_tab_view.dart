@@ -19,19 +19,28 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(dashboardEventsProvider.notifier).fetchEvents();
+      final selectedAge = ref.read(selectedAgeGroupProvider);
+      ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedAge = ref.watch(selectedAgeGroupProvider);
+
+    ref.listen<String>(selectedAgeGroupProvider, (previous, next) {
+      if (previous != next) {
+        ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: next);
+      }
+    });
+
     final eventsState = ref.watch(dashboardEventsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FF),
       body: RefreshIndicator(
         onRefresh: () async {
-          await ref.read(dashboardEventsProvider.notifier).fetchEvents();
+          await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);
         },
         child: eventsState.when(
           data: (events) {
