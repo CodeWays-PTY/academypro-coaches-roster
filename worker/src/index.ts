@@ -712,6 +712,43 @@ app.get('/api/dashboard/flags', async (c) => {
   });
 });
 
+// Helper to automatically purge workout images from R2 and D1 for events older than 7 days (1 week)
+async function purgeExpiredWorkoutImages(c: any, results: any[]) {
+  const db = getDB(c);
+  const r2 = c.env?.R2;
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const nowMs = Date.now();
+
+  for (const r of results) {
+    if (!r.workout_image_path) continue;
+
+    try {
+      const eventDateMs = new Date(r.date).getTime();
+      if (!isNaN(eventDateMs) && (nowMs - eventDateMs) > sevenDaysMs) {
+        const imagePath = r.workout_image_path;
+
+        // 1. Delete object from Cloudflare R2 bucket if binding exists
+        if (r2 && typeof r2.delete === 'function') {
+          const key = imagePath.includes('/') ? imagePath.split('/').pop() : imagePath;
+          if (key) {
+            await r2.delete(key);
+            console.log(`[Observer Log] [R2 PURGE] Deleted workout image '${key}' for event #${r.id} older than 7 days.`);
+          }
+        }
+
+        // 2. Clear workout_image_path reference in D1 database
+        await db.prepare('UPDATE events SET workout_image_path = NULL WHERE id = ?')
+          .bind(r.id)
+          .run();
+
+        r.workout_image_path = null;
+      }
+    } catch (err) {
+      console.warn(`[Observer Error] [R2 PURGE] Failed purging workout image for event #${r?.id}:`, err);
+    }
+  }
+}
+
 // Route: Get Coach Command Events
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
@@ -730,6 +767,13 @@ app.get('/api/dashboard/events', async (c) => {
   try {
     const { results } = await db.prepare(query).bind(...params).all();
     
+    // Purge workout images for events older than 1 week (7 days) asynchronously
+    if (c.executionCtx && typeof c.executionCtx.waitUntil === 'function') {
+      c.executionCtx.waitUntil(purgeExpiredWorkoutImages(c, results || []));
+    } else {
+      purgeExpiredWorkoutImages(c, results || []).catch(() => {});
+    }
+
     let events = (results || []).map((r: any) => ({
       id: r.id?.toString() || '',
       schoolId: r.school_id,
