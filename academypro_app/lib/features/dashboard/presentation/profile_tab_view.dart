@@ -9,6 +9,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/utils/phone_utils.dart';
+import '../../../core/utils/app_toast.dart';
 
 class ProfileTabView extends ConsumerStatefulWidget {
   const ProfileTabView({Key? key}) : super(key: key);
@@ -222,6 +223,173 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showEmailVerificationModal(
+    BuildContext context,
+    String currentEmail,
+    String newEmail,
+    Map<String, dynamic> updatedProfile,
+  ) {
+    final otpController = TextEditingController();
+    bool verifying = false;
+
+    final apiClient = ref.read(apiClientProvider);
+    apiClient.post(
+      '/api/auth/send-email-change-otp',
+      data: {'currentEmail': currentEmail, 'newEmail': newEmail},
+    ).catchError((e) {
+      if (context.mounted) {
+        AppToast.showError(context, title: 'Email Dispatch Failed', message: 'Could not send verification code to $newEmail.');
+      }
+    });
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 20.0,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24.0 + MediaQuery.of(context).padding.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40.0,
+                      height: 4.0,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2.0),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(14.0),
+                        ),
+                        child: const Icon(Icons.mark_email_read_outlined, color: Color(0xFF003EC7), size: 24.0),
+                      ),
+                      const SizedBox(width: 14.0),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Verify New Email Address',
+                              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                            const SizedBox(height: 2.0),
+                            Text(
+                              '6-digit code sent to $newEmail',
+                              style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20.0),
+                  TextField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, letterSpacing: 8.0),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      hintText: '• • • • • •',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), letterSpacing: 4.0),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      counterText: '',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF003EC7), width: 2.0)),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  ElevatedButton(
+                    onPressed: verifying
+                        ? null
+                        : () async {
+                            final code = otpController.text.trim();
+                            if (code.length != 6) {
+                              AppToast.showError(context, title: 'Invalid Code', message: 'Please enter the 6-digit verification code.');
+                              return;
+                            }
+
+                            setModalState(() => verifying = true);
+
+                            try {
+                              final res = await apiClient.post(
+                                '/api/auth/verify-new-email',
+                                data: {
+                                  'currentEmail': currentEmail,
+                                  'newEmail': newEmail,
+                                  'otp': code,
+                                },
+                              );
+
+                              if (res.statusCode == 200 && res.data['success'] == true) {
+                                final finalProfile = Map<String, dynamic>.from(updatedProfile);
+                                finalProfile['email'] = newEmail;
+                                await ref.read(authProvider.notifier).updateUserProfile(finalProfile);
+
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  AppToast.showSuccess(
+                                    context,
+                                    title: 'Email Address Verified',
+                                    message: 'Your account email was updated successfully to $newEmail.',
+                                  );
+                                }
+                              } else {
+                                setModalState(() => verifying = false);
+                                if (context.mounted) {
+                                  AppToast.showError(context, title: 'Verification Failed', message: res.data['message'] ?? 'Invalid code');
+                                }
+                              }
+                            } catch (e) {
+                              setModalState(() => verifying = false);
+                              if (context.mounted) {
+                                AppToast.showError(context, title: 'Verification Error', message: 'Failed to verify new email code.');
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003EC7),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                      elevation: 0,
+                    ),
+                    child: verifying
+                        ? const SizedBox(width: 20.0, height: 20.0, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0))
+                        : const Text('Verify & Save Email', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -520,48 +688,45 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                   child: ElevatedButton(
                     onPressed: () async {
                       HapticFeedback.mediumImpact();
+
+                      final oldEmail = (currentProfile['email'] ?? '').toString().trim().toLowerCase();
+                      final newEmail = emailController.text.trim().toLowerCase();
+                      final isEmailChanged = newEmail.isNotEmpty && newEmail != oldEmail;
+
                       final newPhone = PhoneUtils.formatRSAPhone(phoneController.text.trim());
                       final oldPhone = currentProfile['phone'] ?? '';
-                      final isPhoneChanged = newPhone != oldPhone || currentProfile['phoneVerified'] != true;
+                      final isPhoneChanged = newPhone != oldPhone;
 
                       final updated = {
                         'first_name': firstNameController.text.trim(),
                         'firstName': firstNameController.text.trim(),
                         'last_name': lastNameController.text.trim(),
                         'lastName': lastNameController.text.trim(),
-                        'email': emailController.text.trim().toLowerCase(),
+                        'email': oldEmail,
                         'phone': newPhone,
+                        'phoneVerified': !isPhoneChanged && (currentProfile['phoneVerified'] == true),
                         'schoolName': tenantController.text.trim(),
                         'school_name': tenantController.text.trim(),
                         'tenant': tenantController.text.trim(),
                       };
 
-                      if (isPhoneChanged && newPhone.isNotEmpty) {
-                        Navigator.pop(context); // Close edit sheet
-                        _showSMSVerificationModal(
-                          context,
-                          newPhone,
-                          '${firstNameController.text} ${lastNameController.text}',
-                          updated,
-                        );
-                      } else {
-                        await ref.read(authProvider.notifier).updateUserProfile(updated);
+                      await ref.read(authProvider.notifier).updateUserProfile(updated);
 
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: const Color(0xFF0F172A),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                              content: const Row(
-                                children: [
-                                  Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
-                                  SizedBox(width: 10.0),
-                                  Text('Personal info updated successfully'),
-                                ],
-                              ),
-                            ),
+                      if (context.mounted) {
+                        Navigator.pop(context);
+
+                        if (isEmailChanged) {
+                          _showEmailVerificationModal(
+                            context,
+                            oldEmail,
+                            newEmail,
+                            updated,
+                          );
+                        } else {
+                          AppToast.showSuccess(
+                            context,
+                            title: 'Profile Saved',
+                            message: 'Personal profile details updated successfully.',
                           );
                         }
                       }

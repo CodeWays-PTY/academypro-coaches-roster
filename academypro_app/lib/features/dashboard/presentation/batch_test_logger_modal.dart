@@ -209,15 +209,21 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                   flex: 2,
                   child: DropdownButtonFormField<String>(
                     value: _selectedMetricId,
+                    borderRadius: BorderRadius.circular(16.0),
                     isDense: true,
                     decoration: InputDecoration(
                       labelText: 'Select Test Metric',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                      prefixIcon: const Icon(Icons.speed, size: 18.0, color: Color(0xFF2563EB)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
                     ),
                     items: _testMetrics.map((m) {
                       return DropdownMenuItem<String>(
                         value: m['id'],
-                        child: Text('${m['name']} (${m['unit']})', style: const TextStyle(fontSize: 13.0)),
+                        child: Text('${m['name']} (${m['unit']})', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold)),
                       );
                     }).toList(),
                     onChanged: (val) => setState(() => _selectedMetricId = val),
@@ -231,7 +237,11 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                     decoration: InputDecoration(
                       labelText: 'Date',
                       isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
                     ),
                   ),
                 ),

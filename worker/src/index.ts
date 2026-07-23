@@ -448,6 +448,92 @@ app.post('/api/auth/profile', async (c) => {
   });
 });
 
+// Route: Request Email Change (Dispatches 6-digit OTP to NEW email)
+app.post('/api/auth/send-email-change-otp', async (c) => {
+  const db = getDB(c);
+  let body: any;
+  try { body = await c.req.json(); } catch (_) { return c.json({ success: false, message: 'Invalid payload' }, 400); }
+
+  const { newEmail, currentEmail } = body;
+  if (!newEmail || !currentEmail) {
+    return c.json({ success: false, message: 'Current email and new email are required' }, 400);
+  }
+
+  const cleanNewEmail = newEmail.trim().toLowerCase();
+  const cleanCurrentEmail = currentEmail.trim().toLowerCase();
+
+  const existingUser = await db.prepare('SELECT id FROM users WHERE email = ? AND email != ?').bind(cleanNewEmail, cleanCurrentEmail).first();
+  if (existingUser) {
+    return c.json({ success: false, message: 'This email address is already registered to another account.' }, 400);
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  await db.prepare(`
+    INSERT INTO user_otps (email, otp, expires_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(email) DO UPDATE SET otp = excluded.otp, expires_at = excluded.expires_at
+  `).bind(cleanNewEmail, otp, expiresAt).run();
+
+  await sendTransactionalEmail(
+    cleanNewEmail,
+    'Verify Your New AcademyPro Email Address',
+    `<div style="font-family: Arial, sans-serif; padding: 20px; color: #1E293B;">
+      <h2 style="color: #003EC7;">Email Change Verification</h2>
+      <p>You requested to update your primary email address on AcademyPro.</p>
+      <p>Use the 6-digit verification code below to confirm this change:</p>
+      <div style="font-size: 28px; font-weight: bold; color: #003EC7; letter-spacing: 4px; padding: 12px 0;">${otp}</div>
+      <p style="font-size: 12px; color: #64748B;">This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+    </div>`
+  );
+
+  return c.json({
+    success: true,
+    message: `Verification code sent to ${cleanNewEmail}`
+  });
+});
+
+// Route: Verify New Email OTP & Perform Cascading Database Update
+app.post('/api/auth/verify-new-email', async (c) => {
+  const db = getDB(c);
+  let body: any;
+  try { body = await c.req.json(); } catch (_) { return c.json({ success: false, message: 'Invalid payload' }, 400); }
+
+  const { currentEmail, newEmail, otp } = body;
+  if (!currentEmail || !newEmail || !otp) {
+    return c.json({ success: false, message: 'Current email, new email, and OTP code are required' }, 400);
+  }
+
+  const cleanCurrentEmail = currentEmail.trim().toLowerCase();
+  const cleanNewEmail = newEmail.trim().toLowerCase();
+
+  const otpRecord = await db.prepare('SELECT * FROM user_otps WHERE email = ? AND otp = ?').bind(cleanNewEmail, otp.trim()).first();
+  if (!otpRecord) {
+    return c.json({ success: false, message: 'Invalid verification code. Please check your email and try again.' }, 400);
+  }
+
+  const now = new Date().toISOString();
+  if (otpRecord.expires_at < now) {
+    return c.json({ success: false, message: 'Verification code has expired. Please request a new code.' }, 400);
+  }
+
+  try {
+    await db.prepare('UPDATE users SET email = ? WHERE email = ?').bind(cleanNewEmail, cleanCurrentEmail).run();
+    await db.prepare('UPDATE players SET email = ? WHERE email = ?').bind(cleanNewEmail, cleanCurrentEmail).run();
+    await db.prepare('UPDATE parent_child_links SET player_email = ? WHERE player_email = ?').bind(cleanNewEmail, cleanCurrentEmail).run();
+    await db.prepare('DELETE FROM user_otps WHERE email = ?').bind(cleanNewEmail).run();
+
+    return c.json({
+      success: true,
+      message: `Email address updated successfully to ${cleanNewEmail}`,
+      data: { updatedEmail: cleanNewEmail }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to update email address in database', error: err.message }, 500);
+  }
+});
+
 // ==========================================
 // SECURED ENDPOINTS (COACH ROLE REQUIRED)
 // ==========================================
