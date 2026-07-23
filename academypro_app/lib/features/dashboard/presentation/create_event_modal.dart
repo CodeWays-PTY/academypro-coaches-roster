@@ -45,7 +45,9 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     'U15 Academy Elite',
     'U15 B Team',
     'U16 Academy Elite',
+    'U16 B Team',
     'U18 Premier Squad',
+    'U18 B Team',
   ];
 
   Map<String, List<String>> _userLocationHistory = {};

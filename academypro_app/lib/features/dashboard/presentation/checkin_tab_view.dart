@@ -242,9 +242,12 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.5),
                         items: const [
-                          DropdownMenuItem(value: 'U15', child: Text('U15')),
-                          DropdownMenuItem(value: 'U16', child: Text('U16')),
-                          DropdownMenuItem(value: 'U18', child: Text('U18')),
+                          DropdownMenuItem(value: 'U15', child: Text('U15 Elite')),
+                          DropdownMenuItem(value: 'U15_B', child: Text('U15 B Team')),
+                          DropdownMenuItem(value: 'U16', child: Text('U16 Elite')),
+                          DropdownMenuItem(value: 'U16_B', child: Text('U16 B Team')),
+                          DropdownMenuItem(value: 'U18', child: Text('U18 Premier')),
+                          DropdownMenuItem(value: 'U18_B', child: Text('U18 B Team')),
                         ],
                         onChanged: (newAge) {
                           if (newAge != null) {

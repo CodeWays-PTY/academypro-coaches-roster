@@ -197,7 +197,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     final position = profile['position'] ?? 'Player';
 
     // Compute Power Index
-    int powerIndex = 580; // default benchmark
+    int powerIndex = 0;
     final baseline = data.fitness['baseline'];
     if (baseline != null) {
       final pushUps = baseline['pushUps'] as num? ?? 0;

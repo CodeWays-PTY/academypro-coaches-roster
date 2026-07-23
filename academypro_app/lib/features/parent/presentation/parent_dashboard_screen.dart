@@ -204,7 +204,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final ageGroup = profile['ageGroup'] ?? 'U15';
 
     // Compute Power Index
-    int powerIndex = 580; // default benchmark
+    int powerIndex = 0;
     final baseline = data.fitness['baseline'];
     if (baseline != null) {
       final pushUps = baseline['pushUps'] as num? ?? 0;

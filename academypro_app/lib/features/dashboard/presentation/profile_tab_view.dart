@@ -400,19 +400,19 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     HapticFeedback.lightImpact();
 
     final firstNameController = TextEditingController(
-      text: currentProfile['first_name'] ?? currentProfile['firstName'] ?? 'Jan-Albert',
+      text: currentProfile['first_name'] ?? currentProfile['firstName'] ?? '',
     );
     final lastNameController = TextEditingController(
-      text: currentProfile['last_name'] ?? currentProfile['lastName'] ?? 'Mentz',
+      text: currentProfile['last_name'] ?? currentProfile['lastName'] ?? '',
     );
     final emailController = TextEditingController(
-      text: currentProfile['email'] ?? 'janmen777@gmail.com',
+      text: currentProfile['email'] ?? '',
     );
     final phoneController = TextEditingController(
-      text: currentProfile['phone'] ?? '+27 82 123 4567',
+      text: currentProfile['phone'] ?? '',
     );
     final tenantController = TextEditingController(
-      text: currentProfile['schoolName'] ?? currentProfile['school_name'] ?? currentProfile['tenant'] ?? 'Hoërskool Overkruin',
+      text: currentProfile['schoolName'] ?? currentProfile['school_name'] ?? currentProfile['tenant'] ?? '',
     );
 
     showModalBottomSheet(
@@ -904,16 +904,6 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                 subtitle: 'Receive match alerts and attendance nudges',
                 value: _pushNotifications,
                 onChanged: (val) => _handlePushToggle(val),
-              ),
-              const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              _buildSwitchTile(
-                icon: Icons.wifi_off_outlined,
-                title: 'Offline Sync Mode',
-                subtitle: 'Cache roster stats for field use without internet',
-                value: _offlineDataMode,
-                onChanged: (val) {
-                  setState(() => _offlineDataMode = val);
-                },
               ),
             ]),
             const SizedBox(height: 24.0),
