@@ -248,6 +248,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         return DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: activeValue,
+                            borderRadius: BorderRadius.circular(16.0),
                             icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.5),
                             items: [

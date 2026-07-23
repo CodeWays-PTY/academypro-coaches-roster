@@ -245,6 +245,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
+                        borderRadius: BorderRadius.circular(16.0),
                         value: squads.any((s) => s.ageGroup == _selectedAgeGroup) ? _selectedAgeGroup : (squads.isNotEmpty ? squads.first.ageGroup : 'U15'),
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF003EC7)),
@@ -283,6 +284,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
+                        borderRadius: BorderRadius.circular(16.0),
                         value: _selectedPosition,
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF003EC7)),

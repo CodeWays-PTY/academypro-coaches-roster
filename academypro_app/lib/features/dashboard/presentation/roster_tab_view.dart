@@ -120,9 +120,8 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
           // Header Row 1: Title & Squad Dropdown Selector
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Squad Roster',
+            children: [              const Text(
+                'Squad Athletes',
                 style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
               const SizedBox(width: 8.0),
@@ -140,7 +139,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.02),
@@ -152,6 +151,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: activeValue,
+                          borderRadius: BorderRadius.circular(16.0),
                           isDense: true,
                           isExpanded: false,
                           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),

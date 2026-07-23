@@ -440,6 +440,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         return DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: activeTeam,
+                            borderRadius: BorderRadius.circular(16.0),
                             isExpanded: true,
                             icon: const Icon(Icons.groups_outlined, color: Color(0xFF003EC7)),
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),

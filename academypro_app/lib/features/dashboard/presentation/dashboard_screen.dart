@@ -245,6 +245,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   return DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: activeValue,
+                      borderRadius: BorderRadius.circular(16.0),
                       icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                       style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 15.0),
                       items: [
@@ -1190,32 +1191,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildBottomNav(BuildContext context, {required int activeIndex}) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16.0,
+        right: 16.0,
+        bottom: bottomInset > 0 ? bottomInset : 12.0,
+        top: 6.0,
       ),
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: BottomNavigationBar(
-          currentIndex: activeIndex,
-          onTap: (index) {
-            ref.read(dashboardTabProvider.notifier).state = index;
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF2563EB),
-          unselectedItemColor: const Color(0xFF64748B),
-          selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontSize: 11.0),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), label: 'Roster'),
-            BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner_outlined), activeIcon: Icon(Icons.qr_code_scanner), label: 'Check-In'),
-            BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Events'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
+      child: Container(
+        height: 64.0,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20.0,
+              spreadRadius: 1.0,
+              offset: const Offset(0, 4),
+            ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32.0),
+          child: BottomNavigationBar(
+            currentIndex: activeIndex,
+            onTap: (index) {
+              ref.read(dashboardTabProvider.notifier).state = index;
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            selectedItemColor: const Color(0xFF003EC7),
+            unselectedItemColor: const Color(0xFF64748B),
+            selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+              BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), activeIcon: Icon(Icons.people_alt), label: 'Athletes'),
+              BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner_outlined), activeIcon: Icon(Icons.qr_code_scanner), label: 'Check-In'),
+              BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Events'),
+              BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
+            ],
+          ),
         ),
       ),
     );

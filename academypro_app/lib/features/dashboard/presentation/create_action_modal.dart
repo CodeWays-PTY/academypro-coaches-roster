@@ -152,6 +152,7 @@ class _CreateActionModalState extends ConsumerState<CreateActionModal> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: _selectedCategory,
+                        borderRadius: BorderRadius.circular(16.0),
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                         style: const TextStyle(fontSize: 14.0, color: Color(0xFF0F172A), fontWeight: FontWeight.w600),

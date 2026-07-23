@@ -1093,33 +1093,52 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
 
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16.0,
+        right: 16.0,
+        bottom: bottomInset > 0 ? bottomInset : 12.0,
+        top: 6.0,
       ),
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: BottomNavigationBar(
-          currentIndex: _activeTab,
-          onTap: (index) {
-            setState(() {
-              _activeTab = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF003EC7),
-          unselectedItemColor: const Color(0xFF64748B),
-          selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontSize: 11.0),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Overview'),
-            BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), label: 'Fitness'),
-            BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Academics'),
-            BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), label: 'Matches'),
+      child: Container(
+        height: 64.0,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20.0,
+              spreadRadius: 1.0,
+              offset: const Offset(0, 4),
+            ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32.0),
+          child: BottomNavigationBar(
+            currentIndex: _activeTab,
+            onTap: (index) {
+              setState(() {
+                _activeTab = index;
+              });
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            selectedItemColor: const Color(0xFF003EC7),
+            unselectedItemColor: const Color(0xFF64748B),
+            selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Overview'),
+              BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), activeIcon: Icon(Icons.fitness_center), label: 'Fitness'),
+              BottomNavigationBarItem(icon: Icon(Icons.school_outlined), activeIcon: Icon(Icons.school), label: 'Academics'),
+              BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Matches'),
+            ],
+          ),
         ),
       ),
     );
