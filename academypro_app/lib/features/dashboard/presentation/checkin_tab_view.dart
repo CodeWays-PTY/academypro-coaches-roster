@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/app_toast.dart';
 import '../controllers/checkin_controller.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
@@ -839,25 +840,19 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           HapticFeedback.mediumImpact();
                           final success = await ref.read(checkInProvider.notifier).submitAttendance();
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: const Color(0xFF0F172A),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 20.0),
-                                    const SizedBox(width: 10.0),
-                                    Expanded(
-                                      child: Text(
-                                        'Practice attendance saved! (${checkInState.checkedInCount} Present)',
-                                        style: const TextStyle(fontWeight: FontWeight.w500),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                            if (success) {
+                              AppToast.showSuccess(
+                                context,
+                                title: 'Attendance Record Saved',
+                                message: 'Practice session check-in complete. ${checkInState.checkedInCount} athlete(s) marked Present.',
+                              );
+                            } else {
+                              AppToast.showInfo(
+                                context,
+                                title: 'Attendance Queued Offline',
+                                message: 'Check-in saved locally. Will sync automatically when connection restores.',
+                              );
+                            }
                           }
                         },
                   icon: const Icon(Icons.cloud_upload_outlined, size: 20.0),

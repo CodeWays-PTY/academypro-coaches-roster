@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../core/storage/local_storage.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/roster_controller.dart';
@@ -69,13 +70,10 @@ class _CreateSquadModalState extends ConsumerState<CreateSquadModal> {
 
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF0F172A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-          content: Text('Squad "${newSquad.name}" created & set as active!'),
-        ),
+      AppToast.showSuccess(
+        context,
+        title: 'Squad Created & Active',
+        message: 'Squad "${newSquad.name}" (${newSquad.ageGroup}) is now set as your active roster.',
       );
     }
   }

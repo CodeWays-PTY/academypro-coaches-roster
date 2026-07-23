@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/app_toast.dart';
 import '../controllers/dashboard_controller.dart';
 
 class CreateEventModal extends ConsumerStatefulWidget {
@@ -164,19 +165,10 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
           _attachedImagePath = file.path;
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: const Color(0xFF0F172A),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 18.0),
-                  SizedBox(width: 8.0),
-                  Text('Workout routine photo added successfully!'),
-                ],
-              ),
-            ),
+          AppToast.showSuccess(
+            context,
+            title: 'Workout Photo Attached',
+            message: 'Routine photo attached. Will be purged automatically 7 days after the event.',
           );
         }
       }
@@ -323,24 +315,16 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
       if (success) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF0F172A),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 20.0),
-                const SizedBox(width: 10.0),
-                Expanded(
-                  child: Text(
-                    widget.eventToEdit != null ? 'Event updated successfully' : 'Event created successfully!',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        AppToast.showSuccess(
+          context,
+          title: widget.eventToEdit != null ? 'Event Updated' : 'New Event Scheduled',
+          message: '${_titleController.text.trim()} scheduled for $_selectedTeam on $_selectedDate.',
+        );
+      } else {
+        AppToast.showError(
+          context,
+          title: 'Schedule Saved Offline',
+          message: 'Saved locally to queue. Will sync when connection is active.',
         );
       }
     }

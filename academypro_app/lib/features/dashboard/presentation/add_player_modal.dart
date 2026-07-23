@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/roster_controller.dart';
 
@@ -101,13 +102,10 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
 
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF0F172A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-          content: Text('$firstName $lastName added to $_selectedTeam!'),
-        ),
+      AppToast.showSuccess(
+        context,
+        title: 'Athlete Added to Roster',
+        message: '$firstName $lastName enrolled in $_selectedTeam${email.isNotEmpty ? " • Invite sent to $email" : ""}.',
       );
     }
   }

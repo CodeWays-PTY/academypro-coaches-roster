@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../core/network/api_client.dart';
 import '../../student/controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
@@ -113,11 +114,10 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                               await apiClient.post('/api/parent/link-request', data: {'childEmail': emailCtrl.text.trim()});
                               if (mounted) {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF003EC7),
-                                    content: Text('Link request sent to ${emailCtrl.text.trim()}! Waiting for athlete approval.'),
-                                  ),
+                                AppToast.showSuccess(
+                                  context,
+                                  title: 'Link Request Dispatched',
+                                  message: 'Parent link request sent to ${emailCtrl.text.trim()}. Pending athlete approval.',
                                 );
                               }
                             } catch (e) {

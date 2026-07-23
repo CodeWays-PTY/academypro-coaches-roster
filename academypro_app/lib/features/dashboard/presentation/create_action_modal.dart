@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import '../controllers/dashboard_controller.dart';
 
 class CreateActionModal extends ConsumerStatefulWidget {
@@ -62,24 +63,10 @@ class _CreateActionModalState extends ConsumerState<CreateActionModal> {
 
     Navigator.pop(context);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20.0),
-            const SizedBox(width: 10.0),
-            Expanded(
-              child: Text(
-                'Coach Action Plan set for ${widget.playerName}',
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
-        ),
-      ),
+    AppToast.showSuccess(
+      context,
+      title: 'Action Item Assigned',
+      message: '${_titleController.text.trim()} assigned to ${widget.playerName}.',
     );
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import 'auth_state.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import '../../student/presentation/student_dashboard_screen.dart';
@@ -51,8 +52,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final success = await ref.read(authProvider.notifier).sendOtp(email);
       if (success) {
         _startResendTimer();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP sent successfully to email.')),
+        AppToast.showSuccess(
+          context,
+          title: 'Verification Code Sent',
+          message: 'A 6-digit OTP code was sent to $email. Valid for 5 minutes.',
         );
       }
     }
@@ -61,8 +64,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _handleVerifyOtp() async {
     final otp = _otpController.text;
     if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a 6-digit OTP code.')),
+      AppToast.showError(
+        context,
+        title: 'Invalid Security Code',
+        message: 'Please enter the complete 6-digit code sent to your email.',
       );
       return;
     }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../core/utils/phone_utils.dart';
 import '../controllers/dashboard_controller.dart';
@@ -778,13 +779,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: item.parentPhone));
                             HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: const Color(0xFF0F172A),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                content: Text('Copied parent phone (${item.parentPhone}) to clipboard!'),
-                              ),
+                            AppToast.showInfo(
+                              context,
+                              title: 'Phone Number Copied',
+                              message: 'Parent contact phone (${item.parentPhone}) copied to clipboard.',
                             );
                           },
                         ),
@@ -814,13 +812,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: item.parentEmail));
                             HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: const Color(0xFF0F172A),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                content: Text('Copied parent email (${item.parentEmail}) to clipboard!'),
-                              ),
+                            AppToast.showInfo(
+                              context,
+                              title: 'Email Address Copied',
+                              message: 'Parent contact email (${item.parentEmail}) copied to clipboard.',
                             );
                           },
                         ),
@@ -868,13 +863,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: item.playerPhone));
                         HapticFeedback.lightImpact();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: const Color(0xFF0F172A),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                            content: Text('Copied player phone (${item.playerPhone}) to clipboard!'),
-                          ),
+                        AppToast.showInfo(
+                          context,
+                          title: 'Phone Number Copied',
+                          message: 'Player contact phone (${item.playerPhone}) copied to clipboard.',
                         );
                       },
                     ),
