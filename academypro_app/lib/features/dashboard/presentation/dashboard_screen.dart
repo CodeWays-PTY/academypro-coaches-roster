@@ -156,21 +156,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(width: 8.0),
         ],
       ),
-      floatingActionButton: activeTab == 0
-          ? FloatingActionButton.extended(
-              backgroundColor: const Color(0xFF003EC7),
-              foregroundColor: Colors.white,
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                CreateEventModal.show(context);
-              },
-              icon: const Icon(Icons.add, size: 22.0),
-              label: const Text(
-                'Create Event',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
-              ),
-            )
-          : null,
       bottomNavigationBar: _buildBottomNav(context, activeIndex: activeTab),
       body: _buildBody(activeTab, summary, flagsState, starsState, coachActions),
     );
@@ -1226,50 +1211,50 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildBottomNav(BuildContext context, {required int activeIndex}) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16.0,
-        right: 16.0,
-        bottom: bottomInset > 0 ? bottomInset : 12.0,
-        top: 6.0,
-      ),
-      child: Container(
-        height: 64.0,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20.0,
-              spreadRadius: 1.0,
-              offset: const Offset(0, 4),
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Container(
+            height: 64.0,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20.0,
+                  spreadRadius: 1.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32.0),
-          child: BottomNavigationBar(
-            currentIndex: activeIndex,
-            onTap: (index) {
-              ref.read(dashboardTabProvider.notifier).state = index;
-            },
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            selectedItemColor: const Color(0xFF003EC7),
-            unselectedItemColor: const Color(0xFF64748B),
-            selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-            unselectedLabelStyle: const TextStyle(fontSize: 11.0),
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Dashboard'),
-              BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), activeIcon: Icon(Icons.people_alt), label: 'Athletes'),
-              BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner_outlined), activeIcon: Icon(Icons.qr_code_scanner), label: 'Check-In'),
-              BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Events'),
-              BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
-            ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32.0),
+              child: BottomNavigationBar(
+                currentIndex: activeIndex,
+                onTap: (index) {
+                  ref.read(dashboardTabProvider.notifier).state = index;
+                },
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: Colors.white,
+                elevation: 0,
+                selectedItemColor: const Color(0xFF003EC7),
+                unselectedItemColor: const Color(0xFF64748B),
+                selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
+                unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+                  BottomNavigationBarItem(icon: Icon(Icons.people_alt_outlined), activeIcon: Icon(Icons.people_alt), label: 'Athletes'),
+                  BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner_outlined), activeIcon: Icon(Icons.qr_code_scanner), label: 'Check-In'),
+                  BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Events'),
+                  BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
+                ],
+              ),
+            ),
           ),
         ),
       ),
