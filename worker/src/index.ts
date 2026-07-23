@@ -1438,15 +1438,14 @@ app.get('/api/student-portal', async (c) => {
   try {
     if (requestedPlayerId) {
       player = await db.prepare('SELECT * FROM players WHERE id = ?').bind(requestedPlayerId).first();
-    }
-    if (!player && role === 'Student') {
+    } else if (role === 'Student') {
       player = await db.prepare('SELECT * FROM players WHERE user_id = ?').bind(userId).first();
-    } else if (!player && role === 'Parent') {
+    } else if (role === 'Parent') {
       player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();
     }
   } catch (_) {}
 
-  if (!player) {
+  if (!player && !requestedPlayerId) {
     player = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
   }
 

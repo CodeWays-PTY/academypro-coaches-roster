@@ -1,7 +1,8 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import '../../../core/network/api_client.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import 'create_action_modal.dart';
@@ -583,20 +584,8 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
   }
 
   void _showPlayerProfileSheet(BuildContext context, RosterPlayer player, bool isFlagged) {
-    // Generate seeded random values for player baselines and grades
-    final randSeed = player.id.hashCode;
-    final r = Random(randSeed);
-
-    final gpa = isFlagged 
-        ? (50.0 + r.nextDouble() * 9.0).toStringAsFixed(1)
-        : (72.0 + r.nextDouble() * 25.0).toStringAsFixed(1);
-    
-    final verticalJump = (0.45 + r.nextDouble() * 0.35).toStringAsFixed(2);
-    final speed40m = (4.70 + r.nextDouble() * 0.90).toStringAsFixed(2);
-    final powerIndex = (520 + r.nextInt(280));
-    final gymAtt = 90 + r.nextInt(10);
-    final uGroups = player.ugroupsActive == 1 ? 'ACTIVE (98% attend)' : 'INACTIVE';
     final initials = '${player.firstName.isNotEmpty ? player.firstName[0] : ''}${player.lastName.isNotEmpty ? player.lastName[0] : ''}';
+    final apiClient = ref.read(apiClientProvider);
 
     showModalBottomSheet(
       context: context,
@@ -612,286 +601,326 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: EdgeInsets.only(
-                left: 24.0,
-                right: 24.0,
-                top: 24.0,
-                bottom: 24.0 + bottomInset,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8.0),
+              initialChildSize: 0.85,
+              minChildSize: 0.5,
+              maxChildSize: 0.95,
+              expand: false,
+              builder: (context, scrollController) {
+                return FutureBuilder<Response>(
+                  future: apiClient.getAndCache('/api/student-portal?player_id=${player.id}'),
+                  builder: (context, snapshot) {
+                    List dynamicMetrics = [];
+                    String gpa = '--';
+                    int powerIndex = 0;
+                    String uGroups = player.ugroupsActive == 1 ? 'ACTIVE' : 'INACTIVE';
+                    String gymAtt = '0%';
 
-                  // Athlete Profile Header Section
-                  Row(
-                    children: [
-                      Container(
-                        width: 80.0,
-                        height: 80.0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD0E1FB), // secondary-container / light blue
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(color: const Color(0xFFB7C8E1), width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 4.0,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            initials.isNotEmpty ? initials : 'P',
-                            style: const TextStyle(
-                              color: Color(0xFF0F172A),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24.0,
-                            ),
-                          ),
-                        ),
+                    if (snapshot.hasData && snapshot.data?.data['success'] == true) {
+                      final data = snapshot.data?.data['data'] ?? {};
+                      dynamicMetrics = data['dynamicMetrics'] ?? [];
+                      final academics = data['academics'] ?? [];
+                      if (academics.isNotEmpty) {
+                        final lastGrade = academics.last['gradePercentage'];
+                        if (lastGrade != null) gpa = '$lastGrade%';
+                      }
+                      powerIndex = data['readinessScore'] ?? 0;
+                      final att = data['attendanceRate'];
+                      if (att != null) gymAtt = '$att%';
+                    }
+
+                    return SingleChildScrollView(
+                      controller: scrollController,
+                      padding: EdgeInsets.only(
+                        left: 24.0,
+                        right: 24.0,
+                        top: 24.0,
+                        bottom: 24.0 + bottomInset,
                       ),
-                      const SizedBox(width: 16.0),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${player.firstName} ${player.lastName}',
-                              style: const TextStyle(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 2.0),
-                            Text(
-                              '${player.position.isNotEmpty ? player.position : 'Unassigned'} • ${player.team.isNotEmpty ? player.team : player.ageGroup}',
-                              style: const TextStyle(
-                                fontSize: 13.0,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 6.0),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF0052FF),
-                                    borderRadius: BorderRadius.circular(20.0),
-                                  ),
-                                  child: const Text(
-                                    'Active Squad',
-                                    style: TextStyle(
-                                      fontSize: 10.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 8.0),
+
+                          // Athlete Profile Header Section
+                          Row(
+                            children: [
+                              Container(
+                                width: 80.0,
+                                height: 80.0,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD0E1FB),
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  border: Border.all(color: const Color(0xFFB7C8E1), width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 4.0,
+                                      offset: const Offset(0, 2),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                const SizedBox(width: 6.0),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDAE2FD),
-                                    borderRadius: BorderRadius.circular(20.0),
-                                  ),
+                                child: Center(
                                   child: Text(
-                                    'ID: ${player.id}',
+                                    initials.isNotEmpty ? initials : 'P',
                                     style: const TextStyle(
-                                      fontSize: 10.0,
+                                      color: Color(0xFF0F172A),
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF434656),
+                                      fontSize: 24.0,
                                     ),
                                   ),
                                 ),
+                              ),
+                              const SizedBox(width: 16.0),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${player.firstName} ${player.lastName}',
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2.0),
+                                    Text(
+                                      '${player.position.isNotEmpty ? player.position : 'Unassigned'} • ${player.team.isNotEmpty ? player.team : player.ageGroup}',
+                                      style: const TextStyle(
+                                        fontSize: 13.0,
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6.0),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF0052FF),
+                                            borderRadius: BorderRadius.circular(20.0),
+                                          ),
+                                          child: const Text(
+                                            'Active Squad',
+                                            style: TextStyle(
+                                              fontSize: 10.0,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6.0),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDAE2FD),
+                                            borderRadius: BorderRadius.circular(20.0),
+                                          ),
+                                          child: Text(
+                                            'ID: ${player.id}',
+                                            style: const TextStyle(
+                                              fontSize: 10.0,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF434656),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24.0),
+
+                          // Development Portals Bento Grid
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: const [
+                              Text(
+                                'Development Portals',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                              ),
+                              Text(
+                                'METRICS OVERVIEW',
+                                style: TextStyle(
+                                  fontSize: 10.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF003EC7),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12.0),
+
+                          // Bento grid layout
+                          GridView.count(
+                            crossAxisCount: 2,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisSpacing: 12.0,
+                            mainAxisSpacing: 12.0,
+                            childAspectRatio: 1.15,
+                            children: [
+                              _buildBentoCard(
+                                title: 'MIND\n(ACADEMIC)',
+                                value: gpa,
+                                subtext: 'Term Average',
+                                icon: Icons.psychology,
+                                color: const Color(0xFF003EC7),
+                              ),
+                              _buildBentoCard(
+                                title: 'BODY\n(FITNESS)',
+                                value: '$powerIndex',
+                                subtext: 'Power Index',
+                                icon: Icons.fitness_center,
+                                color: const Color(0xFF16A34A),
+                              ),
+                              _buildBentoCard(
+                                title: 'SPIRIT\n(UGROUP)',
+                                value: uGroups,
+                                subtext: 'Character Dev',
+                                icon: Icons.diversity_3,
+                                color: const Color(0xFF952200),
+                                hasLeftBorder: true,
+                              ),
+                              _buildBentoCard(
+                                title: 'GYM\nATTENDANCE',
+                                value: gymAtt,
+                                subtext: 'Facility Attendance',
+                                icon: Icons.open_in_full,
+                                color: const Color(0xFF64748B),
+                                valueColor: const Color(0xFF131B2E),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24.0),
+
+                          // Evaluation Baselines Section Header & Action Button
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Evaluation Baselines',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                              ),
+                              TextButton.icon(
+                                onPressed: () async {
+                                  HapticFeedback.lightImpact();
+                                  await SinglePlayerBaselineModal.show(
+                                    context,
+                                    playerId: player.id,
+                                    playerName: '${player.firstName} ${player.lastName}',
+                                  );
+                                  setSheetState(() {});
+                                },
+                                icon: const Icon(Icons.edit_note, size: 18.0, color: Color(0xFF003EC7)),
+                                label: const Text(
+                                  'Update Test Score',
+                                  style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8.0),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12.0),
+                              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                            ),
+                            child: Column(
+                              children: [
+                                if (dynamicMetrics.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Text(
+                                      'No baseline test scores logged for this athlete yet.\nTap "Update Test Score" above to record a baseline test.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                                    ),
+                                  )
+                                else
+                                  ...dynamicMetrics.map((m) {
+                                    final name = m['name'] ?? 'Test';
+                                    final latest = m['latestScore'];
+                                    final unit = m['unit'] ?? '';
+                                    final valStr = latest != null ? '$latest $unit' : 'No test logged';
+                                    return Column(
+                                      children: [
+                                        _buildProfileRow(name, valStr),
+                                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                                      ],
+                                    );
+                                  }).toList(),
+                                _buildPositionRow(context, ref, player, () => setSheetState(() {})),
+                                const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                                _buildProfileRow('Athlete System ID', player.id),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24.0),
+                          ),
+                          const SizedBox(height: 24.0),
 
-                  // Development Portals Bento Grid
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        'Development Portals',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                          // Actions
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  HapticFeedback.mediumImpact();
+                                  Navigator.pop(context);
+                                  CreateActionModal.show(
+                                    context,
+                                    playerId: player.id,
+                                    playerName: '${player.firstName} ${player.lastName}',
+                                  );
+                                },
+                                icon: const Icon(Icons.add_task, size: 18.0),
+                                label: const Text(
+                                  'Set Coach Action Plan',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF003EC7),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                ),
+                              ),
+                              const SizedBox(height: 10.0),
+                              OutlinedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF475569),
+                                  side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+                                  padding: const EdgeInsets.symmetric(vertical: 14.0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                ),
+                                child: const Text(
+                                  'Close Profile',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Text(
-                        'METRICS OVERVIEW',
-                        style: TextStyle(
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF003EC7),
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12.0),
-
-                  // Bento grid layout
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12.0,
-                    mainAxisSpacing: 12.0,
-                    childAspectRatio: 1.15,
-                    children: [
-                      _buildBentoCard(
-                        title: 'MIND\n(ACADEMIC)',
-                        value: '$gpa%',
-                        subtext: 'Term 1 Average',
-                        icon: Icons.psychology,
-                        color: const Color(0xFF003EC7),
-                      ),
-                      _buildBentoCard(
-                        title: 'BODY\n(FITNESS)',
-                        value: '$powerIndex',
-                        subtext: 'Power Index',
-                        icon: Icons.fitness_center,
-                        color: const Color(0xFF16A34A),
-                      ),
-                      _buildBentoCard(
-                        title: 'SPIRIT\n(UGROUP)',
-                        value: uGroups,
-                        subtext: 'Character Dev',
-                        icon: Icons.diversity_3,
-                        color: const Color(0xFF952200),
-                        hasLeftBorder: true,
-                      ),
-                      _buildBentoCard(
-                        title: 'GYM\nATTENDANCE',
-                        value: '$gymAtt%',
-                        subtext: 'Facility Attendance',
-                        icon: Icons.open_in_full,
-                        color: const Color(0xFF64748B),
-                        valueColor: const Color(0xFF131B2E),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24.0),
-
-                  // Evaluation Baselines Section Header & Action Button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Evaluation Baselines',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
-                      ),
-                      TextButton.icon(
-                        onPressed: () async {
-                          HapticFeedback.lightImpact();
-                          await SinglePlayerBaselineModal.show(
-                            context,
-                            playerId: player.id,
-                            playerName: '${player.firstName} ${player.lastName}',
-                          );
-                          setSheetState(() {});
-                        },
-                        icon: const Icon(Icons.edit_note, size: 18.0, color: Color(0xFF003EC7)),
-                        label: const Text(
-                          'Update Test Score',
-                          style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8.0),
-
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildProfileRow('Vertical Jump Baseline', '$verticalJump m'),
-                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
-                        _buildProfileRow('40m Sprint Speed', '$speed40m s'),
-                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
-                        _buildProfileRow('Bench Press 1RM', '85.0 kg'),
-                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
-                        _buildPositionRow(context, ref, player, () => setSheetState(() {})),
-                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
-                        _buildProfileRow('Athlete System ID', player.id),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24.0),
-
-                  // Actions
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          Navigator.pop(context);
-                          CreateActionModal.show(
-                            context,
-                            playerId: player.id,
-                            playerName: '${player.firstName} ${player.lastName}',
-                          );
-                        },
-                        icon: const Icon(Icons.add_task, size: 18.0),
-                        label: const Text(
-                          'Set Coach Action Plan',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF003EC7),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                        ),
-                      ),
-                      const SizedBox(height: 10.0),
-                      OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF475569),
-                          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-                          padding: const EdgeInsets.symmetric(vertical: 14.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                        ),
-                        child: const Text(
-                          'Close Profile',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    );
+                  },
+                );
+              },
             );
           },
         );
       },
     );
-  },
-);
-}
+  }
 
   Widget _buildProfileRow(String label, String val) {
     return Padding(

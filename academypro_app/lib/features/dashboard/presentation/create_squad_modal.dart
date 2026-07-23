@@ -80,14 +80,19 @@ class _CreateSquadModalState extends ConsumerState<CreateSquadModal> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final systemBottom = MediaQuery.of(context).padding.bottom;
+    final keyboardBottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return Padding(
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
       padding: EdgeInsets.only(
         left: 24.0,
         right: 24.0,
         top: 16.0,
-        bottom: 24.0 + bottomPadding,
+        bottom: 24.0 + systemBottom + keyboardBottom,
       ),
       child: Form(
         key: _formKey,
