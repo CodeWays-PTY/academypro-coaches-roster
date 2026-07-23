@@ -508,6 +508,8 @@ final selectedAgeGroupProvider = StateProvider<String>((ref) {
   return 'U15';
 });
 
+final dashboardTabProvider = StateProvider<int>((ref) => 0);
+
 final dashboardSummaryProvider = StateNotifierProvider<DashboardSummaryNotifier, DashboardSummaryState>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return DashboardSummaryNotifier(apiClient);

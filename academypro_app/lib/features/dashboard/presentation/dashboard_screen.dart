@@ -55,6 +55,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final activeTab = ref.watch(dashboardTabProvider);
     final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
     final summary = ref.watch(dashboardSummaryProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
@@ -79,9 +80,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           padding: const EdgeInsets.only(left: 16.0),
           child: GestureDetector(
             onTap: () {
-              setState(() {
-                _activeTab = 4;
-              });
+              ref.read(dashboardTabProvider.notifier).state = 4;
             },
             child: CircleAvatar(
               backgroundColor: const Color(0xFF003EC7),
@@ -154,7 +153,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(width: 8.0),
         ],
       ),
-      floatingActionButton: _activeTab == 3
+      floatingActionButton: activeTab == 0
           ? FloatingActionButton.extended(
               backgroundColor: const Color(0xFF003EC7),
               foregroundColor: Colors.white,
@@ -169,18 +168,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             )
           : null,
-      bottomNavigationBar: _buildBottomNav(context, activeIndex: _activeTab),
-      body: _buildBody(summary, flagsState, starsState, coachActions),
+      bottomNavigationBar: _buildBottomNav(context, activeIndex: activeTab),
+      body: _buildBody(activeTab, summary, flagsState, starsState, coachActions),
     );
   }
 
   Widget _buildBody(
+    int activeTab,
     DashboardSummaryState summary,
     AsyncValue<List<FlaggedPlayer>> flagsState,
     AsyncValue<List<RisingStarPlayer>> starsState,
     List<CoachActionItem> coachActions,
   ) {
-    switch (_activeTab) {
+    switch (activeTab) {
       case 1:
         return const RosterTabView();
       case 2:
@@ -1209,9 +1209,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: BottomNavigationBar(
           currentIndex: activeIndex,
           onTap: (index) {
-            setState(() {
-              _activeTab = index;
-            });
+            ref.read(dashboardTabProvider.notifier).state = index;
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,

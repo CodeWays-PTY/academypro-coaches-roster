@@ -507,6 +507,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                   onPressed: () {
                     Navigator.pop(ctx);
                     ref.read(checkInProvider.notifier).selectEvent(event);
+                    ref.read(dashboardTabProvider.notifier).state = 2;
                   },
                   icon: const Icon(Icons.qr_code_scanner, size: 18.0),
                   label: const Text('Start Practice Check-In For This Event', style: TextStyle(fontWeight: FontWeight.bold)),
