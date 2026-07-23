@@ -1093,50 +1093,47 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
 
 
   Widget _buildBottomNav() {
-    return Container(
-      color: Colors.white,
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Container(
-            height: 64.0,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20.0,
-                  spreadRadius: 1.0,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(32.0),
-              child: BottomNavigationBar(
-                currentIndex: _activeTab,
-                onTap: (index) {
-                  setState(() {
-                    _activeTab = index;
-                  });
-                },
-                type: BottomNavigationBarType.fixed,
-                backgroundColor: Colors.white,
-                elevation: 0,
-                selectedItemColor: const Color(0xFF003EC7),
-                unselectedItemColor: const Color(0xFF64748B),
-                selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-                unselectedLabelStyle: const TextStyle(fontSize: 11.0),
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Overview'),
-                  BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), activeIcon: Icon(Icons.fitness_center), label: 'Fitness'),
-                  BottomNavigationBarItem(icon: Icon(Icons.school_outlined), activeIcon: Icon(Icons.school), label: 'Academics'),
-                  BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Matches'),
-                ],
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0, top: 4.0),
+        child: Container(
+          height: 64.0,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20.0,
+                spreadRadius: 1.0,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32.0),
+            child: BottomNavigationBar(
+              currentIndex: _activeTab,
+              onTap: (index) {
+                setState(() {
+                  _activeTab = index;
+                });
+              },
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              selectedItemColor: const Color(0xFF003EC7),
+              unselectedItemColor: const Color(0xFF64748B),
+              selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
+              unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Overview'),
+                BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), activeIcon: Icon(Icons.fitness_center), label: 'Fitness'),
+                BottomNavigationBarItem(icon: Icon(Icons.school_outlined), activeIcon: Icon(Icons.school), label: 'Academics'),
+                BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Matches'),
+              ],
             ),
           ),
         ),

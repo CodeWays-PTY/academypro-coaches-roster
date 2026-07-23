@@ -1215,14 +1215,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildBottomNav(BuildContext context, {required int activeIndex}) {
-    return Container(
-      color: Colors.white,
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Container(
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0, top: 4.0),
+        child: Container(
             height: 64.0,
             decoration: BoxDecoration(
               color: Colors.white,
@@ -1261,7 +1259,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 }
