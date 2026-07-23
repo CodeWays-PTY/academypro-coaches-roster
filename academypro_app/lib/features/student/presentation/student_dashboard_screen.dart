@@ -196,15 +196,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     final ageGroup = profile['ageGroup'] ?? 'U15';
     final position = profile['position'] ?? 'Player';
 
-    // Compute Power Index
-    int powerIndex = 0;
-    final baseline = data.fitness['baseline'];
-    if (baseline != null) {
-      final pushUps = baseline['pushUps'] as num? ?? 0;
-      final squats = baseline['squats40kg'] as num? ?? 0;
-      final pullUps = baseline['pullUps'] as num? ?? 0;
-      powerIndex = (pushUps * 5 + squats * 10 + pullUps * 15).toInt();
-    }
+    // Athlete Readiness Score
+    final readinessScore = data.readinessScore;
 
     // Compute Latest Grade
     final latestGrade = _getLatestGrade(data.academics);
@@ -364,8 +357,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           const SizedBox(height: 12.0),
           _buildPortalCard(
             'Body',
-            'Athletic progression and performance index.',
-            'Power Index: $powerIndex',
+            'Athletic progression and dynamic test metrics.',
+            'Readiness: $readinessScore%',
             Icons.sports_martial_arts,
             const Color(0xFF05B046),
             () => setState(() => _activeTab = 1), // Go to Fitness Tab
@@ -917,9 +910,207 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   // TAB 2: FITNESS PROGRESSION
   // ==========================================
   Widget _buildFitnessTab(StudentPortalData data) {
-    final fitness = data.fitness;
-    final baseline = fitness['baseline'];
+    if (data.dynamicMetrics.isNotEmpty) {
+      final Map<String, List<DynamicTestMetric>> categories = {};
+      for (final metric in data.dynamicMetrics) {
+        final cat = metric.category;
+        if (!categories.containsKey(cat)) {
+          categories[cat] = [];
+        }
+        categories[cat]!.add(metric);
+      }
 
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Coach Test Evaluations',
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+                  ),
+                  SizedBox(height: 4.0),
+                  Text(
+                    'Dynamic fitness test results & coach benchmarks.',
+                    style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(16.0),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Text(
+                  '${data.readinessScore}% READINESS',
+                  style: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20.0),
+
+          ...categories.entries.map((entry) {
+            final categoryName = entry.key;
+            final metrics = entry.value;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0, top: 6.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8.0,
+                        height: 8.0,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2563EB),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        categoryName.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ...metrics.map((m) {
+                  final isPositiveTrend = !m.trendText.contains('-');
+                  final trendBgColor = isPositiveTrend ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF);
+                  final trendTextColor = isPositiveTrend ? const Color(0xFF15803D) : const Color(0xFF2563EB);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12.0),
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x06000000),
+                          blurRadius: 8.0,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              m.name,
+                              style: const TextStyle(
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                              decoration: BoxDecoration(
+                                color: trendBgColor,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                m.trendText,
+                                style: TextStyle(
+                                  fontSize: 11.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: trendTextColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '${m.latestScore}',
+                                  style: const TextStyle(
+                                    fontSize: 26.0,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF2563EB),
+                                  ),
+                                ),
+                                const SizedBox(width: 4.0),
+                                Text(
+                                  m.unit,
+                                  style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'Target: ${m.targetBenchmark} ${m.unit}',
+                              style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12.0),
+
+                        // Progress Bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4.0),
+                          child: LinearProgressIndicator(
+                            value: (m.targetPercent / 100.0).clamp(0.0, 1.0),
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            color: m.targetPercent >= 100 ? const Color(0xFF10B981) : const Color(0xFF2563EB),
+                            minHeight: 6.0,
+                          ),
+                        ),
+                        const SizedBox(height: 8.0),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Session: ${m.sessionName}',
+                              style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8)),
+                            ),
+                            Text(
+                              'Date: ${m.latestTestDate}',
+                              style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12.0),
+              ],
+            );
+          }),
+        ],
+      );
+    }
+
+    final baseline = data.fitness['baseline'];
     if (baseline == null) {
       return _buildEmptyState('No fitness baseline stats recorded.');
     }
@@ -939,7 +1130,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ),
         const SizedBox(height: 16.0),
 
-        // Speed Metrics
         _buildStatCard('Speed', [
           _buildStatRow('40m Sprint', '${baseline['speed40m'] ?? '-'} seconds'),
           _buildStatRow('60m Sprint', '${baseline['speed60m'] ?? '-'} seconds'),
@@ -947,7 +1137,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ]),
         const SizedBox(height: 16.0),
 
-        // Strength Metrics
         _buildStatCard('Strength & Power', [
           _buildStatRow('Push-Ups Reps', '${baseline['pushUps'] ?? '-'} reps'),
           _buildStatRow('Pull-Ups Reps', '${baseline['pullUps'] ?? '-'} reps'),

@@ -1370,26 +1370,71 @@ app.get('/api/student-portal', async (c) => {
   const academicsQuery = 'SELECT * FROM academic_logs WHERE player_id = ? ORDER BY term ASC';
   const { results: academics } = await db.prepare(academicsQuery).bind(playerId).all();
 
-  // 2. Fetch Fitness Baselines & Progression
-  const baselineQuery = 'SELECT * FROM fitness_baselines WHERE player_id = ?';
-  const baseline = await db.prepare(baselineQuery).bind(playerId).first();
+  // 2b. Fetch Dynamic Test Metrics & Time-Series Logs
+  let dynamicMetrics: any[] = [];
+  let totalReadinessScore = 0;
+  let metricsCount = 0;
 
-  const progressionQuery = 'SELECT * FROM fitness_progression WHERE player_id = ? ORDER BY week ASC';
-  const { results: progressions } = await db.prepare(progressionQuery).bind(playerId).all();
+  try {
+    const { results: metricDefs } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? ORDER BY category, name ASC').bind(player.school_id || 'OVK').all();
+    if (metricDefs && metricDefs.length > 0) {
+      for (const mDef of metricDefs) {
+        const { results: logs } = await db.prepare('SELECT * FROM player_test_logs WHERE player_id = ? AND metric_id = ? ORDER BY test_date ASC').bind(playerId, mDef.id).all();
+        if (logs && logs.length > 0) {
+          const firstLog = logs[0];
+          const latestLog = logs[logs.length - 1];
+          const initialBaseline = firstLog.score;
+          const latestScore = latestLog.score;
+          const target = mDef.target_benchmark || latestScore;
+          const goalDir = mDef.goal_direction || 'HIGHER_IS_BETTER';
 
-  // 3. Fetch Match Stats History
-  const matchesQuery = 'SELECT * FROM match_stats WHERE player_id = ? ORDER BY match_date DESC';
-  const { results: matches } = await db.prepare(matchesQuery).bind(playerId).all();
+          let targetPercent = 100;
+          if (target > 0) {
+            if (goalDir === 'HIGHER_IS_BETTER') {
+              targetPercent = Math.min(100, Math.round((latestScore / target) * 100));
+            } else {
+              targetPercent = Math.min(100, Math.round((target / Math.max(0.1, latestScore)) * 100));
+            }
+          }
 
-  // 4. Fetch Attendance Summary
-  const attendanceQuery = `
-    SELECT session_type, COUNT(*) as total, SUM(CASE WHEN att.status = 'Present' THEN 1 ELSE 0 END) as present
-    FROM attendance att
-    JOIN players p ON att.player_id = p.id
-    WHERE p.id = ?
-    GROUP BY session_type
-  `;
-  const { results: attendance } = await db.prepare(attendanceQuery).bind(playerId).all();
+          let trendText = 'Initial';
+          if (logs.length > 1 && initialBaseline > 0) {
+            const diff = latestScore - initialBaseline;
+            if (goalDir === 'HIGHER_IS_BETTER') {
+              const pct = Math.round((diff / initialBaseline) * 100);
+              trendText = pct >= 0 ? `+${pct}%` : `${pct}%`;
+            } else {
+              const secDiff = (initialBaseline - latestScore).toFixed(1);
+              trendText = parseFloat(secDiff) >= 0 ? `-${secDiff}s` : `+${Math.abs(parseFloat(secDiff))}s`;
+            }
+          }
+
+          totalReadinessScore += targetPercent;
+          metricsCount++;
+
+          dynamicMetrics.push({
+            id: mDef.id,
+            name: mDef.name,
+            category: mDef.category,
+            unit: mDef.unit,
+            goalDirection: goalDir,
+            targetBenchmark: target,
+            initialBaseline,
+            latestScore,
+            targetPercent,
+            trendText,
+            latestTestDate: latestLog.test_date,
+            sessionName: latestLog.session_name,
+            logsCount: logs.length
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Dynamic metrics fetch error:', err);
+  }
+
+  const athleteReadinessScore = metricsCount > 0 ? Math.round(totalReadinessScore / metricsCount) : 88;
 
   return c.json({
     success: true,
@@ -1415,6 +1460,8 @@ app.get('/api/student-portal', async (c) => {
         disciplineScore: a.discipline_score
       })),
       fitness: {
+        readinessScore: athleteReadinessScore,
+        dynamicMetrics: dynamicMetrics,
         baseline: baseline ? {
           speed40m: baseline.speed_40m,
           speed60m: baseline.speed_60m,
@@ -1457,6 +1504,133 @@ app.get('/api/student-portal', async (c) => {
     }
   });
 });
+
+// Route: Get Test Metric Definitions
+app.get('/api/test-metrics', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || c.req.query('school_id') || 'OVK';
+  const db = getDB(c);
+
+  try {
+    const { results } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? ORDER BY category, name ASC').bind(schoolId).all();
+    return c.json({
+      success: true,
+      data: (results || []).map((m: any) => ({
+        id: m.id,
+        schoolId: m.school_id,
+        sportId: m.sport_id,
+        name: m.name,
+        category: m.category,
+        unit: m.unit,
+        goalDirection: m.goal_direction,
+        targetBenchmark: m.target_benchmark
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to fetch test metrics', error: err.message }, 500);
+  }
+});
+
+// Route: Create/Update Test Metric Definition
+app.post('/api/test-metrics', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const db = getDB(c);
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { id, name, category, unit, goalDirection, targetBenchmark } = body;
+  if (!name || !category || !unit) {
+    return c.json({ success: false, message: 'Name, category, and unit are required.' }, 400);
+  }
+
+  const metricId = id || `m_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`;
+
+  try {
+    await db.prepare(`
+      INSERT INTO test_metric_definitions (id, school_id, sport_id, name, category, unit, goal_direction, target_benchmark)
+      VALUES (?, ?, 'rugby', ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        category = excluded.category,
+        unit = excluded.unit,
+        goal_direction = excluded.goal_direction,
+        target_benchmark = excluded.target_benchmark
+    `).bind(
+      metricId, schoolId, name.trim(), category.trim(), unit.trim(),
+      goalDirection || 'HIGHER_IS_BETTER', targetBenchmark || null
+    ).run();
+
+    return c.json({
+      success: true,
+      message: 'Test metric saved successfully',
+      data: { id: metricId, schoolId, name, category, unit, goalDirection, targetBenchmark }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to save test metric', error: err.message }, 500);
+  }
+});
+
+// Route: Delete Test Metric Definition
+app.delete('/api/test-metrics/:id', async (c) => {
+  const metricId = c.req.param('id');
+  const db = getDB(c);
+  try {
+    await db.prepare('DELETE FROM test_metric_definitions WHERE id = ?').bind(metricId).run();
+    return c.json({ success: true, message: 'Test metric deleted successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to delete test metric', error: err.message }, 500);
+  }
+});
+
+// Route: Batch Log Test Scores
+app.post('/api/test-logs/batch', async (c) => {
+  const db = getDB(c);
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { metricId, testDate, sessionName, logs } = body;
+  if (!metricId || !testDate || !Array.isArray(logs)) {
+    return c.json({ success: false, message: 'metricId, testDate, and logs array are required' }, 400);
+  }
+
+  let savedCount = 0;
+  for (const item of logs) {
+    if (!item.playerId || item.score === undefined || item.score === null) continue;
+    try {
+      await db.prepare(`
+        INSERT INTO player_test_logs (player_id, metric_id, test_date, session_name, score, notes)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(player_id, metric_id, test_date) DO UPDATE SET
+          score = excluded.score,
+          session_name = excluded.session_name,
+          notes = excluded.notes
+      `).bind(
+        item.playerId, metricId, testDate, sessionName || 'Testing Evaluation',
+        parseFloat(item.score.toString()), item.notes || null
+      ).run();
+      savedCount++;
+    } catch (e) {
+      console.warn(`Failed test log for player ${item.playerId}:`, e);
+    }
+  }
+
+  return c.json({
+    success: true,
+    message: `Saved ${savedCount} test logs successfully`,
+    data: { savedCount, metricId, testDate }
+  });
+});
+
 
 // Route: Get all players for admin configurator
 app.get('/api/admin/all-players', async (c) => {

@@ -16,6 +16,8 @@ import 'profile_tab_view.dart';
 import 'create_event_modal.dart';
 import 'create_action_modal.dart';
 import 'create_squad_modal.dart';
+import 'manage_metrics_modal.dart';
+import 'batch_test_logger_modal.dart';
 
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
@@ -276,13 +278,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: newAge);
                           ref.read(rosterProvider.notifier).fetchRoster(newAge);
                         }
-                      },
-                    ),
-                  );
-                },
               ),
             ),
-            const SizedBox(height: 24.0),
+            const SizedBox(height: 10.0),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      final currentAge = ref.read(selectedAgeGroupProvider);
+                      BatchTestLoggerModal.show(context, ageGroup: currentAge);
+                    },
+                    icon: const Icon(Icons.speed, size: 16.0, color: Color(0xFF2563EB)),
+                    label: const Text('Log Squad Test', style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF2563EB),
+                      side: const BorderSide(color: Color(0xFFBFDBFE)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      ManageMetricsModal.show(context);
+                    },
+                    icon: const Icon(Icons.tune, size: 16.0, color: Color(0xFF475569)),
+                    label: const Text('Test Metrics', style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF475569),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20.0),
 
             // Squad KPIs Overview Row
             Row(
