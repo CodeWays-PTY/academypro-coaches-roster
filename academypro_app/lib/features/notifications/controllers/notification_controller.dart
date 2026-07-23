@@ -57,7 +57,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
   Future<void> fetchNotifications() async {
     state = state.copyWith(loading: true, error: null);
     try {
-      final response = await _apiClient.dio.get('/api/notifications');
+      final response = await _apiClient.getAndCache('/api/notifications');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
         final List notifList = data['notifications'] ?? [];

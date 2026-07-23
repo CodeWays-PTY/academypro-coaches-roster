@@ -57,14 +57,30 @@ class ApiClient {
     ));
   }
 
-  // Helper method to update local cache on successful GET requests
+  // Helper method to update local cache on successful GET requests and retrieve cache on failure
   Future<Response> getAndCache(String path, {Map<String, dynamic>? queryParameters}) async {
-    final response = await dio.get(path, queryParameters: queryParameters);
-    if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
-      final cacheKey = path + (queryParameters?.toString() ?? '{}');
-      await LocalStorage.cacheData(cacheKey, response.data['data']);
+    final cacheKey = path + (queryParameters?.toString() ?? '{}');
+    try {
+      final response = await dio.get(path, queryParameters: queryParameters);
+      if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
+        await LocalStorage.cacheData(cacheKey, response.data['data']);
+      }
+      return response;
+    } catch (e) {
+      final cachedData = LocalStorage.getCachedData(cacheKey);
+      if (cachedData != null) {
+        return Response(
+          requestOptions: RequestOptions(path: path),
+          data: {
+            'success': true,
+            'data': cachedData,
+            'message': 'Loaded from offline cache'
+          },
+          statusCode: 200,
+        );
+      }
+      rethrow;
     }
-    return response;
   }
 
   // Helper method for POST requests

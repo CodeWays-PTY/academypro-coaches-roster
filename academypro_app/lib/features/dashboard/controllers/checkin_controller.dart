@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/local_storage.dart';
 import '../../auth/presentation/auth_state.dart';
 import 'roster_controller.dart';
 import 'dashboard_controller.dart';
@@ -293,10 +294,18 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
         _ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: state.activeAgeGroup);
         return true;
       }
-      return false;
+      await LocalStorage.queueMatchStats(payload);
+      return true;
     } catch (e) {
-      state = state.copyWith(loading: false, error: 'Failed to record server attendance: $e');
-      return false;
+      final payload = {
+        'eventId': state.selectedEvent?.id,
+        'sessionType': state.sessionType,
+        'ageGroup': state.activeAgeGroup,
+        'checkedInPlayerIds': state.playerRecords.values.where((r) => r.isCheckedIn).map((r) => r.player.id).toList(),
+      };
+      await LocalStorage.queueMatchStats(payload);
+      state = state.copyWith(loading: false);
+      return true;
     }
   }
 }
