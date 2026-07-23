@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/storage/local_storage.dart';
 import 'core/theme/app_theme.dart';
-import 'core/services/permission_service.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/student/presentation/student_dashboard_screen.dart';
@@ -47,31 +46,7 @@ class MyApp extends StatelessWidget {
       title: 'AcademyPro Athlete Command',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: StartupPermissionWrapper(child: homeScreen),
+      home: homeScreen,
     );
-  }
-}
-
-class StartupPermissionWrapper extends StatefulWidget {
-  final Widget child;
-
-  const StartupPermissionWrapper({Key? key, required this.child}) : super(key: key);
-
-  @override
-  State<StartupPermissionWrapper> createState() => _StartupPermissionWrapperState();
-}
-
-class _StartupPermissionWrapperState extends State<StartupPermissionWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      PermissionService.requestAppStartupPermissions(context);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.child;
   }
 }
