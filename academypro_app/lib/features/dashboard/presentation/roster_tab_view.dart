@@ -298,6 +298,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
           else
             Expanded(
               child: ListView.separated(
+                padding: const EdgeInsets.only(bottom: 100.0),
                 itemCount: filteredPlayers.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12.0),
                 itemBuilder: (context, index) {

@@ -187,7 +187,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 100.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

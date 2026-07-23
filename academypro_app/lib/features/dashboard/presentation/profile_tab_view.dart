@@ -836,7 +836,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
           left: 20.0,
           right: 20.0,
           top: 16.0,
-          bottom: 32.0 + MediaQuery.of(context).padding.bottom,
+          bottom: 100.0 + MediaQuery.of(context).padding.bottom,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
