@@ -155,12 +155,11 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         : 'Parent';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF), // light background (surface)
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
         titleSpacing: 16.0,
         title: Row(
           children: [

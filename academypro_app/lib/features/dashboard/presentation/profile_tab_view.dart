@@ -829,7 +829,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     final avatarPath = userProfile['avatarUrl'] ?? userProfile['profile_pic'];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.only(

@@ -37,7 +37,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
     final eventsState = ref.watch(dashboardEventsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);

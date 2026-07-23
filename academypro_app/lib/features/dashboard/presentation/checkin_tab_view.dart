@@ -177,7 +177,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
     final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(rosterProvider.notifier).fetchRoster(selectedAgeGroup);

@@ -601,7 +601,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: const Color(0xFFFAF8FF),
+      backgroundColor: const Color(0xFFF8FAFC),
       constraints: const BoxConstraints(maxWidth: double.infinity),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
