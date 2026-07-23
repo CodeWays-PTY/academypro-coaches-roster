@@ -142,7 +142,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
     final selectedMetric = _testMetrics.firstWhere((m) => m['id'] == _selectedMetricId, orElse: () => null);
 
     return Container(
-      maxHeight: MediaQuery.of(context).size.height * 0.90,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),

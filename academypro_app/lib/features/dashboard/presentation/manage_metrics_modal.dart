@@ -114,7 +114,7 @@ class _ManageMetricsModalState extends ConsumerState<ManageMetricsModal> {
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      maxHeight: MediaQuery.of(context).size.height * 0.85,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),

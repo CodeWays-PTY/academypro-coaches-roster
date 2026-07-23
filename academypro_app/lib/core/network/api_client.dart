@@ -87,6 +87,11 @@ class ApiClient {
   Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
     return await dio.post(path, data: data, queryParameters: queryParameters);
   }
+
+  // Helper method for DELETE requests
+  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return await dio.delete(path, data: data, queryParameters: queryParameters);
+  }
 }
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());

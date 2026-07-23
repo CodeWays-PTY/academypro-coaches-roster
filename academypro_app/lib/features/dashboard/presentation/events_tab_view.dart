@@ -65,6 +65,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                   // ===================================================================
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Expanded(
                         child: Column(
@@ -76,33 +77,34 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                                 fontSize: 22.0,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF0F172A),
+                                letterSpacing: -0.5,
                               ),
                             ),
-                            SizedBox(height: 2.0),
+                            SizedBox(height: 3.0),
                             Text(
                               'Manage training sessions, gym tests & matches',
                               style: TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 12.0,
                                 color: Color(0xFF64748B),
+                                height: 1.2,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12.0),
+                      const SizedBox(width: 8.0),
                       ElevatedButton.icon(
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           CreateEventModal.show(context);
                         },
-                        icon: const Icon(Icons.add, size: 18.0),
-                        label: const Text('Add Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)),
+                        icon: const Icon(Icons.add, size: 16.0),
+                        label: const Text('Add Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF003EC7),
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                         ),
                       ),
@@ -300,77 +302,85 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              // Category Badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                                decoration: BoxDecoration(
-                                  color: badgeBgColor,
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(iconData, size: 13.0, color: badgeTextColor),
-                                    const SizedBox(width: 4.0),
-                                    Text(
-                                      badgeText.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 11.0,
-                                        fontWeight: FontWeight.bold,
-                                        color: badgeTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6.0),
-                              // Team Badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.shield_outlined, size: 12.0, color: Color(0xFF003EC7)),
-                                    const SizedBox(width: 4.0),
-                                    Text(
-                                      event.team,
-                                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              if (event.isImportant)
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6.0,
+                              runSpacing: 6.0,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                // Category Badge
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                  margin: const EdgeInsets.only(right: 6.0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 4.0),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFEF3C7),
+                                    color: badgeBgColor,
                                     borderRadius: BorderRadius.circular(8.0),
                                   ),
-                                  child: const Row(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.star, color: Color(0xFFD97706), size: 12.0),
-                                      SizedBox(width: 4.0),
+                                      Icon(iconData, size: 12.0, color: badgeTextColor),
+                                      const SizedBox(width: 4.0),
                                       Text(
-                                        'IMPORTANT',
-                                        style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
+                                        badgeText.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: badgeTextColor,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              const Icon(Icons.arrow_forward_ios, size: 14.0, color: Color(0xFF94A3B8)),
-                            ],
+                                // Team Badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.shield_outlined, size: 11.0, color: Color(0xFF003EC7)),
+                                      const SizedBox(width: 4.0),
+                                      Text(
+                                        event.team,
+                                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Important Badge
+                                if (event.isImportant)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      border: Border.all(color: const Color(0xFFFDE68A)),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.star, color: Color(0xFFD97706), size: 11.0),
+                                        SizedBox(width: 4.0),
+                                        Text(
+                                          'IMPORTANT',
+                                          style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8.0),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2.0),
+                            child: Icon(Icons.chevron_right, size: 20.0, color: Color(0xFF94A3B8)),
                           ),
                         ],
                       ),

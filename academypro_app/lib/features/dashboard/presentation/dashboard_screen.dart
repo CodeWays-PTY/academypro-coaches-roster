@@ -263,6 +263,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: newAge);
                           ref.read(rosterProvider.notifier).fetchRoster(newAge);
                         }
+                      },
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 10.0),
