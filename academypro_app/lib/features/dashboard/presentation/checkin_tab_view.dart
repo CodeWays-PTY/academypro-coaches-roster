@@ -6,6 +6,7 @@ import '../controllers/checkin_controller.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import 'qr_scanner_modal.dart';
+import 'create_squad_modal.dart';
 
 class CheckInTabView extends ConsumerStatefulWidget {
   const CheckInTabView({Key? key}) : super(key: key);
@@ -236,25 +237,47 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         ),
                       ],
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedAgeGroup,
-                        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.5),
-                        items: const [
-                          DropdownMenuItem(value: 'U15', child: Text('U15')),
-                          DropdownMenuItem(value: 'U16', child: Text('U16')),
-                          DropdownMenuItem(value: 'U18', child: Text('U18')),
-                        ],
-                        onChanged: (newAge) {
-                          if (newAge != null) {
-                            ref.read(selectedAgeGroupProvider.notifier).state = newAge;
-                            ref.read(rosterProvider.notifier).fetchRoster(newAge);
-                            final updated = ref.read(rosterProvider).playersByAge[newAge] ?? [];
-                            ref.read(checkInProvider.notifier).changeAgeGroup(newAge, updated);
-                          }
-                        },
-                      ),
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final squads = ref.watch(squadsProvider);
+                        final activeValue = squads.any((s) => s.ageGroup == selectedAgeGroup)
+                            ? selectedAgeGroup
+                            : (squads.isNotEmpty ? squads.first.ageGroup : 'U15');
+
+                        return DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: activeValue,
+                            icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.5),
+                            items: [
+                              ...squads.map((sq) => DropdownMenuItem(
+                                    value: sq.ageGroup,
+                                    child: Text(sq.name),
+                                  )),
+                              const DropdownMenuItem(
+                                value: '__CREATE_NEW_SQUAD__',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 16.0),
+                                    SizedBox(width: 6.0),
+                                    Text('+ Create Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onChanged: (newAge) {
+                              if (newAge == '__CREATE_NEW_SQUAD__') {
+                                CreateSquadModal.show(context);
+                              } else if (newAge != null) {
+                                ref.read(selectedAgeGroupProvider.notifier).state = newAge;
+                                ref.read(rosterProvider.notifier).fetchRoster(newAge);
+                                final updated = ref.read(rosterProvider).playersByAge[newAge] ?? [];
+                                ref.read(checkInProvider.notifier).changeAgeGroup(newAge, updated);
+                              }
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],

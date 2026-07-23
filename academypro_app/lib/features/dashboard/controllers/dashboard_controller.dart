@@ -414,7 +414,92 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
   }
 }
 
+class SquadItem {
+  final String id;
+  final String name;
+  final String ageGroup;
+  final String description;
+
+  SquadItem({
+    required this.id,
+    required this.name,
+    required this.ageGroup,
+    this.description = '',
+  });
+
+  factory SquadItem.fromJson(Map<String, dynamic> json) {
+    return SquadItem(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? json['title'] ?? '',
+      ageGroup: json['ageGroup'] ?? json['code'] ?? json['age_group'] ?? 'U15',
+      description: json['description'] ?? '',
+    );
+  }
+}
+
+class SquadsNotifier extends StateNotifier<List<SquadItem>> {
+  final ApiClient _apiClient;
+
+  SquadsNotifier(this._apiClient) : super([]) {
+    fetchSquads();
+  }
+
+  Future<void> fetchSquads() async {
+    try {
+      final res = await _apiClient.getAndCache('/api/squads');
+      if (res.statusCode == 200 && res.data['success'] == true) {
+        final List list = res.data['data'] ?? [];
+        if (list.isNotEmpty) {
+          final items = list.map((x) => SquadItem.fromJson(x)).toList();
+          state = items;
+          return;
+        }
+      }
+    } catch (_) {}
+
+    if (state.isEmpty) {
+      state = [
+        SquadItem(id: 'sq-1', name: 'U15 Academy Elite', ageGroup: 'U15', description: 'U15 Performance Squad'),
+        SquadItem(id: 'sq-2', name: 'U16 Academy Elite', ageGroup: 'U16', description: 'U16 Junior Elite Squad'),
+        SquadItem(id: 'sq-3', name: 'U18 Premier Squad', ageGroup: 'U18', description: 'U18 Senior Premier Squad'),
+      ];
+    }
+  }
+
+  Future<SquadItem> createSquad({
+    required String name,
+    required String ageGroup,
+    String description = '',
+  }) async {
+    final newId = 'sq-${DateTime.now().millisecondsSinceEpoch}';
+    final newSquad = SquadItem(
+      id: newId,
+      name: name,
+      ageGroup: ageGroup,
+      description: description,
+    );
+
+    state = [...state, newSquad];
+
+    try {
+      await _apiClient.post('/api/squads', data: {
+        'id': newId,
+        'name': name,
+        'ageGroup': ageGroup,
+        'description': description,
+      });
+    } catch (_) {}
+
+    return newSquad;
+  }
+}
+
 // Providers
+final squadsProvider = StateNotifierProvider<SquadsNotifier, List<SquadItem>>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return SquadsNotifier(apiClient);
+});
+
 final selectedAgeGroupProvider = StateProvider<String>((ref) {
   final cached = LocalStorage.getCachedData('selected_age_group');
   if (cached is String && cached.isNotEmpty) {

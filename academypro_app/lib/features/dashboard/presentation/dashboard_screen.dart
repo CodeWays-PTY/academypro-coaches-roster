@@ -14,6 +14,7 @@ import 'events_tab_view.dart';
 import 'profile_tab_view.dart';
 import 'create_event_modal.dart';
 import 'create_action_modal.dart';
+import 'create_squad_modal.dart';
 
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
@@ -231,28 +232,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 borderRadius: BorderRadius.circular(16.0),
                 border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: ref.watch(selectedAgeGroupProvider),
-                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 15.0),
-                  items: const [
-                    DropdownMenuItem(value: 'U15', child: Text('U15 Academy Elite')),
-                    DropdownMenuItem(value: 'U16', child: Text('U16 Academy Elite')),
-                    DropdownMenuItem(value: 'U18', child: Text('U18 Premier Squad')),
-                  ],
-                  onChanged: (newAge) {
-                    if (newAge != null) {
-                      ref.read(selectedAgeGroupProvider.notifier).state = newAge;
-                      LocalStorage.cacheData('selected_age_group', newAge);
-                      ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
-                      ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
-                      ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
-                      ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: newAge);
-                      ref.read(rosterProvider.notifier).fetchRoster(newAge);
-                    }
-                  },
-                ),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final squads = ref.watch(squadsProvider);
+                  final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
+                  
+                  final activeValue = squads.any((s) => s.ageGroup == selectedAgeGroup) 
+                      ? selectedAgeGroup 
+                      : (squads.isNotEmpty ? squads.first.ageGroup : 'U15');
+
+                  return DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: activeValue,
+                      icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 15.0),
+                      items: [
+                        ...squads.map((sq) => DropdownMenuItem(
+                              value: sq.ageGroup,
+                              child: Text(sq.name),
+                            )),
+                        const DropdownMenuItem(
+                          value: '__CREATE_NEW_SQUAD__',
+                          child: Row(
+                            children: [
+                              Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 18.0),
+                              SizedBox(width: 8.0),
+                              Text('+ Create New Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onChanged: (newAge) {
+                        if (newAge == '__CREATE_NEW_SQUAD__') {
+                          CreateSquadModal.show(context);
+                        } else if (newAge != null) {
+                          ref.read(selectedAgeGroupProvider.notifier).state = newAge;
+                          LocalStorage.cacheData('selected_age_group', newAge);
+                          ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
+                          ref.read(dashboardFlagsProvider.notifier).fetchFlags(ageGroup: newAge);
+                          ref.read(risingStarsProvider.notifier).fetchRisingStars(ageGroup: newAge);
+                          ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: newAge);
+                          ref.read(rosterProvider.notifier).fetchRoster(newAge);
+                        }
+                      },
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 24.0),

@@ -144,6 +144,48 @@ class RosterNotifier extends StateNotifier<RosterState> {
       return true;
     }
   }
+
+  Future<bool> addPlayer({
+    required String firstName,
+    required String lastName,
+    required String ageGroup,
+    required String position,
+    required String team,
+    String? parentPhone,
+  }) async {
+    final newId = 'OVK-$ageGroup-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    final newPlayer = RosterPlayer(
+      id: newId,
+      firstName: firstName,
+      lastName: lastName,
+      ageGroup: ageGroup,
+      position: position,
+      team: team,
+      status: 'Active',
+      ugroupsActive: 1,
+      parentPhone: parentPhone,
+    );
+
+    final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
+    final currentList = newMap[ageGroup] ?? [];
+    newMap[ageGroup] = [newPlayer, ...currentList];
+
+    state = state.copyWith(playersByAge: newMap);
+
+    try {
+      await _apiClient.post('/api/players', data: {
+        'id': newId,
+        'firstName': firstName,
+        'lastName': lastName,
+        'ageGroup': ageGroup,
+        'position': position,
+        'team': team,
+        'parentPhone': parentPhone,
+      });
+    } catch (_) {}
+
+    return true;
+  }
 }
 
 final rosterProvider = StateNotifierProvider<RosterNotifier, RState>((ref) {

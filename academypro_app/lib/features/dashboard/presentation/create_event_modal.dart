@@ -441,31 +441,45 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         borderRadius: BorderRadius.circular(12.0),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _teamOptions.contains(_selectedTeam) ? _selectedTeam : _teamOptions.first,
-                          isExpanded: true,
-                          icon: const Icon(Icons.groups_outlined, color: Color(0xFF003EC7)),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => _selectedTeam = val);
-                            }
-                          },
-                          items: _teamOptions.map((t) {
-                            return DropdownMenuItem<String>(
-                              value: t,
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.shield_outlined, size: 16.0, color: Color(0xFF2563EB)),
-                                  const SizedBox(width: 8.0),
-                                  Text(t),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final squads = ref.watch(squadsProvider);
+                        final availableTeams = squads.map((s) => s.name).toList();
+                        if (availableTeams.isEmpty) {
+                          availableTeams.add('U15 Academy Elite');
+                        }
+
+                        final activeTeam = availableTeams.contains(_selectedTeam) 
+                            ? _selectedTeam 
+                            : availableTeams.first;
+
+                        return DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: activeTeam,
+                            isExpanded: true,
+                            icon: const Icon(Icons.groups_outlined, color: Color(0xFF003EC7)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _selectedTeam = val);
+                              }
+                            },
+                            items: availableTeams.map((t) {
+                              return DropdownMenuItem<String>(
+                                value: t,
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.shield_outlined, size: 16.0, color: Color(0xFF2563EB)),
+                                    const SizedBox(width: 8.0),
+                                    Text(t),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      },
+                    ),
                     ),
                     const SizedBox(height: 20.0),
 

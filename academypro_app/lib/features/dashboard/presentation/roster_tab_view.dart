@@ -2,11 +2,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/api_client.dart';
-import '../../auth/presentation/auth_state.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import 'create_action_modal.dart';
+import 'create_squad_modal.dart';
+import 'add_player_modal.dart';
 
 class RosterTabView extends ConsumerStatefulWidget {
   const RosterTabView({Key? key}) : super(key: key);
@@ -125,34 +125,91 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                 'Squad Roster',
                 style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
-              // Age Dropdown selector
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 4.0,
-                      offset: const Offset(0, 2),
+              Row(
+                children: [
+                  // Add Athlete Button
+                  InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      AddPlayerModal.show(context, initialAgeGroup: selectedAgeGroup);
+                    },
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.person_add_alt_1, size: 16.0, color: Color(0xFF2563EB)),
+                          SizedBox(width: 4.0),
+                          Text(
+                            '+ Add Athlete',
+                            style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: selectedAgeGroup,
-                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
-                    items: const [
-                      DropdownMenuItem(value: 'U15', child: Text('U15 Academy Elite')),
-                      DropdownMenuItem(value: 'U16', child: Text('U16 Academy Elite')),
-                      DropdownMenuItem(value: 'U18', child: Text('U18 Premier Squad')),
-                    ],
-                    onChanged: _onAgeGroupChanged,
                   ),
-                ),
+                  const SizedBox(width: 8.0),
+                  // Age Dropdown selector
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final squads = ref.watch(squadsProvider);
+                      final activeValue = squads.any((s) => s.ageGroup == selectedAgeGroup)
+                          ? selectedAgeGroup
+                          : (squads.isNotEmpty ? squads.first.ageGroup : 'U15');
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 4.0,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: activeValue,
+                            icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
+                            items: [
+                              ...squads.map((sq) => DropdownMenuItem(
+                                    value: sq.ageGroup,
+                                    child: Text(sq.name),
+                                  )),
+                              const DropdownMenuItem(
+                                value: '__CREATE_NEW_SQUAD__',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 16.0),
+                                    SizedBox(width: 6.0),
+                                    Text('+ Create Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onChanged: (newAge) {
+                              if (newAge == '__CREATE_NEW_SQUAD__') {
+                                CreateSquadModal.show(context);
+                              } else if (newAge != null) {
+                                _onAgeGroupChanged(newAge);
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
