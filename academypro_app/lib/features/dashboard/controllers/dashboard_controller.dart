@@ -582,7 +582,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     final assignedTeam = team ?? 'U15 Academy Elite';
     final newEvent = CoachEvent(
       id: eventId,
-      schoolId: 'sch1',
+      schoolId: '',
       title: title,
       eventType: eventType,
       startTime: startTime,

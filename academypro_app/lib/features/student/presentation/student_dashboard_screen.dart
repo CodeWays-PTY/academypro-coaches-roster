@@ -823,11 +823,11 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   }
 
   Widget _buildCoachFeedbackCard(StudentPortalData data) {
-    // Determine feedback based on matches
-    String coachQuote = "Liam is showing steady work ethic in drills. Focus on maintaining defensive shape during width plays.";
+    final firstName = data.profile['firstName'] ?? data.profile['first_name'] ?? 'Athlete';
+    String coachQuote = "$firstName is showing steady work ethic in drills. Focus on maintaining defensive shape during width plays.";
     if (data.matches.isNotEmpty) {
       final latest = data.matches.first;
-      coachQuote = "Liam played a great game vs. ${latest['opponent']}. His tackles accuracy was outstanding. Keep up the high work rate.";
+      coachQuote = "$firstName played a great game vs. ${latest['opponent']}. Tackles and work rate were outstanding. Keep it up!";
     }
 
     return Container(

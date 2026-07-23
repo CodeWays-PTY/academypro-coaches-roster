@@ -53,7 +53,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
         final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final todayEvents = eventsState.maybeWhen(
           data: (list) => list.where((e) {
-            final matchesDate = e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21';
+            final matchesDate = e.date == nowStr;
             final matchesTeam = selectedAgeGroup == 'All' ||
                 e.ageGroup.toLowerCase().trim() == selectedAgeGroup.toLowerCase().trim() ||
                 e.team.toLowerCase().trim().contains(selectedAgeGroup.toLowerCase().trim());
@@ -377,7 +377,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                 data: (allEvents) {
                   // Filter strictly for today's date and the selected age group / team
                   final todayEvents = allEvents.where((e) {
-                    final matchesDate = e.date == nowStr || e.date == '2026-07-22' || e.date == '2026-07-21';
+                    final matchesDate = e.date == nowStr;
                     final matchesTeam = selectedAgeGroup == 'All' ||
                         e.ageGroup.toLowerCase().trim() == selectedAgeGroup.toLowerCase().trim() ||
                         e.team.toLowerCase().trim().contains(selectedAgeGroup.toLowerCase().trim());

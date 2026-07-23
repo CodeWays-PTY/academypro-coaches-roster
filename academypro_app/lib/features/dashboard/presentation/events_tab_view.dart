@@ -47,9 +47,9 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
             final now = DateTime.now();
             final todayStr = DateFormat('yyyy-MM-dd').format(now);
 
-            // Filter today's events: matches todayStr or matches '2026-07-22'
-            final todayEvents = events.where((e) => e.date == todayStr || e.date == '2026-07-22').toList();
-            final upcomingEvents = events.where((e) => e.date != todayStr && e.date != '2026-07-22').toList();
+            // Filter today's events vs upcoming events dynamically
+            final todayEvents = events.where((e) => e.date == todayStr).toList();
+            final upcomingEvents = events.where((e) => e.date != todayStr).toList();
 
             todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
             upcomingEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
