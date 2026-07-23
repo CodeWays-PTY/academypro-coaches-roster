@@ -343,7 +343,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               data: (players) {
                 // APPLY STRICT QUALIFICATION FILTER & AGE GROUP MATCHING
                 final qualifiedStars = players
-                    .where((p) => p.isQualifiedForRisingStar && (p.ageGroup == _selectedAgeGroup || players.length <= 2))
+                    .where((p) => p.isQualifiedForRisingStar && p.ageGroup == _selectedAgeGroup)
                     .toList();
 
                 if (qualifiedStars.isEmpty) {
@@ -417,7 +417,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 flagsState.when(
                   data: (list) {
-                    final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup || list.length <= 2).toList();
+                    final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup).toList();
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                       decoration: BoxDecoration(
@@ -448,7 +448,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             flagsState.when(
               data: (list) {
-                final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup || list.length <= 2).toList();
+                final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup).toList();
                 if (filtered.isEmpty) {
                   return Container(
                     width: double.infinity,

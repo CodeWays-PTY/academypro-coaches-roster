@@ -29,15 +29,15 @@ class DashboardSummaryState {
   });
 
   factory DashboardSummaryState.initial() => DashboardSummaryState(
-        attendancePercent: 96,
-        teamPerformanceAvg: 4.4,
-        totalPlayers: 28,
-        uniReady: 18,
-        onTrack: 8,
-        atRisk: 2,
+        attendancePercent: 0,
+        teamPerformanceAvg: 0.0,
+        totalPlayers: 0,
+        uniReady: 0,
+        onTrack: 0,
+        atRisk: 0,
         danger: 0,
-        flagged: 2,
-        loading: false,
+        flagged: 0,
+        loading: true,
       );
 
   DashboardSummaryState copyWith({
@@ -78,57 +78,25 @@ class DashboardSummaryNotifier extends StateNotifier<DashboardSummaryState> {
       final response = await _apiClient.getAndCache('/api/dashboard/summary?ageGroup=$ageGroup');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
-        final kpis = data['kpis'];
+        final kpis = data['kpis'] ?? {};
 
         state = state.copyWith(
-          attendancePercent: data['attendancePercent'] ?? 96,
-          teamPerformanceAvg: (data['teamPerformanceAvg'] as num?)?.toDouble() ?? 4.4,
-          totalPlayers: kpis['totalPlayers'] ?? 28,
-          uniReady: kpis['uniReady'] ?? 18,
-          onTrack: kpis['onTrack'] ?? 8,
-          atRisk: kpis['atRisk'] ?? 2,
+          attendancePercent: data['attendancePercent'] ?? 0,
+          teamPerformanceAvg: (data['teamPerformanceAvg'] as num?)?.toDouble() ?? 0.0,
+          totalPlayers: kpis['totalPlayers'] ?? 0,
+          uniReady: kpis['uniReady'] ?? 0,
+          onTrack: kpis['onTrack'] ?? 0,
+          atRisk: kpis['atRisk'] ?? 0,
           danger: kpis['danger'] ?? 0,
-          flagged: kpis['flagged'] ?? 2,
+          flagged: kpis['flagged'] ?? 0,
           loading: false,
           error: null,
         );
       } else {
-        _applyAgeGroupFallback(ageGroup);
+        state = state.copyWith(loading: false);
       }
     } catch (e) {
-      _applyAgeGroupFallback(ageGroup);
-    }
-  }
-
-  void _applyAgeGroupFallback(String ageGroup) {
-    if (ageGroup == 'U16') {
-      state = state.copyWith(
-        attendancePercent: 94,
-        teamPerformanceAvg: 4.2,
-        totalPlayers: 24,
-        uniReady: 15,
-        onTrack: 6,
-        atRisk: 3,
-        danger: 0,
-        flagged: 1,
-        loading: false,
-        error: null,
-      );
-    } else if (ageGroup == 'U18') {
-      state = state.copyWith(
-        attendancePercent: 98,
-        teamPerformanceAvg: 4.6,
-        totalPlayers: 30,
-        uniReady: 22,
-        onTrack: 6,
-        atRisk: 1,
-        danger: 1,
-        flagged: 3,
-        loading: false,
-        error: null,
-      );
-    } else {
-      state = DashboardSummaryState.initial();
+      state = state.copyWith(loading: false);
     }
   }
 }
@@ -187,38 +155,10 @@ class DashboardFlagsNotifier extends StateNotifier<AsyncValue<List<FlaggedPlayer
   final ApiClient _apiClient;
 
   DashboardFlagsNotifier(this._apiClient)
-      : super(AsyncValue.data(_defaultFlags));
-
-  static final List<FlaggedPlayer> _defaultFlags = [
-    FlaggedPlayer(
-      id: 'OVK-U15-003',
-      name: 'Ethan Botha',
-      firstName: 'Ethan',
-      lastName: 'Botha',
-      team: 'U15 Academy Elite',
-      position: 'Midfielder',
-      ageGroup: 'U15',
-      reason: '2 consecutive missed gym sessions',
-      flagReason: '2 consecutive missed gym sessions',
-      flagType: 'atRisk',
-      severity: 'atRisk',
-    ),
-    FlaggedPlayer(
-      id: 'OVK-U15-006',
-      name: 'Ruben Van Zyl',
-      firstName: 'Ruben',
-      lastName: 'Van Zyl',
-      team: 'U15 Academy Elite',
-      position: 'Flanker',
-      ageGroup: 'U15',
-      reason: 'uGroup character reflection pending',
-      flagReason: 'uGroup character reflection pending',
-      flagType: 'attention',
-      severity: 'attention',
-    ),
-  ];
+      : super(const AsyncValue.loading());
 
   Future<void> fetchFlags({String? ageGroup}) async {
+    state = const AsyncValue.loading();
     try {
       final path = ageGroup != null ? '/api/dashboard/flags?ageGroup=$ageGroup' : '/api/dashboard/flags';
       final response = await _apiClient.getAndCache(path);
@@ -227,10 +167,10 @@ class DashboardFlagsNotifier extends StateNotifier<AsyncValue<List<FlaggedPlayer
         final flags = list.map((x) => FlaggedPlayer.fromJson(x)).toList();
         state = AsyncValue.data(flags);
       } else {
-        state = AsyncValue.data(_defaultFlags);
+        state = const AsyncValue.data([]);
       }
     } catch (e) {
-      state = AsyncValue.data(_defaultFlags);
+      state = const AsyncValue.data([]);
     }
   }
 }
@@ -299,57 +239,10 @@ class RisingStarsNotifier extends StateNotifier<AsyncValue<List<RisingStarPlayer
   final ApiClient _apiClient;
 
   RisingStarsNotifier(this._apiClient)
-      : super(AsyncValue.data(_defaultStars));
-
-  static final List<RisingStarPlayer> _defaultStars = [
-    RisingStarPlayer(
-      id: 'OVK-U15-001',
-      name: 'Liam Venter',
-      firstName: 'Liam',
-      lastName: 'Venter',
-      team: 'U15 Academy Elite',
-      position: 'Forward',
-      ageGroup: 'U15',
-      streakWeeks: 5,
-      gymConsistencyWeeks: 5,
-      gradeImprovement: 15,
-      attendancePercent: 100,
-      gymProgressPercent: 18,
-      highlights: '100% attendance & top 10m sprint time',
-    ),
-    RisingStarPlayer(
-      id: 'OVK-U15-002',
-      name: 'Marcus Reed',
-      firstName: 'Marcus',
-      lastName: 'Reed',
-      team: 'U15 Academy Elite',
-      position: 'Defender',
-      ageGroup: 'U15',
-      streakWeeks: 5,
-      gymConsistencyWeeks: 5,
-      gradeImprovement: 10,
-      attendancePercent: 98,
-      gymProgressPercent: 14,
-      highlights: 'Perfect GPS workload & video analysis submission',
-    ),
-    RisingStarPlayer(
-      id: 'OVK-U15-004',
-      name: 'Leo Silva',
-      firstName: 'Leo',
-      lastName: 'Silva',
-      team: 'U15 Academy Elite',
-      position: 'Forward',
-      ageGroup: 'U15',
-      streakWeeks: 5,
-      gymConsistencyWeeks: 5,
-      gradeImprovement: 14,
-      attendancePercent: 100,
-      gymProgressPercent: 20,
-      highlights: '+15kg squat PR & 5 consecutive uGroup meetings',
-    ),
-  ];
+      : super(const AsyncValue.loading());
 
   Future<void> fetchStars({String? ageGroup}) async {
+    state = const AsyncValue.loading();
     try {
       final path = ageGroup != null ? '/api/dashboard/rising-stars?ageGroup=$ageGroup' : '/api/dashboard/rising-stars';
       final response = await _apiClient.getAndCache(path);
@@ -358,10 +251,10 @@ class RisingStarsNotifier extends StateNotifier<AsyncValue<List<RisingStarPlayer
         final stars = list.map((x) => RisingStarPlayer.fromJson(x)).toList();
         state = AsyncValue.data(stars);
       } else {
-        state = AsyncValue.data(_defaultStars);
+        state = const AsyncValue.data([]);
       }
     } catch (e) {
-      state = AsyncValue.data(_defaultStars);
+      state = const AsyncValue.data([]);
     }
   }
 
@@ -442,62 +335,32 @@ class CoachActionItem {
 class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
   final ApiClient _apiClient;
 
-  CoachActionNotifier(this._apiClient) : super(_defaultActions) {
+  CoachActionNotifier(this._apiClient) : super([]) {
     fetchActions();
   }
-
-  static final List<CoachActionItem> _defaultActions = [
-    CoachActionItem(
-      id: '1',
-      title: 'Review GPS workload for Liam Venter',
-      type: 'GPS Analysis',
-      category: 'GPS Analysis',
-      deadline: 'Today, 17:00',
-      playerId: 'OVK-U15-001',
-      playerName: 'Liam Venter',
-    ),
-    CoachActionItem(
-      id: '2',
-      title: 'Follow up on Ethan Botha missed session',
-      type: 'Attendance Alert',
-      category: 'Attendance Alert',
-      deadline: 'Tomorrow, 09:00',
-      playerId: 'OVK-U15-003',
-      playerName: 'Ethan Botha',
-    ),
-    CoachActionItem(
-      id: '3',
-      title: 'Confirm squad roster for Saturday Derby',
-      type: 'Match Prep',
-      category: 'Match Prep',
-      deadline: 'Fri, 12:00',
-    ),
-  ];
 
   Future<void> fetchActions() async {
     try {
       final res = await _apiClient.getAndCache('/api/dashboard/actions');
       if (res.statusCode == 200 && res.data['success'] == true) {
         final List list = res.data['data'] ?? [];
-        if (list.isNotEmpty) {
-          final items = list.map((x) => CoachActionItem(
-            id: x['id'].toString(),
-            title: x['title'] ?? '',
-            type: x['type'] ?? 'General',
-            category: x['category'] ?? 'General',
-            deadline: x['deadline'] ?? 'Today',
-            dateAdded: x['dateAdded'] ?? 'Today',
-            isCompleted: x['isCompleted'] == true,
-            playerId: x['playerId'],
-            playerName: x['playerName'] ?? '',
-            parentName: x['parentName'] ?? 'Parent Contact',
-            parentPhone: x['parentPhone'] ?? '+27 82 555 0192',
-            parentEmail: x['parentEmail'] ?? 'parent@academypro.co.za',
-            playerPhone: x['playerPhone'] ?? '+27 71 444 8821',
-            notes: x['notes'] ?? 'Follow up required with coaching staff.',
-          )).toList();
-          state = items;
-        }
+        final items = list.map((x) => CoachActionItem(
+          id: x['id'].toString(),
+          title: x['title'] ?? '',
+          type: x['type'] ?? 'General',
+          category: x['category'] ?? 'General',
+          deadline: x['deadline'] ?? 'Today',
+          dateAdded: x['dateAdded'] ?? 'Today',
+          isCompleted: x['isCompleted'] == true,
+          playerId: x['playerId'],
+          playerName: x['playerName'] ?? '',
+          parentName: x['parentName'] ?? 'Parent Contact',
+          parentPhone: x['parentPhone'] ?? '+27 82 555 0192',
+          parentEmail: x['parentEmail'] ?? 'parent@academypro.co.za',
+          playerPhone: x['playerPhone'] ?? '+27 71 444 8821',
+          notes: x['notes'] ?? 'Follow up required with coaching staff.',
+        )).toList();
+        state = items;
       }
     } catch (_) {}
   }
@@ -680,69 +543,13 @@ class CoachEvent {
 class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>> {
   final ApiClient _apiClient;
 
-  static final List<CoachEvent> _defaultEvents = [
-    CoachEvent(
-      id: '101',
-      schoolId: 'sch1',
-      title: 'Tactical & Offload Drills',
-      eventType: 'Field',
-      startTime: '16:30',
-      date: '2026-07-22',
-      durationMins: 90,
-      location: 'Field A',
-      isImportant: false,
-      completionCount: 2,
-      team: 'U15 Academy Elite',
-      ageGroup: 'U15',
-    ),
-    CoachEvent(
-      id: '102',
-      schoolId: 'sch1',
-      title: 'Power Hypertrophy & Core Conditioning',
-      eventType: 'Gym',
-      startTime: '07:00',
-      date: '2026-07-22',
-      durationMins: 60,
-      location: 'Gym Facility',
-      isImportant: false,
-      completionCount: 3,
-      team: 'U15 Academy Elite',
-      ageGroup: 'U15',
-    ),
-    CoachEvent(
-      id: '103',
-      schoolId: 'sch1',
-      title: 'Quarterly Fitness Testing Day',
-      eventType: 'Test Day',
-      startTime: '15:00',
-      date: '2026-07-22',
-      durationMins: 45,
-      location: 'Krieket Field',
-      isImportant: true,
-      team: 'U16 Academy Elite',
-      ageGroup: 'U16',
-    ),
-    CoachEvent(
-      id: '104',
-      schoolId: 'sch1',
-      title: 'Premier Derby Match',
-      eventType: 'Match',
-      startTime: '14:00',
-      date: '2026-07-22',
-      durationMins: 120,
-      location: 'Main Stadium',
-      isImportant: true,
-      team: 'U18 Premier Squad',
-      ageGroup: 'U18',
-    ),
-  ];
-
   DashboardEventsNotifier(this._apiClient)
-      : super(AsyncValue.data(_defaultEvents)) {
+      : super(const AsyncValue.loading()) {
     fetchEvents();
   }
 
   Future<void> fetchEvents({String? ageGroup}) async {
+    state = const AsyncValue.loading();
     try {
       final query = ageGroup != null ? '?ageGroup=$ageGroup' : '';
       final response = await _apiClient.getAndCache('/api/dashboard/events$query');
@@ -751,10 +558,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         final events = list.map((x) => CoachEvent.fromJson(x)).toList();
         state = AsyncValue.data(events);
       } else {
-        state = AsyncValue.data([]);
+        state = const AsyncValue.data([]);
       }
     } catch (e) {
-      state = AsyncValue.data([]);
+      state = const AsyncValue.data([]);
     }
   }
 

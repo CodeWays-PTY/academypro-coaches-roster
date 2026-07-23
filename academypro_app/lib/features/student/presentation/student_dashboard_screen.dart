@@ -402,10 +402,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
   Widget _buildCoachActionPlansForStudent(String studentName) {
     final actions = ref.watch(coachActionProvider);
+    final studentFirstName = studentName.split(' ')[0].toLowerCase();
     final studentActions = actions.where((a) =>
-        a.playerName.toLowerCase().contains(studentName.split(' ')[0].toLowerCase()) ||
-        studentName.toLowerCase().contains(a.playerName.toLowerCase()) ||
-        actions.length <= 2).toList();
+        a.playerName.toLowerCase().contains(studentFirstName) ||
+        (a.playerName.isNotEmpty && studentName.toLowerCase().contains(a.playerName.toLowerCase()))).toList();
 
     if (studentActions.isEmpty) return const SizedBox();
 
