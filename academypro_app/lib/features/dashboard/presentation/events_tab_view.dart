@@ -267,17 +267,17 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
 
     return InkWell(
       onTap: () => _showEventDetailsBottomSheet(context, event),
-      borderRadius: BorderRadius.circular(16.0),
+      borderRadius: BorderRadius.circular(20.0),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16.0),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(20.0),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: const Color(0x0A0F172A),
+              blurRadius: 16.0,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -286,12 +286,12 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
             children: [
               // Left Category Indicator Accent Bar
               Container(
-                width: 6.0,
+                width: 5.0,
                 decoration: BoxDecoration(
                   color: leftBorderColor,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16.0),
-                    bottomLeft: Radius.circular(16.0),
+                    topLeft: Radius.circular(20.0),
+                    bottomLeft: Radius.circular(20.0),
                   ),
                 ),
               ),

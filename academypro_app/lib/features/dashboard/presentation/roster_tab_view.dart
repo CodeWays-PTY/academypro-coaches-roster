@@ -316,18 +316,18 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                       padding: const EdgeInsets.all(16.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16.0),
+                        borderRadius: BorderRadius.circular(20.0),
                         border: Border.all(
                           color: isFlagged 
-                              ? const Color(0xFFFCA5A5) // red-300
-                              : const Color(0xFFE2E8F0), // slate-200
+                              ? const Color(0xFFFECACA)
+                              : const Color(0xFFF1F5F9),
                           width: 1.0,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
-                            blurRadius: 4.0,
-                            offset: const Offset(0, 2),
+                            color: const Color(0x0A0F172A),
+                            blurRadius: 16.0,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),

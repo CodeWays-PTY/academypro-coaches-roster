@@ -1187,11 +1187,18 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16.0),
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+            borderRadius: BorderRadius.circular(20.0),
+            border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A0F172A),
+                blurRadius: 16.0,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.0),
+            borderRadius: BorderRadius.circular(20.0),
             child: Container(
               decoration: BoxDecoration(
                 border: Border(left: BorderSide(color: cardBorderColor, width: 4.0)),

@@ -613,13 +613,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(14.0),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(18.0),
+                        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x08000000),
-                            blurRadius: 6.0,
-                            offset: Offset(0, 2),
+                            color: Color(0x0A0F172A),
+                            blurRadius: 16.0,
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
@@ -1060,8 +1060,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0F172A),
+            blurRadius: 16.0,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
