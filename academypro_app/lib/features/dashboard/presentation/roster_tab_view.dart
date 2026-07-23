@@ -7,6 +7,7 @@ import '../controllers/dashboard_controller.dart';
 import 'create_action_modal.dart';
 import 'create_squad_modal.dart';
 import 'add_player_modal.dart';
+import 'single_player_baseline_modal.dart';
 
 class RosterTabView extends ConsumerStatefulWidget {
   const RosterTabView({Key? key}) : super(key: key);
@@ -786,12 +787,33 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                   ),
                   const SizedBox(height: 24.0),
 
-                  // Evaluation Baselines
-                  const Text(
-                    'Evaluation Baselines',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                  // Evaluation Baselines Section Header & Action Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Evaluation Baselines',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.lightImpact();
+                          await SinglePlayerBaselineModal.show(
+                            context,
+                            playerId: player.id,
+                            playerName: '${player.firstName} ${player.lastName}',
+                          );
+                          setSheetState(() {});
+                        },
+                        icon: const Icon(Icons.edit_note, size: 18.0, color: Color(0xFF003EC7)),
+                        label: const Text(
+                          'Update Test Score',
+                          style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7)),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12.0),
+                  const SizedBox(height: 8.0),
 
                   Container(
                     decoration: BoxDecoration(
@@ -801,9 +823,11 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     ),
                     child: Column(
                       children: [
-                        _buildProfileRow('Vertical Jump Baseline', '$verticalJump metres'),
+                        _buildProfileRow('Vertical Jump Baseline', '$verticalJump m'),
                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
-                        _buildProfileRow('40m Dash Speed', '$speed40m seconds'),
+                        _buildProfileRow('40m Sprint Speed', '$speed40m s'),
+                        const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                        _buildProfileRow('Bench Press 1RM', '85.0 kg'),
                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
                         _buildPositionRow(context, ref, player, () => setSheetState(() {})),
                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),

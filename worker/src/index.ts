@@ -1347,11 +1347,15 @@ app.get('/api/student-portal', async (c) => {
   }
 
   let player: any = null;
+  const requestedPlayerId = c.req.query('player_id');
 
   try {
-    if (role === 'Student') {
+    if (requestedPlayerId) {
+      player = await db.prepare('SELECT * FROM players WHERE id = ?').bind(requestedPlayerId).first();
+    }
+    if (!player && role === 'Student') {
       player = await db.prepare('SELECT * FROM players WHERE user_id = ?').bind(userId).first();
-    } else if (role === 'Parent') {
+    } else if (!player && role === 'Parent') {
       player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();
     }
   } catch (_) {}
@@ -1503,6 +1507,46 @@ app.get('/api/student-portal', async (c) => {
       }))
     }
   });
+});
+
+// Route: Log / Update Individual Athlete Evaluation Baseline
+app.post('/api/player/evaluation-baseline', async (c) => {
+  const db = getDB(c);
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e) {
+    return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { playerId, metricId, score, testDate, sessionName, notes } = body;
+  if (!playerId || !metricId || score === undefined || score === null) {
+    return c.json({ success: false, message: 'playerId, metricId, and score are required' }, 400);
+  }
+
+  const dateStr = testDate || new Date().toISOString().split('T')[0];
+
+  try {
+    await db.prepare(`
+      INSERT INTO player_test_logs (player_id, metric_id, test_date, session_name, score, notes)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(player_id, metric_id, test_date) DO UPDATE SET
+        score = excluded.score,
+        session_name = excluded.session_name,
+        notes = excluded.notes
+    `).bind(
+      playerId, metricId, dateStr, sessionName || 'Baseline Evaluation',
+      parseFloat(score.toString()), notes || null
+    ).run();
+
+    return c.json({
+      success: true,
+      message: 'Evaluation baseline updated successfully',
+      data: { playerId, metricId, score, testDate: dateStr }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to update evaluation baseline', error: err.message }, 500);
+  }
 });
 
 // Route: Get Test Metric Definitions
