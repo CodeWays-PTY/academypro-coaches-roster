@@ -117,7 +117,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header Row 1: Title & Squad Dropdown Selector
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -125,135 +125,145 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                 'Squad Roster',
                 style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
-              Row(
-                children: [
-                  // Add Athlete Button
-                  InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      AddPlayerModal.show(context, initialAgeGroup: selectedAgeGroup);
-                    },
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+              const SizedBox(width: 8.0),
+              // Squad Dropdown selector
+              Flexible(
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final squads = ref.watch(squadsProvider);
+                    final activeValue = squads.any((s) => s.ageGroup == selectedAgeGroup)
+                        ? selectedAgeGroup
+                        : (squads.isNotEmpty ? squads.first.ageGroup : 'U15');
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.person_add_alt_1, size: 16.0, color: Color(0xFF2563EB)),
-                          SizedBox(width: 4.0),
-                          Text(
-                            '+ Add Athlete',
-                            style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 4.0,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8.0),
-                  // Age Dropdown selector
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final squads = ref.watch(squadsProvider);
-                      final activeValue = squads.any((s) => s.ageGroup == selectedAgeGroup)
-                          ? selectedAgeGroup
-                          : (squads.isNotEmpty ? squads.first.ageGroup : 'U15');
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
-                              blurRadius: 4.0,
-                              offset: const Offset(0, 2),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: activeValue,
+                          isDense: true,
+                          isExpanded: false,
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
+                          items: [
+                            ...squads.map((sq) => DropdownMenuItem(
+                                  value: sq.ageGroup,
+                                  child: Text(sq.name, overflow: TextOverflow.ellipsis),
+                                )),
+                            const DropdownMenuItem(
+                              value: '__CREATE_NEW_SQUAD__',
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 16.0),
+                                  SizedBox(width: 6.0),
+                                  Text('+ Create Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ),
                           ],
+                          onChanged: (newAge) {
+                            if (newAge == '__CREATE_NEW_SQUAD__') {
+                              CreateSquadModal.show(context);
+                            } else if (newAge != null) {
+                              _onAgeGroupChanged(newAge);
+                            }
+                          },
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: activeValue,
-                            icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
-                            items: [
-                              ...squads.map((sq) => DropdownMenuItem(
-                                    value: sq.ageGroup,
-                                    child: Text(sq.name),
-                                  )),
-                              const DropdownMenuItem(
-                                value: '__CREATE_NEW_SQUAD__',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 16.0),
-                                    SizedBox(width: 6.0),
-                                    Text('+ Create Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            onChanged: (newAge) {
-                              if (newAge == '__CREATE_NEW_SQUAD__') {
-                                CreateSquadModal.show(context);
-                              } else if (newAge != null) {
-                                _onAgeGroupChanged(newAge);
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16.0),
+          const SizedBox(height: 14.0),
 
-          // Search Field
-          TextField(
-            controller: _searchController,
-            onChanged: (val) {
-              setState(() {
-                _searchQuery = val;
-              });
-            },
-            decoration: InputDecoration(
-              hintText: 'Search athlete by name...',
-              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.0),
-              prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20.0),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.close, size: 18.0, color: Color(0xFF94A3B8)),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+          // Action Row 2: Search Field + Add Athlete Button
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search athlete by name...',
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20.0),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, size: 18.0, color: Color(0xFF94A3B8)),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                    ),
+                  ),
+                ),
               ),
-              enabledBorder: OutlineInputBorder(
+              const SizedBox(width: 8.0),
+              // Add Athlete Button
+              InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  AddPlayerModal.show(context, initialAgeGroup: selectedAgeGroup);
+                },
                 borderRadius: BorderRadius.circular(12.0),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+                child: Container(
+                  height: 46.0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person_add_alt_1, size: 16.0, color: Color(0xFF2563EB)),
+                      SizedBox(width: 4.0),
+                      Text(
+                        '+ Add Athlete',
+                        style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-              ),
-            ),
+            ],
           ),
           const SizedBox(height: 20.0),
 
