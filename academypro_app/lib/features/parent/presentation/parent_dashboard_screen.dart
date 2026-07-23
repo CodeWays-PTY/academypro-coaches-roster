@@ -659,24 +659,24 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
             // Academics card
             _buildMetricItemCard(
               'Academics',
-              'GPA: 3.8 Stable',
-              'Elite Standing',
-              'NEXT EXAM: OCT 12',
+              latestGrade > 0 ? 'Term Avg: ${latestGrade.toStringAsFixed(1)}%' : 'No grades recorded',
+              latestGrade >= 60 ? 'On Track' : (latestGrade > 0 ? 'Needs Attention' : 'Pending'),
+              'ACADEMIC PORTAL',
               Icons.school,
               const Color(0xFF16A34A),
-              4, // 4 segments out of 5
+              latestGrade > 0 ? (latestGrade / 20).clamp(1, 5).toInt() : 0,
             ),
             const SizedBox(height: 12.0),
 
             // Athleticism card
             _buildMetricItemCard(
               'Athleticism',
-              'Power Index: $powerIndex',
-              'Top 5% League',
-              'AGILITY: PEAK',
+              powerIndex > 0 ? 'Power Index: $powerIndex' : 'No tests logged',
+              powerIndex > 0 ? 'Active Athlete' : 'Pending Test',
+              'FITNESS PORTAL',
               Icons.sports_martial_arts,
               const Color(0xFF003EC7),
-              5, // 5 segments out of 5
+              powerIndex > 0 ? 5 : 0,
             ),
           ],
         )
@@ -1086,8 +1086,8 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   }
 
   double _getLatestGrade(List<dynamic> academics) {
-    if (academics.isEmpty) return 78.0; // default seeded benchmark
-    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 78.0;
+    if (academics.isEmpty) return 0.0;
+    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 0.0;
   }
 
 

@@ -1075,11 +1075,11 @@ app.get('/api/dashboard/actions', async (c) => {
         isCompleted: Boolean(row.is_completed),
         playerId: row.player_id,
         playerName: row.player_name || '',
-        parentName: row.parent_name || 'Parent Contact',
-        parentPhone: row.parent_phone || '+27 82 555 0192',
-        parentEmail: row.parent_email || 'parent@academypro.co.za',
-        playerPhone: row.player_phone || '+27 71 444 8821',
-        notes: row.notes || 'Follow up required with coaching staff.'
+        parentName: row.parent_name || '',
+        parentPhone: row.parent_phone || '',
+        parentEmail: row.parent_email || '',
+        playerPhone: row.player_phone || '',
+        notes: row.notes || ''
       }))
     });
   } catch (err: any) {

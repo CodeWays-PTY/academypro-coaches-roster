@@ -349,7 +349,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           _buildPortalCard(
             'Mind',
             'Academic performance and cognitive load metrics.',
-            'GPA: $latestGrade%',
+            latestGrade > 0 ? 'Term Avg: ${latestGrade.toStringAsFixed(1)}%' : 'No grades recorded',
             Icons.psychology,
             const Color(0xFF003EC7),
             () => setState(() => _activeTab = 2), // Go to Academics Tab
@@ -358,7 +358,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           _buildPortalCard(
             'Body',
             'Athletic progression and dynamic test metrics.',
-            'Readiness: $readinessScore%',
+            readinessScore > 0 ? 'Readiness: $readinessScore%' : 'No tests logged',
             Icons.sports_martial_arts,
             const Color(0xFF05B046),
             () => setState(() => _activeTab = 1), // Go to Fitness Tab
@@ -1394,8 +1394,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   }
 
   double _getLatestGrade(List<dynamic> academics) {
-    if (academics.isEmpty) return 78.0; // default seeded benchmark
-    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 78.0;
+    if (academics.isEmpty) return 0.0;
+    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 0.0;
   }
 
 

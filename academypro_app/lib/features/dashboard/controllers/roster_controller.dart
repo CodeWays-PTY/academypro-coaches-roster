@@ -25,9 +25,10 @@ class RosterPlayer {
     required this.ugroupsActive,
     this.age,
     String? parentPhone,
-  }) : parentPhone = PhoneUtils.formatRSAPhone(parentPhone ?? '+27 82 123 4567');
+  }) : parentPhone = (parentPhone != null && parentPhone.trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(parentPhone) : '';
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
+    final rawPhone = json['parentPhone'] ?? json['parentContact'];
     return RosterPlayer(
       id: json['id'] ?? '',
       firstName: json['firstName'] ?? '',
@@ -38,7 +39,7 @@ class RosterPlayer {
       status: json['status'] ?? 'Active',
       ugroupsActive: json['ugroupsActive'] ?? 0,
       age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
-      parentPhone: PhoneUtils.formatRSAPhone(json['parentPhone'] ?? json['parentContact'] ?? '+27 82 123 4567'),
+      parentPhone: (rawPhone != null && rawPhone.toString().trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(rawPhone.toString()) : '',
     );
   }
 }
