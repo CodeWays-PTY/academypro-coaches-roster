@@ -30,6 +30,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   
   String _selectedPosition = 'Forward';
@@ -72,6 +73,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -84,6 +86,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
 
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
+    final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
 
     await ref.read(rosterProvider.notifier).addPlayer(
@@ -92,6 +95,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
       ageGroup: _selectedAgeGroup,
       position: _selectedPosition,
       team: _selectedTeam,
+      email: email.isNotEmpty ? email : null,
       parentPhone: phone.isNotEmpty ? phone : null,
     );
 
@@ -296,6 +300,26 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                           }
                         },
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
+
+                  // Athlete Email (For Account Activation & Invite Link)
+                  const Text(
+                    'ATHLETE EMAIL (OPTIONAL FOR APP INVITE)',
+                    style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+                  ),
+                  const SizedBox(height: 6.0),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. marcus.reed@academypro.co.za',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5)),
                     ),
                   ),
                   const SizedBox(height: 16.0),

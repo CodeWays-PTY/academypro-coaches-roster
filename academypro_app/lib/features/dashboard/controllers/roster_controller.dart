@@ -151,6 +151,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
     required String ageGroup,
     required String position,
     required String team,
+    String? email,
     String? parentPhone,
   }) async {
     final newId = 'OVK-$ageGroup-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
@@ -180,6 +181,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
         'ageGroup': ageGroup,
         'position': position,
         'team': team,
+        'email': email,
         'parentPhone': parentPhone,
       });
     } catch (_) {}

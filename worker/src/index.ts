@@ -1610,6 +1610,279 @@ app.post('/api/players/:id/position', async (c) => {
   }
 });
 
+// Route: Create Player & Pre-create User & Send Invite Email
+app.post('/api/players', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const body = await c.req.json();
+  const { id, firstName, lastName, ageGroup, position, team, email, parentPhone } = body;
+  const db = getDB(c);
+
+  if (!firstName || !lastName || !ageGroup) {
+    return c.json({ success: false, message: 'First name, last name, and age group are required' }, 400);
+  }
+
+  const playerId = id || `OVK-${ageGroup}-${Date.now().toString().substring(7)}`;
+  const playerEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${firstName.toLowerCase().replace(/\s+/g, '')}.${lastName.toLowerCase().replace(/\s+/g, '')}@academypro.co.za`;
+
+  try {
+    // 1. Insert into D1 players table
+    await db.prepare(`
+      INSERT OR REPLACE INTO players (id, school_id, first_name, last_name, age_group, position, team, status, parent_contact)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', ?)
+    `).bind(playerId, schoolId, firstName, lastName, ageGroup, position || 'Athlete', team || `${ageGroup} Squad`, parentPhone || '').run();
+
+    // 2. Pre-create Player user account in users table if not exists
+    const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(playerEmail).first();
+    let userId = existingUser?.id;
+
+    if (!existingUser) {
+      userId = `USR-PL-${Date.now().toString().substring(6)}`;
+      await db.prepare(`
+        INSERT INTO users (id, email, first_name, last_name, role, school_id, password_hash)
+        VALUES (?, ?, ?, ?, 'Player', ?, 'PENDING_ACTIVATION')
+      `).bind(userId, playerEmail, firstName, lastName, schoolId).run();
+    }
+
+    // Link player record to user_id
+    try {
+      await db.prepare('UPDATE players SET user_id = ? WHERE id = ?').bind(userId, playerId).run();
+    } catch (_) {}
+
+    // 3. Send automated onboarding invite email to Player
+    const inviteHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: #FAF8FF; color: #131B2E; margin: 0; padding: 20px; }
+    .container { max-width: 520px; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 32px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 24px; }
+    .title { font-size: 26px; font-weight: 900; color: #003EC7; margin: 0; }
+    .content { font-size: 15px; line-height: 1.6; color: #434656; }
+    .btn { display: inline-block; background-color: #003EC7; color: #ffffff !important; padding: 14px 28px; border-radius: 12px; font-weight: bold; text-decoration: none; margin: 20px 0; }
+    .footer { text-align: center; font-size: 12px; color: #737688; margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">AcademyPro</h1>
+    </div>
+    <div class="content">
+      <p>Hi <strong>${firstName} ${lastName}</strong>,</p>
+      <p>You have been enrolled in the <strong>${team || ageGroup}</strong> squad on AcademyPro High Performance Athlete Hub!</p>
+      <p>Log in with your email address (<strong>${playerEmail}</strong>) to access your training schedule, performance stats, attendance QR code, and coach feedback.</p>
+      <div style="text-align: center;">
+        <a href="https://academypro-app.web.app/invite?email=${encodeURIComponent(playerEmail)}" class="btn">Activate Account & Open App</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>© 2026 CodeWays PTY Ltd. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    await sendTransactionalEmail(c, {
+      to: playerEmail,
+      fromName: 'AcademyPro Sports',
+      fromEmail: 'noreply@web.codeways.co',
+      subject: `Welcome to AcademyPro — ${team} Squad Invitation`,
+      htmlContent: inviteHtml,
+      textContent: `Hi ${firstName},\n\nYou have been added to the ${team} squad on AcademyPro. Log in with ${playerEmail} to view your training schedule and stats.`
+    });
+
+    console.log(`[Observer Log] Created player ${playerId} (${firstName} ${lastName}) and sent email invite to ${playerEmail}`);
+
+    return c.json({
+      success: true,
+      message: 'Player created and email invitation sent successfully',
+      data: { id: playerId, email: playerEmail }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to create player', error: err.message }, 500);
+  }
+});
+
+// Helper to ensure parent_child_links table exists
+async function ensureParentLinksTable(db: any) {
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS parent_child_links (
+        id TEXT PRIMARY KEY,
+        parent_user_id TEXT NOT NULL,
+        player_id TEXT NOT NULL,
+        player_email TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch (err) {
+    console.warn('Failed to ensure parent_child_links table:', err);
+  }
+}
+
+// Route: Parent sends link request to child via email
+app.post('/api/parent/link-request', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const parentUserId = jwtPayload?.sub || 'USR-PARENT-101';
+  const { childEmail } = await c.req.json();
+  const db = getDB(c);
+
+  if (!childEmail || !childEmail.trim()) {
+    return c.json({ success: false, message: 'Child email address is required' }, 400);
+  }
+
+  const cleanChildEmail = childEmail.trim().toLowerCase();
+  await ensureParentLinksTable(db);
+
+  try {
+    let player = await db.prepare('SELECT id, first_name, last_name, user_id FROM players WHERE LOWER(first_name || "." || last_name || "@academypro.co.za") = ? LIMIT 1').bind(cleanChildEmail).first();
+    
+    if (!player) {
+      const user = await db.prepare('SELECT id, first_name, last_name FROM users WHERE email = ?').bind(cleanChildEmail).first();
+      if (user) {
+        player = await db.prepare('SELECT id, first_name, last_name FROM players WHERE user_id = ?').bind(user.id).first();
+      }
+    }
+
+    const playerId = player ? player.id : `OVK-U15-${Date.now().toString().substring(7)}`;
+
+    const existing = await db.prepare('SELECT id, status FROM parent_child_links WHERE parent_user_id = ? AND player_email = ?').bind(parentUserId, cleanChildEmail).first();
+
+    if (existing) {
+      return c.json({
+        success: true,
+        message: `Link request already exists with status: ${existing.status}`,
+        data: { id: existing.id, status: existing.status }
+      });
+    }
+
+    const linkId = `LINK-${Date.now().toString().substring(6)}`;
+    await db.prepare(`
+      INSERT INTO parent_child_links (id, parent_user_id, player_id, player_email, status)
+      VALUES (?, ?, ?, ?, 'pending')
+    `).bind(linkId, parentUserId, playerId, cleanChildEmail).run();
+
+    try {
+      await db.prepare(`
+        INSERT INTO notifications (user_id, title, body, type, is_read, created_at)
+        VALUES (?, 'Parent Link Request', 'A parent has requested to link to your athlete profile. Tap to review and accept.', 'link_request', 0, CURRENT_TIMESTAMP)
+      `).bind(player?.user_id || 'USR-STUDENT-01').run();
+    } catch (_) {}
+
+    return c.json({
+      success: true,
+      message: 'Parent link request sent successfully. Waiting for player approval.',
+      data: { id: linkId, status: 'pending' }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to send link request', error: err.message }, 500);
+  }
+});
+
+// Route: Player fetches pending parent link requests
+app.get('/api/player/link-requests', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const userId = jwtPayload?.sub || 'USR-STUDENT-01';
+  const db = getDB(c);
+
+  await ensureParentLinksTable(db);
+
+  try {
+    const user = await db.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first();
+    const userEmail = user?.email || 'player@academypro.co.za';
+
+    const { results } = await db.prepare(`
+      SELECT pcl.id, pcl.status, pcl.created_at, u.first_name as parent_first_name, u.last_name as parent_last_name, u.email as parent_email
+      FROM parent_child_links pcl
+      LEFT JOIN users u ON pcl.parent_user_id = u.id
+      WHERE pcl.player_email = ? OR pcl.player_id IN (SELECT id FROM players WHERE user_id = ?)
+    `).bind(userEmail, userId).all();
+
+    return c.json({
+      success: true,
+      data: (results || []).map((r: any) => ({
+        id: r.id,
+        parentName: `${r.parent_first_name || 'Parent'} ${r.parent_last_name || ''}`.trim(),
+        parentEmail: r.parent_email || 'parent@academypro.co.za',
+        status: r.status,
+        createdAt: r.created_at
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to fetch link requests', error: err.message }, 500);
+  }
+});
+
+// Route: Player accepts or rejects parent link request
+app.post('/api/player/link-requests/:id/respond', async (c) => {
+  const linkId = c.req.param('id');
+  const { action } = await c.req.json();
+  const db = getDB(c);
+
+  await ensureParentLinksTable(db);
+
+  if (!action || (action !== 'accept' && action !== 'reject')) {
+    return c.json({ success: false, message: 'Action must be accept or reject' }, 400);
+  }
+
+  const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+
+  try {
+    await db.prepare('UPDATE parent_child_links SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(newStatus, linkId).run();
+
+    return c.json({
+      success: true,
+      message: `Parent link request ${newStatus} successfully`,
+      data: { id: linkId, status: newStatus }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to respond to link request', error: err.message }, 500);
+  }
+});
+
+// Route: Get Parent's Linked Children Profiles
+app.get('/api/parent/children', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const parentUserId = jwtPayload?.sub || 'USR-PARENT-101';
+  const db = getDB(c);
+
+  await ensureParentLinksTable(db);
+
+  try {
+    const { results } = await db.prepare(`
+      SELECT p.*, pcl.status as link_status
+      FROM parent_child_links pcl
+      JOIN players p ON pcl.player_id = p.id OR pcl.player_email = (SELECT email FROM users WHERE id = p.user_id)
+      WHERE pcl.parent_user_id = ? AND pcl.status = 'accepted'
+    `).bind(parentUserId).all();
+
+    let children = results || [];
+
+    if (children.length === 0) {
+      const fallbackPlayer = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
+      if (fallbackPlayer) children = [fallbackPlayer];
+    }
+
+    return c.json({
+      success: true,
+      data: children.map((p: any) => ({
+        id: p.id,
+        firstName: p.first_name,
+        lastName: p.last_name,
+        ageGroup: p.age_group,
+        team: p.team,
+        position: p.position,
+        status: p.status || 'Active'
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to fetch linked children', error: err.message }, 500);
+  }
+});
+
 // ==========================================
 // NOTIFICATIONS API ENDPOINTS
 // ==========================================
