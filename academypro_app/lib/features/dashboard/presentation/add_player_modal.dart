@@ -57,7 +57,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
   void initState() {
     super.initState();
     final squads = ref.read(squadsProvider);
-    final activeAge = widget.initialAgeGroup ?? ref.read(selectedAgeGroupProvider);
+    final String activeAge = widget.initialAgeGroup ?? ref.read(selectedAgeGroupProvider) ?? 'U15';
     
     _selectedAgeGroup = activeAge;
     
