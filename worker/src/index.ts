@@ -1235,11 +1235,10 @@ app.get('/api/dashboard/rising-stars', async (c) => {
     const grp = ageGroup || 'U15';
 
     if (!results || results.length === 0) {
-      results = [
-        { id: `OVK-${grp}-001`, first_name: 'Liam', last_name: 'Venter', age_group: grp, position: 'Forward', team: `${grp} Academy Elite`, avg_grade: 82 },
-        { id: `OVK-${grp}-002`, first_name: 'Marcus', last_name: 'Reed', age_group: grp, position: 'Defender', team: `${grp} Academy Elite`, avg_grade: 78 },
-        { id: `OVK-${grp}-004`, first_name: 'Leo', last_name: 'Silva', age_group: grp, position: 'Flanker', team: `${grp} Academy Elite`, avg_grade: 85 },
-      ];
+      return c.json({
+        success: true,
+        data: []
+      });
     }
 
     const stars = results.map((p: any) => {
@@ -1250,15 +1249,15 @@ app.get('/api/dashboard/rising-stars', async (c) => {
         name: `${firstName} ${lastName}`.trim(),
         firstName,
         lastName,
-        team: p.team || `${p.age_group} Academy Elite`,
+        team: p.team || p.age_group || grp,
         position: p.position || 'Athlete',
         ageGroup: p.age_group || grp,
-        streakWeeks: 5,
-        gymConsistencyWeeks: 5,
-        gradeImprovement: Math.round(p.avg_grade || 12),
+        streakWeeks: 0,
+        gymConsistencyWeeks: 0,
+        gradeImprovement: p.avg_grade ? Math.round(p.avg_grade) : 0,
         attendancePercent: 100,
-        gymProgressPercent: 18,
-        highlights: '100% practice attendance & top fitness baseline score'
+        gymProgressPercent: 0,
+        highlights: 'Consistently active squad member'
       };
     });
 
@@ -1523,7 +1522,7 @@ app.get('/api/student-portal', async (c) => {
     console.warn('Dynamic metrics fetch error:', err);
   }
 
-  const athleteReadinessScore = metricsCount > 0 ? Math.round(totalReadinessScore / metricsCount) : 88;
+  const athleteReadinessScore = metricsCount > 0 ? Math.round(totalReadinessScore / metricsCount) : 0;
 
   return c.json({
     success: true,
