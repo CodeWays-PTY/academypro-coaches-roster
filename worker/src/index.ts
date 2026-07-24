@@ -1524,6 +1524,33 @@ app.get('/api/student-portal', async (c) => {
 
   const athleteReadinessScore = metricsCount > 0 ? Math.round(totalReadinessScore / metricsCount) : 0;
 
+  // 2. Fetch Fitness Baseline
+  let baseline: any = null;
+  try {
+    baseline = await db.prepare('SELECT * FROM fitness_baselines WHERE player_id = ?').bind(playerId).first();
+  } catch (_) {}
+
+  // 3. Fetch Fitness Progressions
+  let progressions: any[] = [];
+  try {
+    const { results } = await db.prepare('SELECT * FROM fitness_progression WHERE player_id = ? ORDER BY week ASC').bind(playerId).all();
+    progressions = results || [];
+  } catch (_) {}
+
+  // 4. Fetch Match Stats
+  let matches: any[] = [];
+  try {
+    const { results } = await db.prepare('SELECT * FROM match_stats WHERE player_id = ? ORDER BY match_date DESC').bind(playerId).all();
+    matches = results || [];
+  } catch (_) {}
+
+  // 5. Fetch Attendance Summary
+  let attendance: any[] = [];
+  try {
+    const { results } = await db.prepare('SELECT session_type, COUNT(*) as total, SUM(CASE WHEN status = "Present" THEN 1 ELSE 0 END) as present FROM attendance WHERE player_id = ? GROUP BY session_type').bind(playerId).all();
+    attendance = results || [];
+  } catch (_) {}
+
   return c.json({
     success: true,
     data: {
