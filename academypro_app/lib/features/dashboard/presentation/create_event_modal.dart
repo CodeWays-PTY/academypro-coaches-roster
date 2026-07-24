@@ -419,47 +419,81 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         borderRadius: BorderRadius.circular(12.0),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                    child: Consumer(
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final squads = ref.watch(squadsProvider);
+                          final availableTeams = squads.map((s) => s.name).toList();
+                          if (availableTeams.isEmpty) {
+                            availableTeams.add('Unassigned');
+                          }
+
+                          final activeTeam = availableTeams.contains(_selectedTeam) 
+                              ? _selectedTeam 
+                              : availableTeams.first;
+
+                          return DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: activeTeam,
+                              borderRadius: BorderRadius.circular(16.0),
+                              isExpanded: true,
+                              icon: const Icon(Icons.groups_outlined, color: Color(0xFF003EC7)),
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedTeam = val);
+                                }
+                              },
+                              items: availableTeams.map((t) {
+                                return DropdownMenuItem<String>(
+                                  value: t,
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.shield_outlined, size: 16.0, color: Color(0xFF2563EB)),
+                                      const SizedBox(width: 8.0),
+                                      Text(t == 'Unassigned' ? 'Unassigned (No Active Squad)' : t),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Consumer(
                       builder: (context, ref, child) {
-                        final activeGroup = ref.watch(selectedAgeGroupProvider);
                         final squads = ref.watch(squadsProvider);
-                        final availableTeams = squads.map((s) => s.name).toList();
-                        if (availableTeams.isEmpty) {
-                          availableTeams.add(activeGroup);
-                        }
-
-                        final activeTeam = availableTeams.contains(_selectedTeam) 
-                            ? _selectedTeam 
-                            : availableTeams.first;
-
-                        return DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: activeTeam,
-                            borderRadius: BorderRadius.circular(16.0),
-                            isExpanded: true,
-                            icon: const Icon(Icons.groups_outlined, color: Color(0xFF003EC7)),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _selectedTeam = val);
-                              }
-                            },
-                            items: availableTeams.map((t) {
-                              return DropdownMenuItem<String>(
-                                value: t,
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.shield_outlined, size: 16.0, color: Color(0xFF2563EB)),
-                                    const SizedBox(width: 8.0),
-                                    Text(t),
-                                  ],
+                        if (squads.isNotEmpty) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, size: 14.0, color: Color(0xFFD97706)),
+                              const SizedBox(width: 6.0),
+                              const Expanded(
+                                child: Text(
+                                  'No active squads found.',
+                                  style: TextStyle(fontSize: 11.5, color: Color(0xFFD97706)),
                                 ),
-                              );
-                            }).toList(),
+                              ),
+                              InkWell(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    builder: (_) => const CreateSquadModal(),
+                                  );
+                                },
+                                child: const Text(
+                                  '+ Create Squad',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF003EC7)),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },
-                    ),
                     ),
                     const SizedBox(height: 20.0),
 
