@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/utils/app_toast.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/widgets/country_code_picker.dart';
 import '../controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
@@ -1717,6 +1720,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   final _dobController = TextEditingController();
   final _preferredPositionController = TextEditingController();
   bool _isSavingProfile = false;
+  String _selectedCountryCode = '+27';
+  String _selectedFlag = '🇿🇦';
 
   Widget _buildProfileTab(StudentPortalData data) {
     final profile = data.profile;
@@ -1937,15 +1942,40 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 const SizedBox(height: 14.0),
 
-                // Phone Number (RSA +27 Code Default)
+                // Phone Number with Country Code Picker (uRun style)
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Mobile Phone Number (RSA +27)',
-                    hintText: '+27 82 123 4567',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone_android_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'Mobile Phone Number',
+                    hintText: '82 123 4567',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: InkWell(
+                      onTap: () {
+                        CountryCodePicker.show(
+                          context,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedCountryCode = selected.dialCode;
+                              _selectedFlag = selected.flag;
+                            });
+                          },
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_selectedFlag, style: const TextStyle(fontSize: 18.0)),
+                            const SizedBox(width: 4.0),
+                            Text(_selectedCountryCode, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.5)),
+                            const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B), size: 20.0),
+                            Container(height: 20.0, width: 1.0, color: const Color(0xFFCBD5E1), margin: const EdgeInsets.only(left: 6.0, right: 4.0)),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14.0),
@@ -2000,20 +2030,19 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       : () async {
                           setState(() => _isSavingProfile = true);
                           try {
-                            // Ensure phone formatting has +27 prefix
                             String rawPhone = _phoneController.text.trim();
-                            if (rawPhone.isNotEmpty && !rawPhone.startsWith('+27')) {
+                            String fullPhone = rawPhone;
+                            if (rawPhone.isNotEmpty) {
                               String digits = rawPhone.replaceAll(RegExp(r'[^\d]'), '');
                               if (digits.startsWith('0')) digits = digits.substring(1);
-                              rawPhone = '+27 $digits'.trim();
-                              _phoneController.text = rawPhone;
+                              fullPhone = '$_selectedCountryCode $digits'.trim();
                             }
 
                             final apiClient = ref.read(apiClientProvider);
                             final res = await apiClient.dio.post('/api/student-portal/profile', data: {
                               'firstName': _firstNameController.text.trim(),
                               'lastName': _lastNameController.text.trim(),
-                              'phone': rawPhone,
+                              'phone': fullPhone,
                               'email': _emailController.text.trim(),
                               'dob': _dobController.text.trim(),
                               'preferredPosition': _preferredPositionController.text.trim(),
@@ -2222,81 +2251,134 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   }
 
   void _showUpdateAvatarDialog(BuildContext context, String currentUrl) {
-    final urlController = TextEditingController(text: currentUrl);
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-        actionsPadding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0, top: 12.0),
-        title: const Row(
-          children: [
-            Icon(Icons.camera_alt, color: Color(0xFF003EC7)),
-            SizedBox(width: 10.0),
-            Text('Update Profile Picture', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter image URL or photo link for your athlete profile picture:',
-              style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 14.0),
-            TextField(
-              controller: urlController,
-              decoration: const InputDecoration(
-                labelText: 'Profile Picture Image URL',
-                hintText: 'https://images.example.com/avatar.jpg',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.link),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              foregroundColor: const Color(0xFF64748B),
-            ),
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(width: 8.0),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF003EC7),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-              elevation: 0,
-            ),
-            onPressed: () async {
-              final newUrl = urlController.text.trim();
-              Navigator.pop(context);
-              try {
-                final apiClient = ref.read(apiClientProvider);
-                await apiClient.dio.post('/api/student-portal/profile', data: {
-                  'profileImagePath': newUrl,
-                });
-                await ref.read(studentControllerProvider.notifier).fetchStudentData();
-                if (mounted) {
-                  AppToast.showSuccess(context, title: 'Profile Photo Updated', message: 'Your new profile picture was saved.');
-                }
-              } catch (_) {
-                if (mounted) {
-                  AppToast.showError(context, title: 'Update Failed', message: 'Unable to save profile photo.');
-                }
-              }
-            },
-            child: const Text('Save Photo', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24.0,
+            right: 24.0,
+            top: 20.0,
+            bottom: 24.0 + MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36.0,
+                  height: 4.0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              const Text(
+                'Update Profile Picture',
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 4.0),
+              const Text(
+                'Take a new photo or select an existing picture from your device gallery:',
+                style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20.0),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                leading: Container(
+                  padding: const EdgeInsets.all(10.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB), size: 24.0),
+                ),
+                title: const Text('Take a Photo (Camera)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5)),
+                subtitle: const Text('Capture photo directly with your camera', style: TextStyle(fontSize: 11.5)),
+                trailing: const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadPhoto(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 12.0),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                leading: Container(
+                  padding: const EdgeInsets.all(10.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF059669), size: 24.0),
+                ),
+                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5)),
+                subtitle: const Text('Select image file from device photo gallery', style: TextStyle(fontSize: 11.5)),
+                trailing: const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadPhoto(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Future<void> _pickAndUploadPhoto(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+      if (pickedFile == null) return;
+
+      if (mounted) {
+        AppToast.showInfo(context, title: 'Uploading Photo...', message: 'Saving profile photo to server.');
+      }
+
+      final bytes = await pickedFile.readAsBytes();
+      final base64Img = base64Encode(bytes);
+
+      final apiClient = ref.read(apiClientProvider);
+      final uploadRes = await apiClient.dio.post('/api/upload', data: {
+        'imageBase64': base64Img,
+        'filename': 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      });
+
+      final uploadedUrl = uploadRes.data['url'];
+
+      await apiClient.dio.post('/api/student-portal/profile', data: {
+        'profileImagePath': uploadedUrl,
+      });
+
+      await ref.read(studentControllerProvider.notifier).fetchStudentData();
+
+      if (mounted) {
+        AppToast.showSuccess(context, title: 'Profile Photo Updated', message: 'Your photo was saved successfully.');
+      }
+    } catch (_) {
+      if (mounted) {
+        AppToast.showError(context, title: 'Upload Failed', message: 'Unable to save profile photo.');
+      }
+    }
   }
 
   void _showQRCodeModal(BuildContext context, StudentPortalData data) {

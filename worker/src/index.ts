@@ -1864,6 +1864,34 @@ app.get('/api/admin/all-players', async (c) => {
   }
 });
 
+// Route: Image Upload (R2 / Base64 Storage)
+app.post('/api/upload', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { imageBase64, filename } = body;
+    if (!imageBase64) {
+      return c.json({ success: false, message: 'Image data is required' }, 400);
+    }
+
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const key = `uploads/${Date.now()}-${filename || 'avatar.jpg'}`;
+
+    if (c.env.R2) {
+      await c.env.R2.put(key, binaryData, {
+        httpMetadata: { contentType: 'image/jpeg' }
+      });
+      const publicUrl = `https://academypro-assets.tata-elash34.workers.dev/${key}`;
+      return c.json({ success: true, url: publicUrl, message: 'Image uploaded successfully' });
+    }
+
+    const dataUrl = `data:image/jpeg;base64,${base64Data}`;
+    return c.json({ success: true, url: dataUrl, message: 'Image processed successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Upload failed', error: err.message }, 500);
+  }
+});
+
 // Route: Bulk upload parsed athlete stats
 app.post('/api/admin/bulk-upload', async (c) => {
   const db = getDB(c);
