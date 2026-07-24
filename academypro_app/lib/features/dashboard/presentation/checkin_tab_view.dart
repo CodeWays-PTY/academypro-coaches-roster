@@ -176,6 +176,17 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
 
     final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
+    final hasTodayEvents = eventsState.maybeWhen(
+      data: (allEvents) => allEvents.any((e) {
+        final matchesDate = e.date == nowStr;
+        final matchesTeam = selectedAgeGroup == 'All' ||
+            e.ageGroup.toLowerCase().trim() == selectedAgeGroup.toLowerCase().trim() ||
+            e.team.toLowerCase().trim().contains(selectedAgeGroup.toLowerCase().trim());
+        return matchesDate && matchesTeam;
+      }),
+      orElse: () => true,
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
@@ -612,7 +623,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                     Text(
                       checkInState.selectedEvent != null
                           ? 'Active Session: ${checkInState.selectedEvent!.title}'
-                          : '⚠️ Please select a scheduled event above to start check-in',
+                          : (!hasTodayEvents
+                              ? '⚠️ Please create an event first to start check-in'
+                              : '⚠️ Please select a scheduled event above to start check-in'),
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
