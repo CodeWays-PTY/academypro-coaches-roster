@@ -32,9 +32,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   void _handleLogout() async {
     await ref.read(authProvider.notifier).logout();
     if (mounted) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
       );
     }
   }

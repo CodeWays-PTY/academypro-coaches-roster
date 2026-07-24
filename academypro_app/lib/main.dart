@@ -20,18 +20,18 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Check local storage to see if user is already authenticated
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
     final token = LocalStorage.getToken();
-    final profile = LocalStorage.getUserProfile();
-    final isAuthenticated = token != null && profile != null;
+    final profile = authState.userProfile ?? LocalStorage.getUserProfile();
+    final isAuthenticated = authState.status == AuthStatus.authenticated || (token != null && profile != null && authState.status != AuthStatus.unauthenticated);
 
     Widget homeScreen = const LoginScreen();
-    if (isAuthenticated) {
+    if (isAuthenticated && profile != null) {
       final role = profile['role'];
       if (role == 'Coach') {
         homeScreen = const DashboardScreen();
