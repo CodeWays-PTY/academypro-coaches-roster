@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api_client.dart';
 import '../controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
@@ -95,6 +96,15 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFF2563EB), size: 26.0),
+            tooltip: 'My Digital Pass',
+            onPressed: () {
+              if (studentDataState.value != null) {
+                _showQRCodeModal(context, studentDataState.value!);
+              }
+            },
+          ),
           Stack(
             alignment: Alignment.center,
             children: [
@@ -180,11 +190,11 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     if (_activeTab == 1) {
       return _buildEventsTab(data);
     } else if (_activeTab == 2) {
-      return _buildFitnessTab(data);
+      return _buildStatsTab(data);
     } else if (_activeTab == 3) {
-      return _buildAcademicsTab(data);
+      return _buildFeedbackTab(data);
     } else if (_activeTab == 4) {
-      return _buildMatchesTab(data);
+      return _buildProfileTab(data);
     }
     return _buildOverviewTab(data);
   }
@@ -385,16 +395,30 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           _buildCoachActionPlansForStudent(studentName),
 
           // Peace of Mind Coach Feed
-          const Text(
-            'Latest Feedback',
-            style: TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF131B2E),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Latest Feedback',
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF131B2E),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => setState(() => _activeTab = 3),
+                icon: const Icon(Icons.arrow_forward, size: 14.0, color: Color(0xFF2563EB)),
+                label: const Text('View All', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+              ),
+            ],
           ),
-          const SizedBox(height: 12.0),
-          _buildCoachFeedbackCard(data),
+          const SizedBox(height: 8.0),
+          InkWell(
+            onTap: () => setState(() => _activeTab = 3),
+            borderRadius: BorderRadius.circular(20.0),
+            child: _buildCoachFeedbackCard(data),
+          ),
           const SizedBox(height: 32.0),
         ],
       ),
@@ -1136,262 +1160,240 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   }
 
   // ==========================================
-  // TAB 2: FITNESS PROGRESSION
+  // TAB 2: COMBINED STATS & PERFORMANCE HUB
   // ==========================================
-  Widget _buildFitnessTab(StudentPortalData data) {
-    if (data.dynamicMetrics.isNotEmpty) {
-      final Map<String, List<DynamicTestMetric>> categories = {};
-      for (final metric in data.dynamicMetrics) {
-        final cat = metric.category;
-        if (!categories.containsKey(cat)) {
-          categories[cat] = [];
-        }
-        categories[cat]!.add(metric);
-      }
+  int _selectedStatsFilter = 0; // 0: All, 1: Fitness & Tests, 2: Academics, 3: Match Logs
 
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Coach Test Evaluations',
-                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
-                  ),
-                  SizedBox(height: 4.0),
-                  Text(
-                    'Dynamic fitness test results & coach benchmarks.',
-                    style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(16.0),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
-                ),
-                child: Text(
-                  '${data.readinessScore}% READINESS',
-                  style: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20.0),
-
-          ...categories.entries.map((entry) {
-            final categoryName = entry.key;
-            final metrics = entry.value;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0, top: 6.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8.0,
-                        height: 8.0,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2563EB),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8.0),
-                      Text(
-                        categoryName.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 13.0,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ...metrics.map((m) {
-                  final isPositiveTrend = !m.trendText.contains('-');
-                  final trendBgColor = isPositiveTrend ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF);
-                  final trendTextColor = isPositiveTrend ? const Color(0xFF15803D) : const Color(0xFF2563EB);
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.0),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x06000000),
-                          blurRadius: 8.0,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              m.name,
-                              style: const TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
-                              decoration: BoxDecoration(
-                                color: trendBgColor,
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              child: Text(
-                                m.trendText,
-                                style: TextStyle(
-                                  fontSize: 11.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: trendTextColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10.0),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  '${m.latestScore}',
-                                  style: const TextStyle(
-                                    fontSize: 26.0,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF2563EB),
-                                  ),
-                                ),
-                                const SizedBox(width: 4.0),
-                                Text(
-                                  m.unit,
-                                  style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Target: ${m.targetBenchmark} ${m.unit}',
-                              style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12.0),
-
-                        // Progress Bar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4.0),
-                          child: LinearProgressIndicator(
-                            value: (m.targetPercent / 100.0).clamp(0.0, 1.0),
-                            backgroundColor: const Color(0xFFF1F5F9),
-                            color: m.targetPercent >= 100 ? const Color(0xFF10B981) : const Color(0xFF2563EB),
-                            minHeight: 6.0,
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Session: ${m.sessionName}',
-                              style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8)),
-                            ),
-                            Text(
-                              'Date: ${m.latestTestDate}',
-                              style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8)),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 12.0),
-              ],
-            );
-          }),
-        ],
-      );
-    }
-
-    final baseline = data.fitness['baseline'];
-    if (baseline == null) {
-      return _buildEmptyState('No fitness baseline stats recorded.');
-    }
-
+  Widget _buildStatsTab(StudentPortalData data) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       children: [
         const Text(
-          'Fitness Baselines & Tests',
-          style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+          'Stats & Performance Hub',
+          style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
         ),
         const SizedBox(height: 4.0),
         const Text(
-          'Your latest performance evaluation results.',
+          'Unified athletic evaluation, academic scores, and match statistics.',
           style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
         ),
         const SizedBox(height: 16.0),
 
-        _buildStatCard('Speed', [
-          _buildStatRow('40m Sprint', '${baseline['speed40m'] ?? '-'} seconds'),
-          _buildStatRow('60m Sprint', '${baseline['speed60m'] ?? '-'} seconds'),
-          _buildStatRow('T-Test Agility', '${baseline['tTest'] ?? '-'} seconds'),
-        ]),
-        const SizedBox(height: 16.0),
+        // Filter Pills
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildStatsPill('All Stats', 0),
+              const SizedBox(width: 8.0),
+              _buildStatsPill('Fitness & Tests', 1),
+              const SizedBox(width: 8.0),
+              _buildStatsPill('Academics', 2),
+              const SizedBox(width: 8.0),
+              _buildStatsPill('Match Logs', 3),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20.0),
 
-        _buildStatCard('Strength & Power', [
-          _buildStatRow('Push-Ups Reps', '${baseline['pushUps'] ?? '-'} reps'),
-          _buildStatRow('Pull-Ups Reps', '${baseline['pullUps'] ?? '-'} reps'),
-          _buildStatRow('Squats (40kg)', '${baseline['squats40kg'] ?? '-'} reps'),
-          _buildStatRow('Broad Jump', '${baseline['broadJump'] ?? '-'} metres'),
-          _buildStatRow('Vertical Jump', '${baseline['verticalJump'] ?? '-'} metres'),
-        ]),
+        // Fitness Section
+        if (_selectedStatsFilter == 0 || _selectedStatsFilter == 1) ...[
+          const Row(
+            children: [
+              Icon(Icons.fitness_center, color: Color(0xFF05B046), size: 20.0),
+              SizedBox(width: 8.0),
+              Text(
+                'Fitness & Athletic Benchmarks',
+                style: TextStyle(fontSize: 17.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12.0),
+          _buildFitnessSectionContent(data),
+          const SizedBox(height: 28.0),
+        ],
+
+        // Academics Section
+        if (_selectedStatsFilter == 0 || _selectedStatsFilter == 2) ...[
+          const Row(
+            children: [
+              Icon(Icons.school, color: Color(0xFF003EC7), size: 20.0),
+              SizedBox(width: 8.0),
+              Text(
+                'Academic Performance',
+                style: TextStyle(fontSize: 17.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12.0),
+          _buildAcademicsSectionContent(data),
+          const SizedBox(height: 28.0),
+        ],
+
+        // Match Logs Section
+        if (_selectedStatsFilter == 0 || _selectedStatsFilter == 3) ...[
+          const Row(
+            children: [
+              Icon(Icons.sports_score, color: Color(0xFFD97706), size: 20.0),
+              SizedBox(width: 8.0),
+              Text(
+                'Match Logs & Auto-Scores',
+                style: TextStyle(fontSize: 17.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12.0),
+          _buildMatchesSectionContent(data),
+        ],
       ],
     );
   }
 
-  // ==========================================
-  // TAB 3: ACADEMICS
-  // ==========================================
-  Widget _buildAcademicsTab(StudentPortalData data) {
-    if (data.academics.isEmpty) {
-      return _buildEmptyState('No school academic grades recorded.');
+  Widget _buildStatsPill(String label, int index) {
+    final isSelected = _selectedStatsFilter == index;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) {
+        setState(() => _selectedStatsFilter = index);
+      },
+      selectedColor: const Color(0xFF003EC7),
+      backgroundColor: Colors.white,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : const Color(0xFF475569),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+        fontSize: 12.0,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0),
+        side: BorderSide(color: isSelected ? const Color(0xFF003EC7) : const Color(0xFFE2E8F0)),
+      ),
+    );
+  }
+
+  Widget _buildFitnessSectionContent(StudentPortalData data) {
+    if (data.dynamicMetrics.isEmpty) {
+      return _buildEmptyState('No dynamic athletic test benchmarks recorded.');
     }
 
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
-      itemCount: data.academics.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16.0),
-      itemBuilder: (context, index) {
-        final acad = data.academics[index];
+    return Column(
+      children: data.dynamicMetrics.map((metric) {
+        final baseline = metric.initialBaseline;
+        final latest = metric.latestScore;
+        final unit = metric.unit;
+        final isLowerBetter = metric.goalDirection == 'LOWER_IS_BETTER';
+
+        double percentChange = 0.0;
+        if (baseline > 0) {
+          if (isLowerBetter) {
+            percentChange = ((baseline - latest) / baseline) * 100;
+          } else {
+            percentChange = ((latest - baseline) / baseline) * 100;
+          }
+        }
+
+        final isImproved = percentChange >= 0;
+        final changeString = isImproved
+            ? '+${percentChange.toStringAsFixed(1)}% from last measured'
+            : '${percentChange.toStringAsFixed(1)}% from last measured';
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      metric.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 3.0),
+                      decoration: BoxDecoration(
+                        color: isImproved ? const Color(0xFFDCFCE7) : const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isImproved ? Icons.trending_up : Icons.trending_down,
+                            size: 14.0,
+                            color: isImproved ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                          ),
+                          const SizedBox(width: 4.0),
+                          Text(
+                            changeString,
+                            style: TextStyle(
+                              fontSize: 11.0,
+                              fontWeight: FontWeight.bold,
+                              color: isImproved ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('BASELINE', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2.0),
+                        Text('$baseline $unit', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('TARGET', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2.0),
+                        Text('${metric.targetBenchmark} $unit', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7))),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('LATEST SCORE', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2.0),
+                        Text('$latest $unit', style: const TextStyle(fontSize: 17.0, fontWeight: FontWeight.w900, color: Color(0xFF05B046))),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10.0),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6.0),
+                  child: LinearProgressIndicator(
+                    value: (metric.targetPercent / 100).clamp(0.0, 1.0),
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    color: const Color(0xFF05B046),
+                    minHeight: 6.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildAcademicsSectionContent(StudentPortalData data) {
+    if (data.academics.isEmpty) {
+      return _buildEmptyState('No academic report cards recorded.');
+    }
+
+    return Column(
+      children: data.academics.map((acad) {
         final term = acad['term'] ?? 1;
         final grade = (acad['gradePercentage'] as num?)?.toDouble() ?? 0.0;
         final discipline = acad['disciplineScore'] ?? 0;
@@ -1414,20 +1416,21 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         }
 
         return Container(
+          margin: const EdgeInsets.only(bottom: 12.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.0),
-            border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(color: const Color(0xFFF1F5F9)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0A0F172A),
-                blurRadius: 16.0,
-                offset: Offset(0, 4),
+                blurRadius: 10.0,
+                offset: Offset(0, 3),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(16.0),
             child: Container(
               decoration: BoxDecoration(
                 border: Border(left: BorderSide(color: cardBorderColor, width: 4.0)),
@@ -1442,7 +1445,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       children: [
                         Text(
                           'Term $term Report Card',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 4.0),
                         Text(
@@ -1455,10 +1458,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '$grade%',
-                          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w900, color: cardBorderColor),
+                          '${grade.toStringAsFixed(1)}%',
+                          style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w900, color: cardBorderColor),
                         ),
-                        const SizedBox(height: 4.0),
+                        const SizedBox(height: 2.0),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                           decoration: BoxDecoration(
@@ -1471,32 +1474,24 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                           ),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         );
-      },
+      }).toList(),
     );
   }
 
-  // ==========================================
-  // TAB 4: MATCH LOGS
-  // ==========================================
-  Widget _buildMatchesTab(StudentPortalData data) {
+  Widget _buildMatchesSectionContent(StudentPortalData data) {
     if (data.matches.isEmpty) {
-      return _buildEmptyState('No matches played in database.');
+      return _buildEmptyState('No match logs recorded.');
     }
 
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
-      itemCount: data.matches.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16.0),
-      itemBuilder: (context, index) {
-        final match = data.matches[index];
+    return Column(
+      children: data.matches.map((match) {
         final opponent = match['opponent'] ?? 'Unknown Opponent';
         final date = match['matchDate'] ?? 'Unknown Date';
         final tackles = match['tacklesMade'] ?? 0;
@@ -1505,6 +1500,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         final category = match['category'] ?? '🟢 On Track';
 
         return Card(
+          margin: const EdgeInsets.only(bottom: 12.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -1515,20 +1511,20 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   children: [
                     Text(
                       'vs. $opponent',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
                     ),
                     Text(
                       date,
                       style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
                     ),
-                    const SizedBox(height: 12.0),
+                    const SizedBox(height: 10.0),
                     Row(
                       children: [
                         _buildMatchMetricChip('Tackles', '$tackles'),
                         const SizedBox(width: 8.0),
                         _buildMatchMetricChip('Carries', '$carries'),
                       ],
-                    )
+                    ),
                   ],
                 ),
                 Column(
@@ -1536,7 +1532,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   children: [
                     Text(
                       '$autoScore',
-                      style: const TextStyle(fontSize: 26.0, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
+                      style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
                     ),
                     const SizedBox(height: 4.0),
                     Text(
@@ -1544,12 +1540,464 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       style: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
                     ),
                   ],
-                )
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ==========================================
+  // TAB 3: COACH FEEDBACK HISTORY
+  // ==========================================
+  Widget _buildFeedbackTab(StudentPortalData data) {
+    final List<Map<String, String>> feedbackList = [
+      {
+        'coach': 'Coach Ross Venter',
+        'role': 'Head Performance Coach',
+        'date': 'Yesterday at 15:30',
+        'category': 'Athletic Speed & Agility',
+        'notes': 'Jan showed tremendous explosive acceleration during 40m sprint evaluations today. Maintain focus on hip extension for maximum top-speed retention.',
+        'avatar': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      },
+      {
+        'coach': 'Coach Mark de Klerk',
+        'role': 'Tactical & Kicking Coach',
+        'date': '2026-07-21 at 10:15',
+        'category': 'Match Strategy & Tactical Kicking',
+        'notes': 'High-ball catching technique improved significantly under pressure. Recommended continuing 20 extra spiralled box-kicks post session.',
+        'avatar': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      },
+      {
+        'coach': 'Dr. Hannes Visser',
+        'role': 'Academic Advisor',
+        'date': '2026-07-18 at 09:00',
+        'category': 'Academic Progress',
+        'notes': 'Term 2 academic average maintained above 68.0%. Good balance between training load and exam preparation.',
+        'avatar': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+      },
+    ];
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
+      itemCount: feedbackList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Coach Feedback History',
+                style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+              ),
+              SizedBox(height: 4.0),
+              Text(
+                'All evaluation notes, performance guidance, and tactical advice from your coaches.',
+                style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
+              ),
+              SizedBox(height: 16.0),
+            ],
+          );
+        }
+
+        final fb = feedbackList[index - 1];
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20.0,
+                      backgroundImage: NetworkImage(fb['avatar']!),
+                    ),
+                    const SizedBox(width: 12.0),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fb['coach']!,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            fb['role']!,
+                            style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Text(
+                        fb['category']!,
+                        style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12.0),
+                Text(
+                  fb['notes']!,
+                  style: const TextStyle(fontSize: 14.0, color: Color(0xFF334155), height: 1.4),
+                ),
+                const SizedBox(height: 10.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Icon(Icons.access_time, size: 12.0, color: Color(0xFF94A3B8)),
+                    const SizedBox(width: 4.0),
+                    Text(
+                      fb['date']!,
+                      style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  // ==========================================
+  // TAB 4: EDIT ATHLETE PROFILE & DIGITAL PASS
+  // ==========================================
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _positionController = TextEditingController();
+  final _ageGroupController = TextEditingController();
+  final _parentContactController = TextEditingController();
+  final _teamController = TextEditingController();
+  bool _isSavingProfile = false;
+
+  Widget _buildProfileTab(StudentPortalData data) {
+    final profile = data.profile;
+    if (_firstNameController.text.isEmpty && profile['firstName'] != null) {
+      _firstNameController.text = profile['firstName'] ?? '';
+      _lastNameController.text = profile['lastName'] ?? '';
+      _positionController.text = profile['position'] ?? '';
+      _ageGroupController.text = profile['ageGroup'] ?? '';
+      _parentContactController.text = profile['parentContact'] ?? '';
+      _teamController.text = profile['team'] ?? '';
+    }
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Athlete Profile',
+                  style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+                ),
+                SizedBox(height: 4.0),
+                Text(
+                  'Manage personal details and access digital QR pass.',
+                  style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.qr_code_2_rounded, size: 32.0, color: Color(0xFF2563EB)),
+              onPressed: () => _showQRCodeModal(context, data),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20.0),
+
+        // Digital Pass Banner
+        GestureDetector(
+          onTap: () => _showQRCodeModal(context, data),
+          child: Container(
+            padding: const EdgeInsets.all(18.0),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF003EC7), Color(0xFF2563EB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20.0),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF003EC7).withOpacity(0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 36.0),
+                ),
+                const SizedBox(width: 14.0),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Digital Athlete ID & QR Pass',
+                        style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      SizedBox(height: 4.0),
+                      Text(
+                        'Tap to present scannable pass for gym & event check-ins.',
+                        style: TextStyle(fontSize: 12.0, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.white, size: 24.0),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24.0),
+
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Edit Personal Information',
+                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _firstNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'First Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+                TextFormField(
+                  controller: _lastNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Last Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+                TextFormField(
+                  controller: _positionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Preferred Playing Position',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.sports_rugby_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+                TextFormField(
+                  controller: _ageGroupController,
+                  decoration: const InputDecoration(
+                    labelText: 'Age Group (e.g. U15, U16)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.groups_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+                TextFormField(
+                  controller: _teamController,
+                  decoration: const InputDecoration(
+                    labelText: 'Team Assignment (e.g. U15 A Team)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.shield_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+                TextFormField(
+                  controller: _parentContactController,
+                  decoration: const InputDecoration(
+                    labelText: 'Guardian / Parent Contact Number',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                ),
+                const SizedBox(height: 20.0),
+                ElevatedButton.icon(
+                  onPressed: _isSavingProfile
+                      ? null
+                      : () async {
+                          setState(() => _isSavingProfile = true);
+                          try {
+                            final apiClient = ref.read(apiClientProvider);
+                            final res = await apiClient.dio.post('/api/student-portal/profile', data: {
+                              'firstName': _firstNameController.text.trim(),
+                              'lastName': _lastNameController.text.trim(),
+                              'position': _positionController.text.trim(),
+                              'ageGroup': _ageGroupController.text.trim(),
+                              'team': _teamController.text.trim(),
+                              'parentContact': _parentContactController.text.trim(),
+                            });
+                            if (res.data['success'] == true) {
+                              await ref.read(studentControllerProvider.notifier).fetchStudentData();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Profile details updated successfully!')),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to update profile: $e')),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isSavingProfile = false);
+                          }
+                        },
+                  icon: _isSavingProfile
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.save_outlined),
+                  label: Text(_isSavingProfile ? 'Saving Changes...' : 'Save Profile Changes'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003EC7),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20.0),
+
+        OutlinedButton.icon(
+          onPressed: _handleLogout,
+          icon: const Icon(Icons.logout_outlined, color: Color(0xFFDC2626)),
+          label: const Text('Sign Out of Account', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold)),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+            side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showQRCodeModal(BuildContext context, StudentPortalData data) {
+    final profile = data.profile;
+    final studentName = '${profile['firstName'] ?? 'Jan'} ${profile['lastName'] ?? 'Mentz'}'.trim();
+    final studentId = profile['id'] ?? 'OVK-STUDENT-JAN';
+    final ageGroup = profile['ageGroup'] ?? 'U15';
+    final position = profile['position'] ?? 'Flyhalf';
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Digital Athlete Pass',
+                    style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12.0),
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 2.0),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Image.network(
+                      'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=$studentId',
+                      width: 200.0,
+                      height: 200.0,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 200,
+                        height: 200,
+                        color: const Color(0xFFF1F5F9),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.qr_code_2, size: 120, color: Color(0xFF2563EB)),
+                      ),
+                    ),
+                    const SizedBox(height: 12.0),
+                    Text(
+                      studentId,
+                      style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7), letterSpacing: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                studentName,
+                style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                'Hoërskool Overkruin • $position ($ageGroup)',
+                style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20.0),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF003EC7),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                ),
+                child: const Text('Close QR Pass', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -2344,9 +2792,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 items: const [
                   BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Overview'),
                   BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), activeIcon: Icon(Icons.calendar_month), label: 'Events'),
-                  BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), activeIcon: Icon(Icons.fitness_center), label: 'Fitness'),
-                  BottomNavigationBarItem(icon: Icon(Icons.school_outlined), activeIcon: Icon(Icons.school), label: 'Academics'),
-                  BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Matches'),
+                  BottomNavigationBarItem(icon: Icon(Icons.analytics_outlined), activeIcon: Icon(Icons.analytics), label: 'Stats'),
+                  BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: 'Feedback'),
+                  BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
                 ],
               ),
             ),

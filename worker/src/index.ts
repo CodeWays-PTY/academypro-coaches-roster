@@ -1646,6 +1646,45 @@ app.get('/api/student-portal', async (c) => {
   });
 });
 
+// Route: Update Student Profile Details
+app.post('/api/student-portal/profile', async (c) => {
+  const db = getDB(c);
+  let userId = '';
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await verify(token, getSecret(c), 'HS256') as any;
+      if (payload && payload.sub) {
+        userId = payload.sub;
+      }
+    } catch (_) {}
+  }
+
+  if (!userId) {
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
+
+  try {
+    const { firstName, lastName, position, ageGroup, parentContact, team, grade } = await c.req.json();
+    await db.prepare(`
+      UPDATE players
+      SET first_name = COALESCE(?, first_name),
+          last_name = COALESCE(?, last_name),
+          position = COALESCE(?, position),
+          age_group = COALESCE(?, age_group),
+          parent_contact = COALESCE(?, parent_contact),
+          team = COALESCE(?, team),
+          grade = COALESCE(?, grade)
+      WHERE user_id = ? OR id = ?
+    `).bind(firstName, lastName, position, ageGroup, parentContact, team, grade, userId, userId).run();
+
+    return c.json({ success: true, message: 'Profile updated successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to update profile', error: err.message }, 500);
+  }
+});
+
 // Route: Log / Update Individual Athlete Evaluation Baseline
 app.post('/api/player/evaluation-baseline', async (c) => {
   const db = getDB(c);
