@@ -2245,7 +2245,7 @@ app.get('/api/parent/children', async (c) => {
 // Route: Get Notifications List
 app.get('/api/notifications', async (c) => {
   const db = getDB(c);
-  let userId = 'USR-10928'; // default fallback for coach dev view
+  let userId = '';
   const authHeader = c.req.header('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
@@ -2260,13 +2260,18 @@ app.get('/api/notifications', async (c) => {
   }
 
   try {
-    const query = `
+    const query = userId ? `
       SELECT id, user_id, title, body, type, is_read, action_route, created_at
       FROM notifications
-      WHERE user_id = ? OR user_id = 'USR-10928' OR user_id = 'ALL'
+      WHERE user_id = ? OR user_id = 'ALL'
+      ORDER BY created_at DESC
+    ` : `
+      SELECT id, user_id, title, body, type, is_read, action_route, created_at
+      FROM notifications
+      WHERE user_id = 'ALL'
       ORDER BY created_at DESC
     `;
-    const { results } = await db.prepare(query).bind(userId).all();
+    const { results } = userId ? await db.prepare(query).bind(userId).all() : await db.prepare(query).all();
     const notifications = results || [];
 
     const unreadCount = notifications.filter((n: any) => n.is_read === 0).length;
@@ -2313,8 +2318,24 @@ app.post('/api/notifications/:id/read', async (c) => {
 // Route: Mark All Notifications as Read
 app.post('/api/notifications/read-all', async (c) => {
   const db = getDB(c);
+  let userId = '';
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await verify(token, getSecret(c), 'HS256') as any;
+      if (payload && payload.sub) {
+        userId = payload.sub;
+      }
+    } catch (_) {}
+  }
+
   try {
-    await db.prepare('UPDATE notifications SET is_read = 1').run();
+    if (userId) {
+      await db.prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ? OR user_id = 'ALL'").bind(userId).run();
+    } else {
+      await db.prepare('UPDATE notifications SET is_read = 1').run();
+    }
     console.log('[Observer Log] Marked all notifications as read');
     return c.json({ success: true, message: 'All notifications marked as read' });
   } catch (err: any) {
@@ -2355,6 +2376,18 @@ app.post('/api/notifications/:id/delete', async (c) => {
 // Route: Send / Create New Notification
 app.post('/api/notifications/send', async (c) => {
   const db = getDB(c);
+  let senderId = '';
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await verify(token, getSecret(c), 'HS256') as any;
+      if (payload && payload.sub) {
+        senderId = payload.sub;
+      }
+    } catch (_) {}
+  }
+
   let body;
   try {
     body = await c.req.json();
@@ -2362,19 +2395,20 @@ app.post('/api/notifications/send', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { title, text, type, userId } = body;
-  if (!title || !text) {
+  const { title, text, body: textBody, type, userId } = body;
+  const content = textBody || text;
+  if (!title || !content) {
     return c.json({ success: false, message: 'Title and body text are required' }, 400);
   }
 
-  const targetUser = userId || 'USR-10928';
+  const targetUser = userId || senderId || 'ALL';
   const notifType = type || 'general';
 
   try {
-    const res = await db.prepare(`
+    await db.prepare(`
       INSERT INTO notifications (user_id, title, body, type, is_read, created_at)
       VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
-    `).bind(targetUser, title, text, notifType).run();
+    `).bind(targetUser, title, content, notifType).run();
 
     console.log(`[Observer Log] Created new notification '${title}' for user '${targetUser}'`);
 

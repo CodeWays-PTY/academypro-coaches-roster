@@ -130,26 +130,13 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     required String body,
     String type = 'system',
   }) async {
-    final newNotif = NotificationItem(
-      id: DateTime.now().millisecondsSinceEpoch,
-      userId: 'USR-10928',
-      title: title,
-      body: body,
-      type: type,
-      isRead: false,
-      createdAt: DateTime.now().toIso8601String(),
-    );
-
-    final updated = [newNotif, ...state.notifications];
-    final newUnread = updated.where((n) => !n.isRead).length;
-    state = state.copyWith(notifications: updated, unreadCount: newUnread);
-
     try {
       await _apiClient.dio.post('/api/notifications/send', data: {
         'title': title,
-        'text': body,
+        'body': body,
         'type': type,
       });
+      await fetchNotifications();
     } catch (_) {
       // Handled silently
     }

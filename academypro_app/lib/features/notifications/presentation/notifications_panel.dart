@@ -189,37 +189,28 @@ class NotificationsPanel extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      notifier.sendTestNotification(
-                        title: '⚡ Instant Push Test Triggered',
-                        body: 'Push notification worker link operational for Overkruin Academy.',
-                        type: 'system',
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Test Push Alert generated! Check notification feed.'),
-                          duration: Duration(seconds: 2),
+                if (state.unreadCount > 0)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        notifier.markAllAsRead();
+                      },
+                      icon: const Icon(Icons.done_all, size: 16.0, color: Color(0xFF2563EB)),
+                      label: const Text(
+                        'Mark All Read',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.send_rounded, size: 16.0, color: Color(0xFF2563EB)),
-                    label: const Text(
-                      'Trigger Push Test',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12.0),
+                if (state.unreadCount > 0) const SizedBox(width: 12.0),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
