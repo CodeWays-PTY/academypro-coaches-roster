@@ -2112,6 +2112,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           builder: (context, setModalState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+              actionsPadding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0, top: 12.0),
               title: const Row(
                 children: [
                   Icon(Icons.cake, color: Color(0xFF003EC7)),
@@ -2188,18 +2189,29 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               ),
               actions: [
                 TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    foregroundColor: const Color(0xFF64748B),
+                  ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
+                const SizedBox(width: 8.0),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF003EC7), foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003EC7),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                    elevation: 0,
+                  ),
                   onPressed: () {
                     final monthStr = selectedMonth.toString().padLeft(2, '0');
                     final dayStr = selectedDay.toString().padLeft(2, '0');
                     _dobController.text = '$selectedYear-$monthStr-$dayStr';
                     Navigator.pop(context);
                   },
-                  child: const Text('Confirm Date'),
+                  child: const Text('Confirm Date', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -2216,6 +2228,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        actionsPadding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0, top: 12.0),
         title: const Row(
           children: [
             Icon(Icons.camera_alt, color: Color(0xFF003EC7)),
@@ -2245,11 +2258,22 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              foregroundColor: const Color(0xFF64748B),
+            ),
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(width: 8.0),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF003EC7), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF003EC7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              elevation: 0,
+            ),
             onPressed: () async {
               final newUrl = urlController.text.trim();
               Navigator.pop(context);
@@ -2268,7 +2292,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 }
               }
             },
-            child: const Text('Save Photo'),
+            child: const Text('Save Photo', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
