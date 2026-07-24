@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../core/network/api_client.dart';
 import '../controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
@@ -1886,12 +1887,13 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 const SizedBox(height: 14.0),
 
-                // Phone Number
+                // Phone Number (RSA +27 Code Default)
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: 'Mobile Phone Number',
+                    labelText: 'Mobile Phone Number (RSA +27)',
+                    hintText: '+27 82 123 4567',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.phone_android_outlined),
                   ),
@@ -1910,26 +1912,17 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 const SizedBox(height: 14.0),
 
-                // Date of Birth (DOB)
+                // Date of Birth (DOB) - Fast Dropdown/Direct Picker
                 TextFormField(
                   controller: _dobController,
                   readOnly: true,
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now().subtract(const Duration(days: 365 * 15)),
-                      firstDate: DateTime(1990),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-                    }
-                  },
+                  onTap: () => _showFastDOBPicker(context),
                   decoration: const InputDecoration(
-                    labelText: 'Date of Birth (YYYY-MM-DD)',
+                    labelText: 'Date of Birth (Fast Year/Month Selection)',
+                    hintText: 'Tap to select Year & Birth Date',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.cake_outlined),
-                    suffixIcon: Icon(Icons.calendar_month_outlined),
+                    suffixIcon: Icon(Icons.tune_outlined),
                   ),
                 ),
                 const SizedBox(height: 14.0),
@@ -1957,11 +1950,20 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       : () async {
                           setState(() => _isSavingProfile = true);
                           try {
+                            // Ensure phone formatting has +27 prefix
+                            String rawPhone = _phoneController.text.trim();
+                            if (rawPhone.isNotEmpty && !rawPhone.startsWith('+27')) {
+                              String digits = rawPhone.replaceAll(RegExp(r'[^\d]'), '');
+                              if (digits.startsWith('0')) digits = digits.substring(1);
+                              rawPhone = '+27 $digits'.trim();
+                              _phoneController.text = rawPhone;
+                            }
+
                             final apiClient = ref.read(apiClientProvider);
                             final res = await apiClient.dio.post('/api/student-portal/profile', data: {
                               'firstName': _firstNameController.text.trim(),
                               'lastName': _lastNameController.text.trim(),
-                              'phone': _phoneController.text.trim(),
+                              'phone': rawPhone,
                               'email': _emailController.text.trim(),
                               'dob': _dobController.text.trim(),
                               'preferredPosition': _preferredPositionController.text.trim(),
@@ -1969,16 +1971,12 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                             if (res.data['success'] == true) {
                               await ref.read(studentControllerProvider.notifier).fetchStudentData();
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Profile details updated successfully!')),
-                                );
+                                AppToast.showSuccess(context, title: 'Profile Updated', message: 'Your personal information was saved successfully.');
                               }
                             }
                           } catch (e) {
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Failed to update profile: $e')),
-                              );
+                              AppToast.showError(context, title: 'Update Failed', message: 'Unable to save profile changes. Please check your connection and try again.');
                             }
                           } finally {
                             if (mounted) setState(() => _isSavingProfile = false);
@@ -2031,6 +2029,133 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+
+  void _showFastDOBPicker(BuildContext context) {
+    int selectedYear = 2008;
+    int selectedMonth = 1;
+    int selectedDay = 1;
+
+    if (_dobController.text.trim().isNotEmpty) {
+      try {
+        final parts = _dobController.text.trim().split('-');
+        if (parts.length == 3) {
+          selectedYear = int.parse(parts[0]);
+          selectedMonth = int.parse(parts[1]);
+          selectedDay = int.parse(parts[2]);
+        }
+      } catch (_) {}
+    }
+
+    final years = List<int>.generate(35, (i) => 2024 - i);
+    final months = [
+      'Jan (01)', 'Feb (02)', 'Mar (03)', 'Apr (04)',
+      'May (05)', 'Jun (06)', 'Jul (07)', 'Aug (08)',
+      'Sep (09)', 'Oct (10)', 'Nov (11)', 'Dec (12)'
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+              title: const Row(
+                children: [
+                  Icon(Icons.cake, color: Color(0xFF003EC7)),
+                  SizedBox(width: 10.0),
+                  Text('Select Date of Birth', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Select birth Year, Month, and Day directly:',
+                    style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      // Year Dropdown
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('YEAR', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                            const SizedBox(height: 4.0),
+                            DropdownButtonFormField<int>(
+                              value: selectedYear,
+                              decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
+                              items: years.map((y) => DropdownMenuItem(value: y, child: Text('$y'))).toList(),
+                              onChanged: (val) => setModalState(() => selectedYear = val!),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      // Month Dropdown
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('MONTH', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                            const SizedBox(height: 4.0),
+                            DropdownButtonFormField<int>(
+                              value: selectedMonth,
+                              decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), border: OutlineInputBorder()),
+                              items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(months[i].split(' ')[0]))).toList(),
+                              onChanged: (val) => setModalState(() => selectedMonth = val!),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      // Day Dropdown
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('DAY', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                            const SizedBox(height: 4.0),
+                            DropdownButtonFormField<int>(
+                              value: selectedDay,
+                              decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), border: OutlineInputBorder()),
+                              items: List.generate(31, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}'))).toList(),
+                              onChanged: (val) => setModalState(() => selectedDay = val!),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF003EC7), foregroundColor: Colors.white),
+                  onPressed: () {
+                    final monthStr = selectedMonth.toString().padLeft(2, '0');
+                    final dayStr = selectedDay.toString().padLeft(2, '0');
+                    _dobController.text = '$selectedYear-$monthStr-$dayStr';
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Confirm Date'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

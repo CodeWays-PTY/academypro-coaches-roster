@@ -1646,6 +1646,17 @@ app.post('/api/student-portal/profile', async (c) => {
 
   try {
     const { firstName, lastName, phone, email, dob, preferredPosition } = await c.req.json();
+    let formattedPhone = phone;
+    if (phone && phone.trim().length > 0) {
+      let clean = phone.replace(/[^\d+]/g, '');
+      if (clean.startsWith('0')) {
+        clean = '+27' + clean.slice(1);
+      } else if (!clean.startsWith('+')) {
+        clean = '+27' + clean;
+      }
+      formattedPhone = clean;
+    }
+
     await db.prepare(`
       UPDATE players
       SET first_name = COALESCE(?, first_name),
@@ -1655,9 +1666,9 @@ app.post('/api/student-portal/profile', async (c) => {
           dob = COALESCE(?, dob),
           preferred_position = COALESCE(?, preferred_position)
       WHERE user_id = ? OR id = ?
-    `).bind(firstName, lastName, phone, email, dob, preferredPosition, userId, userId).run();
+    `).bind(firstName, lastName, formattedPhone, email, dob, preferredPosition, userId, userId).run();
 
-    return c.json({ success: true, message: 'Profile updated successfully' });
+    return c.json({ success: true, message: 'Profile updated successfully', phone: formattedPhone });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to update profile', error: err.message }, 500);
   }
