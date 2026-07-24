@@ -1012,7 +1012,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Term $term Report Card', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
-                        Text('Discipline Demerits: $discipline', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12.0)),
+                        const Text('Official Term Grade', style: TextStyle(color: Color(0xFF64748B), fontSize: 12.0)),
                       ],
                     ),
                     Text('$grade%', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w900, color: border)),

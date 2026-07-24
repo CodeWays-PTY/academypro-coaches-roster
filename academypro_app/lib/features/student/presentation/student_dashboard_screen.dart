@@ -1462,9 +1462,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 4.0),
-                        Text(
-                          'Discipline Score: $discipline Demerits',
-                          style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                        const Text(
+                          'Official Term Assessment',
+                          style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
                         ),
                       ],
                     ),
@@ -2400,170 +2400,182 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.90,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12.0),
-              Container(
-                width: 44.0,
-                height: 5.0,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(3.0),
+        return SafeArea(
+          top: false,
+          bottom: true,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12.0),
+                Container(
+                  width: 44.0,
+                  height: 5.0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(3.0),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
-                            decoration: BoxDecoration(
-                              color: event.eventType == 'Match Day'
-                                  ? const Color(0xFFFEE2E2)
-                                  : event.eventType == 'Gym Session'
-                                      ? const Color(0xFFEFF6FF)
-                                      : const Color(0xFFF0FDF4),
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            child: Text(
-                              event.eventType.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 11.0,
-                                fontWeight: FontWeight.bold,
+                const SizedBox(height: 16.0),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
+                              decoration: BoxDecoration(
                                 color: event.eventType == 'Match Day'
-                                    ? const Color(0xFF991B1B)
+                                    ? const Color(0xFFFEE2E2)
                                     : event.eventType == 'Gym Session'
-                                        ? const Color(0xFF1D4ED8)
-                                        : const Color(0xFF166534),
+                                        ? const Color(0xFFEFF6FF)
+                                        : const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              child: Text(
+                                event.eventType.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 11.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: event.eventType == 'Match Day'
+                                      ? const Color(0xFF991B1B)
+                                      : event.eventType == 'Gym Session'
+                                          ? const Color(0xFF1D4ED8)
+                                          : const Color(0xFF166534),
+                                ),
                               ),
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2563EB),
-                              borderRadius: BorderRadius.circular(20.0),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB),
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              child: Text(
+                                countdown,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                            child: Text(
-                              countdown,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11.0,
-                                fontWeight: FontWeight.bold,
+                          ],
+                        ),
+                        const SizedBox(height: 16.0),
+                        Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontSize: 24.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 16.0),
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16.0),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildEventDetailRow(Icons.calendar_month, 'Date & Time', '${event.date} at ${event.startTime}'),
+                              const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
+                              _buildEventDetailRow(Icons.location_on_outlined, 'Location', event.location),
+                              if (event.durationMins != null) ...[
+                                const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
+                                _buildEventDetailRow(Icons.timer_outlined, 'Duration', '${event.durationMins} minutes'),
+                              ],
+                              const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
+                              _buildEventDetailRow(Icons.groups_outlined, 'Team Assignment', '${event.ageGroup} ${event.team}'),
+                            ],
+                          ),
+                        ),
+                        if (hasImage) ...[
+                          const SizedBox(height: 20.0),
+                          const Text(
+                            'Coach Workout Plan',
+                            style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 10.0),
+                          GestureDetector(
+                            onTap: () => _showFullImageModal(context, event.workoutImagePath!, event.title),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: Stack(
+                                alignment: Alignment.bottomCenter,
+                                children: [
+                                  Image.network(
+                                    event.workoutImagePath!,
+                                    width: double.infinity,
+                                    height: 320.0,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                    color: const Color(0xFF003EC7).withOpacity(0.9),
+                                    child: const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.zoom_in, color: Colors.white, size: 20.0),
+                                        SizedBox(width: 8.0),
+                                        Text(
+                                          'Tap to Expand Full Resolution Plan',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.0),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 16.0),
-                      Text(
-                        event.title,
-                        style: const TextStyle(
-                          fontSize: 24.0,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 16.0),
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildEventDetailRow(Icons.calendar_month, 'Date & Time', '${event.date} at ${event.startTime}'),
-                            const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
-                            _buildEventDetailRow(Icons.location_on_outlined, 'Location', event.location),
-                            if (event.durationMins != null) ...[
-                              const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
-                              _buildEventDetailRow(Icons.timer_outlined, 'Duration', '${event.durationMins} minutes'),
-                            ],
-                            const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
-                            _buildEventDetailRow(Icons.groups_outlined, 'Team Assignment', '${event.ageGroup} ${event.team}'),
-                          ],
-                        ),
-                      ),
-                      if (hasImage) ...[
-                        const SizedBox(height: 20.0),
-                        const Text(
-                          'Coach Workout Plan',
-                          style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        const SizedBox(height: 10.0),
-                        GestureDetector(
-                          onTap: () => _showFullImageModal(context, event.workoutImagePath!, event.title),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16.0),
-                            child: Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: [
-                                Image.network(
-                                  event.workoutImagePath!,
-                                  width: double.infinity,
-                                  height: 320.0,
-                                  fit: BoxFit.cover,
-                                ),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                  color: const Color(0xFF003EC7).withOpacity(0.9),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.zoom_in, color: Colors.white, size: 20.0),
-                                      SizedBox(width: 8.0),
-                                      Text(
-                                        'Tap to Expand Full Resolution Plan',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.0),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ],
-                      const SizedBox(height: 24.0),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          if (hasImage) {
-                            _showFullImageModal(context, event.workoutImagePath!, event.title);
-                          }
-                        },
-                        icon: Icon(hasImage ? Icons.zoom_in : Icons.check_circle_outline, size: 20.0),
-                        label: Text(hasImage ? 'Open Full Resolution Workout Plan' : 'Close Event Details'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF003EC7),
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+
+                // Solid Pinned Bottom Action Container above Safe Area
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0)),
+                  ),
+                  padding: EdgeInsets.fromLTRB(20.0, 12.0, 20.0, MediaQuery.of(context).padding.bottom + 16.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      if (hasImage) {
+                        _showFullImageModal(context, event.workoutImagePath!, event.title);
+                      }
+                    },
+                    icon: Icon(hasImage ? Icons.zoom_in : Icons.check_circle_outline, size: 20.0),
+                    label: Text(hasImage ? 'Open Full Resolution Workout Plan' : 'Close Event Details'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003EC7),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
