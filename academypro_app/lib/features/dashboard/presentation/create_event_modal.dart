@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/app_toast.dart';
 import '../controllers/dashboard_controller.dart';
+import 'create_squad_modal.dart';
 
 class CreateEventModal extends ConsumerStatefulWidget {
   final CoachEvent? eventToEdit;
@@ -482,7 +483,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                                   showModalBottomSheet(
                                     context: context,
                                     isScrollControlled: true,
-                                    builder: (_) => const CreateSquadModal(),
+                                    builder: (_) => CreateSquadModal(),
                                   );
                                 },
                                 child: const Text(
