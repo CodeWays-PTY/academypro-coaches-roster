@@ -178,10 +178,12 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
   Widget _buildContent(StudentPortalData data) {
     if (_activeTab == 1) {
-      return _buildFitnessTab(data);
+      return _buildEventsTab(data);
     } else if (_activeTab == 2) {
-      return _buildAcademicsTab(data);
+      return _buildFitnessTab(data);
     } else if (_activeTab == 3) {
+      return _buildAcademicsTab(data);
+    } else if (_activeTab == 4) {
       return _buildMatchesTab(data);
     }
     return _buildOverviewTab(data);
@@ -205,7 +207,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 100.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -389,6 +391,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           ),
           const SizedBox(height: 12.0),
           _buildCoachFeedbackCard(data),
+          const SizedBox(height: 32.0),
         ],
       ),
     );
@@ -923,7 +926,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1118,7 +1121,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       children: [
         const Text(
           'Fitness Baselines & Tests',
@@ -1126,7 +1129,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ),
         const SizedBox(height: 4.0),
         const Text(
-          'Your June 2025 performance evaluation results.',
+          'Your latest performance evaluation results.',
           style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
         ),
         const SizedBox(height: 16.0),
@@ -1159,7 +1162,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       itemCount: data.academics.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16.0),
       itemBuilder: (context, index) {
@@ -1264,7 +1267,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       itemCount: data.matches.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16.0),
       itemBuilder: (context, index) {
@@ -1401,6 +1404,230 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
 
 
+  // ==========================================
+  // TAB 5: TEAM EVENTS & SCHEDULE
+  // ==========================================
+  Widget _buildEventsTab(StudentPortalData data) {
+    final events = data.events;
+    if (events.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
+        children: [
+          _buildEmptyState('No upcoming team sessions or events scheduled.'),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
+      itemCount: events.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Team Events & Schedule',
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+              ),
+              SizedBox(height: 4.0),
+              Text(
+                'Upcoming training sessions, match days, and coach workout plans.',
+                style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
+              ),
+              SizedBox(height: 16.0),
+            ],
+          );
+        }
+
+        final event = events[index - 1];
+        final hasImage = event.workoutImagePath != null && event.workoutImagePath!.trim().isNotEmpty;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: event.eventType == 'Match Day'
+                            ? const Color(0xFFFEE2E2)
+                            : event.eventType == 'Gym Session'
+                                ? const Color(0xFFEFF6FF)
+                                : const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Text(
+                        event.eventType.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.bold,
+                          color: event.eventType == 'Match Day'
+                              ? const Color(0xFF991B1B)
+                              : event.eventType == 'Gym Session'
+                                  ? const Color(0xFF1D4ED8)
+                                  : const Color(0xFF166534),
+                        ),
+                      ),
+                    ),
+                    if (event.isImportant)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(6.0),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.star, size: 12.0, color: Color(0xFFD97706)),
+                            SizedBox(width: 4.0),
+                            Text(
+                              'IMPORTANT',
+                              style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12.0),
+                Text(
+                  event.title,
+                  style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 8.0),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 14.0, color: Color(0xFF64748B)),
+                    const SizedBox(width: 6.0),
+                    Text(
+                      '${event.date} at ${event.startTime}',
+                      style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                    ),
+                    if (event.durationMins != null) ...[
+                      const SizedBox(width: 12.0),
+                      const Icon(Icons.timer_outlined, size: 14.0, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        '${event.durationMins} mins',
+                        style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
+                      ),
+                    ]
+                  ],
+                ),
+                const SizedBox(height: 6.0),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 14.0, color: Color(0xFF64748B)),
+                    const SizedBox(width: 6.0),
+                    Expanded(
+                      child: Text(
+                        event.location,
+                        style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
+                      ),
+                    ),
+                    if (event.intensity != null)
+                      Text(
+                        'Intensity: ${event.intensity}',
+                        style: const TextStyle(fontSize: 12.0, color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                if (hasImage) ...[
+                  const SizedBox(height: 16.0),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.network(
+                          event.workoutImagePath!,
+                          width: double.infinity,
+                          height: 180.0,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            height: 100.0,
+                            color: const Color(0xFFF1F5F9),
+                            alignment: Alignment.center,
+                            child: const Text('Workout image preview unavailable', style: TextStyle(color: Color(0xFF64748B))),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            _showFullImageModal(context, event.workoutImagePath!, event.title);
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 10.0),
+                            color: const Color(0xFF003EC7),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.zoom_in, color: Colors.white, size: 18.0),
+                                SizedBox(width: 6.0),
+                                Text(
+                                  'View Coach Workout Plan',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.0),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFullImageModal(BuildContext context, String imageUrl, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              backgroundColor: Colors.black,
+              title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16.0)),
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Flexible(
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16.0),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomNav() {
     return SafeArea(
       top: false,
@@ -1435,10 +1662,11 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 elevation: 0,
                 selectedItemColor: const Color(0xFF003EC7),
                 unselectedItemColor: const Color(0xFF64748B),
-                selectedLabelStyle: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold),
-                unselectedLabelStyle: const TextStyle(fontSize: 11.0),
+                selectedLabelStyle: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold),
+                unselectedLabelStyle: const TextStyle(fontSize: 10.0),
                 items: const [
                   BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Overview'),
+                  BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), activeIcon: Icon(Icons.calendar_month), label: 'Events'),
                   BottomNavigationBarItem(icon: Icon(Icons.fitness_center_outlined), activeIcon: Icon(Icons.fitness_center), label: 'Fitness'),
                   BottomNavigationBarItem(icon: Icon(Icons.school_outlined), activeIcon: Icon(Icons.school), label: 'Academics'),
                   BottomNavigationBarItem(icon: Icon(Icons.sports_score_outlined), activeIcon: Icon(Icons.sports_score), label: 'Matches'),

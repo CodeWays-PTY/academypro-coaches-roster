@@ -1551,6 +1551,32 @@ app.get('/api/student-portal', async (c) => {
     attendance = results || [];
   } catch (_) {}
 
+  // 6. Fetch Team Events for Student
+  let events: any[] = [];
+  try {
+    const schoolId = player.school_id || 'OVK';
+    const ageGroup = player.age_group;
+    const { results } = await db.prepare(
+      'SELECT * FROM events WHERE school_id = ? AND (age_group = ? OR age_group IS NULL OR age_group = "") ORDER BY date ASC, start_time ASC'
+    ).bind(schoolId, ageGroup).all();
+    events = (results || []).map((r: any) => ({
+      id: r.id?.toString() || '',
+      schoolId: r.school_id,
+      title: r.title,
+      eventType: r.event_type,
+      startTime: r.start_time,
+      date: r.date,
+      durationMins: r.duration_mins,
+      location: r.location,
+      intensity: r.intensity,
+      isImportant: r.is_important === 1,
+      completionCount: r.completion_count,
+      ageGroup: r.age_group || 'U15',
+      team: r.team || 'U15 Academy Elite',
+      workoutImagePath: r.workout_image_path
+    }));
+  } catch (_) {}
+
   return c.json({
     success: true,
     data: {
@@ -1615,7 +1641,8 @@ app.get('/api/student-portal', async (c) => {
         sessionType: a.session_type,
         total: a.total,
         present: a.present || 0
-      }))
+      })),
+      events: events
     }
   });
 });

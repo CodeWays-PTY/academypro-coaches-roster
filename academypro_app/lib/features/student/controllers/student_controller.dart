@@ -48,6 +48,59 @@ class DynamicTestMetric {
   }
 }
 
+class StudentEvent {
+  final String id;
+  final String schoolId;
+  final String title;
+  final String eventType;
+  final String startTime;
+  final String date;
+  final int? durationMins;
+  final String location;
+  final String? intensity;
+  final bool isImportant;
+  final int? completionCount;
+  final String ageGroup;
+  final String team;
+  final String? workoutImagePath;
+
+  StudentEvent({
+    required this.id,
+    required this.schoolId,
+    required this.title,
+    required this.eventType,
+    required this.startTime,
+    required this.date,
+    this.durationMins,
+    required this.location,
+    this.intensity,
+    required this.isImportant,
+    this.completionCount,
+    required this.ageGroup,
+    required this.team,
+    this.workoutImagePath,
+  });
+
+  factory StudentEvent.fromJson(Map<String, dynamic> json) {
+    return StudentEvent(
+      id: json['id']?.toString() ?? '',
+      schoolId: json['schoolId'] ?? '',
+      title: json['title'] ?? 'Training Session',
+      eventType: json['eventType'] ?? 'Field Session',
+      startTime: json['startTime'] ?? '00:00',
+      date: json['date'] ?? '',
+      durationMins: (json['durationMins'] as num?)?.toInt(),
+      location: json['location'] ?? 'Grounds',
+      intensity: json['intensity'],
+      isImportant: json['isImportant'] == true,
+      completionCount: (json['completionCount'] as num?)?.toInt(),
+      ageGroup: json['ageGroup'] ?? 'U15',
+      team: json['team'] ?? '',
+      workoutImagePath: json['workoutImagePath'],
+    );
+  }
+}
+
 class StudentPortalData {
   final Map<String, dynamic> profile;
   final List<dynamic> academics;
@@ -56,6 +109,7 @@ class StudentPortalData {
   final int readinessScore;
   final List<dynamic> matches;
   final List<dynamic> attendance;
+  final List<StudentEvent> events;
 
   StudentPortalData({
     required this.profile,
@@ -65,6 +119,7 @@ class StudentPortalData {
     required this.readinessScore,
     required this.matches,
     required this.attendance,
+    required this.events,
   });
 
   factory StudentPortalData.fromJson(Map<String, dynamic> json) {
@@ -74,7 +129,12 @@ class StudentPortalData {
         .map((m) => DynamicTestMetric.fromJson(m as Map<String, dynamic>))
         .toList();
 
-    final int parsedReadiness = (fitnessObj['readinessScore'] as num?)?.toInt() ?? 88;
+    final int parsedReadiness = (fitnessObj['readinessScore'] as num?)?.toInt() ?? 0;
+
+    final eventsRaw = json['events'] as List<dynamic>? ?? [];
+    final parsedEvents = eventsRaw
+        .map((e) => StudentEvent.fromJson(e as Map<String, dynamic>))
+        .toList();
 
     return StudentPortalData(
       profile: json['profile'] ?? {},
@@ -84,6 +144,7 @@ class StudentPortalData {
       readinessScore: parsedReadiness,
       matches: json['matches'] ?? [],
       attendance: json['attendance'] ?? [],
+      events: parsedEvents,
     );
   }
 }
