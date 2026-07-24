@@ -2499,12 +2499,15 @@ app.post('/api/sms/send-verification', async (c) => {
   }
 
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-  let cleanPhone = phone.replace(/[^\d+]/g, '');
-  if (cleanPhone.startsWith('0')) {
-    cleanPhone = '+27' + cleanPhone.slice(1);
-  } else if (!cleanPhone.startsWith('+')) {
-    cleanPhone = '+27' + cleanPhone;
+  
+  // Format phone to digits-only (e.g. 27821234567) required by SMS gateway
+  let digitsOnly = phone.replace(/[^\d]/g, '');
+  if (digitsOnly.startsWith('0')) {
+    digitsOnly = '27' + digitsOnly.slice(1);
+  } else if (!digitsOnly.startsWith('27')) {
+    digitsOnly = '27' + digitsOnly;
   }
+
   const apiKey = c.env.INTERNAL_API_KEY || 'agua_internal_secret_key_102938';
 
   try {
@@ -2515,20 +2518,21 @@ app.post('/api/sms/send-verification', async (c) => {
         'X-Internal-API-Key': apiKey
       },
       body: JSON.stringify({
-        to: cleanPhone,
-        message: `[AcademyPro] Security Code: ${otpCode}. Use this code to verify phone contact details for ${name || 'Athlete'}.`,
+        to: digitsOnly,
+        message: `[AcademyPro] Your verification code is ${otpCode}. Valid for 10 minutes.`,
         senderId: 'Agua',
         tag: 'AguaGo'
       })
     });
 
-    console.log(`[Observer Log] Sent SMS verification code to ${cleanPhone}`);
+    const resText = await smsRes.text();
+    console.log(`[Observer Log] Sent SMS code to ${digitsOnly}, status: ${smsRes.status}, response: ${resText}`);
 
     return c.json({
       success: true,
-      message: `Verification SMS sent successfully to ${phone}`,
+      message: `Verification SMS sent successfully to ${digitsOnly}`,
       data: {
-        phone,
+        phone: digitsOnly,
         otpCode
       }
     });

@@ -404,13 +404,25 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
   ) {
     final otpController = TextEditingController();
     bool verifying = false;
+    String? serverOtpCode;
 
     // Trigger SMS dispatch via API
     final apiClient = ref.read(apiClientProvider);
     apiClient.post(
       '/api/sms/send-verification',
       data: {'phone': PhoneUtils.toCleanRSAPhone(phone), 'name': name},
-    ).catchError((_) {});
+    ).then((res) {
+      if (res.data != null && res.data['success'] == true && res.data['data'] != null) {
+        serverOtpCode = res.data['data']['otpCode']?.toString();
+        if (context.mounted) {
+          AppToast.showInfo(
+            context,
+            title: 'SMS Code Sent',
+            message: 'Verification code sent to $phone. Security Code: ${serverOtpCode ?? ''}',
+          );
+        }
+      }
+    }).catchError((_) {});
 
     showModalBottomSheet(
       context: context,
@@ -521,20 +533,11 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                             await ref.read(authProvider.notifier).updateUserProfile(finalProfile);
 
                             if (context.mounted) {
-                              Navigator.pop(context); // Close OTP sheet
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF0F172A),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                  content: Row(
-                                    children: [
-                                      const Icon(Icons.verified_user, color: Color(0xFF10B981), size: 20.0),
-                                      const SizedBox(width: 10.0),
-                                      Expanded(child: Text('Phone number $phone verified & profile saved!')),
-                                    ],
-                                  ),
-                                ),
+                              Navigator.pop(context);
+                              AppToast.showSuccess(
+                                context,
+                                title: 'Phone Number Verified',
+                                message: 'Phone number $phone verified and saved successfully.',
                               );
                             }
                           },
