@@ -781,12 +781,12 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           const SizedBox(height: 8.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
-                '98% Attendance',
-                style: TextStyle(fontSize: 10.0, color: Color(0xFF434656), fontWeight: FontWeight.bold),
+                badgeText,
+                style: const TextStyle(fontSize: 10.0, color: Color(0xFF434656), fontWeight: FontWeight.bold),
               ),
-              Text(
+              const Text(
                 'Elite Benchmark: 90%',
                 style: TextStyle(fontSize: 10.0, color: Color(0xFF434656), fontStyle: FontStyle.italic),
               ),

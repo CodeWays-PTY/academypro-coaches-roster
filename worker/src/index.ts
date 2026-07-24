@@ -666,7 +666,7 @@ app.get('/api/dashboard/summary', async (c) => {
     attParams.push(ageGroup);
   }
   const attRes = await db.prepare(attendanceQuery).bind(...attParams).first();
-  const attendancePercent = attRes && attRes.total > 0 ? Math.round((attRes.present / attRes.total) * 100) : 100;
+  const attendancePercent = attRes && attRes.total > 0 ? Math.round((attRes.present / attRes.total) * 100) : 0;
 
   return c.json({
     success: true,
@@ -1230,7 +1230,7 @@ app.get('/api/dashboard/rising-stars', async (c) => {
         streakWeeks: 0,
         gymConsistencyWeeks: 0,
         gradeImprovement: p.avg_grade ? Math.round(p.avg_grade) : 0,
-        attendancePercent: 100,
+        attendancePercent: 0,
         gymProgressPercent: 0,
         highlights: 'Consistently active squad member'
       };

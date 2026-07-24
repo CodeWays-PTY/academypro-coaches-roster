@@ -210,8 +210,8 @@ class RisingStarPlayer {
         ageGroup = ageGroup ?? 'U15',
         gymConsistencyWeeks = gymConsistencyWeeks ?? streakWeeks,
         gradeImprovement = gradeImprovement ?? 12,
-        attendancePercent = attendancePercent ?? 100,
-        gymProgressPercent = gymProgressPercent ?? 15;
+        attendancePercent = attendancePercent ?? 0,
+        gymProgressPercent = gymProgressPercent ?? 0;
 
   bool get isQualifiedForRisingStar => streakWeeks >= 5 || gymConsistencyWeeks >= 5;
 
@@ -223,13 +223,13 @@ class RisingStarPlayer {
       firstName: json['firstName'],
       lastName: json['lastName'],
       team: json['team'] ?? '',
-      position: json['position'] ?? 'Forward',
+      position: json['position'] ?? 'Athlete',
       ageGroup: json['ageGroup'] ?? 'U15',
-      streakWeeks: json['streakWeeks'] ?? 5,
-      gymConsistencyWeeks: json['gymConsistencyWeeks'] ?? json['streakWeeks'] ?? 5,
-      gradeImprovement: json['gradeImprovement'] ?? 12,
-      attendancePercent: json['attendancePercent'] ?? 100,
-      gymProgressPercent: json['gymProgressPercent'] ?? 15,
+      streakWeeks: json['streakWeeks'] ?? 0,
+      gymConsistencyWeeks: json['gymConsistencyWeeks'] ?? json['streakWeeks'] ?? 0,
+      gradeImprovement: json['gradeImprovement'] ?? 0,
+      attendancePercent: json['attendancePercent'] ?? 0,
+      gymProgressPercent: json['gymProgressPercent'] ?? 0,
       highlights: json['highlights'] ?? '',
     );
   }
