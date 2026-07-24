@@ -1725,13 +1725,17 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
   Widget _buildProfileTab(StudentPortalData data) {
     final profile = data.profile;
+    final accountEmail = (ref.watch(authProvider).userProfile?['email'] ?? profile['email'] ?? '').toString().trim();
+
     if (_firstNameController.text.isEmpty && profile['firstName'] != null) {
       _firstNameController.text = profile['firstName'] ?? '';
       _lastNameController.text = profile['lastName'] ?? '';
       _phoneController.text = profile['phone'] ?? '';
-      _emailController.text = profile['email'] ?? '';
+      _emailController.text = accountEmail.isNotEmpty ? accountEmail : (profile['email'] ?? '');
       _dobController.text = profile['dob'] ?? '';
       _preferredPositionController.text = profile['preferredPosition'] ?? '';
+    } else if (accountEmail.isNotEmpty && _emailController.text != accountEmail) {
+      _emailController.text = accountEmail;
     }
 
     final officialTeam = profile['team'] != null && profile['team'].toString().isNotEmpty ? profile['team'] : 'Unassigned';
@@ -1980,15 +1984,22 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 const SizedBox(height: 14.0),
 
-                // Email Address
+                // Registered Account Email Address
                 TextFormField(
                   controller: _emailController,
+                  readOnly: true,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
-                    labelText: 'Email Address',
+                    labelText: 'Registered Account Email',
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email_outlined),
+                    prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF003EC7)),
+                    suffixIcon: Icon(Icons.lock_outlined, color: Color(0xFF94A3B8), size: 18.0),
                   ),
+                ),
+                const SizedBox(height: 4.0),
+                const Text(
+                  'Your profile email matches your registered account email address.',
+                  style: TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 14.0),
 
