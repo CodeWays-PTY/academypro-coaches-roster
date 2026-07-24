@@ -385,9 +385,11 @@ app.post('/api/auth/verify-otp', async (c) => {
   let user = await db.prepare(query).bind(email.trim().toLowerCase()).first();
 
   if (!user) {
-    // Fallback if not joined or missing
-    const altUser = await db.prepare('SELECT id, email, first_name, last_name, role, school_id FROM users WHERE email = ?').bind(email.trim().toLowerCase()).first();
-    user = { ...altUser, school_name: 'Hoërskool Overkruin' };
+    user = await db.prepare('SELECT id, email, first_name, last_name, role, school_id FROM users WHERE email = ?').bind(email.trim().toLowerCase()).first();
+  }
+
+  if (!user) {
+    return c.json({ success: false, message: 'User profile not found after OTP verification' }, 404);
   }
 
   // Delete OTP from cache
@@ -399,7 +401,7 @@ app.post('/api/auth/verify-otp', async (c) => {
     sub: user.id,
     email: user.email,
     role: user.role,
-    schoolId: user.school_id,
+    schoolId: user.school_id || null,
     exp: Math.floor(Date.now() / 1000) + (12 * 60 * 60) // 12 hours expiration
   };
   const token = await sign(payload, secret);
@@ -412,8 +414,8 @@ app.post('/api/auth/verify-otp', async (c) => {
         id: user.id,
         email: user.email,
         role: user.role,
-        schoolId: user.school_id,
-        schoolName: user.school_name || 'Hoërskool Overkruin',
+        schoolId: user.school_id || null,
+        schoolName: user.school_name || null,
         firstName: user.first_name,
         lastName: user.last_name,
         first_name: user.first_name,
@@ -539,53 +541,26 @@ app.post('/api/auth/verify-new-email', async (c) => {
 // ==========================================
 
 // JWT Authentication Guard
-app.use('/api/rosters/*', async (c, next) => {
+async function enforceJwtAuth(c: any, next: any) {
   const authHeader = c.req.header('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     try {
       const payload = await verify(token, getSecret(c), 'HS256');
       c.set('jwtPayload', payload);
+      await next();
+      return;
     } catch (_) {
-      c.set('jwtPayload', { schoolId: 'OVK', sub: 'USR-COACH-001', role: 'Coach' });
+      return c.json({ success: false, message: 'Invalid or expired session token' }, 401);
     }
-  } else {
-    c.set('jwtPayload', { schoolId: 'OVK', sub: 'USR-COACH-001', role: 'Coach' });
   }
-  await next();
-});
+  return c.json({ success: false, message: 'Authorization header required' }, 401);
+}
 
-app.use('/api/dashboard/*', async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    try {
-      const payload = await verify(token, getSecret(c), 'HS256');
-      c.set('jwtPayload', payload);
-    } catch (_) {
-      c.set('jwtPayload', { schoolId: 'OVK', sub: 'USR-COACH-001', role: 'Coach' });
-    }
-  } else {
-    c.set('jwtPayload', { schoolId: 'OVK', sub: 'USR-COACH-001', role: 'Coach' });
-  }
-  await next();
-});
-
-app.use('/api/match-stats', async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    try {
-      const payload = await verify(token, getSecret(c), 'HS256');
-      c.set('jwtPayload', payload);
-    } catch (_) {
-      c.set('jwtPayload', { schoolId: 'OVK', sub: 'USR-COACH-001', role: 'Coach' });
-    }
-  } else {
-    c.set('jwtPayload', { schoolId: 'OVK', sub: 'USR-COACH-001', role: 'Coach' });
-  }
-  await next();
-});
+app.use('/api/rosters/*', enforceJwtAuth);
+app.use('/api/dashboard/*', enforceJwtAuth);
+app.use('/api/match-stats/*', enforceJwtAuth);
+app.use('/api/match-stats', enforceJwtAuth);
 
 // Route: Get Team Roster
 app.get('/api/rosters/:age_group', async (c) => {
@@ -872,13 +847,13 @@ app.get('/api/dashboard/events', async (c) => {
       intensity: r.intensity,
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
-      ageGroup: r.age_group || 'U15',
-      team: r.team || 'U15 Academy Elite',
+      ageGroup: r.age_group || null,
+      team: r.team || r.age_group || null,
       workoutImagePath: r.workout_image_path
     }));
 
     if (team) {
-      events = events.filter((e: any) => e.team.toLowerCase().trim() === team.toLowerCase().trim());
+      events = events.filter((e: any) => e.team && e.team.toLowerCase().trim() === team.toLowerCase().trim());
     }
 
     return c.json({
@@ -893,7 +868,7 @@ app.get('/api/dashboard/events', async (c) => {
 // Route: Create Coach Command Event
 app.post('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId || null;
   const db = getDB(c);
 
   if (!db) {
@@ -917,7 +892,7 @@ app.post('/api/dashboard/events', async (c) => {
   }
 
   const eventId = id ? id.toString() : `EVT-${Date.now()}`;
-  const assignedTeam = team || 'U15 Academy Elite';
+  const assignedTeam = team ? team.trim() : (ageGroup ? ageGroup.trim() : null);
 
   const query = `
     INSERT INTO events (
@@ -942,7 +917,7 @@ app.post('/api/dashboard/events', async (c) => {
       intensity ? intensity.trim() : null,
       isImpVal,
       compCountVal,
-      ageGroup || 'U15',
+      ageGroup ? ageGroup.trim() : null,
       assignedTeam,
       workoutImagePath || null
     ).run();
@@ -962,7 +937,7 @@ app.post('/api/dashboard/events', async (c) => {
         intensity: intensity || null,
         isImportant: isImpVal === 1,
         completionCount: compCountVal,
-        ageGroup: ageGroup || 'U15',
+        ageGroup: ageGroup ? ageGroup.trim() : null,
         team: assignedTeam,
         workoutImagePath: workoutImagePath || null
       }
@@ -1000,8 +975,8 @@ app.post('/api/dashboard/events/:id', async (c) => {
     `;
     await db.prepare(query).bind(
       title.trim(), eventType.trim(), startTime.trim(), date.trim(), durMinsVal,
-      location.trim(), intensity ? intensity.trim() : null, isImpVal, ageGroup || 'U15',
-      team || 'U15 Academy Elite', workoutImagePath || null, id.toString(), id.toString()
+      location.trim(), intensity ? intensity.trim() : null, isImpVal, ageGroup ? ageGroup.trim() : null,
+      team ? team.trim() : (ageGroup ? ageGroup.trim() : null), workoutImagePath || null, id.toString(), id.toString()
     ).run();
 
     return c.json({ success: true, message: 'Event updated successfully' });
@@ -1570,8 +1545,8 @@ app.get('/api/student-portal', async (c) => {
       location: r.location,
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
-      ageGroup: r.age_group || 'U15',
-      team: r.team || 'U15 Academy Elite',
+      ageGroup: r.age_group || null,
+      team: r.team || r.age_group || null,
       workoutImagePath: r.workout_image_path
     }));
   } catch (_) {}
@@ -2240,7 +2215,10 @@ app.post('/api/player/link-requests/:id/respond', async (c) => {
 // Route: Get Parent's Linked Children Profiles
 app.get('/api/parent/children', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const parentUserId = jwtPayload?.sub || 'USR-PARENT-101';
+  const parentUserId = jwtPayload?.sub;
+  if (!parentUserId) {
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
   const db = getDB(c);
 
   await ensureParentLinksTable(db);
@@ -2253,12 +2231,7 @@ app.get('/api/parent/children', async (c) => {
       WHERE pcl.parent_user_id = ? AND pcl.status = 'accepted'
     `).bind(parentUserId).all();
 
-    let children = results || [];
-
-    if (children.length === 0) {
-      const fallbackPlayer = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
-      if (fallbackPlayer) children = [fallbackPlayer];
-    }
+    const children = results || [];
 
     return c.json({
       success: true,

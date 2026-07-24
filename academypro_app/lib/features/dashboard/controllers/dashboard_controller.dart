@@ -458,11 +458,7 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
     } catch (_) {}
 
     if (state.isEmpty) {
-      state = [
-        SquadItem(id: 'sq-1', name: 'U15 Academy Elite', ageGroup: 'U15', description: 'U15 Performance Squad'),
-        SquadItem(id: 'sq-2', name: 'U16 Academy Elite', ageGroup: 'U16', description: 'U16 Junior Elite Squad'),
-        SquadItem(id: 'sq-3', name: 'U18 Premier Squad', ageGroup: 'U18', description: 'U18 Senior Premier Squad'),
-      ];
+      state = [];
     }
   }
 
@@ -569,7 +565,7 @@ class CoachEvent {
     this.completionCount,
     this.recurrenceRule = 'Does Not Repeat',
     this.workoutImagePath,
-    this.team = 'U15 Academy Elite',
+    this.team = '',
     this.ageGroup = 'U15',
   });
 
@@ -621,7 +617,7 @@ class CoachEvent {
       completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
       recurrenceRule: json['recurrenceRule'] ?? 'Does Not Repeat',
       workoutImagePath: json['workoutImagePath'] ?? json['workoutAttachmentName'],
-      team: json['team'] ?? 'U15 Academy Elite',
+      team: json['team'] ?? json['ageGroup'] ?? json['age_group'] ?? '',
       ageGroup: json['ageGroup'] ?? json['age_group'] ?? 'U15',
     );
   }
@@ -666,7 +662,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     String? team,
   }) async {
     final eventId = 'EVT-${DateTime.now().millisecondsSinceEpoch}';
-    final assignedTeam = team ?? 'U15 Academy Elite';
+    final assignedTeam = team ?? ageGroup ?? '';
     final newEvent = CoachEvent(
       id: eventId,
       schoolId: '',

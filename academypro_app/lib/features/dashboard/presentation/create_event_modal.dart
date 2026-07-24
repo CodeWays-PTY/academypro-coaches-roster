@@ -40,13 +40,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   bool _isImportant = false;
   bool _isSubmitting = false;
   String? _attachedImagePath;
-  String _selectedTeam = 'U15 Academy Elite';
-
-  final List<String> _teamOptions = [
-    'U15 Academy Elite',
-    'U16 Academy Elite',
-    'U18 Premier Squad',
-  ];
+  String _selectedTeam = '';
 
   Map<String, List<String>> _userLocationHistory = {};
 
@@ -73,7 +67,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       _isImportant = e.isImportant;
       _selectedRecurrence = e.recurrenceRule;
       _attachedImagePath = e.workoutImagePath;
-      _selectedTeam = e.team.isNotEmpty ? e.team : 'U15 Academy Elite';
+      _selectedTeam = e.team;
       if (e.date.isNotEmpty) {
         _selectedDate = DateTime.tryParse(e.date) ?? DateTime.now();
       }
@@ -427,10 +421,11 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                       ),
                     child: Consumer(
                       builder: (context, ref, child) {
+                        final activeGroup = ref.watch(selectedAgeGroupProvider);
                         final squads = ref.watch(squadsProvider);
                         final availableTeams = squads.map((s) => s.name).toList();
                         if (availableTeams.isEmpty) {
-                          availableTeams.add('U15 Academy Elite');
+                          availableTeams.add(activeGroup);
                         }
 
                         final activeTeam = availableTeams.contains(_selectedTeam) 
