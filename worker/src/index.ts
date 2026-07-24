@@ -566,17 +566,27 @@ app.use('/api/match-stats', enforceJwtAuth);
 app.get('/api/rosters/:age_group', async (c) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload.schoolId;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
-  const query = 'SELECT * FROM players WHERE school_id = ? AND age_group = ? ORDER BY first_name ASC';
-  const { results } = await db.prepare(query).bind(schoolId, ageGroup).all();
+  if (!ageGroup || ageGroup === 'None' || ageGroup === 'Unassigned' || ageGroup === 'No Squad') {
+    return c.json({
+      success: true,
+      data: {
+        ageGroup: ageGroup || 'None',
+        players: []
+      }
+    });
+  }
+
+  const query = 'SELECT * FROM players WHERE school_id = ? AND (age_group = ? OR team = ?) ORDER BY first_name ASC';
+  const { results } = await db.prepare(query).bind(schoolId, ageGroup, ageGroup).all();
 
   return c.json({
     success: true,
     data: {
       ageGroup,
-      players: results.map((p: any) => ({
+      players: (results || []).map((p: any) => ({
         id: p.id,
         firstName: p.first_name,
         lastName: p.last_name,
@@ -818,11 +828,18 @@ app.get('/api/dashboard/events', async (c) => {
   const team = c.req.query('team');
   const db = getDB(c);
 
+  if (!ageGroup || ageGroup === 'None' || ageGroup === 'Unassigned' || ageGroup === 'No Squad') {
+    return c.json({
+      success: true,
+      data: []
+    });
+  }
+
   let query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
   let params: any[] = [schoolId];
-  if (ageGroup) {
-    query = 'SELECT * FROM events WHERE school_id = ? AND (age_group = ? OR age_group IS NULL OR age_group = "") ORDER BY date ASC, start_time ASC';
-    params.push(ageGroup);
+  if (ageGroup && ageGroup !== 'All') {
+    query = 'SELECT * FROM events WHERE school_id = ? AND (age_group = ? OR team = ?) ORDER BY date ASC, start_time ASC';
+    params.push(ageGroup, ageGroup);
   }
 
   try {

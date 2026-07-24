@@ -497,11 +497,15 @@ final squadsProvider = StateNotifierProvider<SquadsNotifier, List<SquadItem>>((r
 });
 
 final selectedAgeGroupProvider = StateProvider<String>((ref) {
+  final squads = ref.watch(squadsProvider);
   final cached = LocalStorage.getCachedData('selected_age_group');
-  if (cached is String && cached.isNotEmpty) {
+  if (cached is String && cached.isNotEmpty && cached != 'None' && squads.any((s) => s.ageGroup == cached)) {
     return cached;
   }
-  return 'U15';
+  if (squads.isNotEmpty) {
+    return squads.first.ageGroup;
+  }
+  return 'None';
 });
 
 final dashboardTabProvider = StateProvider<int>((ref) => 0);
