@@ -1558,6 +1558,10 @@ app.get('/api/student-portal', async (c) => {
         id: player.id,
         firstName: player.first_name,
         lastName: player.last_name,
+        phone: player.phone || '',
+        email: player.email || '',
+        dob: player.dob || '',
+        preferredPosition: player.preferred_position || '',
         ageGroup: player.age_group,
         position: player.position,
         team: player.team,
@@ -1641,18 +1645,17 @@ app.post('/api/student-portal/profile', async (c) => {
   }
 
   try {
-    const { firstName, lastName, position, ageGroup, parentContact, team, grade } = await c.req.json();
+    const { firstName, lastName, phone, email, dob, preferredPosition } = await c.req.json();
     await db.prepare(`
       UPDATE players
       SET first_name = COALESCE(?, first_name),
           last_name = COALESCE(?, last_name),
-          position = COALESCE(?, position),
-          age_group = COALESCE(?, age_group),
-          parent_contact = COALESCE(?, parent_contact),
-          team = COALESCE(?, team),
-          grade = COALESCE(?, grade)
+          phone = COALESCE(?, phone),
+          email = COALESCE(?, email),
+          dob = COALESCE(?, dob),
+          preferred_position = COALESCE(?, preferred_position)
       WHERE user_id = ? OR id = ?
-    `).bind(firstName, lastName, position, ageGroup, parentContact, team, grade, userId, userId).run();
+    `).bind(firstName, lastName, phone, email, dob, preferredPosition, userId, userId).run();
 
     return c.json({ success: true, message: 'Profile updated successfully' });
   } catch (err: any) {

@@ -435,36 +435,48 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     );
   }
 
-  Widget _buildPositionRow(BuildContext context, WidgetRef ref, RosterPlayer player, [VoidCallback? onUpdated]) {
+  Widget _buildPositionRow(BuildContext context, WidgetRef ref, RosterPlayer player, [VoidCallback? onUpdated, String? preferredPosition]) {
     return InkWell(
       onTap: () => _showEditPositionDialog(context, ref, player, onUpdated),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Position Allocation',
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 14.0),
-            ),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  player.position.isNotEmpty ? player.position : 'Unassigned',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                    fontSize: 14.0,
-                  ),
+                const Text(
+                  'Official Position Allocation',
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 14.0),
                 ),
-                const SizedBox(width: 6.0),
-                const Icon(
-                  Icons.edit_outlined,
-                  size: 16.0,
-                  color: Color(0xFF2563EB),
+                Row(
+                  children: [
+                    Text(
+                      player.position.isNotEmpty ? player.position : 'Unassigned',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                        fontSize: 14.0,
+                      ),
+                    ),
+                    const SizedBox(width: 6.0),
+                    const Icon(
+                      Icons.edit_outlined,
+                      size: 16.0,
+                      color: Color(0xFF2563EB),
+                    ),
+                  ],
                 ),
               ],
             ),
+            if (preferredPosition != null && preferredPosition.trim().isNotEmpty) ...[
+              const SizedBox(height: 4.0),
+              Text(
+                'Athlete Preference: $preferredPosition',
+                style: const TextStyle(fontSize: 12.0, color: Color(0xFF2563EB), fontWeight: FontWeight.w500),
+              ),
+            ],
           ],
         ),
       ),
@@ -614,10 +626,14 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     int powerIndex = 0;
                     String uGroups = player.ugroupsActive == 1 ? 'ACTIVE' : 'INACTIVE';
                     String gymAtt = '0%';
+                    String? preferredPos;
 
                     if (snapshot.hasData && snapshot.data?.data['success'] == true) {
                       final data = snapshot.data?.data['data'] ?? {};
                       dynamicMetrics = data['dynamicMetrics'] ?? [];
+                      if (data['profile'] != null) {
+                        preferredPos = data['profile']['preferredPosition']?.toString();
+                      }
                       final academics = data['academics'] ?? [];
                       if (academics.isNotEmpty) {
                         final lastGrade = academics.last['gradePercentage'];
@@ -857,7 +873,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                       ],
                                     );
                                   }).toList(),
-                                _buildPositionRow(context, ref, player, () => setSheetState(() {})),
+                                _buildPositionRow(context, ref, player, () => setSheetState(() {}), preferredPos),
                                 const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
                                 _buildProfileRow('Athlete System ID', player.id),
                               ],

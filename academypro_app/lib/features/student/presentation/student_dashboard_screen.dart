@@ -1712,10 +1712,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   // ==========================================
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _positionController = TextEditingController();
-  final _ageGroupController = TextEditingController();
-  final _parentContactController = TextEditingController();
-  final _teamController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _dobController = TextEditingController();
+  final _preferredPositionController = TextEditingController();
   bool _isSavingProfile = false;
 
   Widget _buildProfileTab(StudentPortalData data) {
@@ -1723,38 +1723,78 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     if (_firstNameController.text.isEmpty && profile['firstName'] != null) {
       _firstNameController.text = profile['firstName'] ?? '';
       _lastNameController.text = profile['lastName'] ?? '';
-      _positionController.text = profile['position'] ?? '';
-      _ageGroupController.text = profile['ageGroup'] ?? '';
-      _parentContactController.text = profile['parentContact'] ?? '';
-      _teamController.text = profile['team'] ?? '';
+      _phoneController.text = profile['phone'] ?? '';
+      _emailController.text = profile['email'] ?? '';
+      _dobController.text = profile['dob'] ?? '';
+      _preferredPositionController.text = profile['preferredPosition'] ?? '';
     }
+
+    final officialTeam = profile['team'] != null && profile['team'].toString().isNotEmpty ? profile['team'] : 'Unassigned';
+    final officialAgeGroup = profile['ageGroup'] != null && profile['ageGroup'].toString().isNotEmpty ? profile['ageGroup'] : 'U15';
+    final officialPosition = profile['position'] != null && profile['position'].toString().isNotEmpty ? profile['position'] : 'Athlete';
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Athlete Profile',
-                  style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
-                ),
-                SizedBox(height: 4.0),
-                Text(
-                  'Manage personal details and access digital QR pass.',
-                  style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
-                ),
-              ],
+            Text(
+              'Athlete Profile',
+              style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
             ),
-            IconButton(
-              icon: const Icon(Icons.qr_code_2_rounded, size: 32.0, color: Color(0xFF2563EB)),
-              onPressed: () => _showQRCodeModal(context, data),
+            SizedBox(height: 4.0),
+            Text(
+              'Manage personal contact information and access your digital QR pass.',
+              style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
             ),
           ],
+        ),
+        const SizedBox(height: 20.0),
+
+        // Official Squad & Position Badges (Read-Only, Managed by Coaches)
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(20.0),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.shield_outlined, size: 16.0, color: Color(0xFF003EC7)),
+                  SizedBox(width: 8.0),
+                  Text(
+                    'OFFICIAL COACH ALLOCATIONS',
+                    style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7), letterSpacing: 0.5),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12.0),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildReadOnlyInfoTile('Squad Team', officialTeam),
+                  ),
+                  Expanded(
+                    child: _buildReadOnlyInfoTile('Age Group', officialAgeGroup),
+                  ),
+                  Expanded(
+                    child: _buildReadOnlyInfoTile('Field Position', officialPosition),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10.0),
+              const Text(
+                'Squad assignments, age groups, and official positions are managed by coaching staff.',
+                style: TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 20.0),
 
@@ -1812,6 +1852,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ),
         const SizedBox(height: 24.0),
 
+        // Personal Information Form (First Name, Last Name, Phone, Email, DOB, Preferred Position)
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -1823,6 +1864,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 16.0),
+
+                // First Name
                 TextFormField(
                   controller: _firstNameController,
                   decoration: const InputDecoration(
@@ -1832,6 +1875,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   ),
                 ),
                 const SizedBox(height: 14.0),
+
+                // Last Name
                 TextFormField(
                   controller: _lastNameController,
                   decoration: const InputDecoration(
@@ -1841,42 +1886,72 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   ),
                 ),
                 const SizedBox(height: 14.0),
+
+                // Phone Number
                 TextFormField(
-                  controller: _positionController,
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: 'Preferred Playing Position',
+                    labelText: 'Mobile Phone Number',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone_android_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+
+                // Email Address
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+
+                // Date of Birth (DOB)
+                TextFormField(
+                  controller: _dobController,
+                  readOnly: true,
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 365 * 15)),
+                      firstDate: DateTime(1990),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Date of Birth (YYYY-MM-DD)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.cake_outlined),
+                    suffixIcon: Icon(Icons.calendar_month_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14.0),
+
+                // Preferred Position (Optional Preference for Coaches)
+                TextFormField(
+                  controller: _preferredPositionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Preferred Playing Position (Optional Preference)',
+                    hintText: 'e.g. Flyhalf / Winger (Coach Preference)',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.sports_rugby_outlined),
                   ),
                 ),
-                const SizedBox(height: 14.0),
-                TextFormField(
-                  controller: _ageGroupController,
-                  decoration: const InputDecoration(
-                    labelText: 'Age Group (e.g. U15, U16)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.groups_outlined),
-                  ),
-                ),
-                const SizedBox(height: 14.0),
-                TextFormField(
-                  controller: _teamController,
-                  decoration: const InputDecoration(
-                    labelText: 'Team Assignment (e.g. U15 A Team)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.shield_outlined),
-                  ),
-                ),
-                const SizedBox(height: 14.0),
-                TextFormField(
-                  controller: _parentContactController,
-                  decoration: const InputDecoration(
-                    labelText: 'Guardian / Parent Contact Number',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
+                const SizedBox(height: 6.0),
+                const Text(
+                  'Your preferred position is visible to coaches to indicate your interest, but official position allocations are set by coaches.',
+                  style: TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 20.0),
+
                 ElevatedButton.icon(
                   onPressed: _isSavingProfile
                       ? null
@@ -1887,10 +1962,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                             final res = await apiClient.dio.post('/api/student-portal/profile', data: {
                               'firstName': _firstNameController.text.trim(),
                               'lastName': _lastNameController.text.trim(),
-                              'position': _positionController.text.trim(),
-                              'ageGroup': _ageGroupController.text.trim(),
-                              'team': _teamController.text.trim(),
-                              'parentContact': _parentContactController.text.trim(),
+                              'phone': _phoneController.text.trim(),
+                              'email': _emailController.text.trim(),
+                              'dob': _dobController.text.trim(),
+                              'preferredPosition': _preferredPositionController.text.trim(),
                             });
                             if (res.data['success'] == true) {
                               await ref.read(studentControllerProvider.notifier).fetchStudentData();
@@ -1933,9 +2008,28 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           label: const Text('Sign Out of Account', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold)),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+            side: const BorderSide(color: Color(0xFFFCA5A5)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReadOnlyInfoTile(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+        ),
+        const SizedBox(height: 2.0),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
