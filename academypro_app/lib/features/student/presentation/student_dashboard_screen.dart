@@ -359,7 +359,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             latestGrade > 0 ? 'Term Avg: ${latestGrade.toStringAsFixed(1)}%' : 'No grades recorded',
             Icons.psychology,
             const Color(0xFF003EC7),
-            () => setState(() => _activeTab = 2), // Go to Academics Tab
+            () => setState(() => _activeTab = 3), // Go to Academics Tab (Index 3)
           ),
           const SizedBox(height: 12.0),
           _buildPortalCard(
@@ -368,7 +368,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             readinessScore > 0 ? 'Readiness: $readinessScore%' : 'No tests logged',
             Icons.sports_martial_arts,
             const Color(0xFF05B046),
-            () => setState(() => _activeTab = 1), // Go to Fitness Tab
+            () => setState(() => _activeTab = 2), // Go to Fitness Tab (Index 2)
           ),
           const SizedBox(height: 12.0),
           _buildPortalCard(
@@ -377,7 +377,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             profile['ugroupsActive'] == 1 ? 'Active' : 'Inactive',
             Icons.church_outlined,
             const Color(0xFF952200),
-            () {},
+            () => _showSpiritDetailModal(context, data), // Opens Spirit Portal Modal
           ),
           const SizedBox(height: 28.0),
 
@@ -2075,6 +2075,232 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSpiritDetailModal(BuildContext context, StudentPortalData data) {
+    final profile = data.profile;
+    final uGroupsActive = profile['ugroupsActive'] == 1 || profile['ugroupsActive'] == true;
+    final attendanceLogs = data.attendance;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12.0),
+              Container(
+                width: 44.0,
+                height: 5.0,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3.0),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(16.0),
+                            ),
+                            child: const Icon(Icons.church_outlined, color: Color(0xFF952200), size: 28.0),
+                          ),
+                          const SizedBox(width: 14.0),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Spirit & Character',
+                                style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                              SizedBox(height: 2.0),
+                              Text(
+                                'Weekly uGroups & Leadership Mentorship',
+                                style: TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20.0),
+                      Container(
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF952200), Color(0xFFC2410C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'uGROUPS MEMBERSHIP',
+                                  style: TextStyle(color: Color(0xFFFFEDD5), fontSize: 11.0, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  child: Text(
+                                    uGroupsActive ? 'ACTIVE' : 'STANDBY',
+                                    style: const TextStyle(color: Color(0xFF952200), fontSize: 10.0, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12.0),
+                            const Text(
+                              'Overkruin Student Leadership Cell',
+                              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                            const SizedBox(height: 6.0),
+                            const Text(
+                              'Weekly character building, peer support, and spiritual growth sessions.',
+                              style: TextStyle(fontSize: 13.0, color: Color(0xFFFFEDD5)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24.0),
+                      const Text(
+                        'Character & Leadership Pillars',
+                        style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 12.0),
+                      _buildPillarTile(Icons.verified_user_outlined, 'Integrity & Honor', 'Demonstrating honesty and accountability in sports & academics.'),
+                      _buildPillarTile(Icons.psychology_outlined, 'Resilience & Grit', 'Overcoming setbacks and maintaining focus under pressure.'),
+                      _buildPillarTile(Icons.groups_outlined, 'Servant Leadership', 'Supporting teammates and serving the school community.'),
+                      const SizedBox(height: 24.0),
+                      const Text(
+                        'Recent Attendance Logs',
+                        style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 12.0),
+                      if (attendanceLogs.isEmpty)
+                        _buildEmptyState('No attendance logs recorded yet.')
+                      else
+                        ...attendanceLogs.map((item) {
+                          final sessionName = item['sessionName'] ?? item['title'] ?? 'uGroup Session';
+                          final date = item['date'] ?? item['sessionDate'] ?? 'Recent';
+                          final status = item['status'] ?? 'PRESENT';
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14.0),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.check_circle, color: Color(0xFF05B046), size: 20.0),
+                                    const SizedBox(width: 10.0),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(sessionName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF0F172A))),
+                                        const SizedBox(height: 2.0),
+                                        Text(date, style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B))),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: Text(
+                                    status,
+                                    style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      const SizedBox(height: 20.0),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF952200),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                        ),
+                        child: const Text('Close Spirit Portal', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPillarTile(IconData icon, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Icon(icon, color: const Color(0xFF952200), size: 20.0),
+          ),
+          const SizedBox(width: 12.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                const SizedBox(height: 2.0),
+                Text(desc, style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B))),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
