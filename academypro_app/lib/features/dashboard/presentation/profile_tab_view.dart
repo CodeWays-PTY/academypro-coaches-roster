@@ -716,7 +716,14 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                       if (context.mounted) {
                         Navigator.pop(context);
 
-                        if (isEmailChanged) {
+                        if (isPhoneChanged) {
+                          _showSMSVerificationModal(
+                            context,
+                            newPhone,
+                            firstNameController.text.trim(),
+                            updated,
+                          );
+                        } else if (isEmailChanged) {
                           _showEmailVerificationModal(
                             context,
                             oldEmail,

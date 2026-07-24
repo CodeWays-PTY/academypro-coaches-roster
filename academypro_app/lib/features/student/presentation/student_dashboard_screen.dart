@@ -1733,21 +1733,71 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     final officialAgeGroup = profile['ageGroup'] != null && profile['ageGroup'].toString().isNotEmpty ? profile['ageGroup'] : 'U15';
     final officialPosition = profile['position'] != null && profile['position'].toString().isNotEmpty ? profile['position'] : 'Athlete';
 
+    final profileImage = profile['profileImagePath'] ?? profile['avatarUrl'] ?? '';
+    final studentFullName = '${profile['firstName'] ?? 'Student'} ${profile['lastName'] ?? ''}'.trim();
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
       children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        // Profile Picture Avatar & Header
+        Row(
           children: [
-            Text(
-              'Athlete Profile',
-              style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 36.0,
+                  backgroundColor: const Color(0xFF003EC7),
+                  backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                  child: profileImage.isEmpty
+                      ? Text(
+                          studentFullName.isNotEmpty ? studentFullName[0].toUpperCase() : 'A',
+                          style: const TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold, color: Colors.white),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: GestureDetector(
+                    onTap: () => _showUpdateAvatarDialog(context, profileImage),
+                    child: Container(
+                      padding: const EdgeInsets.all(6.0),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2563EB),
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                      ),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 14.0),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 4.0),
-            Text(
-              'Manage personal contact information and access your digital QR pass.',
-              style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
+            const SizedBox(width: 16.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    studentFullName,
+                    style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+                  ),
+                  const SizedBox(height: 2.0),
+                  Text(
+                    'Athlete Profile • ${profile['id'] ?? 'OVK-ATHLETE'}',
+                    style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 4.0),
+                  GestureDetector(
+                    onTap: () => _showUpdateAvatarDialog(context, profileImage),
+                    child: const Text(
+                      'Tap avatar to change profile photo',
+                      style: TextStyle(fontSize: 11.0, color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -2159,6 +2209,72 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     );
   }
 
+  void _showUpdateAvatarDialog(BuildContext context, String currentUrl) {
+    final urlController = TextEditingController(text: currentUrl);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        title: const Row(
+          children: [
+            Icon(Icons.camera_alt, color: Color(0xFF003EC7)),
+            SizedBox(width: 10.0),
+            Text('Update Profile Picture', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter image URL or photo link for your athlete profile picture:',
+              style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 14.0),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(
+                labelText: 'Profile Picture Image URL',
+                hintText: 'https://images.example.com/avatar.jpg',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.link),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF003EC7), foregroundColor: Colors.white),
+            onPressed: () async {
+              final newUrl = urlController.text.trim();
+              Navigator.pop(context);
+              try {
+                final apiClient = ref.read(apiClientProvider);
+                await apiClient.dio.post('/api/student-portal/profile', data: {
+                  'profileImagePath': newUrl,
+                });
+                await ref.read(studentControllerProvider.notifier).fetchStudentData();
+                if (mounted) {
+                  AppToast.showSuccess(context, title: 'Profile Photo Updated', message: 'Your new profile picture was saved.');
+                }
+              } catch (_) {
+                if (mounted) {
+                  AppToast.showError(context, title: 'Update Failed', message: 'Unable to save profile photo.');
+                }
+              }
+            },
+            child: const Text('Save Photo'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showQRCodeModal(BuildContext context, StudentPortalData data) {
     final profile = data.profile;
     final studentName = '${profile['firstName'] ?? 'Jan'} ${profile['lastName'] ?? 'Mentz'}'.trim();
@@ -2235,6 +2351,26 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               Text(
                 'Hoërskool Overkruin • $position ($ageGroup)',
                 style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12.0),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(12.0),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.wifi_off_outlined, color: Color(0xFF059669), size: 14.0),
+                    SizedBox(width: 6.0),
+                    Text(
+                      'Saved Offline — Valid Scan Without Data',
+                      style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20.0),
               ElevatedButton(

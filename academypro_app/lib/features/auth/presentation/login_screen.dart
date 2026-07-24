@@ -110,10 +110,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // AcademyPro Branding Logo section
-              const Icon(
-                Icons.sports_rugby,
-                size: 64.0,
-                color: Color(0xFF2563EB), // Electric Blue
+              Center(
+                child: Container(
+                  width: 100.0,
+                  height: 100.0,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24.0),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A0F172A),
+                        blurRadius: 20.0,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24.0),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.sports_rugby,
+                        size: 64.0,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 16.0),
               const Text(
@@ -122,21 +146,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: TextStyle(
                   fontSize: 32.0,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF0F172A), // Slate 900
+                  color: Color(0xFF0F172A),
                   letterSpacing: -1.0,
                 ),
               ),
               const Text(
-                'COACH COMMAND CENTER',
+                'COACH & ATHLETE PLATFORM',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12.0,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF64748B), // Slate 500
+                  color: Color(0xFF64748B),
                   letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(height: 40.0),
+              const SizedBox(height: 36.0),
 
               // Form Container Card
               Card(
