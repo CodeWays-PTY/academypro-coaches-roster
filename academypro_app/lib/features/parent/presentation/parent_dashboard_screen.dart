@@ -5,6 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../student/controllers/student_controller.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 
 import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
@@ -797,83 +798,97 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   }
 
   Widget _buildCoachQuoteCard(String studentName) {
+    final actions = ref.watch(coachActionProvider);
+    final studentActions = actions.where((a) =>
+        a.playerName.isNotEmpty && studentName.toLowerCase().contains(a.playerName.toLowerCase())).toList();
+
+    if (studentActions.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24.0),
+          border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.mark_chat_read_outlined, size: 36.0, color: Color(0xFF94A3B8)),
+            const SizedBox(height: 10.0),
+            Text(
+              'No Coach Notes Logged for $studentName',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 4.0),
+            const Text(
+              'Evaluation updates and direct notes from coaching staff will appear here as reviews are logged.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final latest = studentActions.first;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24.0),
         border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 160,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
-              image: DecorationImage(
-                image: NetworkImage(
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuBJgKVh9XL1zB21jv1RIcPjnknvLwARm0Ma5A7_4G6rjVJ79StPJ_drBmkrP97BFi4JpUB8rD1BiyGJdebPdjuns_A67hs0ePwARV3cxNAbXLrS9Y9eeWAcrSHhjEANCps2uAB2n4mt0Qm79A1XofJF8MN5cDunz65kMJf3eT9zTiZWscgJo1YMqHtwTuLtahit_YJvXWIIoHMQ3CLl4dzX5vod_utCoHuU8gik6cg0U4WGXb3ptBmNZQ'
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                const Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Color(0xFF003EC7),
-                      child: Icon(Icons.person, color: Colors.white, size: 16.0),
-                    ),
-                    SizedBox(width: 12.0),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Coach Ross Venter',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
-                        ),
-                        Text(
-                          'Head Tactical Coach',
-                          style: TextStyle(fontSize: 11.0, color: Color(0xFF434656)),
-                        ),
-                      ],
-                    )
-                  ],
+                const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Color(0xFF003EC7),
+                  child: Icon(Icons.person, color: Colors.white, size: 16.0),
                 ),
-                const SizedBox(height: 16.0),
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F3FF),
-                    borderRadius: BorderRadius.circular(16.0),
-                  ),
-                  child: Text(
-                    '"$studentName showed incredible leadership during today\'s tactical drill. His communication with the defense has improved significantly. Great focus today."',
-                    style: const TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Color(0xFF131B2E),
-                      fontSize: 14.0,
-                      height: 1.4,
-                    ),
+                const SizedBox(width: 12.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        latest.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+                      ),
+                      Text(
+                        'Category: ${latest.category}',
+                        style: const TextStyle(fontSize: 11.0, color: Color(0xFF434656)),
+                      ),
+                    ],
                   ),
                 )
               ],
             ),
-          )
-        ],
+            if (latest.notes.isNotEmpty) ...[
+              const SizedBox(height: 14.0),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF2F3FF),
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Text(
+                  '"${latest.notes}"',
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Color(0xFF131B2E),
+                    fontSize: 14.0,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

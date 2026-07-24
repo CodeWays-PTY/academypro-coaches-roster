@@ -369,7 +369,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             latestGrade > 0 ? 'Term Avg: ${latestGrade.toStringAsFixed(1)}%' : 'No grades recorded',
             Icons.psychology,
             const Color(0xFF003EC7),
-            () => setState(() => _activeTab = 3), // Go to Academics Tab (Index 3)
+            () => setState(() {
+              _activeTab = 2;
+              _selectedStatsFilter = 2; // Academics in Stats Page
+            }),
           ),
           const SizedBox(height: 12.0),
           _buildPortalCard(
@@ -378,7 +381,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             readinessScore > 0 ? 'Readiness: $readinessScore%' : 'No tests logged',
             Icons.sports_martial_arts,
             const Color(0xFF05B046),
-            () => setState(() => _activeTab = 2), // Go to Fitness Tab (Index 2)
+            () => setState(() {
+              _activeTab = 2;
+              _selectedStatsFilter = 1; // Fitness & Tests in Stats Page
+            }),
           ),
           const SizedBox(height: 12.0),
           _buildPortalCard(
@@ -387,7 +393,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             profile['ugroupsActive'] == 1 ? 'Active' : 'Inactive',
             Icons.church_outlined,
             const Color(0xFF952200),
-            () => _showSpiritDetailModal(context, data), // Opens Spirit Portal Modal
+            () => setState(() {
+              _activeTab = 2;
+              _selectedStatsFilter = 0; // All Stats / Character in Stats Page
+            }),
           ),
           const SizedBox(height: 28.0),
 
@@ -1069,91 +1078,96 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   }
 
   Widget _buildCoachFeedbackCard(StudentPortalData data) {
-    final firstName = data.profile['firstName'] ?? data.profile['first_name'] ?? 'Athlete';
-    String coachQuote = "$firstName is showing steady work ethic in drills. Focus on maintaining defensive shape during width plays.";
-    if (data.matches.isNotEmpty) {
-      final latest = data.matches.first;
-      coachQuote = "$firstName played a great game vs. ${latest['opponent']}. Tackles and work rate were outstanding. Keep it up!";
+    final actions = ref.watch(coachActionProvider);
+    final studentName = '${data.profile['firstName'] ?? ''} ${data.profile['lastName'] ?? ''}'.trim();
+    final studentId = data.profile['id']?.toString() ?? '';
+    final studentActions = actions.where((a) =>
+        (studentId.isNotEmpty && a.playerId == studentId) ||
+        (a.playerName.isNotEmpty && studentName.toLowerCase().contains(a.playerName.toLowerCase()))).toList();
+
+    if (studentActions.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.0),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.rate_review_outlined, size: 36.0, color: Color(0xFF94A3B8)),
+            SizedBox(height: 10.0),
+            Text(
+              'No Coach Feedback Logged Yet',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF0F172A)),
+            ),
+            SizedBox(height: 4.0),
+            Text(
+              'Evaluation notes and tactical guidance from your coaching staff will appear here as reviews are logged.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+      );
     }
 
+    final latestAction = studentActions.first;
     return Container(
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.4), width: 1.0),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20.0)),
-              image: DecorationImage(
-                image: NetworkImage(
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuBJgKVh9XL1zB21jv1RIcPjnknvLwARm0Ma5A7_4G6rjVJ79StPJ_drBmkrP97BFi4JpUB8rD1BiyGJdebPdjuns_A67hs0ePwARV3cxNAbXLrS9Y9eeWAcrSHhjEANCps2uAB2n4mt0Qm79A1XofJF8MN5cDunz65kMJf3eT9zTiZWscgJo1YMqHtwTuLtahit_YJvXWIIoHMQ3CLl4dzX5vod_utCoHuU8gik6cg0U4WGXb3ptBmNZQ'
-                ),
-                fit: BoxFit.cover,
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: Color(0xFF003EC7),
+                child: Icon(Icons.person, color: Colors.white, size: 16.0),
               ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.white.withOpacity(0.8)],
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
+              const SizedBox(width: 12.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Color(0xFF003EC7),
-                      child: Icon(Icons.person, color: Colors.white, size: 16.0),
+                    Text(
+                      latestAction.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
                     ),
-                    SizedBox(width: 12.0),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Coach Ross Venter',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
-                        ),
-                        Text(
-                          'Head Technical Coach',
-                          style: TextStyle(fontSize: 11.0, color: Color(0xFF434656)),
-                        ),
-                      ],
-                    )
+                    Text(
+                      'Category: ${latestAction.category}',
+                      style: const TextStyle(fontSize: 11.0, color: Color(0xFF434656)),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16.0),
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F3FF),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: Text(
-                    '"$coachQuote"',
-                    style: const TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Color(0xFF131B2E),
-                      fontSize: 14.0,
-                      height: 1.4,
-                    ),
-                  ),
-                )
-              ],
+              ),
+            ],
+          ),
+          if (latestAction.notes.isNotEmpty) ...[
+            const SizedBox(height: 12.0),
+            Container(
+              padding: const EdgeInsets.all(14.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F3FF),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Text(
+                '"${latestAction.notes}"',
+                style: const TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Color(0xFF131B2E),
+                  fontSize: 13.5,
+                  height: 1.4,
+                ),
+              ),
             ),
-          )
+          ],
         ],
       ),
     );
@@ -1553,37 +1567,55 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   // TAB 3: COACH FEEDBACK HISTORY
   // ==========================================
   Widget _buildFeedbackTab(StudentPortalData data) {
-    final List<Map<String, String>> feedbackList = [
-      {
-        'coach': 'Coach Ross Venter',
-        'role': 'Head Performance Coach',
-        'date': 'Yesterday at 15:30',
-        'category': 'Athletic Speed & Agility',
-        'notes': 'Jan showed tremendous explosive acceleration during 40m sprint evaluations today. Maintain focus on hip extension for maximum top-speed retention.',
-        'avatar': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      },
-      {
-        'coach': 'Coach Mark de Klerk',
-        'role': 'Tactical & Kicking Coach',
-        'date': '2026-07-21 at 10:15',
-        'category': 'Match Strategy & Tactical Kicking',
-        'notes': 'High-ball catching technique improved significantly under pressure. Recommended continuing 20 extra spiralled box-kicks post session.',
-        'avatar': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      },
-      {
-        'coach': 'Dr. Hannes Visser',
-        'role': 'Academic Advisor',
-        'date': '2026-07-18 at 09:00',
-        'category': 'Academic Progress',
-        'notes': 'Term 2 academic average maintained above 68.0%. Good balance between training load and exam preparation.',
-        'avatar': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-      },
-    ];
+    final actions = ref.watch(coachActionProvider);
+    final studentName = '${data.profile['firstName'] ?? ''} ${data.profile['lastName'] ?? ''}'.trim();
+    final studentId = data.profile['id']?.toString() ?? '';
+    final studentActions = actions.where((a) =>
+        (studentId.isNotEmpty && a.playerId == studentId) ||
+        (a.playerName.isNotEmpty && studentName.toLowerCase().contains(a.playerName.toLowerCase()))).toList();
+
+    if (studentActions.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
+        children: const [
+          Text(
+            'Coach Feedback History',
+            style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Color(0xFF131B2E)),
+          ),
+          SizedBox(height: 4.0),
+          Text(
+            'All evaluation notes, performance guidance, and tactical advice from your coaches.',
+            style: TextStyle(fontSize: 13.0, color: Color(0xFF434656)),
+          ),
+          SizedBox(height: 48.0),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.rate_review_outlined, size: 56.0, color: Color(0xFF94A3B8)),
+                SizedBox(height: 16.0),
+                Text(
+                  'No Feedback Notes Logged Yet',
+                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  'Evaluation notes, performance guidance, and tactical advice from your coaching staff will appear here as reviews are logged in D1.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
-      itemCount: feedbackList.length + 1,
+      itemCount: studentActions.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
           return const Column(
@@ -1603,7 +1635,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
           );
         }
 
-        final fb = feedbackList[index - 1];
+        final action = studentActions[index - 1];
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16.0),
@@ -1614,9 +1646,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 20.0,
-                      backgroundImage: NetworkImage(fb['avatar']!),
+                      backgroundColor: Color(0xFF003EC7),
+                      child: Icon(Icons.person, color: Colors.white, size: 20.0),
                     ),
                     const SizedBox(width: 12.0),
                     Expanded(
@@ -1624,11 +1657,11 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            fb['coach']!,
+                            action.title,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
                           ),
                           Text(
-                            fb['role']!,
+                            'Assigned to ${action.playerName.isNotEmpty ? action.playerName : studentName}',
                             style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
                           ),
                         ],
@@ -1641,17 +1674,19 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         borderRadius: BorderRadius.circular(8.0),
                       ),
                       child: Text(
-                        fb['category']!,
+                        action.category.toUpperCase(),
                         style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12.0),
-                Text(
-                  fb['notes']!,
-                  style: const TextStyle(fontSize: 14.0, color: Color(0xFF334155), height: 1.4),
-                ),
+                if (action.notes.isNotEmpty) ...[
+                  const SizedBox(height: 12.0),
+                  Text(
+                    action.notes,
+                    style: const TextStyle(fontSize: 14.0, color: Color(0xFF334155), height: 1.4),
+                  ),
+                ],
                 const SizedBox(height: 10.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1659,8 +1694,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                     const Icon(Icons.access_time, size: 12.0, color: Color(0xFF94A3B8)),
                     const SizedBox(width: 4.0),
                     Text(
-                      fb['date']!,
-                      style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                      action.dateAdded,
+                      style: const TextStyle(fontSize: 11.0, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
