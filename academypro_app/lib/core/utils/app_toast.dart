@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppToast {
-  /// Displays a modern, floating toast near the top of the screen
-  /// ensuring high visibility without obscuring bottom nav bars or modal sheets.
+  static OverlayEntry? _currentOverlay;
+
+  /// Displays a modern, floating toast safe-area banner below the status bar.
   static void showSuccess(BuildContext context, {required String title, String? message}) {
     _showToast(
       context,
@@ -44,80 +45,113 @@ class AppToast {
     required Color backgroundColor,
     required Color accentColor,
   }) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
+    // Remove previous toast overlay if active
+    _currentOverlay?.remove();
+    _currentOverlay = null;
 
-    final double mediaHeight = MediaQuery.of(context).size.height;
-    final double topMargin = MediaQuery.of(context).padding.top + 16.0;
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) {
+      // Fallback to standard SnackBar if overlay context is unavailable
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$title: ${message ?? ''}'),
+          backgroundColor: backgroundColor,
+        ),
+      );
+      return;
+    }
 
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        elevation: 8.0,
-        backgroundColor: Colors.transparent,
-        duration: const Duration(seconds: 4),
-        margin: EdgeInsets.only(
-          bottom: (mediaHeight - topMargin - 85.0).clamp(100.0, 2000.0),
+    final topInset = MediaQuery.of(context).padding.top;
+    // Guaranteed top margin sitting completely below hardware notch / status bar
+    final topOffset = topInset > 0 ? topInset + 12.0 : 54.0;
+
+    OverlayEntry entry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          top: topOffset,
           left: 16.0,
           right: 16.0,
-        ),
-        padding: EdgeInsets.zero,
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(16.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 14.0,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: accentColor, size: 20.0),
-              ),
-              const SizedBox(width: 12.0),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    if (message != null && message.trim().isNotEmpty) ...[
-                      const SizedBox(height: 2.0),
-                      Text(
-                        message,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
-                          fontSize: 11.5,
-                          height: 1.3,
-                        ),
+          child: Material(
+            color: Colors.transparent,
+            child: SafeArea(
+              top: false,
+              child: GestureDetector(
+                onTap: () {
+                  _currentOverlay?.remove();
+                  _currentOverlay = null;
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(16.0),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black38,
+                        blurRadius: 16.0,
+                        offset: Offset(0, 6),
                       ),
                     ],
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: accentColor.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: accentColor, size: 22.0),
+                      ),
+                      const SizedBox(width: 14.0),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            if (message != null && message.trim().isNotEmpty) ...[
+                              const SizedBox(height: 3.0),
+                              Text(
+                                message,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 12.0,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Icon(Icons.close, color: Colors.white.withOpacity(0.6), size: 18.0),
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
+
+    _currentOverlay = entry;
+    overlay.insert(entry);
+
+    Future.delayed(const Duration(seconds: 4), () {
+      if (_currentOverlay == entry) {
+        entry.remove();
+        _currentOverlay = null;
+      }
+    });
   }
 }
