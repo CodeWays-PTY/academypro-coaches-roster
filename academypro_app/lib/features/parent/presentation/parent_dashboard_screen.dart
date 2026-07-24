@@ -987,7 +987,6 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         final acad = data.academics[index];
         final grade = (acad['gradePercentage'] as num?)?.toDouble() ?? 0.0;
         final term = acad['term'] ?? 1;
-        final discipline = acad['disciplineScore'] ?? 0;
 
         Color border = const Color(0xFF16A34A);
         if (grade < 50) border = const Color(0xFFDC2626);
