@@ -2549,8 +2549,7 @@ app.post('/api/sms/send-verification', async (c) => {
       success: true,
       message: `Verification SMS sent successfully to ${digitsOnly}`,
       data: {
-        phone: digitsOnly,
-        otpCode
+        phone: digitsOnly
       }
     });
   } catch (err: any) {

@@ -412,13 +412,12 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
       '/api/sms/send-verification',
       data: {'phone': PhoneUtils.toCleanRSAPhone(phone), 'name': name},
     ).then((res) {
-      if (res.data != null && res.data['success'] == true && res.data['data'] != null) {
-        serverOtpCode = res.data['data']['otpCode']?.toString();
+      if (res.data != null && res.data['success'] == true) {
         if (context.mounted) {
           AppToast.showInfo(
             context,
             title: 'SMS Code Sent',
-            message: 'Verification code sent to $phone. Security Code: ${serverOtpCode ?? ''}',
+            message: 'A 6-digit verification code has been sent via SMS to $phone.',
           );
         }
       }
