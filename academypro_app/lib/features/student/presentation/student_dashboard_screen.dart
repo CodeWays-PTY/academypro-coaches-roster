@@ -337,6 +337,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               ],
             ),
           ),
+
+          // Next Event Countdown Hero Card
+          _buildNextEventHeroWidget(data),
           const SizedBox(height: 28.0),
 
           // Mind, Body, Spirit Portals Grid
@@ -395,6 +398,193 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildNextEventHeroWidget(StudentPortalData data) {
+    if (data.events.isEmpty) return const SizedBox();
+
+    final now = DateTime.now();
+    StudentEvent? nextEvent;
+
+    for (final event in data.events) {
+      try {
+        final parts = event.startTime.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        final dateParts = event.date.split('-');
+        final year = int.parse(dateParts[0]);
+        final month = int.parse(dateParts[1]);
+        final day = int.parse(dateParts[2]);
+        final eventTime = DateTime(year, month, day, hour, minute);
+
+        if (eventTime.isAfter(now) || eventTime.add(Duration(minutes: event.durationMins ?? 90)).isAfter(now)) {
+          nextEvent = event;
+          break;
+        }
+      } catch (_) {}
+    }
+
+    nextEvent ??= data.events.first;
+
+    final countdownText = _formatCountdown(nextEvent.date, nextEvent.startTime);
+    final hasImage = nextEvent.workoutImagePath != null && nextEvent.workoutImagePath!.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24.0),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF003EC7).withOpacity(0.2),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.timer, color: Color(0xFF60A5FA), size: 18.0),
+                  SizedBox(width: 6.0),
+                  Text(
+                    'NEXT TEAM EVENT',
+                    style: TextStyle(
+                      color: Color(0xFF93C5FD),
+                      fontSize: 11.0,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB),
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Text(
+                  countdownText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14.0),
+          Text(
+            nextEvent.title,
+            style: const TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 10.0),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, color: Color(0xFF94A3B8), size: 14.0),
+              const SizedBox(width: 6.0),
+              Text(
+                '${nextEvent.date} at ${nextEvent.startTime}',
+                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.0, fontWeight: FontWeight.w600),
+              ),
+              if (nextEvent.durationMins != null) ...[
+                const SizedBox(width: 12.0),
+                const Icon(Icons.timer_outlined, color: Color(0xFF94A3B8), size: 14.0),
+                const SizedBox(width: 4.0),
+                Text(
+                  '${nextEvent.durationMins}m',
+                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.0),
+                ),
+              ]
+            ],
+          ),
+          const SizedBox(height: 6.0),
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, color: Color(0xFF94A3B8), size: 14.0),
+              const SizedBox(width: 6.0),
+              Expanded(
+                child: Text(
+                  nextEvent.location,
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.0),
+                ),
+              ),
+            ],
+          ),
+          if (hasImage) ...[
+            const SizedBox(height: 16.0),
+            ElevatedButton.icon(
+              onPressed: () {
+                _showFullImageModal(context, nextEvent!.workoutImagePath!, nextEvent.title);
+              },
+              icon: const Icon(Icons.zoom_in, size: 18.0),
+              label: const Text('View Coach Workout Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              ),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  String _formatCountdown(String dateStr, String startTimeStr) {
+    try {
+      final now = DateTime.now();
+      final parts = startTimeStr.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      final dateParts = dateStr.split('-');
+      final year = int.parse(dateParts[0]);
+      final month = int.parse(dateParts[1]);
+      final day = int.parse(dateParts[2]);
+
+      final eventTime = DateTime(year, month, day, hour, minute);
+      final diff = eventTime.difference(now);
+
+      if (diff.isNegative) {
+        if (diff.inHours.abs() < 2) {
+          return 'IN PROGRESS NOW';
+        }
+        return 'Completed';
+      }
+
+      if (diff.inMinutes < 60) {
+        return 'Starting in ${diff.inMinutes} mins';
+      } else if (diff.inHours < 24) {
+        final hrs = diff.inHours;
+        final mins = diff.inMinutes % 60;
+        if (mins == 0) {
+          return 'Starting in ${hrs}h';
+        }
+        return 'Starting in ${hrs}h ${mins}m';
+      } else if (diff.inDays == 1) {
+        return 'Starts tomorrow at $startTimeStr';
+      } else {
+        return 'Starting in ${diff.inDays} days';
+      }
+    } catch (_) {
+      return '$dateStr at $startTimeStr';
+    }
   }
 
   Widget _buildCoachActionPlansForStudent(String studentName) {
