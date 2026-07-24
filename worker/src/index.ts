@@ -1568,7 +1568,6 @@ app.get('/api/student-portal', async (c) => {
       date: r.date,
       durationMins: r.duration_mins,
       location: r.location,
-      intensity: r.intensity,
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
       ageGroup: r.age_group || 'U15',

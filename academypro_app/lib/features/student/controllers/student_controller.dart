@@ -57,7 +57,6 @@ class StudentEvent {
   final String date;
   final int? durationMins;
   final String location;
-  final String? intensity;
   final bool isImportant;
   final int? completionCount;
   final String ageGroup;
@@ -73,7 +72,6 @@ class StudentEvent {
     required this.date,
     this.durationMins,
     required this.location,
-    this.intensity,
     required this.isImportant,
     this.completionCount,
     required this.ageGroup,
@@ -91,7 +89,6 @@ class StudentEvent {
       date: json['date'] ?? '',
       durationMins: (json['durationMins'] as num?)?.toInt(),
       location: json['location'] ?? 'Grounds',
-      intensity: json['intensity'],
       isImportant: json['isImportant'] == true,
       completionCount: (json['completionCount'] as num?)?.toInt(),
       ageGroup: json['ageGroup'] ?? 'U15',

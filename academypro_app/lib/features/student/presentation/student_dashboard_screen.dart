@@ -337,6 +337,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               ],
             ),
           ),
+          const SizedBox(height: 24.0),
 
           // Next Event Countdown Hero Card
           _buildNextEventHeroWidget(data),
@@ -429,120 +430,154 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     final countdownText = _formatCountdown(nextEvent.date, nextEvent.startTime);
     final hasImage = nextEvent.workoutImagePath != null && nextEvent.workoutImagePath!.trim().isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showEventDetailsModal(context, nextEvent!),
         borderRadius: BorderRadius.circular(24.0),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF003EC7).withOpacity(0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Container(
+          padding: const EdgeInsets.all(20.0),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24.0),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF003EC7).withOpacity(0.2),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.timer, color: Color(0xFF60A5FA), size: 18.0),
-                  SizedBox(width: 6.0),
-                  Text(
-                    'NEXT TEAM EVENT',
-                    style: TextStyle(
-                      color: Color(0xFF93C5FD),
-                      fontSize: 11.0,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
+                  const Row(
+                    children: [
+                      Icon(Icons.timer, color: Color(0xFF60A5FA), size: 18.0),
+                      SizedBox(width: 6.0),
+                      Text(
+                        'NEXT TEAM EVENT',
+                        style: TextStyle(
+                          color: Color(0xFF93C5FD),
+                          fontSize: 11.0,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      countdownText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB),
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-                child: Text(
-                  countdownText,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14.0),
-          Text(
-            nextEvent.title,
-            style: const TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 10.0),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, color: Color(0xFF94A3B8), size: 14.0),
-              const SizedBox(width: 6.0),
+              const SizedBox(height: 14.0),
               Text(
-                '${nextEvent.date} at ${nextEvent.startTime}',
-                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.0, fontWeight: FontWeight.w600),
+                nextEvent.title,
+                style: const TextStyle(
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              if (nextEvent.durationMins != null) ...[
-                const SizedBox(width: 12.0),
-                const Icon(Icons.timer_outlined, color: Color(0xFF94A3B8), size: 14.0),
-                const SizedBox(width: 4.0),
-                Text(
-                  '${nextEvent.durationMins}m',
-                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.0),
+              const SizedBox(height: 10.0),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: Color(0xFF94A3B8), size: 14.0),
+                  const SizedBox(width: 6.0),
+                  Text(
+                    '${nextEvent.date} at ${nextEvent.startTime}',
+                    style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.0, fontWeight: FontWeight.w600),
+                  ),
+                  if (nextEvent.durationMins != null) ...[
+                    const SizedBox(width: 12.0),
+                    const Icon(Icons.timer_outlined, color: Color(0xFF94A3B8), size: 14.0),
+                    const SizedBox(width: 4.0),
+                    Text(
+                      '${nextEvent.durationMins}m',
+                      style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.0),
+                    ),
+                  ]
+                ],
+              ),
+              const SizedBox(height: 6.0),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, color: Color(0xFF94A3B8), size: 14.0),
+                  const SizedBox(width: 6.0),
+                  Expanded(
+                    child: Text(
+                      nextEvent.location,
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.0),
+                    ),
+                  ),
+                  const Row(
+                    children: [
+                      Text(
+                        'View Details',
+                        style: TextStyle(color: Color(0xFF60A5FA), fontSize: 12.0, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 4.0),
+                      Icon(Icons.chevron_right, color: Color(0xFF60A5FA), size: 16.0),
+                    ],
+                  )
+                ],
+              ),
+              if (hasImage) ...[
+                const SizedBox(height: 16.0),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Image.network(
+                        nextEvent.workoutImagePath!,
+                        width: double.infinity,
+                        height: 280.0,
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        color: const Color(0xFF003EC7).withOpacity(0.9),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.zoom_in, color: Colors.white, size: 18.0),
+                            SizedBox(width: 6.0),
+                            Text(
+                              'View Coach Workout Plan',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.0),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ]
             ],
           ),
-          const SizedBox(height: 6.0),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined, color: Color(0xFF94A3B8), size: 14.0),
-              const SizedBox(width: 6.0),
-              Expanded(
-                child: Text(
-                  nextEvent.location,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.0),
-                ),
-              ),
-            ],
-          ),
-          if (hasImage) ...[
-            const SizedBox(height: 16.0),
-            ElevatedButton.icon(
-              onPressed: () {
-                _showFullImageModal(context, nextEvent!.workoutImagePath!, nextEvent.title);
-              },
-              icon: const Icon(Icons.zoom_in, size: 18.0),
-              label: const Text('View Coach Workout Plan', style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-              ),
-            ),
-          ]
-        ],
+        ),
       ),
     );
   }
@@ -1634,130 +1669,125 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
         final event = events[index - 1];
         final hasImage = event.workoutImagePath != null && event.workoutImagePath!.trim().isNotEmpty;
+        final countdown = _formatCountdown(event.date, event.startTime);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16.0),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                      decoration: BoxDecoration(
-                        color: event.eventType == 'Match Day'
-                            ? const Color(0xFFFEE2E2)
-                            : event.eventType == 'Gym Session'
-                                ? const Color(0xFFEFF6FF)
-                                : const Color(0xFFF0FDF4),
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Text(
-                        event.eventType.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.bold,
-                          color: event.eventType == 'Match Day'
-                              ? const Color(0xFF991B1B)
-                              : event.eventType == 'Gym Session'
-                                  ? const Color(0xFF1D4ED8)
-                                  : const Color(0xFF166534),
-                        ),
-                      ),
-                    ),
-                    if (event.isImportant)
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _showEventDetailsModal(context, event),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(6.0),
+                          color: event.eventType == 'Match Day'
+                              ? const Color(0xFFFEE2E2)
+                              : event.eventType == 'Gym Session'
+                                  ? const Color(0xFFEFF6FF)
+                                  : const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.star, size: 12.0, color: Color(0xFFD97706)),
-                            SizedBox(width: 4.0),
-                            Text(
-                              'IMPORTANT',
-                              style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12.0),
-                Text(
-                  event.title,
-                  style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 8.0),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 14.0, color: Color(0xFF64748B)),
-                    const SizedBox(width: 6.0),
-                    Text(
-                      '${event.date} at ${event.startTime}',
-                      style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569), fontWeight: FontWeight.w600),
-                    ),
-                    if (event.durationMins != null) ...[
-                      const SizedBox(width: 12.0),
-                      const Icon(Icons.timer_outlined, size: 14.0, color: Color(0xFF64748B)),
-                      const SizedBox(width: 4.0),
-                      Text(
-                        '${event.durationMins} mins',
-                        style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
-                      ),
-                    ]
-                  ],
-                ),
-                const SizedBox(height: 6.0),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 14.0, color: Color(0xFF64748B)),
-                    const SizedBox(width: 6.0),
-                    Expanded(
-                      child: Text(
-                        event.location,
-                        style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
-                      ),
-                    ),
-                    if (event.intensity != null)
-                      Text(
-                        'Intensity: ${event.intensity}',
-                        style: const TextStyle(fontSize: 12.0, color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
-                      ),
-                  ],
-                ),
-                if (hasImage) ...[
-                  const SizedBox(height: 16.0),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Image.network(
-                          event.workoutImagePath!,
-                          width: double.infinity,
-                          height: 180.0,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 100.0,
-                            color: const Color(0xFFF1F5F9),
-                            alignment: Alignment.center,
-                            child: const Text('Workout image preview unavailable', style: TextStyle(color: Color(0xFF64748B))),
+                        child: Text(
+                          event.eventType.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.bold,
+                            color: event.eventType == 'Match Day'
+                                ? const Color(0xFF991B1B)
+                                : event.eventType == 'Gym Session'
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF166534),
                           ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            _showFullImageModal(context, event.workoutImagePath!, event.title);
-                          },
-                          child: Container(
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        child: Text(
+                          countdown,
+                          style: const TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12.0),
+                  Text(
+                    event.title,
+                    style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 14.0, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6.0),
+                      Text(
+                        '${event.date} at ${event.startTime}',
+                        style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                      ),
+                      if (event.durationMins != null) ...[
+                        const SizedBox(width: 12.0),
+                        const Icon(Icons.timer_outlined, size: 14.0, color: Color(0xFF64748B)),
+                        const SizedBox(width: 4.0),
+                        Text(
+                          '${event.durationMins} mins',
+                          style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
+                        ),
+                      ]
+                    ],
+                  ),
+                  const SizedBox(height: 6.0),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 14.0, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6.0),
+                      Expanded(
+                        child: Text(
+                          event.location,
+                          style: const TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
+                        ),
+                      ),
+                      const Row(
+                        children: [
+                          Text('Details', style: TextStyle(fontSize: 12.0, color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                          SizedBox(width: 2.0),
+                          Icon(Icons.chevron_right, size: 16.0, color: Color(0xFF2563EB)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (hasImage) ...[
+                    const SizedBox(height: 16.0),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Image.network(
+                            event.workoutImagePath!,
+                            width: double.infinity,
+                            height: 300.0,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 100.0,
+                              color: const Color(0xFFF1F5F9),
+                              alignment: Alignment.center,
+                              child: const Text('Workout image preview unavailable', style: TextStyle(color: Color(0xFF64748B))),
+                            ),
+                          ),
+                          Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            color: const Color(0xFF003EC7),
+                            color: const Color(0xFF003EC7).withOpacity(0.9),
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -1770,12 +1800,12 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                               ],
                             ),
                           ),
-                        )
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -1783,36 +1813,267 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     );
   }
 
+  void _showEventDetailsModal(BuildContext context, StudentEvent event) {
+    final hasImage = event.workoutImagePath != null && event.workoutImagePath!.trim().isNotEmpty;
+    final countdown = _formatCountdown(event.date, event.startTime);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.90,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12.0),
+              Container(
+                width: 44.0,
+                height: 5.0,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3.0),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
+                            decoration: BoxDecoration(
+                              color: event.eventType == 'Match Day'
+                                  ? const Color(0xFFFEE2E2)
+                                  : event.eventType == 'Gym Session'
+                                      ? const Color(0xFFEFF6FF)
+                                      : const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: Text(
+                              event.eventType.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.bold,
+                                color: event.eventType == 'Match Day'
+                                    ? const Color(0xFF991B1B)
+                                    : event.eventType == 'Gym Session'
+                                        ? const Color(0xFF1D4ED8)
+                                        : const Color(0xFF166534),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2563EB),
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            child: Text(
+                              countdown,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      Text(
+                        event.title,
+                        style: const TextStyle(
+                          fontSize: 24.0,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 16.0),
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(16.0),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildEventDetailRow(Icons.calendar_month, 'Date & Time', '${event.date} at ${event.startTime}'),
+                            const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
+                            _buildEventDetailRow(Icons.location_on_outlined, 'Location', event.location),
+                            if (event.durationMins != null) ...[
+                              const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
+                              _buildEventDetailRow(Icons.timer_outlined, 'Duration', '${event.durationMins} minutes'),
+                            ],
+                            const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
+                            _buildEventDetailRow(Icons.groups_outlined, 'Team Assignment', '${event.ageGroup} ${event.team}'),
+                          ],
+                        ),
+                      ),
+                      if (hasImage) ...[
+                        const SizedBox(height: 20.0),
+                        const Text(
+                          'Coach Workout Plan',
+                          style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 10.0),
+                        GestureDetector(
+                          onTap: () => _showFullImageModal(context, event.workoutImagePath!, event.title),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16.0),
+                            child: Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                Image.network(
+                                  event.workoutImagePath!,
+                                  width: double.infinity,
+                                  height: 320.0,
+                                  fit: BoxFit.cover,
+                                ),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                  color: const Color(0xFF003EC7).withOpacity(0.9),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.zoom_in, color: Colors.white, size: 20.0),
+                                      SizedBox(width: 8.0),
+                                      Text(
+                                        'Tap to Expand Full Resolution Plan',
+                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.0),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24.0),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          if (hasImage) {
+                            _showFullImageModal(context, event.workoutImagePath!, event.title);
+                          }
+                        },
+                        icon: Icon(hasImage ? Icons.zoom_in : Icons.check_circle_outline, size: 20.0),
+                        label: Text(hasImage ? 'Open Full Resolution Workout Plan' : 'Close Event Details'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003EC7),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEventDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF2563EB), size: 20.0),
+        const SizedBox(width: 12.0),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2.0),
+            Text(value, style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          ],
+        ),
+      ],
+    );
+  }
+
   void _showFullImageModal(BuildContext context, String imageUrl, String title) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      barrierDismissible: true,
+      builder: (context) => Dialog.fullscreen(
         backgroundColor: Colors.black,
-        insetPadding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBar(
-              backgroundColor: Colors.black,
-              title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16.0)),
-              leading: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            elevation: 0,
+            title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16.0, fontWeight: FontWeight.bold)),
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 28.0),
+              onPressed: () => Navigator.pop(context),
             ),
-            Flexible(
-              child: InteractiveViewer(
-                panEnabled: true,
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
+          ),
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  panEnabled: true,
+                  boundaryMargin: const EdgeInsets.all(20.0),
+                  minScale: 1.0,
+                  maxScale: 6.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)));
+                    },
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Text('Failed to load workout plan image.', style: TextStyle(color: Colors.white70)),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16.0),
-          ],
+              Positioned(
+                bottom: 24.0,
+                left: 20.0,
+                right: 20.0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(20.0),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.zoom_in, color: Color(0xFF60A5FA), size: 18.0),
+                      SizedBox(width: 8.0),
+                      Text(
+                        'Pinch to Zoom & Pan Workout Details',
+                        style: TextStyle(color: Colors.white, fontSize: 12.0, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
