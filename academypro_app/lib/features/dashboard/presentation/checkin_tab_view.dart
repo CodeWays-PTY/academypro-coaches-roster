@@ -690,15 +690,55 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
               // ===================================================================
               if (filteredRecords.isEmpty)
                 Container(
-                  padding: const EdgeInsets.all(32.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
                   alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.0),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
                   child: Column(
-                    children: const [
-                      Icon(Icons.person_search_outlined, color: Color(0xFF94A3B8), size: 48.0),
-                      SizedBox(height: 12.0),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person_search_outlined, color: Color(0xFF64748B), size: 40.0),
+                      ),
+                      const SizedBox(height: 14.0),
                       Text(
-                        'No roster players found for selected team',
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 14.0, fontWeight: FontWeight.w500),
+                        _searchQuery.isNotEmpty
+                            ? 'No check-in match for "$_searchQuery"'
+                            : 'No Athletes Registered in Squad',
+                        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16.0, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6.0),
+                      Text(
+                        _searchQuery.isNotEmpty
+                            ? 'Try clearing your search query.'
+                            : 'No athletes are currently assigned to squad $selectedAgeGroup.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 12.5),
+                      ),
+                      const SizedBox(height: 16.0),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003EC7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => AddPlayerModal(initialAgeGroup: selectedAgeGroup),
+                          );
+                        },
+                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 16.0),
+                        label: const Text('Add Athlete to Squad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)),
                       ),
                     ],
                   ),

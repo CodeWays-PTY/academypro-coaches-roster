@@ -291,9 +291,57 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
               ),
             )
           else if (filteredPlayers.isEmpty)
-            const Expanded(
+            Expanded(
               child: Center(
-                child: Text('No athletes match your query.', style: TextStyle(color: Color(0xFF64748B))),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.groups_outlined, size: 48.0, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      _searchQuery.isNotEmpty
+                          ? 'No athletes match "$_searchQuery"'
+                          : 'No Squad Athletes Registered',
+                      style: const TextStyle(fontSize: 17.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 6.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Text(
+                        _searchQuery.isNotEmpty
+                            ? 'Try adjusting your search filter or age group.'
+                            : 'No athletes have been assigned to squad $selectedAgeGroup yet.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                    const SizedBox(height: 20.0),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003EC7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      ),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => AddPlayerModal(initialAgeGroup: selectedAgeGroup),
+                        );
+                      },
+                      icon: const Icon(Icons.person_add_alt_1_outlined, size: 18.0),
+                      label: const Text('Add Athlete to Squad', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
             )
           else
