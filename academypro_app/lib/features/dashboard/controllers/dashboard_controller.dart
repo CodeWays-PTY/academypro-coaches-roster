@@ -479,16 +479,8 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
       }
     } catch (_) {}
 
-    if (state.isEmpty) {
-      final cachedRaw = LocalStorage.getCachedData('/api/squads');
-      if (cachedRaw is List && cachedRaw.isNotEmpty) {
-        state = cachedRaw.map((x) => SquadItem.fromJson(Map<String, dynamic>.from(x))).toList();
       } else {
-        state = [
-          SquadItem(id: 'sq-u15', name: 'U15 Development', ageGroup: 'U15', description: 'U15 Development Squad'),
-          SquadItem(id: 'sq-u16', name: 'U16 Academy Elite', ageGroup: 'U16', description: 'U16 Academy Elite Squad'),
-          SquadItem(id: 'sq-u18', name: 'U18 Academy Elite', ageGroup: 'U18', description: 'U18 Academy Elite Squad'),
-        ];
+        state = [];
       }
     }
   }
