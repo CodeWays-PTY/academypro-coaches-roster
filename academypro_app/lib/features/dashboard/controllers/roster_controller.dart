@@ -147,7 +147,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
   Future<List<RosterPlayer>> fetchSchoolPlayers([String query = '']) async {
     try {
       final qParam = query.trim().isNotEmpty ? '?q=${Uri.encodeComponent(query.trim())}' : '';
-      final response = await _apiClient.getAndCache('/api/school/players$qParam');
+      final response = await _apiClient.get('/api/school/players$qParam');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'] ?? [];
         return list.map((x) => RosterPlayer.fromJson(x)).toList();
