@@ -21,25 +21,54 @@ void main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized) {
+      return MaterialApp(
+        title: 'AcademyPro Athlete Command',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: SplashScreenBody(),
+      );
+    }
+
     final authState = ref.watch(authProvider);
     final token = LocalStorage.getToken();
     final profile = authState.userProfile ?? LocalStorage.getUserProfile();
-    final isAuthenticated = authState.status == AuthStatus.authenticated || (token != null && profile != null && authState.status != AuthStatus.unauthenticated);
+    final isAuthenticated = authState.status == AuthStatus.authenticated || 
+        (token != null && profile != null && authState.status != AuthStatus.unauthenticated);
 
     Widget homeScreen = const LoginScreen();
     if (isAuthenticated && profile != null) {
-      final role = profile['role'];
-      if (role == 'Coach') {
+      final rawRole = (profile['role'] ?? '').toString().toLowerCase();
+      if (rawRole.contains('coach')) {
         homeScreen = const DashboardScreen();
-      } else if (role == 'Student') {
-        homeScreen = const StudentDashboardScreen();
-      } else if (role == 'Parent') {
+      } else if (rawRole.contains('parent')) {
         homeScreen = const ParentDashboardScreen();
+      } else {
+        homeScreen = const StudentDashboardScreen();
       }
     }
 
@@ -47,35 +76,13 @@ class MyApp extends ConsumerWidget {
       title: 'AcademyPro Athlete Command',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: SplashScreen(child: homeScreen),
+      home: homeScreen,
     );
   }
 }
 
-class SplashScreen extends StatefulWidget {
-  final Widget child;
-  const SplashScreen({Key? key, required this.child}) : super(key: key);
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => widget.child,
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 400),
-          ),
-        );
-      }
-    });
-  }
+class SplashScreenBody extends StatelessWidget {
+  const SplashScreenBody({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

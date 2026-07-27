@@ -251,7 +251,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   )
                                 : const Text('Send Login Code'),
                           ),
-                        ] else if (authState.status == AuthStatus.otpSent) ...[
+                        ] else ...[
                           const Text(
                             'Verify Code',
                             style: TextStyle(
