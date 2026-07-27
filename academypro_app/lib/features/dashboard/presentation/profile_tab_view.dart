@@ -682,11 +682,12 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                 ),
                 const SizedBox(height: 16.0),
 
-                // School Tenant Input (Dynamic School)
+                // School Tenant Input (Read-Only, Managed by Admin)
                 _buildInputField(
                   controller: tenantController,
-                  label: 'Academy Tenant / School',
+                  label: 'Academy Tenant / School (Managed by Admin)',
                   icon: Icons.account_balance_outlined,
+                  readOnly: true,
                 ),
                 const SizedBox(height: 28.0),
 
@@ -772,6 +773,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,8 +791,16 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 15.0),
+          readOnly: readOnly,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: readOnly ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+            fontSize: 15.0,
+          ),
           decoration: InputDecoration(
+            fillColor: readOnly ? const Color(0xFFF1F5F9) : null,
+            filled: readOnly,
+            suffixIcon: readOnly ? const Icon(Icons.lock_outlined, color: Color(0xFF94A3B8), size: 18.0) : null,
             prefixIcon: keyboardType == TextInputType.phone
                 ? Padding(
                     padding: const EdgeInsets.only(left: 12.0, right: 8.0),
