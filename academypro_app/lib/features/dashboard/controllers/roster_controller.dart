@@ -22,6 +22,7 @@ class RosterPlayer {
   final String id;
   final String firstName;
   final String lastName;
+  final String email;
   final String ageGroup;
   String position;
   final String team;
@@ -35,6 +36,7 @@ class RosterPlayer {
     required this.id,
     required this.firstName,
     required this.lastName,
+    this.email = '',
     required this.ageGroup,
     required this.position,
     required this.team,
@@ -53,6 +55,7 @@ class RosterPlayer {
       id: json['id'] ?? '',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
+      email: json['email'] ?? '',
       ageGroup: json['ageGroup'] ?? '',
       position: json['position'] ?? '',
       team: json['team'] ?? '',

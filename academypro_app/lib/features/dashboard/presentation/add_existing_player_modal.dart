@@ -70,7 +70,8 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
       } else {
         _filteredPlayers = _allSchoolPlayers.where((p) {
           final fullName = '${p.firstName} ${p.lastName}'.toLowerCase();
-          return fullName.contains(clean) || p.ageGroup.toLowerCase().contains(clean);
+          final email = p.email.toLowerCase();
+          return fullName.contains(clean) || email.contains(clean) || p.ageGroup.toLowerCase().contains(clean);
         }).toList();
       }
     });
