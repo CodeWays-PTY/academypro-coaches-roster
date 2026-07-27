@@ -1313,11 +1313,16 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
         final isImproved = percentChange >= 0;
         final changeString = isImproved
-            ? '+${percentChange.toStringAsFixed(1)}% from last measured'
-            : '${percentChange.toStringAsFixed(1)}% from last measured';
+            ? '+${percentChange.toStringAsFixed(1)}%'
+            : '${percentChange.toStringAsFixed(1)}%';
 
         return Card(
-          margin: const EdgeInsets.only(bottom: 12.0),
+          margin: const EdgeInsets.only(bottom: 14.0),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -1325,18 +1330,25 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      metric.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
+                    Expanded(
+                      child: Text(
+                        metric.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 8.0),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 3.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                       decoration: BoxDecoration(
                         color: isImproved ? const Color(0xFFDCFCE7) : const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(10.0),
+                        borderRadius: BorderRadius.circular(20.0),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             isImproved ? Icons.trending_up : Icons.trending_down,
@@ -1347,7 +1359,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                           Text(
                             changeString,
                             style: TextStyle(
-                              fontSize: 11.0,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.bold,
                               color: isImproved ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
                             ),
@@ -1357,37 +1369,42 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12.0),
+                const SizedBox(height: 16.0),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('BASELINE', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2.0),
-                        Text('$baseline $unit', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('BASELINE', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          const SizedBox(height: 4.0),
+                          Text('$baseline $unit', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                        ],
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('TARGET', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2.0),
-                        Text('${metric.targetBenchmark} $unit', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7))),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text('TARGET', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          const SizedBox(height: 4.0),
+                          Text('${metric.targetBenchmark} $unit', style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF003EC7))),
+                        ],
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text('LATEST SCORE', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2.0),
-                        Text('$latest $unit', style: const TextStyle(fontSize: 17.0, fontWeight: FontWeight.w900, color: Color(0xFF05B046))),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text('LATEST SCORE', style: TextStyle(fontSize: 10.0, color: Color(0xFF64748B), fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          const SizedBox(height: 4.0),
+                          Text('$latest $unit', style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w900, color: Color(0xFF05B046))),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10.0),
+                const SizedBox(height: 12.0),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6.0),
                   child: LinearProgressIndicator(
