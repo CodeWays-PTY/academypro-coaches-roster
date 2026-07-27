@@ -269,37 +269,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: Color(0xFF64748B),
                             ),
                           ),
-                          if (authState.devOtp != null && authState.devOtp!.isNotEmpty) ...[
-                            const SizedBox(height: 14.0),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEFF6FF),
-                                borderRadius: BorderRadius.circular(12.0),
-                                border: Border.all(color: const Color(0xFFBFDBFE)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.mark_email_read, size: 18.0, color: Color(0xFF2563EB)),
-                                  const SizedBox(width: 8.0),
-                                  Expanded(
-                                    child: Text(
-                                      'Verification code: ${authState.devOtp}',
-                                      style: const TextStyle(
-                                        fontSize: 13.0,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF1E40AF),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 24.0),
                           TextFormField(
                             controller: _otpController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: TextInputType.phone,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
