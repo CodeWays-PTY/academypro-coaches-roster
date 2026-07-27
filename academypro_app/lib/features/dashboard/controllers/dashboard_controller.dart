@@ -444,21 +444,52 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
     fetchSquads();
   }
 
+  Future<void> _updateHiveCache(List<SquadItem> squads) async {
+    final jsonList = squads.map((s) => {
+      'id': s.id,
+      'name': s.name,
+      'ageGroup': s.ageGroup,
+      'description': s.description,
+    }).toList();
+    await LocalStorage.cacheData('/api/squads', jsonList);
+  }
+
   Future<void> fetchSquads() async {
+    final currentSquads = state;
     try {
       final res = await _apiClient.getAndCache('/api/squads');
       if (res.statusCode == 200 && res.data['success'] == true) {
         final List list = res.data['data'] ?? [];
-        if (list.isNotEmpty) {
-          final items = list.map((x) => SquadItem.fromJson(x)).toList();
-          state = items;
-          return;
+        final fetchedSquads = list.map((x) => SquadItem.fromJson(x)).toList();
+
+        final Map<String, SquadItem> mergedMap = {};
+        for (var s in fetchedSquads) {
+          mergedMap[s.ageGroup.toUpperCase()] = s;
         }
+        for (var s in currentSquads) {
+          if (!mergedMap.containsKey(s.ageGroup.toUpperCase())) {
+            mergedMap[s.ageGroup.toUpperCase()] = s;
+          }
+        }
+
+        final finalSquads = mergedMap.values.toList();
+        state = finalSquads;
+        await _updateHiveCache(finalSquads);
+        return;
       }
     } catch (_) {}
 
     if (state.isEmpty) {
-      state = [];
+      final cachedRaw = LocalStorage.getCachedData('/api/squads');
+      if (cachedRaw is List && cachedRaw.isNotEmpty) {
+        state = cachedRaw.map((x) => SquadItem.fromJson(Map<String, dynamic>.from(x))).toList();
+      } else {
+        state = [
+          SquadItem(id: 'sq-u15', name: 'U15 Development', ageGroup: 'U15', description: 'U15 Development Squad'),
+          SquadItem(id: 'sq-u16', name: 'U16 Academy Elite', ageGroup: 'U16', description: 'U16 Academy Elite Squad'),
+          SquadItem(id: 'sq-u18', name: 'U18 Academy Elite', ageGroup: 'U18', description: 'U18 Academy Elite Squad'),
+        ];
+      }
     }
   }
 
@@ -468,20 +499,23 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
     String description = '',
   }) async {
     final newId = 'sq-${DateTime.now().millisecondsSinceEpoch}';
+    final formattedAge = ageGroup.trim().toUpperCase();
     final newSquad = SquadItem(
       id: newId,
-      name: name,
-      ageGroup: ageGroup,
+      name: name.trim(),
+      ageGroup: formattedAge,
       description: description,
     );
 
-    state = [...state, newSquad];
+    final updatedList = [...state.where((s) => s.ageGroup.toUpperCase() != formattedAge), newSquad];
+    state = updatedList;
+    await _updateHiveCache(updatedList);
 
     try {
       await _apiClient.post('/api/squads', data: {
         'id': newId,
-        'name': name,
-        'ageGroup': ageGroup,
+        'name': name.trim(),
+        'ageGroup': formattedAge,
         'description': description,
       });
     } catch (_) {}
