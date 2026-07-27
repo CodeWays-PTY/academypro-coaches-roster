@@ -392,7 +392,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          (data.academics != null && data.academics.isNotEmpty)
+                          data.academics.isNotEmpty
                               ? (latestGrade >= 65 ? 'A+' : (latestGrade >= 60 ? 'A' : 'B'))
                               : '--',
                           style: const TextStyle(
@@ -424,7 +424,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          (data.academics != null && data.academics.isNotEmpty)
+                          data.academics.isNotEmpty
                               ? '${readinessScore.toStringAsFixed(0)}%'
                               : '--',
                           style: const TextStyle(
