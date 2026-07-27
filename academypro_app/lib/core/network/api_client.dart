@@ -29,58 +29,15 @@ class ApiClient {
         }
         return handler.next(options);
       },
-      onError: (DioException e, handler) async {
-        // Intercept network connection issues for GET request caching fallbacks
-        if (e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.connectionError ||
-            e.type == DioExceptionType.unknown) {
-          final request = e.requestOptions;
-          if (request.method == 'GET') {
-            final cacheKey = request.path + (request.queryParameters.toString());
-            final cachedData = LocalStorage.getCachedData(cacheKey);
-            if (cachedData != null) {
-              // Return mocked success response with cached data
-              return handler.resolve(Response(
-                requestOptions: request,
-                data: {
-                  'success': true,
-                  'data': cachedData,
-                  'message': 'Loaded from offline cache'
-                },
-                statusCode: 200,
-              ));
-            }
-          }
-        }
+      onError: (DioException e, handler) {
         return handler.next(e);
       },
     ));
   }
 
-  // Helper method to update local cache on successful GET requests and retrieve cache on failure
+  // Direct real HTTP GET request (No dummy cache fallbacks or mock data generation)
   Future<Response> getAndCache(String path, {Map<String, dynamic>? queryParameters}) async {
-    final cacheKey = path + (queryParameters?.toString() ?? '{}');
-    try {
-      final response = await dio.get(path, queryParameters: queryParameters);
-      if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
-        await LocalStorage.cacheData(cacheKey, response.data['data']);
-      }
-      return response;
-    } catch (e) {
-      final cachedData = LocalStorage.getCachedData(cacheKey);
-      if (cachedData != null) {
-        return Response(
-          requestOptions: RequestOptions(path: path),
-          data: {
-            'success': true,
-            'data': cachedData,
-            'message': 'Loaded from offline cache'
-          },
-          statusCode: 200,
-        );
-      }
-      rethrow;
-    }
+    return await dio.get(path, queryParameters: queryParameters);
   }
 
   // Helper method for POST requests
