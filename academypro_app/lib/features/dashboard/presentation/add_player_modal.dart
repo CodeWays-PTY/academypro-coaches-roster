@@ -32,40 +32,23 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _positionController = TextEditingController();
   
-  String _selectedPosition = 'Forward';
   late String _selectedAgeGroup;
   late String _selectedTeam;
   bool _isSubmitting = false;
-
-  final List<String> _positions = [
-    'Forward',
-    'Back',
-    'Midfielder',
-    'Defender',
-    'Goalkeeper',
-    'Lock',
-    'Prop',
-    'Flanker',
-    'Fly-half',
-    'Scrum-half',
-    'Winger',
-    'Center',
-    'Fullback',
-  ];
 
   @override
   void initState() {
     super.initState();
     final squads = ref.read(squadsProvider);
-    final String activeAge = widget.initialAgeGroup ?? ref.read(selectedAgeGroupProvider) ?? 'U15';
+    final String activeAge = widget.initialAgeGroup ?? ref.read(selectedAgeGroupProvider) ?? 'GENERAL';
     
     _selectedAgeGroup = activeAge;
     
     final matchingSquad = squads.firstWhere(
       (sq) => sq.ageGroup == activeAge,
-      orElse: () => squads.isNotEmpty ? squads.first : SquadItem(id: '1', name: 'U15 Squad', ageGroup: 'U15'),
+      orElse: () => squads.isNotEmpty ? squads.first : SquadItem(id: 'gen', name: 'General Roster', ageGroup: 'GENERAL'),
     );
     _selectedTeam = matchingSquad.name;
   }
@@ -75,7 +58,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+    _positionController.dispose();
     super.dispose();
   }
 
@@ -88,16 +71,15 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
     final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
+    final position = _positionController.text.trim();
 
     await ref.read(rosterProvider.notifier).addPlayer(
       firstName: firstName,
       lastName: lastName,
       ageGroup: _selectedAgeGroup,
-      position: _selectedPosition,
+      position: position,
       team: _selectedTeam,
-      email: email.isNotEmpty ? email : null,
-      parentPhone: phone.isNotEmpty ? phone : null,
+      email: email,
     );
 
     if (mounted) {
@@ -230,7 +212,7 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                   ),
                   const SizedBox(height: 16.0),
 
-                  // Target Squad Dropdown
+                  // Target Squad Selector
                   const Text(
                     'TARGET SQUAD',
                     style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
@@ -246,18 +228,27 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         borderRadius: BorderRadius.circular(16.0),
-                        value: squads.any((s) => s.ageGroup == _selectedAgeGroup) ? _selectedAgeGroup : (squads.isNotEmpty ? squads.first.ageGroup : 'U15'),
+                        value: squads.any((s) => s.ageGroup == _selectedAgeGroup)
+                            ? _selectedAgeGroup
+                            : (squads.isNotEmpty ? squads.first.ageGroup : 'GENERAL'),
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF003EC7)),
-                        items: squads.map((sq) {
-                          return DropdownMenuItem(
-                            value: sq.ageGroup,
-                            child: Text(sq.name, style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-                          );
-                        }).toList(),
+                        items: [
+                          if (squads.isEmpty)
+                            const DropdownMenuItem(
+                              value: 'GENERAL',
+                              child: Text('General Roster (No Squad)', style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                            ),
+                          ...squads.map((sq) {
+                            return DropdownMenuItem(
+                              value: sq.ageGroup,
+                              child: Text(sq.name, style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                            );
+                          }).toList(),
+                        ],
                         onChanged: (val) {
                           if (val != null) {
-                            final sq = squads.firstWhere((s) => s.ageGroup == val);
+                            final sq = squads.firstWhere((s) => s.ageGroup == val, orElse: () => SquadItem(id: 'gen', name: 'General Roster', ageGroup: 'GENERAL'));
                             setState(() {
                               _selectedAgeGroup = val;
                               _selectedTeam = sq.name;
@@ -269,44 +260,34 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                   ),
                   const SizedBox(height: 16.0),
 
-                  // Position Dropdown
+                  // Freetext Position Input
                   const Text(
-                    'POSITION',
+                    'PRIMARY POSITION',
                     style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
                   ),
                   const SizedBox(height: 6.0),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(14.0),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                  TextFormField(
+                    controller: _positionController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Prop, Fly-half, Center',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5)),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        borderRadius: BorderRadius.circular(16.0),
-                        value: _selectedPosition,
-                        isExpanded: true,
-                        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF003EC7)),
-                        items: _positions.map((pos) {
-                          return DropdownMenuItem(
-                            value: pos,
-                            child: Text(pos, style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedPosition = val);
-                          }
-                        },
-                      ),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a primary position';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16.0),
 
-                  // Athlete Email (For Account Activation & Invite Link)
+                  // Mandatory Athlete Email
                   const Text(
-                    'ATHLETE EMAIL (OPTIONAL FOR APP INVITE)',
+                    'ATHLETE EMAIL (MANDATORY FOR ACCOUNT PROFILE)',
                     style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
                   ),
                   const SizedBox(height: 6.0),
@@ -314,33 +295,22 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      hintText: 'e.g. marcus.reed@academypro.co.za',
+                      hintText: 'e.g. athlete@example.com',
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5)),
                     ),
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  // Parent Contact Phone (Optional)
-                  const Text(
-                    'PARENT CONTACT PHONE (OPTIONAL)',
-                    style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
-                  ),
-                  const SizedBox(height: 6.0),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. +27 82 123 4567',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5)),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Athlete email address is required';
+                      }
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                        return 'Enter a valid email address';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24.0),
 

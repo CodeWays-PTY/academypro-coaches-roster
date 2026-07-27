@@ -512,27 +512,27 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                 style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 20.0),
-
-              // View Workout Photo Button (Only when photo exists and NOT on Match Days)
-              if (event.workoutImagePath != null && event.eventType != 'Match') ...[
-                SizedBox(
+              // Display Workout Attachment directly inside details modal
+              if (event.workoutImagePath != null && event.workoutImagePath!.trim().isNotEmpty && event.eventType != 'Match') ...[
+                const Text(
+                  'WORKOUT ROUTINE ATTACHMENT',
+                  style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+                ),
+                const SizedBox(height: 8.0),
+                Container(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showWorkoutImageDialog(context, event.workoutImagePath!);
-                    },
-                    icon: const Icon(Icons.photo, size: 18.0),
-                    label: const Text('View Workout Routine Photo', style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                    ),
+                  constraints: const BoxConstraints(maxHeight: 220.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16.0),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: _buildWorkoutPreviewWidget(event.workoutImagePath!),
                   ),
                 ),
-                const SizedBox(height: 10.0),
+                const SizedBox(height: 16.0),
               ],
 
               // Start Practice Check-In CTA Button
@@ -568,6 +568,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                       label: const Text('Edit Event'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                       ),
                     ),
@@ -597,35 +598,50 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
     );
   }
 
-  void _showWorkoutImageDialog(BuildContext context, String imagePath) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Workout Routine Photo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12.0),
-                child: imagePath.startsWith('assets/')
-                    ? Image.asset(imagePath, fit: BoxFit.contain)
-                    : Image.file(File(imagePath), fit: BoxFit.contain),
-              ),
-            ),
-          ],
-        ),
+  Widget _buildWorkoutPreviewWidget(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackAttachmentBox(path),
+      );
+    } else if (path.startsWith('assets/')) {
+      return Image.asset(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackAttachmentBox(path),
+      );
+    } else {
+      try {
+        final file = File(path);
+        if (file.existsSync()) {
+          return Image.file(file, fit: BoxFit.cover);
+        }
+      } catch (_) {}
+      return _buildFallbackAttachmentBox(path);
+    }
+  }
+
+  Widget _buildFallbackAttachmentBox(String text) {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      color: const Color(0xFFF1F5F9),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.fitness_center, color: Color(0xFF003EC7), size: 36.0),
+          const SizedBox(height: 8.0),
+          Text(
+            text.split('/').last,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0, color: Color(0xFF0F172A)),
+          ),
+          const SizedBox(height: 4.0),
+          const Text(
+            'Workout Plan Attached',
+            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+          ),
+        ],
       ),
     );
   }
