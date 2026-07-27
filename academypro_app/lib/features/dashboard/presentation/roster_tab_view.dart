@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/utils/app_toast.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import 'create_action_modal.dart';
@@ -433,7 +434,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                           final squads = ref.read(squadsProvider);
                                           final activeSquad = squads.firstWhere(
                                             (s) => s.ageGroup == selectedAgeGroup,
-                                            orElse: () => squads.isNotEmpty ? squads.first : Squad(id: 'default', schoolId: 'OVK', coachId: '', name: 'Active Squad', ageGroup: selectedAgeGroup, code: selectedAgeGroup),
+                                            orElse: () => squads.isNotEmpty ? squads.first : SquadItem(id: 'default', name: 'Active Squad', ageGroup: selectedAgeGroup, description: ''),
                                           );
 
                                           final confirmed = await showDialog<bool>(

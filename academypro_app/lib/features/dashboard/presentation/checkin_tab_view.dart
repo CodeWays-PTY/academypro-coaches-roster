@@ -711,12 +711,6 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: Color(0xFF64748B), fontSize: 12.5),
                       ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF003EC7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
                     ],
                   ),
                 )

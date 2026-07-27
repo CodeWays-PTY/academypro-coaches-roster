@@ -115,7 +115,7 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
     final squads = ref.watch(squadsProvider);
     final activeSquad = squads.firstWhere(
       (s) => s.ageGroup == widget.activeAgeGroup,
-      orElse: () => squads.isNotEmpty ? squads.first : Squad(id: 'default', schoolId: 'OVK', coachId: '', name: 'Active Squad', ageGroup: widget.activeAgeGroup, code: widget.activeAgeGroup),
+      orElse: () => squads.isNotEmpty ? squads.first : SquadItem(id: 'default', name: 'Active Squad', ageGroup: widget.activeAgeGroup, description: ''),
     );
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
