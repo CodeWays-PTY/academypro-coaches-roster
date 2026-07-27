@@ -635,20 +635,66 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     fetchEvents();
   }
 
+  Future<void> _updateHiveCache(List<CoachEvent> events, String? ageGroup) async {
+    final jsonList = events.map((e) => {
+      'id': e.id,
+      'schoolId': e.schoolId,
+      'title': e.title,
+      'eventType': e.eventType,
+      'startTime': e.startTime,
+      'date': e.date,
+      'durationMins': e.durationMins,
+      'location': e.location,
+      'isImportant': e.isImportant,
+      'recurrenceRule': e.recurrenceRule,
+      'workoutImagePath': e.workoutImagePath,
+      'team': e.team,
+      'ageGroup': e.ageGroup,
+    }).toList();
+
+    await LocalStorage.cacheData('/api/dashboard/events', jsonList);
+    await LocalStorage.cacheData('/api/dashboard/events{}', jsonList);
+    if (ageGroup != null) {
+      await LocalStorage.cacheData('/api/dashboard/events?ageGroup=$ageGroup', jsonList);
+    }
+  }
+
   Future<void> fetchEvents({String? ageGroup}) async {
-    state = const AsyncValue.loading();
+    final currentEvents = state.asData?.value ?? [];
+    if (currentEvents.isEmpty) {
+      state = const AsyncValue.loading();
+    }
     try {
       final query = ageGroup != null ? '?ageGroup=$ageGroup' : '';
       final response = await _apiClient.getAndCache('/api/dashboard/events$query');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List list = response.data['data'] ?? [];
-        final events = list.map((x) => CoachEvent.fromJson(x)).toList();
-        state = AsyncValue.data(events);
+        final fetchedEvents = list.map((x) => CoachEvent.fromJson(x)).toList();
+
+        final Map<String, CoachEvent> mergedMap = {};
+        for (var e in fetchedEvents) {
+          mergedMap[e.id.toString()] = e;
+        }
+        for (var e in currentEvents) {
+          if (!mergedMap.containsKey(e.id.toString())) {
+            mergedMap[e.id.toString()] = e;
+          }
+        }
+
+        final finalEvents = mergedMap.values.toList();
+        state = AsyncValue.data(finalEvents);
+        await _updateHiveCache(finalEvents, ageGroup);
+      } else if (currentEvents.isNotEmpty) {
+        state = AsyncValue.data(currentEvents);
       } else {
         state = const AsyncValue.data([]);
       }
     } catch (e) {
-      state = const AsyncValue.data([]);
+      if (currentEvents.isNotEmpty) {
+        state = AsyncValue.data(currentEvents);
+      } else {
+        state = const AsyncValue.data([]);
+      }
     }
   }
 
@@ -683,9 +729,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       ageGroup: ageGroup ?? 'U15',
     );
 
-    state.whenData((currentList) {
-      state = AsyncValue.data([newEvent, ...currentList]);
-    });
+    final currentList = state.asData?.value ?? [];
+    final updatedList = [newEvent, ...currentList];
+    state = AsyncValue.data(updatedList);
+    await _updateHiveCache(updatedList, ageGroup);
 
     try {
       await _apiClient.post('/api/dashboard/events', data: {
@@ -707,10 +754,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
   }
 
   Future<bool> updateEvent(CoachEvent event) async {
-    state.whenData((currentList) {
-      final updated = currentList.map((e) => e.id.toString() == event.id.toString() ? event : e).toList();
-      state = AsyncValue.data(updated);
-    });
+    final currentList = state.asData?.value ?? [];
+    final updatedList = currentList.map((e) => e.id.toString() == event.id.toString() ? event : e).toList();
+    state = AsyncValue.data(updatedList);
+    await _updateHiveCache(updatedList, event.ageGroup);
 
     try {
       await _apiClient.post('/api/dashboard/events/${event.id}', data: {
@@ -732,10 +779,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
 
   Future<bool> deleteEvent(dynamic eventId) async {
     final targetIdStr = eventId.toString();
-    state.whenData((currentList) {
-      final updated = currentList.where((e) => e.id.toString() != targetIdStr).toList();
-      state = AsyncValue.data(updated);
-    });
+    final currentList = state.asData?.value ?? [];
+    final updatedList = currentList.where((e) => e.id.toString() != targetIdStr).toList();
+    state = AsyncValue.data(updatedList);
+    await _updateHiveCache(updatedList, null);
 
     try {
       await _apiClient.post('/api/dashboard/events/$targetIdStr/delete');

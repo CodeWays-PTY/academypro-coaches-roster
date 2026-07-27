@@ -47,12 +47,14 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
             final now = DateTime.now();
             final todayStr = DateFormat('yyyy-MM-dd').format(now);
 
-            // Filter today's events vs upcoming events dynamically (excluding past events)
+            // Filter today's events vs upcoming events vs past events dynamically
             final todayEvents = events.where((e) => e.date == todayStr).toList();
             final upcomingEvents = events.where((e) => e.date.compareTo(todayStr) > 0).toList();
+            final pastEvents = events.where((e) => e.date.compareTo(todayStr) < 0).toList();
 
             todayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
-            upcomingEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+            upcomingEvents.sort((a, b) => a.date.compareTo(b.date) != 0 ? a.date.compareTo(b.date) : a.startTime.compareTo(b.startTime));
+            pastEvents.sort((a, b) => b.date.compareTo(a.date) != 0 ? b.date.compareTo(a.date) : b.startTime.compareTo(a.startTime));
 
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -200,6 +202,29 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                         return _buildEventCard(context, upcomingEvents[index]);
                       },
                     ),
+
+                  if (pastEvents.isNotEmpty) ...[
+                    const SizedBox(height: 24.0),
+                    const Text(
+                      'PAST SESSIONS',
+                      style: TextStyle(
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 10.0),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: pastEvents.length,
+                      separatorBuilder: (ctx, i) => const SizedBox(height: 12.0),
+                      itemBuilder: (context, index) {
+                        return _buildEventCard(context, pastEvents[index]);
+                      },
+                    ),
+                  ],
 
                   const SizedBox(height: 32.0),
                 ],

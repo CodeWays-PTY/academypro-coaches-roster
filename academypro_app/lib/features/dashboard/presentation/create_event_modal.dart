@@ -301,8 +301,6 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
           );
     }
 
-    await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: activeAge);
-
     if (mounted) {
       setState(() {
         _isSubmitting = false;
