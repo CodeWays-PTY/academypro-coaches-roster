@@ -313,7 +313,10 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                   const SizedBox(height: 20.0),
                   TextField(
                     controller: otpController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: false, signed: false),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     maxLength: 6,
                     style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, letterSpacing: 8.0),
                     textAlign: TextAlign.center,
@@ -491,7 +494,10 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                   const SizedBox(height: 20.0),
                   TextField(
                     controller: otpController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: false, signed: false),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     maxLength: 6,
                     autofocus: true,
                     textAlign: TextAlign.center,
