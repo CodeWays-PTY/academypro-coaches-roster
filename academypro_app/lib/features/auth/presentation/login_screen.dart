@@ -299,7 +299,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SizedBox(height: 24.0),
                           TextFormField(
                             controller: _otpController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: false, signed: false),
+                            keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
