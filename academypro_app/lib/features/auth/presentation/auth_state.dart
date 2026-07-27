@@ -8,12 +8,14 @@ enum AuthStatus { unauthenticated, otpSent, authenticating, authenticated, error
 class AuthState {
   final AuthStatus status;
   final String? email;
+  final String? devOtp;
   final String? errorMessage;
   final Map<String, dynamic>? userProfile;
 
   AuthState({
     required this.status,
     this.email,
+    this.devOtp,
     this.errorMessage,
     this.userProfile,
   });
@@ -33,12 +35,14 @@ class AuthState {
   AuthState copyWith({
     AuthStatus? status,
     String? email,
+    String? devOtp,
     String? errorMessage,
     Map<String, dynamic>? userProfile,
   }) {
     return AuthState(
       status: status ?? this.status,
       email: email ?? this.email,
+      devOtp: devOtp ?? this.devOtp,
       errorMessage: errorMessage ?? this.errorMessage,
       userProfile: userProfile ?? this.userProfile,
     );
@@ -58,9 +62,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       });
 
       if (response.data['success'] == true) {
+        final otpCode = response.data['otp']?.toString();
         state = state.copyWith(
           status: AuthStatus.otpSent,
           email: email.trim().toLowerCase(),
+          devOtp: otpCode,
           errorMessage: null,
         );
         return true;
