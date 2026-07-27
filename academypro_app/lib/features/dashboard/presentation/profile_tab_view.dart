@@ -1339,7 +1339,6 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
         actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 20.0),
-        actionsGap: 12.0,
         title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to sign out of your AcademyPro coach account?'),
         actions: [

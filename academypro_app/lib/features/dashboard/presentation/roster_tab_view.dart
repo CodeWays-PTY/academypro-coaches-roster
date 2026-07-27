@@ -442,7 +442,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                             builder: (ctx) => AlertDialog(
                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
                                               actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 20.0),
-                                              actionsGap: 12.0,
                                               title: const Text('Remove Player from Squad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.0)),
                                               content: Text(
                                                 'Are you sure you want to remove ${player.firstName} ${player.lastName} from ${activeSquad.name}?\n\nNote: This unassigns the athlete from this squad while keeping their profile intact in the school database.',
@@ -602,7 +601,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
               actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 20.0),
-              actionsGap: 12.0,
               title: const Text(
                 'Edit Position',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
