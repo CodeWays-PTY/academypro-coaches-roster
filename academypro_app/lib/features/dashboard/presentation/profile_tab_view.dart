@@ -825,9 +825,9 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     final authState = ref.watch(authProvider);
     final userProfile = authState.userProfile ?? LocalStorage.getUserProfile() ?? {};
 
-    final firstName = userProfile['first_name'] ?? userProfile['firstName'] ?? 'Jan-Albert';
-    final lastName = userProfile['last_name'] ?? userProfile['lastName'] ?? 'Mentz';
-    final email = userProfile['email'] ?? authState.email ?? 'janmen777@gmail.com';
+    final firstName = userProfile['first_name'] ?? userProfile['firstName'] ?? '';
+    final lastName = userProfile['last_name'] ?? userProfile['lastName'] ?? '';
+    final email = userProfile['email'] ?? authState.email ?? '';
     final role = (userProfile['role'] ?? 'Head Coach').toString().toUpperCase();
     final initials = '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}';
 

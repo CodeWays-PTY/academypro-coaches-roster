@@ -194,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
                               labelText: 'Email Address',
-                              hintText: 'e.g. jrobertse1@gmail.com or janmen777@gmail.com',
+                              hintText: 'name@example.com',
                               prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF64748B)),
                             ),
                             validator: (value) {
