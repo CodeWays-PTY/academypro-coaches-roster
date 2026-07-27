@@ -48,21 +48,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _handleSendOtp() async {
     if (_formKey.currentState!.validate()) {
-      final email = _emailController.text;
+      final email = _emailController.text.trim();
       final success = await ref.read(authProvider.notifier).sendOtp(email);
       if (success) {
         _startResendTimer();
-        AppToast.showSuccess(
-          context,
-          title: 'Verification Code Sent',
-          message: 'A 6-digit OTP code was sent to $email. Valid for 5 minutes.',
-        );
+        if (mounted) {
+          AppToast.showSuccess(
+            context,
+            title: 'Verification Code Sent',
+            message: 'A 6-digit OTP code was sent to $email. Valid for 10 minutes.',
+          );
+        }
+      } else {
+        if (mounted) {
+          final errorMsg = ref.read(authProvider).errorMessage ?? 'Failed to send login code. Please try again.';
+          AppToast.showError(
+            context,
+            title: 'Request Failed',
+            message: errorMsg,
+          );
+        }
       }
     }
   }
 
   void _handleVerifyOtp() async {
-    final otp = _otpController.text;
+    final otp = _otpController.text.trim();
     if (otp.length != 6) {
       AppToast.showError(
         context,
@@ -75,21 +86,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final success = await ref.read(authProvider.notifier).verifyOtp(otp);
     if (success) {
       final profile = ref.read(authProvider).userProfile;
-      final role = profile?['role'];
+      final rawRole = (profile?['role'] ?? 'student').toString().toLowerCase();
       
-      Widget targetScreen = const LoginScreen();
-      if (role == 'Coach') {
+      Widget targetScreen = const StudentDashboardScreen();
+      if (rawRole.contains('coach')) {
         targetScreen = const DashboardScreen();
-      } else if (role == 'Student') {
-        targetScreen = const StudentDashboardScreen();
-      } else if (role == 'Parent') {
+      } else if (rawRole.contains('parent')) {
         targetScreen = const ParentDashboardScreen();
+      } else {
+        targetScreen = const StudentDashboardScreen();
       }
 
       if (mounted) {
+        AppToast.showSuccess(
+          context,
+          title: 'Sign In Successful',
+          message: 'Welcome to AcademyPro!',
+        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => targetScreen),
+        );
+      }
+    } else {
+      if (mounted) {
+        final errorMsg = ref.read(authProvider).errorMessage ?? 'Invalid verification code. Please check your code and try again.';
+        AppToast.showError(
+          context,
+          title: 'Verification Failed',
+          message: errorMsg,
         );
       }
     }

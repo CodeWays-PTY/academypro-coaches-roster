@@ -72,7 +72,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return false;
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? 'Network request failed';
+      final msg = e.response?.data?['error'] ?? e.response?.data?['message'] ?? 'Network request failed. Please check your connection.';
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: msg,
@@ -108,12 +108,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         state = state.copyWith(
           status: AuthStatus.otpSent, // Rollback to otpSent to let user try again
-          errorMessage: response.data['message'] ?? 'Invalid OTP code',
+          errorMessage: response.data['error'] ?? response.data['message'] ?? 'Invalid OTP code',
         );
         return false;
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? 'Verification failed';
+      final msg = e.response?.data?['error'] ?? e.response?.data?['message'] ?? 'Invalid security code. Please try again.';
       state = state.copyWith(
         status: AuthStatus.otpSent,
         errorMessage: msg,
