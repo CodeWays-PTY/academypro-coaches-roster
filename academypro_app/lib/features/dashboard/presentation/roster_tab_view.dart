@@ -187,7 +187,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
           ),
           const SizedBox(height: 14.0),
 
-          // Action Row 2: Search Field + Add Athlete Button
+          // Action Row 2: Search Field
           Row(
             children: [
               Expanded(
@@ -287,24 +287,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
                       ),
-                    ),
-                    const SizedBox(height: 20.0),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003EC7),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                      ),
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => AddPlayerModal(initialAgeGroup: selectedAgeGroup),
-                        );
-                      },
-                      icon: const Icon(Icons.person_add_alt_1_outlined, size: 18.0),
-                      label: const Text('Add Athlete to Squad', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),

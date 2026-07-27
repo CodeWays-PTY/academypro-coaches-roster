@@ -475,22 +475,8 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                               const SizedBox(width: 6.0),
                               const Expanded(
                                 child: Text(
-                                  'No active squads found.',
+                                  'No active squads assigned. Squads are managed in Admin Dashboard.',
                                   style: TextStyle(fontSize: 11.5, color: Color(0xFFD97706)),
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    builder: (_) => CreateSquadModal(),
-                                  );
-                                },
-                                child: const Text(
-                                  '+ Create Squad',
-                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF003EC7)),
                                 ),
                               ),
                             ],

@@ -268,21 +268,9 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                                     value: sq.ageGroup,
                                     child: Text(sq.name),
                                   )),
-                              const DropdownMenuItem(
-                                value: '__CREATE_NEW_SQUAD__',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 16.0),
-                                    SizedBox(width: 6.0),
-                                    Text('+ Create Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
                             ],
                             onChanged: (newAge) {
-                              if (newAge == '__CREATE_NEW_SQUAD__') {
-                                CreateSquadModal.show(context);
-                              } else if (newAge != null) {
+                              if (newAge != null) {
                                 ref.read(selectedAgeGroupProvider.notifier).state = newAge;
                                 ref.read(rosterProvider.notifier).fetchRoster(newAge);
                                 final updated = ref.read(rosterProvider).playersByAge[newAge] ?? [];
@@ -729,18 +717,6 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           backgroundColor: const Color(0xFF003EC7),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                        ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) => AddPlayerModal(initialAgeGroup: selectedAgeGroup),
-                          );
-                        },
-                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 16.0),
-                        label: const Text('Add Athlete to Squad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)),
-                      ),
                     ],
                   ),
                 )

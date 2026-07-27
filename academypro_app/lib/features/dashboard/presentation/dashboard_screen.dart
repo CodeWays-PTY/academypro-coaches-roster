@@ -242,21 +242,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               value: sq.ageGroup,
                               child: Text(sq.name),
                             )),
-                        const DropdownMenuItem(
-                          value: '__CREATE_NEW_SQUAD__',
-                          child: Row(
-                            children: [
-                              Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 18.0),
-                              SizedBox(width: 8.0),
-                              Text('+ Create New Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
                       ],
                       onChanged: (newAge) {
-                        if (newAge == '__CREATE_NEW_SQUAD__') {
-                          CreateSquadModal.show(context);
-                        } else if (newAge != null) {
+                        if (newAge != null) {
                           ref.read(selectedAgeGroupProvider.notifier).state = newAge;
                           LocalStorage.cacheData('selected_age_group', newAge);
                           ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: newAge);
