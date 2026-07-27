@@ -141,6 +141,46 @@ class RosterNotifier extends StateNotifier<RosterState> {
     return false;
   }
 
+  Future<List<RosterPlayer>> fetchSchoolPlayers([String query = '']) async {
+    try {
+      final qParam = query.trim().isNotEmpty ? '?q=${Uri.encodeComponent(query.trim())}' : '';
+      final response = await _apiClient.getAndCache('/api/school/players$qParam');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final List list = response.data['data'] ?? [];
+        return list.map((x) => RosterPlayer.fromJson(x)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<bool> addPlayerToSquad(String playerId, String squadId, String currentAgeGroup) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/squads/$squadId/players/add',
+        data: {'playerId': playerId},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchRoster(currentAgeGroup);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  Future<bool> removePlayerFromSquad(String playerId, String squadId, String currentAgeGroup) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/squads/$squadId/players/remove',
+        data: {'playerId': playerId},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchRoster(currentAgeGroup);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<bool> updatePlayerPosition(RosterPlayer player, String newPosition) async {
     final cleanPosition = newPosition.trim();
     if (cleanPosition.isEmpty) return false;

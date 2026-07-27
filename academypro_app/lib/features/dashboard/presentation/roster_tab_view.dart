@@ -10,6 +10,7 @@ import 'create_squad_modal.dart';
 import 'add_player_modal.dart';
 import 'single_player_baseline_modal.dart';
 import 'manage_player_squads_modal.dart';
+import 'add_existing_player_modal.dart';
 
 class RosterTabView extends ConsumerStatefulWidget {
   const RosterTabView({Key? key}) : super(key: key);
@@ -231,6 +232,34 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                   ),
                 ),
               ),
+              const SizedBox(width: 8.0),
+              InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  AddExistingPlayerModal.show(context, activeAgeGroup: selectedAgeGroup);
+                },
+                borderRadius: BorderRadius.circular(12.0),
+                child: Container(
+                  height: 46.0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person_add_alt_1, size: 16.0, color: Color(0xFF2563EB)),
+                      SizedBox(width: 4.0),
+                      Text(
+                        '+ Add Existing Player',
+                        style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20.0),
@@ -395,6 +424,79 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                             fontSize: 11.0,
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xFF475569), // slate-600
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6.0),
+                                      InkWell(
+                                        onTap: () async {
+                                          final squads = ref.read(squadsProvider);
+                                          final activeSquad = squads.firstWhere(
+                                            (s) => s.ageGroup == selectedAgeGroup,
+                                            orElse: () => squads.isNotEmpty ? squads.first : Squad(id: 'default', schoolId: 'OVK', coachId: '', name: 'Active Squad', ageGroup: selectedAgeGroup, code: selectedAgeGroup),
+                                          );
+
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+                                              title: const Text('Remove Player from Squad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.0)),
+                                              content: Text(
+                                                'Are you sure you want to remove ${player.firstName} ${player.lastName} from ${activeSquad.name}?\n\nNote: This unassigns the athlete from this squad while keeping their profile intact in the school database.',
+                                                style: const TextStyle(fontSize: 13.5, color: Color(0xFF475569)),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(ctx, false),
+                                                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () => Navigator.pop(ctx, true),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: const Color(0xFFDC2626),
+                                                    foregroundColor: Colors.white,
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                                  ),
+                                                  child: const Text('Remove', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          if (confirmed == true && context.mounted) {
+                                            final ok = await ref.read(rosterProvider.notifier).removePlayerFromSquad(player.id, activeSquad.id, selectedAgeGroup);
+                                            if (context.mounted) {
+                                              Navigator.pop(context);
+                                              if (ok) {
+                                                AppToast.showSuccess(context, title: '${player.firstName} removed from ${activeSquad.name}');
+                                              } else {
+                                                AppToast.showError(context, title: 'Failed to remove player from squad');
+                                              }
+                                            }
+                                          }
+                                        },
+                                        borderRadius: BorderRadius.circular(20.0),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFEF2F2),
+                                            borderRadius: BorderRadius.circular(20.0),
+                                            border: Border.all(color: const Color(0xFFFECACA)),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.person_remove_outlined, size: 12.0, color: Color(0xFFDC2626)),
+                                              SizedBox(width: 4.0),
+                                              Text(
+                                                'Remove from Squad',
+                                                style: TextStyle(
+                                                  fontSize: 10.0,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFFDC2626),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),

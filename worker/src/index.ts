@@ -2217,6 +2217,127 @@ app.get('/api/admin/all-players', async (c) => {
   }
 });
 
+// Route: Get school players for search & squad assignment
+app.get('/api/school/players', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || c.req.query('school_id') || 'OVK';
+  const searchQuery = (c.req.query('q') || c.req.query('query') || '').trim();
+  const db = getDB(c);
+
+  await ensureSquadsTables(db);
+
+  try {
+    let sql = 'SELECT id, first_name, last_name, age_group, team, position, status FROM players WHERE school_id = ?';
+    let params: any[] = [schoolId];
+
+    if (searchQuery) {
+      sql += ' AND (first_name LIKE ? OR last_name LIKE ? OR (first_name || " " || last_name) LIKE ?)';
+      const term = `%${searchQuery}%`;
+      params.push(term, term, term);
+    }
+
+    sql += ' ORDER BY last_name ASC, first_name ASC LIMIT 100';
+
+    const { results } = await db.prepare(sql).bind(...params).all();
+    const players = results || [];
+
+    if (players.length > 0) {
+      const pIds = players.map((p: any) => p.id);
+      const placeholders = pIds.map(() => '?').join(',');
+      const { results: sqRes } = await db.prepare(`
+        SELECT sp.player_id, s.id as squad_id, s.name as squad_name, s.code as squad_code
+        FROM squad_players sp
+        JOIN squads s ON s.id = sp.squad_id
+        WHERE sp.player_id IN (${placeholders})
+      `).bind(...pIds).all();
+
+      const sqMap: Record<string, any[]> = {};
+      for (const row of (sqRes || [])) {
+        if (!sqMap[row.player_id]) sqMap[row.player_id] = [];
+        sqMap[row.player_id].push({
+          id: row.squad_id,
+          name: row.squad_name,
+          code: row.squad_code
+        });
+      }
+
+      for (const p of players) {
+        p.assignedSquads = sqMap[p.id] || [];
+      }
+    }
+
+    return c.json({
+      success: true,
+      data: players.map((p: any) => ({
+        id: p.id,
+        firstName: p.first_name,
+        lastName: p.last_name,
+        ageGroup: p.age_group,
+        team: p.team,
+        position: p.position || 'Athlete',
+        status: p.status || 'Active',
+        assignedSquads: p.assignedSquads || []
+      }))
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to search school players', error: err.message }, 500);
+  }
+});
+
+// Route: Add player to squad
+app.post('/api/squads/:squadId/players/add', async (c) => {
+  const squadId = c.req.param('squadId');
+  const body = await c.req.json();
+  const playerId = body.playerId;
+  const db = getDB(c);
+
+  if (!playerId) {
+    return c.json({ success: false, message: 'playerId is required' }, 400);
+  }
+
+  await ensureSquadsTables(db);
+
+  try {
+    await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squadId, playerId).run();
+    console.log(`[Observer Log] Added player '${playerId}' to squad '${squadId}'`);
+
+    return c.json({
+      success: true,
+      message: 'Player added to squad successfully',
+      data: { squadId, playerId }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to add player to squad', error: err.message }, 500);
+  }
+});
+
+// Route: Remove player from squad
+app.post('/api/squads/:squadId/players/remove', async (c) => {
+  const squadId = c.req.param('squadId');
+  const body = await c.req.json();
+  const playerId = body.playerId;
+  const db = getDB(c);
+
+  if (!playerId) {
+    return c.json({ success: false, message: 'playerId is required' }, 400);
+  }
+
+  await ensureSquadsTables(db);
+
+  try {
+    await db.prepare('DELETE FROM squad_players WHERE squad_id = ? AND player_id = ?').bind(squadId, playerId).run();
+    console.log(`[Observer Log] Removed player '${playerId}' from squad '${squadId}'`);
+
+    return c.json({
+      success: true,
+      message: 'Player removed from squad successfully',
+      data: { squadId, playerId }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to remove player from squad', error: err.message }, 500);
+  }
+});
+
 // Route: Image Upload (R2 / Base64 Storage)
 app.post('/api/upload', async (c) => {
   try {
