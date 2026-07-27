@@ -798,8 +798,8 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
             fontSize: 15.0,
           ),
           decoration: InputDecoration(
-            fillColor: readOnly ? const Color(0xFFF1F5F9) : null,
-            filled: readOnly,
+            fillColor: readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
+            filled: true,
             suffixIcon: readOnly ? const Icon(Icons.lock_outlined, color: Color(0xFF94A3B8), size: 18.0) : null,
             prefixIcon: keyboardType == TextInputType.phone
                 ? Padding(
@@ -819,8 +819,6 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                     ),
                   )
                 : Icon(icon, color: const Color(0xFF2563EB), size: 20.0),
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14.0),
