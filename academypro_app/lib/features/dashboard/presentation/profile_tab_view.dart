@@ -1338,12 +1338,20 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 20.0),
+        actionsGap: 12.0,
         title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to sign out of your AcademyPro coach account?'),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF737688))),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              foregroundColor: const Color(0xFF475569),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+            ),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1361,7 +1369,8 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
               backgroundColor: const Color(0xFFBA1A1A),
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+              padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
             ),
             child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
           ),

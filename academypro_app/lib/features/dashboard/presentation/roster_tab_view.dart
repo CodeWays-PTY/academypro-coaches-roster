@@ -441,22 +441,32 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                             context: context,
                                             builder: (ctx) => AlertDialog(
                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+                                              actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 20.0),
+                                              actionsGap: 12.0,
                                               title: const Text('Remove Player from Squad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.0)),
                                               content: Text(
                                                 'Are you sure you want to remove ${player.firstName} ${player.lastName} from ${activeSquad.name}?\n\nNote: This unassigns the athlete from this squad while keeping their profile intact in the school database.',
                                                 style: const TextStyle(fontSize: 13.5, color: Color(0xFF475569)),
                                               ),
                                               actions: [
-                                                TextButton(
+                                                OutlinedButton(
                                                   onPressed: () => Navigator.pop(ctx, false),
-                                                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                                                  style: OutlinedButton.styleFrom(
+                                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                                    foregroundColor: const Color(0xFF475569),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                                                  ),
+                                                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
                                                 ),
                                                 ElevatedButton(
                                                   onPressed: () => Navigator.pop(ctx, true),
                                                   style: ElevatedButton.styleFrom(
                                                     backgroundColor: const Color(0xFFDC2626),
                                                     foregroundColor: Colors.white,
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                                    elevation: 0,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
                                                   ),
                                                   child: const Text('Remove', style: TextStyle(fontWeight: FontWeight.bold)),
                                                 ),
@@ -467,7 +477,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                           if (confirmed == true && context.mounted) {
                                             final ok = await ref.read(rosterProvider.notifier).removePlayerFromSquad(player.id, activeSquad.id, selectedAgeGroup);
                                             if (context.mounted) {
-                                              Navigator.pop(context);
                                               if (ok) {
                                                 AppToast.showSuccess(context, title: '${player.firstName} removed from ${activeSquad.name}');
                                               } else {
@@ -592,6 +601,8 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
           builder: (context, setState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+              actionsPadding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 20.0),
+              actionsGap: 12.0,
               title: const Text(
                 'Edit Position',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -627,9 +638,15 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                 ],
               ),
               actions: [
-                TextButton(
+                OutlinedButton(
                   onPressed: saving ? null : () => Navigator.pop(context),
-                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    foregroundColor: const Color(0xFF475569),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                  ),
+                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
                 ElevatedButton(
                   onPressed: saving

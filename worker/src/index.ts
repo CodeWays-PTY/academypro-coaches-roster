@@ -2326,6 +2326,29 @@ app.post('/api/squads/:squadId/players/remove', async (c) => {
 
   try {
     await db.prepare('DELETE FROM squad_players WHERE squad_id = ? AND player_id = ?').bind(squadId, playerId).run();
+
+    // Look up squad info to also clear age_group / team on players table if they matched
+    let squad: any = null;
+    try {
+      squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
+    } catch (_) {}
+
+    if (squad) {
+      await db.prepare(`
+        UPDATE players
+        SET age_group = CASE WHEN age_group = ? OR age_group = ? OR age_group = ? THEN 'Unassigned' ELSE age_group END,
+            team = CASE WHEN team = ? OR team = ? OR team = ? THEN NULL ELSE team END
+        WHERE id = ?
+      `).bind(squad.id, squad.code, squad.name, squad.id, squad.code, squad.name, playerId).run();
+    } else {
+      await db.prepare(`
+        UPDATE players
+        SET age_group = CASE WHEN age_group = ? THEN 'Unassigned' ELSE age_group END,
+            team = CASE WHEN team = ? THEN NULL ELSE team END
+        WHERE id = ?
+      `).bind(squadId, squadId, playerId).run();
+    }
+
     console.log(`[Observer Log] Removed player '${playerId}' from squad '${squadId}'`);
 
     return c.json({
