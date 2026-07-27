@@ -346,21 +346,23 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8.0),
-                    const Text(
-                      '98TH PERCENTILE',
-                      style: TextStyle(
-                        color: Color(0xFF434656),
-                        fontSize: 11.0,
-                        fontWeight: FontWeight.bold,
+                    if (readinessScore > 0) ...[
+                      const SizedBox(width: 8.0),
+                      Text(
+                        '${readinessScore.toStringAsFixed(0)}TH PERCENTILE',
+                        style: const TextStyle(
+                          color: Color(0xFF434656),
+                          fontSize: 11.0,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 16.0),
-                const Text(
-                  'Green Zone',
-                  style: TextStyle(
+                Text(
+                  readinessScore > 0 ? 'Active Evaluation' : 'Pending Evaluation',
+                  style: const TextStyle(
                     fontSize: 28.0,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF131B2E),
@@ -368,7 +370,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 const SizedBox(height: 8.0),
                 Text(
-                  '$studentName is currently tracking at University Ready in the $ageGroup $team squad as a $position. Maintain this velocity to unlock Elite status.',
+                  readinessScore > 0
+                      ? '$studentName is currently tracking in the $ageGroup $team squad as a $position.'
+                      : '$studentName is registered as a $position in the $ageGroup $team squad. Log baseline test scores to unlock performance insights.',
                   style: TextStyle(
                     fontSize: 15.0,
                     color: const Color(0xFF434656).withOpacity(0.9),
@@ -424,7 +428,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          data.academics.isNotEmpty
+                          readinessScore > 0
                               ? '${readinessScore.toStringAsFixed(0)}%'
                               : '--',
                           style: const TextStyle(

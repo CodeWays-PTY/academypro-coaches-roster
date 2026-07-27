@@ -408,9 +408,17 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                 const SizedBox(height: 24.0),
                 Row(
                   children: [
-                    _buildGlassSubPanel('Squad Rank', '#4 / 24', const Color(0xFF4ADE80)),
+                    _buildGlassSubPanel(
+                      'Squad Rank',
+                      powerIndex > 0 ? '#$powerIndex' : '--',
+                      powerIndex > 0 ? const Color(0xFF4ADE80) : Colors.white,
+                    ),
                     const SizedBox(width: 16.0),
-                    _buildGlassSubPanel('Consistency', '94%', Colors.white),
+                    _buildGlassSubPanel(
+                      'Consistency',
+                      data.attendance.isNotEmpty ? '${data.attendance.length}%' : '--',
+                      Colors.white,
+                    ),
                   ],
                 )
               ],
