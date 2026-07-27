@@ -278,6 +278,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ],
                             maxLength: 6,
                             textAlign: TextAlign.center,
+                            onChanged: (val) {
+                              if (val.trim().length == 6 && !isAuthenticating) {
+                                FocusScope.of(context).unfocus();
+                                _handleVerifyOtp();
+                              }
+                            },
                             style: const TextStyle(
                               fontSize: 24.0,
                               fontWeight: FontWeight.bold,

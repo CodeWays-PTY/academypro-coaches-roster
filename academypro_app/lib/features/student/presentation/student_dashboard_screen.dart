@@ -64,37 +64,43 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         titleSpacing: 16.0,
         title: Row(
           children: [
-            Container(
-              width: 36.0,
-              height: 36.0,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18.0),
-                child: Image.network(
-                  'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=150',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return CircleAvatar(
-                      backgroundColor: const Color(0xFF2563EB),
-                      child: Text(
-                        studentName.isNotEmpty ? studentName[0] : 'S',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                    );
-                  },
+            GestureDetector(
+              onTap: () => setState(() => _activeTab = 4),
+              child: Container(
+                width: 36.0,
+                height: 36.0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18.0),
+                  child: Image.network(
+                    'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=150',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return CircleAvatar(
+                        backgroundColor: const Color(0xFF2563EB),
+                        child: Text(
+                          studentName.isNotEmpty ? studentName[0] : 'S',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 10.0),
-            const Text(
-              'AcademyPro',
-              style: TextStyle(
-                color: Color(0xFF2563EB),
-                fontWeight: FontWeight.bold,
-                fontSize: 20.0,
+            GestureDetector(
+              onTap: () => setState(() => _activeTab = 4),
+              child: const Text(
+                'AcademyPro',
+                style: TextStyle(
+                  color: Color(0xFF2563EB),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20.0,
+                ),
               ),
             ),
           ],
@@ -386,7 +392,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          latestGrade >= 65 ? 'A+' : (latestGrade >= 60 ? 'A' : 'B'),
+                          (data.academics != null && data.academics.isNotEmpty)
+                              ? (latestGrade >= 65 ? 'A+' : (latestGrade >= 60 ? 'A' : 'B'))
+                              : '--',
                           style: const TextStyle(
                             fontSize: 36.0,
                             fontWeight: FontWeight.w900,
@@ -416,7 +424,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          latestGrade >= 60 ? '94%' : '88%',
+                          (data.academics != null && data.academics.isNotEmpty)
+                              ? '${readinessScore.toStringAsFixed(0)}%'
+                              : '--',
                           style: const TextStyle(
                             fontSize: 28.0,
                             fontWeight: FontWeight.bold,

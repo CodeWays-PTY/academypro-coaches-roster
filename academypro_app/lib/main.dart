@@ -8,9 +8,22 @@ import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/student/presentation/student_dashboard_screen.dart';
 import 'features/parent/presentation/parent_dashboard_screen.dart';
 
+import 'package:flutter/services.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Enforce solid white system navigation bar for phone 3-button / gesture bars
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+
   // Initialize Hive storage helper
   await LocalStorage.init();
 

@@ -16,11 +16,14 @@ class CreateEventModal extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context, {CoachEvent? eventToEdit}) async {
     await showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      barrierColor: Colors.black.withOpacity(0.5),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.35),
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => CreateEventModal(eventToEdit: eventToEdit),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+        child: CreateEventModal(eventToEdit: eventToEdit),
+      ),
     );
   }
 
