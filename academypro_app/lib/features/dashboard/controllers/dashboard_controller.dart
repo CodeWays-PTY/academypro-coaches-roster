@@ -479,6 +479,10 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
       }
     } catch (_) {}
 
+    if (state.isEmpty) {
+      final cachedRaw = LocalStorage.getCachedData('/api/squads');
+      if (cachedRaw is List && cachedRaw.isNotEmpty) {
+        state = cachedRaw.map((x) => SquadItem.fromJson(Map<String, dynamic>.from(x))).toList();
       } else {
         state = [];
       }

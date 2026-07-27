@@ -473,9 +473,6 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
     );
   }
 
-import 'dart:ui';
-import 'dart:io';
-
   void _showEventDetailsBottomSheet(BuildContext context, CoachEvent event) {
     showModalBottomSheet(
       context: context,
@@ -604,7 +601,9 @@ import 'dart:io';
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildWorkoutPreviewWidget(String path) {

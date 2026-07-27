@@ -750,7 +750,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                               backgroundColor: Colors.transparent,
                                               builder: (context) => ManagePlayerSquadsModal(
                                                 player: player,
-                                                currentAgeGroup: selectedAgeGroup,
+                                                currentAgeGroup: player.ageGroup,
                                               ),
                                             );
                                             if (updated == true) {

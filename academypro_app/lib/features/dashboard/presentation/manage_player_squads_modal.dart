@@ -54,17 +54,17 @@ class _ManagePlayerSquadsModalState extends ConsumerState<ManagePlayerSquadsModa
         _isSaving = false;
       });
       if (success) {
-        AppToast.showSuccess(context, 'Squad assignments updated for ${widget.player.firstName}');
+        AppToast.showSuccess(context, title: 'Squad assignments updated for ${widget.player.firstName}');
         Navigator.pop(context, true);
       } else {
-        AppToast.showError(context, 'Failed to update squad assignments');
+        AppToast.showError(context, title: 'Failed to update squad assignments');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final availableSquads = ref.watch(coachSquadsProvider);
+    final availableSquads = ref.watch(squadsProvider);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final paddingBottom = MediaQuery.of(context).padding.bottom;
 
@@ -81,7 +81,7 @@ class _ManagePlayerSquadsModalState extends ConsumerState<ManagePlayerSquadsModa
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Container(
@@ -111,7 +111,7 @@ class _ManagePlayerSquadsModalState extends ConsumerState<ManagePlayerSquadsModa
               const SizedBox(width: 12.0),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Manage Squads',
@@ -174,7 +174,7 @@ class _ManagePlayerSquadsModalState extends ConsumerState<ManagePlayerSquadsModa
                 separatorBuilder: (context, index) => const SizedBox(height: 8.0),
                 itemBuilder: (context, index) {
                   final squad = availableSquads[index];
-                  final isChecked = _selectedSquadIds.contains(squad['id']);
+                  final isChecked = _selectedSquadIds.contains(squad.id);
                   return Container(
                     decoration: BoxDecoration(
                       color: isChecked ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
@@ -186,10 +186,10 @@ class _ManagePlayerSquadsModalState extends ConsumerState<ManagePlayerSquadsModa
                     ),
                     child: CheckboxListTile(
                       value: isChecked,
-                      onChanged: (val) => _onToggleSquad(squad['id'], val),
+                      onChanged: (val) => _onToggleSquad(squad.id, val),
                       activeColor: const Color(0xFF2563EB),
                       title: Text(
-                        squad['name'] ?? 'Squad',
+                        squad.name,
                         style: TextStyle(
                           fontSize: 14.0,
                           fontWeight: FontWeight.w600,
@@ -197,7 +197,7 @@ class _ManagePlayerSquadsModalState extends ConsumerState<ManagePlayerSquadsModa
                         ),
                       ),
                       subtitle: Text(
-                        'Code: ${squad['code'] ?? 'N/A'}',
+                        'Age Group: ${squad.ageGroup}',
                         style: const TextStyle(
                           fontSize: 12.0,
                           color: Color(0xFF64748B),
