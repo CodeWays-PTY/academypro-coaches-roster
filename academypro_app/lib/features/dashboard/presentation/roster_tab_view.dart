@@ -134,7 +134,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     final squads = ref.watch(squadsProvider);
                     final activeValue = squads.any((s) => s.ageGroup == selectedAgeGroup)
                         ? selectedAgeGroup
-                        : (squads.isNotEmpty ? squads.first.ageGroup : 'U15');
+                        : (squads.isNotEmpty ? squads.first.ageGroup : 'None');
 
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
@@ -159,6 +159,11 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13.0),
                           items: [
+                            if (squads.isEmpty)
+                              const DropdownMenuItem(
+                                value: 'None',
+                                child: Text('No Squad Created', overflow: TextOverflow.ellipsis),
+                              ),
                             ...squads.map((sq) => DropdownMenuItem(
                                   value: sq.ageGroup,
                                   child: Text(sq.name, overflow: TextOverflow.ellipsis),

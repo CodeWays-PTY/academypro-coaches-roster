@@ -6,6 +6,7 @@ import { jwt, sign, verify } from 'hono/jwt';
 export interface Env {
   DB: any; // D1Database
   KV: any; // KVNamespace
+  R2?: any; // R2Bucket binding
   EMAIL?: any; // Cloudflare Email Sending binding
   INTERNAL_API_KEY?: string;
   JWT_SECRET?: string;
@@ -478,17 +479,20 @@ app.post('/api/auth/send-email-change-otp', async (c) => {
     ON CONFLICT(email) DO UPDATE SET otp = excluded.otp, expires_at = excluded.expires_at
   `).bind(cleanNewEmail, otp, expiresAt).run();
 
-  await sendTransactionalEmail(
-    cleanNewEmail,
-    'Verify Your New AcademyPro Email Address',
-    `<div style="font-family: Arial, sans-serif; padding: 20px; color: #1E293B;">
+  await sendTransactionalEmail(c, {
+    to: cleanNewEmail,
+    fromName: 'AcademyPro Support',
+    fromEmail: 'noreply@web.codeways.co',
+    subject: 'Verify Your New AcademyPro Email Address',
+    htmlContent: `<div style="font-family: Arial, sans-serif; padding: 20px; color: #1E293B;">
       <h2 style="color: #003EC7;">Email Change Verification</h2>
       <p>You requested to update your primary email address on AcademyPro.</p>
       <p>Use the 6-digit verification code below to confirm this change:</p>
       <div style="font-size: 28px; font-weight: bold; color: #003EC7; letter-spacing: 4px; padding: 12px 0;">${otp}</div>
       <p style="font-size: 12px; color: #64748B;">This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
-    </div>`
-  );
+    </div>`,
+    textContent: `Your verification code is ${otp}`
+  });
 
   return c.json({
     success: true,
@@ -561,12 +565,198 @@ app.use('/api/rosters/*', enforceJwtAuth);
 app.use('/api/dashboard/*', enforceJwtAuth);
 app.use('/api/match-stats/*', enforceJwtAuth);
 app.use('/api/match-stats', enforceJwtAuth);
+app.use('/api/squads/*', enforceJwtAuth);
+app.use('/api/squads', enforceJwtAuth);
 
-// Route: Get Team Roster
+// Helper to ensure squads & squad_players D1 tables exist
+async function ensureSquadsTables(db: any) {
+  if (!db) return;
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS squads (
+        id TEXT PRIMARY KEY,
+        school_id TEXT NOT NULL,
+        coach_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS squad_players (
+        squad_id TEXT NOT NULL,
+        player_id TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (squad_id, player_id)
+      )
+    `).run();
+  } catch (err) {
+    console.warn('Failed ensuring squads tables:', err);
+  }
+}
+
+// Helper to get player IDs and squad codes owned by a coach
+async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string, role?: string, ageGroupFilter?: string): Promise<{ squadIds: string[]; playerIds: string[]; squadCodes: string[] }> {
+  await ensureSquadsTables(db);
+
+  if (role === 'SuperAdmin' || role === 'SchoolAdmin') {
+    let pQuery = 'SELECT id FROM players WHERE school_id = ?';
+    let pParams: any[] = [schoolId];
+    if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
+      pQuery = 'SELECT id FROM players WHERE school_id = ? AND (age_group = ? OR team = ?)';
+      pParams.push(ageGroupFilter, ageGroupFilter);
+    }
+    const { results } = await db.prepare(pQuery).bind(...pParams).all();
+    const playerIds = (results || []).map((r: any) => r.id);
+    return { squadIds: [], playerIds, squadCodes: ageGroupFilter ? [ageGroupFilter] : [] };
+  }
+
+  let sQuery = 'SELECT id, code, name FROM squads WHERE coach_id = ? AND school_id = ?';
+  let sParams: any[] = [coachId, schoolId];
+
+  if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
+    sQuery = 'SELECT id, code, name FROM squads WHERE coach_id = ? AND school_id = ? AND (code = ? OR name = ? OR id = ?)';
+    sParams.push(coachId, schoolId, ageGroupFilter, ageGroupFilter, ageGroupFilter);
+  }
+
+  let squadRows: any[] = [];
+  try {
+    const { results } = await db.prepare(sQuery).bind(...sParams).all();
+    squadRows = results || [];
+  } catch (_) {}
+
+  if (squadRows.length === 0) {
+    return { squadIds: [], playerIds: [], squadCodes: [] };
+  }
+
+  const squadIds = squadRows.map((s: any) => s.id);
+  const squadCodes = squadRows.map((s: any) => s.code);
+  const squadNames = squadRows.map((s: any) => s.name);
+
+  const squadPlaceholders = squadIds.map(() => '?').join(',');
+  const codePlaceholders = squadCodes.map(() => '?').join(',');
+  const namePlaceholders = squadNames.map(() => '?').join(',');
+
+  const spQuery = `
+    SELECT player_id FROM squad_players WHERE squad_id IN (${squadPlaceholders})
+    UNION
+    SELECT id as player_id FROM players WHERE school_id = ? AND (age_group IN (${codePlaceholders}) OR team IN (${namePlaceholders}))
+  `;
+  const bindParams = [...squadIds, schoolId, ...squadCodes, ...squadNames];
+  let pRows: any[] = [];
+  try {
+    const { results } = await db.prepare(spQuery).bind(...bindParams).all();
+    pRows = results || [];
+  } catch (_) {}
+
+  const playerIds = pRows.map((r: any) => r.player_id);
+
+  return { squadIds, playerIds, squadCodes };
+}
+
+// Route: Get Coach Squads
+app.get('/api/squads', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const coachId = jwtPayload?.sub;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const role = jwtPayload?.role || 'Coach';
+  const db = getDB(c);
+
+  await ensureSquadsTables(db);
+
+  let query = 'SELECT * FROM squads WHERE coach_id = ? AND school_id = ? ORDER BY name ASC';
+  let params: any[] = [coachId, schoolId];
+  if (role === 'SuperAdmin' || role === 'SchoolAdmin') {
+    query = 'SELECT * FROM squads WHERE school_id = ? ORDER BY name ASC';
+    params = [schoolId];
+  }
+
+  let results: any[] = [];
+  try {
+    const res = await db.prepare(query).bind(...params).all();
+    results = res.results || [];
+  } catch (_) {}
+
+  const squads = results.map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    ageGroup: s.code,
+    code: s.code,
+    description: s.description || '',
+    createdAt: s.created_at
+  }));
+
+  return c.json({
+    success: true,
+    data: squads
+  });
+});
+
+// Route: Create Coach Squad
+app.post('/api/squads', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const coachId = jwtPayload?.sub;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const db = getDB(c);
+
+  if (!coachId) {
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
+
+  const body = await c.req.json();
+  const { id, name, ageGroup, code, description } = body;
+  const squadName = name || 'New Squad';
+  const squadCode = (code || ageGroup || 'U15').trim().toUpperCase();
+  const squadId = id || `sq-${Date.now()}`;
+
+  await ensureSquadsTables(db);
+
+  try {
+    await db.prepare(`
+      INSERT INTO squads (id, school_id, coach_id, name, code, description)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(squadId, schoolId, coachId, squadName, squadCode, description || '').run();
+
+    try {
+      const { results: matchingPlayers } = await db.prepare(
+        'SELECT id FROM players WHERE school_id = ? AND (age_group = ? OR team = ?)'
+      ).bind(schoolId, squadCode, squadName).all();
+
+      if (matchingPlayers && matchingPlayers.length > 0) {
+        for (const p of matchingPlayers) {
+          await db.prepare(
+            'INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)'
+          ).bind(squadId, p.id).run();
+        }
+      }
+    } catch (_) {}
+
+    console.log(`[Observer Log] Coach '${coachId}' created squad '${squadName}' (${squadCode}) [ID: ${squadId}]`);
+
+    return c.json({
+      success: true,
+      message: 'Squad created successfully',
+      data: {
+        id: squadId,
+        name: squadName,
+        ageGroup: squadCode,
+        code: squadCode,
+        description: description || ''
+      }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to create squad', error: err.message }, 500);
+  }
+});
+
+// Route: Get Team Roster (Restricted to Coach's Owned Squads)
 app.get('/api/rosters/:age_group', async (c) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
+  const coachId = jwtPayload?.sub;
+  const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
 
   if (!ageGroup || ageGroup === 'None' || ageGroup === 'Unassigned' || ageGroup === 'No Squad') {
@@ -579,8 +769,21 @@ app.get('/api/rosters/:age_group', async (c) => {
     });
   }
 
-  const query = 'SELECT * FROM players WHERE school_id = ? AND (age_group = ? OR team = ?) ORDER BY first_name ASC';
-  const { results } = await db.prepare(query).bind(schoolId, ageGroup, ageGroup).all();
+  const { playerIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
+
+  if (playerIds.length === 0) {
+    return c.json({
+      success: true,
+      data: {
+        ageGroup,
+        players: []
+      }
+    });
+  }
+
+  const placeholders = playerIds.map(() => '?').join(',');
+  const query = `SELECT * FROM players WHERE id IN (${placeholders}) ORDER BY first_name ASC`;
+  const { results } = await db.prepare(query).bind(...playerIds).all();
 
   return c.json({
     success: true,
@@ -601,55 +804,58 @@ app.get('/api/rosters/:age_group', async (c) => {
   });
 });
 
-// Route: Get Coach Dashboard Summary KPIs
+// Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
+  const coachId = jwtPayload?.sub;
+  const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
-  let totalPlayersQuery = 'SELECT COUNT(*) as count FROM players WHERE school_id = ?';
-  let totalParams: any[] = [schoolId];
-  if (ageGroup) {
-    totalPlayersQuery = 'SELECT COUNT(*) as count FROM players WHERE school_id = ? AND age_group = ?';
-    totalParams.push(ageGroup);
-  }
-  const totalRes = await db.prepare(totalPlayersQuery).bind(...totalParams).first();
-  const totalPlayers = totalRes ? totalRes.count : 0;
+  const { playerIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
 
-  let avgPerformanceQuery = 'SELECT AVG(auto_score) as avg FROM match_stats ms JOIN players p ON ms.player_id = p.id WHERE p.school_id = ?';
-  let avgParams: any[] = [schoolId];
-  if (ageGroup) {
-    avgPerformanceQuery = 'SELECT AVG(auto_score) as avg FROM match_stats ms JOIN players p ON ms.player_id = p.id WHERE p.school_id = ? AND p.age_group = ?';
-    avgParams.push(ageGroup);
+  if (playerIds.length === 0) {
+    return c.json({
+      success: true,
+      data: {
+        attendancePercent: 0,
+        teamPerformanceAvg: 0.0,
+        kpis: {
+          totalPlayers: 0,
+          uniReady: 0,
+          onTrack: 0,
+          atRisk: 0,
+          danger: 0,
+          flagged: 0
+        }
+      }
+    });
   }
-  const avgRes = await db.prepare(avgPerformanceQuery).bind(...avgParams).first();
+
+  const totalPlayers = playerIds.length;
+  const placeholders = playerIds.map(() => '?').join(',');
+
+  const avgPerformanceQuery = `SELECT AVG(auto_score) as avg FROM match_stats WHERE player_id IN (${placeholders})`;
+  const avgRes = await db.prepare(avgPerformanceQuery).bind(...playerIds).first();
   const avgScore = avgRes && avgRes.avg ? Math.round(avgRes.avg * 10) / 10 : 0.0;
 
-  let academicQuery = `
+  const academicQuery = `
     SELECT player_id, AVG(grade_percentage) as avg_grade
-    FROM academic_logs al
-    JOIN players p ON al.player_id = p.id
-    WHERE p.school_id = ?
+    FROM academic_logs
+    WHERE player_id IN (${placeholders})
     GROUP BY player_id
   `;
-  let acadParams: any[] = [schoolId];
-  if (ageGroup) {
-    academicQuery = `
-      SELECT player_id, AVG(grade_percentage) as avg_grade
-      FROM academic_logs al
-      JOIN players p ON al.player_id = p.id
-      WHERE p.school_id = ? AND p.age_group = ?
-      GROUP BY player_id
-    `;
-    acadParams.push(ageGroup);
-  }
-  const { results: acads } = await db.prepare(academicQuery).bind(...acadParams).all();
-  
-  let uniReadyCount = 0; // Green
-  let onTrackCount = 0;   // Amber
-  let atRiskCount = 0;    // Orange
-  let dangerCount = 0;    // Red
+  let acads: any[] = [];
+  try {
+    const res = await db.prepare(academicQuery).bind(...playerIds).all();
+    acads = res.results || [];
+  } catch (_) {}
+
+  let uniReadyCount = 0;
+  let onTrackCount = 0;
+  let atRiskCount = 0;
+  let dangerCount = 0;
 
   acads.forEach((row: any) => {
     const score = row.avg_grade;
@@ -659,23 +865,12 @@ app.get('/api/dashboard/summary', async (c) => {
     else dangerCount++;
   });
 
-  let attendanceQuery = `
-    SELECT COUNT(*) as total, SUM(CASE WHEN att.status = 'Present' THEN 1 ELSE 0 END) as present
-    FROM attendance att
-    JOIN players p ON att.player_id = p.id
-    WHERE p.school_id = ?
+  const attendanceQuery = `
+    SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) as present
+    FROM attendance
+    WHERE player_id IN (${placeholders})
   `;
-  let attParams: any[] = [schoolId];
-  if (ageGroup) {
-    attendanceQuery = `
-      SELECT COUNT(*) as total, SUM(CASE WHEN att.status = 'Present' THEN 1 ELSE 0 END) as present
-      FROM attendance att
-      JOIN players p ON att.player_id = p.id
-      WHERE p.school_id = ? AND p.age_group = ?
-    `;
-    attParams.push(ageGroup);
-  }
-  const attRes = await db.prepare(attendanceQuery).bind(...attParams).first();
+  const attRes = await db.prepare(attendanceQuery).bind(...playerIds).first();
   const attendancePercent = attRes && attRes.total > 0 ? Math.round((attRes.present / attRes.total) * 100) : 0;
 
   return c.json({
@@ -695,14 +890,26 @@ app.get('/api/dashboard/summary', async (c) => {
   });
 });
 
-// Route: Get Flagged Players (Requires Coach Attention)
+// Route: Get Flagged Players (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
+  const coachId = jwtPayload?.sub;
+  const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
-  let query = `
+  const { playerIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
+
+  if (playerIds.length === 0) {
+    return c.json({
+      success: true,
+      data: []
+    });
+  }
+
+  const placeholders = playerIds.map(() => '?').join(',');
+  const query = `
     SELECT 
       p.id, 
       p.first_name, 
@@ -713,29 +920,12 @@ app.get('/api/dashboard/flags', async (c) => {
       (SELECT AVG(al.grade_percentage) FROM academic_logs al WHERE al.player_id = p.id) as avg_grade,
       (SELECT ms.auto_score FROM match_stats ms WHERE ms.player_id = p.id ORDER BY ms.match_date DESC LIMIT 1) as auto_score
     FROM players p
-    WHERE p.school_id = ?
+    WHERE p.id IN (${placeholders})
   `;
-  let params: any[] = [schoolId];
-  if (ageGroup) {
-    query = `
-      SELECT 
-        p.id, 
-        p.first_name, 
-        p.last_name, 
-        p.age_group, 
-        p.position, 
-        p.team,
-        (SELECT AVG(al.grade_percentage) FROM academic_logs al WHERE al.player_id = p.id) as avg_grade,
-        (SELECT ms.auto_score FROM match_stats ms WHERE ms.player_id = p.id ORDER BY ms.match_date DESC LIMIT 1) as auto_score
-      FROM players p
-      WHERE p.school_id = ? AND p.age_group = ?
-    `;
-    params.push(ageGroup);
-  }
 
   let rows: any[] = [];
   try {
-    const res = await db.prepare(query).bind(...params).all();
+    const res = await db.prepare(query).bind(...playerIds).all();
     rows = res.results || [];
   } catch (err: any) {
     return c.json({ success: false, message: 'Database query failed', error: err.message }, 500);
@@ -798,7 +988,6 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
       if (!isNaN(eventDateMs) && (nowMs - eventDateMs) > sevenDaysMs) {
         const imagePath = r.workout_image_path;
 
-        // 1. Delete object from Cloudflare R2 bucket if binding exists
         if (r2 && typeof r2.delete === 'function') {
           const key = imagePath.includes('/') ? imagePath.split('/').pop() : imagePath;
           if (key) {
@@ -807,7 +996,6 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
           }
         }
 
-        // 2. Clear workout_image_path reference in D1 database
         await db.prepare('UPDATE events SET workout_image_path = NULL WHERE id = ?')
           .bind(r.id)
           .run();
@@ -820,15 +1008,19 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
   }
 }
 
-// Route: Get Coach Command Events
+// Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
+  const coachId = jwtPayload?.sub;
+  const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const team = c.req.query('team');
   const db = getDB(c);
 
-  if (!ageGroup || ageGroup === 'None' || ageGroup === 'Unassigned' || ageGroup === 'No Squad') {
+  const { squadCodes } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
+
+  if (role === 'Coach' && squadCodes.length === 0 && ageGroup && ageGroup !== 'All') {
     return c.json({
       success: true,
       data: []
@@ -845,7 +1037,6 @@ app.get('/api/dashboard/events', async (c) => {
   try {
     const { results } = await db.prepare(query).bind(...params).all();
     
-    // Purge workout images for events older than 1 week (7 days) asynchronously
     if (c.executionCtx && typeof c.executionCtx.waitUntil === 'function') {
       c.executionCtx.waitUntil(purgeExpiredWorkoutImages(c, results || []));
     } else {
@@ -2077,6 +2268,21 @@ app.post('/api/players', async (c) => {
       await db.prepare('UPDATE players SET user_id = ? WHERE id = ?').bind(userId, playerId).run();
     } catch (_) {}
 
+    // Auto-link player to coach squad if coach owns a matching squad
+    if (jwtPayload && jwtPayload.sub) {
+      try {
+        const squad = await db.prepare(
+          'SELECT id FROM squads WHERE coach_id = ? AND school_id = ? AND (code = ? OR name = ?)'
+        ).bind(jwtPayload.sub, schoolId, ageGroup, team || ageGroup).first();
+
+        if (squad) {
+          await db.prepare(
+            'INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)'
+          ).bind(squad.id, playerId).run();
+        }
+      } catch (_) {}
+    }
+
     // 3. Send automated onboarding invite email to Player
     const inviteHtml = `<!DOCTYPE html>
 <html>
@@ -2476,7 +2682,7 @@ app.post('/api/notifications/send', async (c) => {
   const notifType = type || 'general';
 
   try {
-    await db.prepare(`
+    const res = await db.prepare(`
       INSERT INTO notifications (user_id, title, body, type, is_read, created_at)
       VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
     `).bind(targetUser, title, content, notifType).run();
