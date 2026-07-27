@@ -1833,15 +1833,19 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     final profile = data.profile;
     final accountEmail = (ref.watch(authProvider).userProfile?['email'] ?? profile['email'] ?? '').toString().trim();
 
-    if (_firstNameController.text.isEmpty && profile['firstName'] != null) {
-      _firstNameController.text = profile['firstName'] ?? '';
-      _lastNameController.text = profile['lastName'] ?? '';
+    if (_firstNameController.text.isEmpty && (profile['firstName'] != null || profile['name'] != null)) {
+      _firstNameController.text = profile['firstName'] ?? profile['name']?.split(' ')[0] ?? '';
+      _lastNameController.text = profile['lastName'] ?? (profile['name']?.split(' ')?.skip(1)?.join(' ') ?? '');
       _phoneController.text = profile['phone'] ?? '';
       _emailController.text = accountEmail.isNotEmpty ? accountEmail : (profile['email'] ?? '');
       _dobController.text = profile['dob'] ?? '';
       _preferredPositionController.text = profile['preferredPosition'] ?? '';
     } else if (accountEmail.isNotEmpty && _emailController.text != accountEmail) {
       _emailController.text = accountEmail;
+    }
+
+    if (_dobController.text.isEmpty && profile['dob'] != null && profile['dob'].toString().isNotEmpty) {
+      _dobController.text = profile['dob'].toString();
     }
 
     final officialTeam = profile['team'] != null && profile['team'].toString().isNotEmpty ? profile['team'] : 'Unassigned';
