@@ -2,6 +2,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/phone_utils.dart';
 
+class SquadInfo {
+  final String id;
+  final String name;
+  final String code;
+
+  SquadInfo({required this.id, required this.name, required this.code});
+
+  factory SquadInfo.fromJson(Map<String, dynamic> json) {
+    return SquadInfo(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      code: json['code'] ?? '',
+    );
+  }
+}
+
 class RosterPlayer {
   final String id;
   final String firstName;
@@ -13,6 +29,7 @@ class RosterPlayer {
   final int ugroupsActive;
   final int? age;
   final String parentPhone;
+  final List<SquadInfo> assignedSquads;
 
   RosterPlayer({
     required this.id,
@@ -25,10 +42,13 @@ class RosterPlayer {
     required this.ugroupsActive,
     this.age,
     String? parentPhone,
-  }) : parentPhone = (parentPhone != null && parentPhone.trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(parentPhone) : '';
+    List<SquadInfo>? assignedSquads,
+  })  : parentPhone = (parentPhone != null && parentPhone.trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(parentPhone) : '',
+        assignedSquads = assignedSquads ?? [];
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
     final rawPhone = json['parentPhone'] ?? json['parentContact'];
+    final rawSquads = json['assignedSquads'] as List<dynamic>? ?? [];
     return RosterPlayer(
       id: json['id'] ?? '',
       firstName: json['firstName'] ?? '',
@@ -40,6 +60,7 @@ class RosterPlayer {
       ugroupsActive: json['ugroupsActive'] ?? 0,
       age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
       parentPhone: (rawPhone != null && rawPhone.toString().trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(rawPhone.toString()) : '',
+      assignedSquads: rawSquads.map((s) => SquadInfo.fromJson(s as Map<String, dynamic>)).toList(),
     );
   }
 }
@@ -106,6 +127,20 @@ class RosterNotifier extends StateNotifier<RosterState> {
     }
   }
 
+  Future<bool> updatePlayerSquads(String playerId, String ageGroup, List<String> squadIds) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/players/$playerId/squads',
+        data: {'squadIds': squadIds},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchRoster(ageGroup);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<bool> updatePlayerPosition(RosterPlayer player, String newPosition) async {
     final cleanPosition = newPosition.trim();
     if (cleanPosition.isEmpty) return false;
@@ -126,6 +161,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
           status: p.status,
           ugroupsActive: p.ugroupsActive,
           age: p.age,
+          assignedSquads: p.assignedSquads,
         );
       }
       return p;

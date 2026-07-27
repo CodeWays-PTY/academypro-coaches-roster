@@ -203,6 +203,84 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     return _buildOverviewTab(data);
   }
 
+  Widget _buildSquadSelectorBar(StudentPortalData data) {
+    if (data.assignedSquads.isEmpty) return const SizedBox.shrink();
+
+    final selectedSquadId = ref.watch(selectedStudentSquadIdProvider) ?? data.assignedSquads.first.id;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6.0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: const Icon(
+              Icons.shield_outlined,
+              color: Color(0xFF2563EB),
+              size: 18.0,
+            ),
+          ),
+          const SizedBox(width: 10.0),
+          const Text(
+            'Active Squad:',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(width: 10.0),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: data.assignedSquads.any((s) => s.id == selectedSquadId) ? selectedSquadId : data.assignedSquads.first.id,
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF2563EB)),
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+                items: data.assignedSquads.map((squad) {
+                  return DropdownMenuItem<String>(
+                    value: squad.id,
+                    child: Text(
+                      '${squad.name} (${squad.code})',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (newSquadId) {
+                  if (newSquadId != null && newSquadId != selectedSquadId) {
+                    ref.read(selectedStudentSquadIdProvider.notifier).state = newSquadId;
+                    ref.read(studentControllerProvider.notifier).fetchStudentData(squadId: newSquadId);
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ==========================================
   // TAB 1: OVERVIEW (Student Journey)
   // ==========================================
@@ -225,6 +303,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildSquadSelectorBar(data),
           // Hero Status Card
           Container(
             padding: const EdgeInsets.all(24.0),

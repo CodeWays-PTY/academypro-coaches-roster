@@ -9,6 +9,7 @@ import 'create_action_modal.dart';
 import 'create_squad_modal.dart';
 import 'add_player_modal.dart';
 import 'single_player_baseline_modal.dart';
+import 'manage_player_squads_modal.dart';
 
 class RosterTabView extends ConsumerStatefulWidget {
   const RosterTabView({Key? key}) : super(key: key);
@@ -52,7 +53,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
     if (player.position.isNotEmpty) {
       parts.add(player.position.toUpperCase());
     }
-    if (player.team.isNotEmpty) {
+    if (player.assignedSquads.isNotEmpty) {
+      parts.add(player.assignedSquads.map((s) => s.name.toUpperCase()).join(' / '));
+    } else if (player.team.isNotEmpty) {
       parts.add(player.team.toUpperCase());
     }
     
@@ -168,22 +171,9 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                   value: sq.ageGroup,
                                   child: Text(sq.name, overflow: TextOverflow.ellipsis),
                                 )),
-                            const DropdownMenuItem(
-                              value: '__CREATE_NEW_SQUAD__',
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.add_circle_outline, color: Color(0xFF2563EB), size: 16.0),
-                                  SizedBox(width: 6.0),
-                                  Text('+ Create Squad', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ),
                           ],
                           onChanged: (newAge) {
-                            if (newAge == '__CREATE_NEW_SQUAD__') {
-                              CreateSquadModal.show(context);
-                            } else if (newAge != null) {
+                            if (newAge != null) {
                               _onAgeGroupChanged(newAge);
                             }
                           },
@@ -238,35 +228,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                       borderRadius: BorderRadius.circular(12.0),
                       borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8.0),
-              // Add Athlete Button
-              InkWell(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  AddPlayerModal.show(context, initialAgeGroup: selectedAgeGroup);
-                },
-                borderRadius: BorderRadius.circular(12.0),
-                child: Container(
-                  height: 46.0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(12.0),
-                    border: Border.all(color: const Color(0xFFBFDBFE)),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.person_add_alt_1, size: 16.0, color: Color(0xFF2563EB)),
-                      SizedBox(width: 4.0),
-                      Text(
-                        '+ Add Athlete',
-                        style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -780,18 +741,44 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                           ),
                                         ),
                                         const SizedBox(width: 6.0),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFDAE2FD),
-                                            borderRadius: BorderRadius.circular(20.0),
-                                          ),
-                                          child: Text(
-                                            'ID: ${player.id}',
-                                            style: const TextStyle(
-                                              fontSize: 10.0,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF434656),
+                                        InkWell(
+                                          onTap: () async {
+                                            final updated = await showModalBottomSheet<bool>(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              useSafeArea: true,
+                                              backgroundColor: Colors.transparent,
+                                              builder: (context) => ManagePlayerSquadsModal(
+                                                player: player,
+                                                currentAgeGroup: selectedAgeGroup,
+                                              ),
+                                            );
+                                            if (updated == true) {
+                                              setSheetState(() {});
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(20.0),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEFF6FF),
+                                              borderRadius: BorderRadius.circular(20.0),
+                                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.edit_calendar, size: 12.0, color: Color(0xFF2563EB)),
+                                                SizedBox(width: 4.0),
+                                                Text(
+                                                  'Manage Squads',
+                                                  style: TextStyle(
+                                                    fontSize: 10.0,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF2563EB),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),

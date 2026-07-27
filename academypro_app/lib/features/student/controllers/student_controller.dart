@@ -99,6 +99,22 @@ class StudentEvent {
   }
 }
 
+class StudentSquad {
+  final String id;
+  final String name;
+  final String code;
+
+  StudentSquad({required this.id, required this.name, required this.code});
+
+  factory StudentSquad.fromJson(Map<String, dynamic> json) {
+    return StudentSquad(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      code: json['code'] ?? '',
+    );
+  }
+}
+
 class StudentPortalData {
   final Map<String, dynamic> profile;
   final List<dynamic> academics;
@@ -108,6 +124,7 @@ class StudentPortalData {
   final List<dynamic> matches;
   final List<dynamic> attendance;
   final List<StudentEvent> events;
+  final List<StudentSquad> assignedSquads;
 
   StudentPortalData({
     required this.profile,
@@ -118,9 +135,11 @@ class StudentPortalData {
     required this.matches,
     required this.attendance,
     required this.events,
+    required this.assignedSquads,
   });
 
   factory StudentPortalData.fromJson(Map<String, dynamic> json) {
+    final profileObj = json['profile'] ?? {};
     final fitnessObj = json['fitness'] ?? {};
     final dynamicMetricsRaw = fitnessObj['dynamicMetrics'] as List<dynamic>? ?? [];
     final parsedMetrics = dynamicMetricsRaw
@@ -134,8 +153,13 @@ class StudentPortalData {
         .map((e) => StudentEvent.fromJson(e as Map<String, dynamic>))
         .toList();
 
+    final assignedSquadsRaw = profileObj['assignedSquads'] as List<dynamic>? ?? [];
+    final parsedSquads = assignedSquadsRaw
+        .map((s) => StudentSquad.fromJson(s as Map<String, dynamic>))
+        .toList();
+
     return StudentPortalData(
-      profile: json['profile'] ?? {},
+      profile: profileObj,
       academics: json['academics'] ?? [],
       fitness: fitnessObj,
       dynamicMetrics: parsedMetrics,
@@ -143,6 +167,7 @@ class StudentPortalData {
       matches: json['matches'] ?? [],
       attendance: json['attendance'] ?? [],
       events: parsedEvents,
+      assignedSquads: parsedSquads,
     );
   }
 }
@@ -152,10 +177,11 @@ class StudentController extends StateNotifier<AsyncValue<StudentPortalData>> {
 
   StudentController(this._apiClient) : super(const AsyncValue.loading());
 
-  Future<void> fetchStudentData() async {
+  Future<void> fetchStudentData({String? squadId}) async {
     state = const AsyncValue.loading();
     try {
-      final response = await _apiClient.getAndCache('/api/student-portal');
+      final queryParam = (squadId != null && squadId.isNotEmpty) ? '?squad_id=$squadId' : '';
+      final response = await _apiClient.getAndCache('/api/student-portal$queryParam');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = StudentPortalData.fromJson(response.data['data']);
         state = AsyncValue.data(data);
@@ -183,3 +209,6 @@ final studentControllerProvider = StateNotifierProvider<StudentController, Async
   final apiClient = ref.watch(apiClientProvider);
   return StudentController(apiClient);
 });
+
+// Provider for Active Student Selected Squad ID
+final selectedStudentSquadIdProvider = StateProvider<String?>((ref) => null);

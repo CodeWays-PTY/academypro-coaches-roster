@@ -785,6 +785,27 @@ app.get('/api/rosters/:age_group', async (c) => {
   const query = `SELECT * FROM players WHERE id IN (${placeholders}) ORDER BY first_name ASC`;
   const { results } = await db.prepare(query).bind(...playerIds).all();
 
+  const playerSquadMap: Record<string, any[]> = {};
+  try {
+    const { results: spResults } = await db.prepare(`
+      SELECT sp.player_id, s.id as squad_id, s.name as squad_name, s.code as squad_code
+      FROM squad_players sp
+      JOIN squads s ON s.id = sp.squad_id
+      WHERE sp.player_id IN (${placeholders})
+    `).bind(...playerIds).all();
+
+    for (const row of (spResults || [])) {
+      if (!playerSquadMap[row.player_id]) {
+        playerSquadMap[row.player_id] = [];
+      }
+      playerSquadMap[row.player_id].push({
+        id: row.squad_id,
+        name: row.squad_name,
+        code: row.squad_code
+      });
+    }
+  } catch (_) {}
+
   return c.json({
     success: true,
     data: {
@@ -798,10 +819,43 @@ app.get('/api/rosters/:age_group', async (c) => {
         team: p.team,
         status: p.status,
         ugroupsActive: p.ugroups_active,
-        age: p.age
+        age: p.age,
+        assignedSquads: playerSquadMap[p.id] || []
       }))
     }
   });
+});
+
+// Route: Update Player Squad Assignments
+app.post('/api/players/:id/squads', async (c) => {
+  const playerId = c.req.param('id');
+  const body = await c.req.json();
+  const { squadIds } = body;
+  const db = getDB(c);
+
+  if (!Array.isArray(squadIds)) {
+    return c.json({ success: false, message: 'squadIds must be an array' }, 400);
+  }
+
+  await ensureSquadsTables(db);
+
+  try {
+    await db.prepare('DELETE FROM squad_players WHERE player_id = ?').bind(playerId).run();
+
+    for (const squadId of squadIds) {
+      await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squadId, playerId).run();
+    }
+
+    console.log(`[Observer Log] Updated squad assignments for player '${playerId}' to [${squadIds.join(', ')}]`);
+
+    return c.json({
+      success: true,
+      message: 'Player squad assignments updated successfully',
+      data: { playerId, squadIds }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to update player squad assignments', error: err.message }, 500);
+  }
 });
 
 // Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
@@ -1781,14 +1835,57 @@ app.get('/api/student-portal', async (c) => {
     attendance = results || [];
   } catch (_) {}
 
-  // 6. Fetch Team Events for Student
+  // 6. Fetch Assigned Squads for Student
+  let assignedSquads: any[] = [];
+  try {
+    const { results: sRes } = await db.prepare(`
+      SELECT s.id, s.name, s.code, s.description
+      FROM squads s
+      JOIN squad_players sp ON sp.squad_id = s.id
+      WHERE sp.player_id = ?
+      ORDER BY s.name ASC
+    `).bind(playerId).all();
+    assignedSquads = (sRes || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      description: s.description || ''
+    }));
+  } catch (_) {}
+
+  if (assignedSquads.length === 0 && player.age_group) {
+    assignedSquads.push({
+      id: `default-${player.age_group}`,
+      name: player.team || `${player.age_group} Squad`,
+      code: player.age_group,
+      description: ''
+    });
+  }
+
+  // 7. Fetch Team Events for Student (filtered by squad if specified)
   let events: any[] = [];
   try {
     const schoolId = player.school_id || 'OVK';
-    const ageGroup = player.age_group;
-    const { results } = await db.prepare(
-      'SELECT * FROM events WHERE school_id = ? AND (age_group = ? OR age_group IS NULL OR age_group = "") ORDER BY date ASC, start_time ASC'
-    ).bind(schoolId, ageGroup).all();
+    const reqSquadId = c.req.query('squad_id') || c.req.query('squadId');
+    let eventsQuery = 'SELECT * FROM events WHERE school_id = ?';
+    let queryParams: any[] = [schoolId];
+
+    if (reqSquadId && !reqSquadId.startsWith('default-')) {
+      const selectedSquad: any = await db.prepare('SELECT name, code FROM squads WHERE id = ?').bind(reqSquadId).first();
+      if (selectedSquad) {
+        eventsQuery += ' AND (team = ? OR age_group = ? OR age_group IS NULL OR age_group = "")';
+        queryParams.push(selectedSquad.name, selectedSquad.code);
+      } else {
+        eventsQuery += ' AND (age_group = ? OR age_group IS NULL OR age_group = "")';
+        queryParams.push(player.age_group);
+      }
+    } else {
+      eventsQuery += ' AND (age_group = ? OR age_group IS NULL OR age_group = "")';
+      queryParams.push(player.age_group);
+    }
+    eventsQuery += ' ORDER BY date ASC, start_time ASC';
+
+    const { results } = await db.prepare(eventsQuery).bind(...queryParams).all();
     events = (results || []).map((r: any) => ({
       id: r.id?.toString() || '',
       schoolId: r.school_id,
@@ -1825,7 +1922,8 @@ app.get('/api/student-portal', async (c) => {
         ugroupsActive: player.ugroups_active,
         notes: player.notes,
         parentName: player.parent_name,
-        parentContact: player.parent_contact
+        parentContact: player.parent_contact,
+        assignedSquads: assignedSquads
       },
       academics: academics.map((a: any) => ({
         id: a.id,
