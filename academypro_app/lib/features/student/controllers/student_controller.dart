@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 
@@ -162,7 +163,17 @@ class StudentController extends StateNotifier<AsyncValue<StudentPortalData>> {
         state = AsyncValue.error(response.data['message'] ?? 'Failed to load data', StackTrace.current);
       }
     } catch (err, stack) {
-      state = AsyncValue.error(err, stack);
+      String cleanMessage = 'Failed to load dashboard. Please try again.';
+      if (err is DioException) {
+        if (err.response?.data != null && err.response?.data is Map && err.response?.data['message'] != null) {
+          cleanMessage = err.response?.data['message'].toString() ?? cleanMessage;
+        } else if (err.type == DioExceptionType.connectionTimeout || err.type == DioExceptionType.connectionError) {
+          cleanMessage = 'Network connection issue. Please check your internet connection.';
+        }
+      } else {
+        cleanMessage = err.toString();
+      }
+      state = AsyncValue.error(cleanMessage, stack);
     }
   }
 }

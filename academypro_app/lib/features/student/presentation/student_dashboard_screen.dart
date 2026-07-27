@@ -172,9 +172,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   const Icon(Icons.error_outline, size: 48.0, color: Color(0xFFBA1A1A)),
                   const SizedBox(height: 12.0),
                   Text(
-                    'Error loading dashboard: $err',
+                    'Error loading dashboard:\n${err.toString().replaceAll(RegExp(r'^DioException \[.*?\]:\s*'), '')}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold, fontSize: 14.0),
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(

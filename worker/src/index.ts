@@ -1618,21 +1618,68 @@ app.get('/api/student-portal', async (c) => {
   const requestedPlayerId = c.req.query('player_id');
 
   try {
-    if (requestedPlayerId) {
-      player = await db.prepare('SELECT * FROM players WHERE id = ?').bind(requestedPlayerId).first();
-    } else if (role === 'Student') {
+    if (requestedPlayerId && requestedPlayerId.trim() !== '' && requestedPlayerId !== 'null' && requestedPlayerId !== 'undefined') {
+      player = await db.prepare('SELECT * FROM players WHERE id = ?').bind(requestedPlayerId.trim()).first();
+    }
+    if (!player && role === 'Student') {
       player = await db.prepare('SELECT * FROM players WHERE user_id = ?').bind(userId).first();
-    } else if (role === 'Parent') {
+      if (!player) {
+        const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
+        if (u) {
+          if (u.phone) {
+            const cleanPhone = u.phone.replace(/[^\d]/g, '');
+            const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
+            player = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
+          }
+          if (!player && u.email) {
+            player = await db.prepare('SELECT * FROM players WHERE email = ?').bind(u.email).first();
+          }
+        }
+      }
+    } else if (!player && role === 'Parent') {
       player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();
+      if (!player) {
+        const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
+        if (u && u.phone) {
+          const cleanPhone = u.phone.replace(/[^\d]/g, '');
+          const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
+          player = await db.prepare('SELECT * FROM players WHERE parent_phone = ? OR parent_phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
+        }
+      }
     }
   } catch (_) {}
 
-  if (!player && !requestedPlayerId) {
+  if (!player) {
     player = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
   }
 
   if (!player) {
-    return c.json({ success: false, message: 'Student-athlete profile not found.' }, 404);
+    return c.json({
+      success: true,
+      data: {
+        profile: {
+          id: '',
+          firstName: 'No Athlete Profile',
+          lastName: '',
+          team: 'Unassigned',
+          ageGroup: 'U15',
+          position: '--',
+          schoolId: jwtPayload?.schoolId || 'OVK'
+        },
+        academics: [],
+        fitness: {
+          baseline: null,
+          progressions: [],
+          dynamicMetrics: [],
+          readinessScore: 0
+        },
+        dynamicMetrics: [],
+        readinessScore: 0,
+        matches: [],
+        attendance: [],
+        events: []
+      }
+    });
   }
 
   const playerId = player.id;
