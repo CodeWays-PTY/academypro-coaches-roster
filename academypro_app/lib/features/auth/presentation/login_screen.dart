@@ -270,13 +270,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 24.0),
-                          TextFormField(
+                          TextField(
                             controller: _otpController,
-                            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                            keyboardType: TextInputType.phone,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(6),
                             ],
-                            maxLength: 6,
                             textAlign: TextAlign.center,
                             onChanged: (val) {
                               if (val.trim().length == 6 && !isAuthenticating) {
