@@ -392,8 +392,8 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          data.academics.isNotEmpty
-                              ? (latestGrade >= 65 ? 'A+' : (latestGrade >= 60 ? 'A' : 'B'))
+                          (data.academics.isNotEmpty && latestGrade > 0)
+                              ? (latestGrade >= 85 ? 'A+' : (latestGrade >= 75 ? 'A' : (latestGrade >= 65 ? 'B+' : (latestGrade >= 55 ? 'B' : (latestGrade >= 45 ? 'C' : 'D')))))
                               : '--',
                           style: const TextStyle(
                             fontSize: 36.0,
@@ -2658,7 +2658,14 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
   double _getLatestGrade(List<dynamic> academics) {
     if (academics.isEmpty) return 0.0;
-    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 0.0;
+    final last = academics.last;
+    if (last is Map) {
+      final val = last['gradeAverage'] ?? last['gradePercentage'] ?? last['grade'];
+      if (val != null && val is num) {
+        return val.toDouble();
+      }
+    }
+    return 0.0;
   }
 
 

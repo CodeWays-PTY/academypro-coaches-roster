@@ -1102,7 +1102,14 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
 
   double _getLatestGrade(List<dynamic> academics) {
     if (academics.isEmpty) return 0.0;
-    return (academics.last['gradePercentage'] as num?)?.toDouble() ?? 0.0;
+    final last = academics.last;
+    if (last is Map) {
+      final val = last['gradeAverage'] ?? last['gradePercentage'] ?? last['grade'];
+      if (val != null && val is num) {
+        return val.toDouble();
+      }
+    }
+    return 0.0;
   }
 
 
