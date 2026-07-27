@@ -2525,37 +2525,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   // HELPERS & WIDGET UTILS
   // ==========================================
 
-  Widget _buildStatCard(String title, List<Widget> rows) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: Color(0xFF0F172A)),
-            ),
-            const Divider(height: 20.0, color: Color(0xFFE2E8F0)),
-            ...rows,
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildStatRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14.0, color: Color(0xFF64748B))),
-          Text(value, style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-        ],
-      ),
-    );
-  }
 
   Widget _buildEmptyState(String msg) {
     return Card(
