@@ -293,9 +293,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   // ==========================================
   Widget _buildOverviewTab(StudentPortalData data) {
     final profile = data.profile;
-    final studentName = (profile['firstName'] != null || profile['lastName'] != null)
-        ? '${profile['firstName'] ?? ''} ${profile['lastName'] ?? ''}'.trim()
-        : '--';
+    final studentName = '${profile['firstName'] ?? 'Athlete'} ${profile['lastName'] ?? ''}'.trim();
     final team = profile['team'] ?? 'First Team';
     final ageGroup = profile['ageGroup'] ?? 'U15';
     final position = profile['position'] ?? 'Player';
@@ -400,7 +398,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         const SizedBox(height: 4.0),
                         Text(
                           (data.academics.isNotEmpty && latestGrade > 0)
-                              ? (latestGrade >= (AppConfig.academicHonorCutoff + 20) ? 'A+' : (latestGrade >= (AppConfig.academicHonorCutoff + 10) ? 'A' : (latestGrade >= AppConfig.academicHonorCutoff ? 'B+' : (latestGrade >= (AppConfig.academicHonorCutoff - 10) ? 'B' : (latestGrade >= (AppConfig.academicHonorCutoff - 20) ? 'C' : 'D')))))
+                              ? (latestGrade >= 85 ? 'A+' : (latestGrade >= 75 ? 'A' : (latestGrade >= 65 ? 'B+' : (latestGrade >= 55 ? 'B' : (latestGrade >= 45 ? 'C' : 'D')))))
                               : '--',
                           style: const TextStyle(
                             fontSize: 36.0,
@@ -993,7 +991,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                           ),
                         ],
                       ),
-                    ),
                     ),
                   ],
                 ),

@@ -10,8 +10,8 @@
 |---|------|-------|-------------|--------|
 | 1 | D1 Database & Schema Cleanup | Clean SQL migrations, remove `0004_seed_dashboard_mock_data.sql`, remove static password hashes, remove `parent_contact` and `email` columns from schema/migrations, update `DATABASE_SCHEMA.md` | None | DONE |
 | 2 | Worker Backend API Remediation | Fix `Math.random()`, remove JWT fallback, remove dev OTP leakage, enforce strict JWT auth (401), remove over-defensive fallbacks (schoolId/squadCode -> 400), fix status codes (500/400/207), remove hardcoded API key fallback, remove `parent_contact`/`email` from Worker types/queries | M1 | DONE |
-| 3 | Flutter Mobile App Remediation | Replace fallback strings with `"--"`, handle controller exceptions & error toasts, remove silent catch blocks, remove dummy phone numbers, make ratings/cutoffs dynamic, remove hardcoded grade metric (12%) & sport ('rugby'), remove `parent_contact`/`email` from models/UI, fix dev OTP key in `auth_state.dart`, bind Parent Portal ticket & checkout cards to D1 Worker API | M2 | IN_PROGRESS |
-| 4 | Remote Execution, Deployment & Verification | Run `wrangler d1 execute academypro-db --remote`, run `wrangler deploy`, run `flutter analyze`, run forensic integrity audit | M1, M2, M3 | PLANNED |
+| 3 | Flutter Mobile App Remediation | Replace fallback strings with `"--"`, handle controller exceptions & error toasts, remove silent catch blocks, remove dummy phone numbers, make ratings/cutoffs dynamic, remove hardcoded grade metric (12%) & sport ('rugby'), remove `parent_contact`/`email` from models/UI, fix dev OTP key in `auth_state.dart`, bind Parent Portal ticket & checkout cards to D1 Worker API | M2 | DONE |
+| 4 | Remote Execution, Deployment & Verification | Run `wrangler d1 execute academypro-db --remote`, run `wrangler deploy`, run `flutter analyze`, run forensic integrity audit | M1, M2, M3 | IN_PROGRESS |
 
 ## Interface Contracts
 ### Worker API ↔ Flutter App
