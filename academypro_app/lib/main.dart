@@ -95,7 +95,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 }
 
 class SplashScreenBody extends StatelessWidget {
-  const SplashScreenBody({Key? key}) : super(key: key);
+  const SplashScreenBody({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +123,7 @@ class SplashScreenBody extends StatelessWidget {
                 child: Image.asset(
                   'assets/images/app_logo.png',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     color: const Color(0xFF003EC7),
                     child: const Icon(Icons.shield, color: Colors.white, size: 64.0),
                   ),
