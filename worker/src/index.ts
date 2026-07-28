@@ -1640,19 +1640,44 @@ app.post('/api/dashboard/checkin', async (c) => {
   }
 
   const sessType = sessionType || 'Field';
+  const checkedInSet = new Set(checkedInPlayerIds);
+  let targetPlayerIds: string[] = [];
+  const ageGrp = body.ageGroup;
+
+  if (eventId) {
+    try {
+      const ev: any = await db.prepare('SELECT age_group, team FROM events WHERE id = ?').bind(eventId).first();
+      const evGroup = ev?.age_group || ev?.team || ageGrp;
+      if (evGroup) {
+        const { results: pRes } = await db.prepare('SELECT id FROM players WHERE age_group = ? OR team = ?').bind(evGroup, evGroup).all();
+        if (pRes) targetPlayerIds = pRes.map((r: any) => r.id);
+      }
+    } catch (_) {}
+  }
+  if (targetPlayerIds.length === 0 && ageGrp) {
+    try {
+      const { results: pRes } = await db.prepare('SELECT id FROM players WHERE age_group = ? OR team = ?').bind(ageGrp, ageGrp).all();
+      if (pRes) targetPlayerIds = pRes.map((r: any) => r.id);
+    } catch (_) {}
+  }
+
+  const allSessionPlayerIds = Array.from(new Set([...targetPlayerIds, ...checkedInPlayerIds]));
   let recordedCount = 0;
 
-  for (const playerId of checkedInPlayerIds) {
+  for (const playerId of allSessionPlayerIds) {
+    const isPresent = checkedInSet.has(playerId);
+    const statusVal = isPresent ? 'Present' : 'Absent';
+
     try {
       const sql = `
         INSERT INTO attendance (player_id, session_type, date, status, created_at)
-        VALUES (?, ?, ?, 'Present', CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(player_id, session_type, date) DO UPDATE SET
-          status = 'Present',
+          status = ?,
           created_at = CURRENT_TIMESTAMP
       `;
-      await db.prepare(sql).bind(playerId, sessType, date).run();
-      recordedCount++;
+      await db.prepare(sql).bind(playerId, sessType, date, statusVal, statusVal).run();
+      if (isPresent) recordedCount++;
     } catch (e) {
       console.warn(`[API WARN] Failed attendance record for ${playerId}:`, e);
     }
