@@ -429,19 +429,35 @@ app.post('/api/auth/verify-otp', async (c) => {
 app.post('/api/auth/profile', async (c) => {
   const db = getDB(c);
   const body = await c.req.json();
-  const { email, firstName, first_name, lastName, last_name } = body;
+  const { id, email, firstName, first_name, lastName, last_name, phone } = body;
 
   const userEmail = (email || '').trim().toLowerCase();
   const fName = firstName || first_name;
   const lName = lastName || last_name;
 
-  if (userEmail && (fName || lName)) {
-    if (fName && lName) {
-      await db.prepare('UPDATE users SET first_name = ?, last_name = ? WHERE email = ?').bind(fName, lName, userEmail).run();
-    } else if (fName) {
-      await db.prepare('UPDATE users SET first_name = ? WHERE email = ?').bind(fName, userEmail).run();
-    } else if (lName) {
-      await db.prepare('UPDATE users SET last_name = ? WHERE email = ?').bind(lName, userEmail).run();
+  let userId = id || '';
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await verify(token, getSecret(c), 'HS256') as any;
+      if (payload && payload.sub) {
+        userId = payload.sub;
+      }
+    } catch (_) {}
+  }
+
+  if (db && (userId || userEmail)) {
+    try {
+      await db.prepare(`
+        UPDATE users
+        SET first_name = COALESCE(?, first_name),
+            last_name = COALESCE(?, last_name),
+            phone = COALESCE(?, phone)
+        WHERE id = ? OR LOWER(email) = ?
+      `).bind(fName || null, lName || null, phone || null, userId, userEmail).run();
+    } catch (err) {
+      console.error('[API Error] Failed to update user profile in D1:', err);
     }
   }
 

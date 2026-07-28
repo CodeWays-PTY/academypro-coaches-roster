@@ -138,7 +138,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(userProfile: newProfile);
 
     try {
-      await _apiClient.dio.post('/api/auth/profile', data: updatedFields);
+      await _apiClient.post('/api/auth/profile', data: updatedFields);
     } catch (e) {
       print('Online profile sync deferred: $e');
     }
