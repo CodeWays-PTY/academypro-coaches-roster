@@ -567,6 +567,8 @@ app.use('/api/match-stats/*', enforceJwtAuth);
 app.use('/api/match-stats', enforceJwtAuth);
 app.use('/api/squads/*', enforceJwtAuth);
 app.use('/api/squads', enforceJwtAuth);
+app.use('/api/student-portal/*', enforceJwtAuth);
+app.use('/api/student-portal', enforceJwtAuth);
 
 // Helper to ensure squads & squad_players D1 tables exist
 async function ensureSquadsTables(db: any) {
@@ -1744,12 +1746,13 @@ app.get('/api/student-portal', async (c) => {
 
   let player: any = null;
   const requestedPlayerId = c.req.query('player_id');
+  const roleLower = (role || '').toString().toLowerCase();
 
   try {
     if (requestedPlayerId && requestedPlayerId.trim() !== '' && requestedPlayerId !== 'null' && requestedPlayerId !== 'undefined') {
       player = await db.prepare('SELECT * FROM players WHERE id = ?').bind(requestedPlayerId.trim()).first();
     }
-    if (!player && role === 'Student') {
+    if (!player && (roleLower === 'student' || roleLower.includes('student'))) {
       player = await db.prepare('SELECT * FROM players WHERE user_id = ?').bind(userId).first();
       if (!player) {
         const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
@@ -1764,7 +1767,7 @@ app.get('/api/student-portal', async (c) => {
           }
         }
       }
-    } else if (!player && role === 'Parent') {
+    } else if (!player && (roleLower === 'parent' || roleLower.includes('parent'))) {
       player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();
       if (!player) {
         const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
@@ -1778,7 +1781,9 @@ app.get('/api/student-portal', async (c) => {
   } catch (_) {}
 
   if (!player) {
-    player = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
+    try {
+      player = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
+    } catch (_) {}
   }
 
   if (!player) {
@@ -1813,8 +1818,12 @@ app.get('/api/student-portal', async (c) => {
   const playerId = player.id;
 
   // 1. Fetch Academic logs
-  const academicsQuery = 'SELECT * FROM academic_logs WHERE player_id = ? ORDER BY term ASC';
-  const { results: academics } = await db.prepare(academicsQuery).bind(playerId).all();
+  let academics: any[] = [];
+  try {
+    const academicsQuery = 'SELECT * FROM academic_logs WHERE player_id = ? ORDER BY term ASC';
+    const { results } = await db.prepare(academicsQuery).bind(playerId).all();
+    academics = results || [];
+  } catch (_) {}
 
   // 2b. Fetch Dynamic Test Metrics & Time-Series Logs
   let dynamicMetrics: any[] = [];
