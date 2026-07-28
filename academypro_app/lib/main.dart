@@ -100,7 +100,7 @@ class SplashScreenBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -112,7 +112,7 @@ class SplashScreenBody extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28.0),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF003EC7).withOpacity(0.4),
+                    color: const Color(0xFF003EC7).withOpacity(0.15),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   )
@@ -121,7 +121,7 @@ class SplashScreenBody extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28.0),
                 child: Image.asset(
-                  'assets/images/app_logo.jpg',
+                  'assets/images/app_logo.png',
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFF003EC7),
@@ -136,7 +136,7 @@ class SplashScreenBody extends StatelessWidget {
               style: TextStyle(
                 fontSize: 28.0,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF0F172A),
                 letterSpacing: -0.5,
               ),
             ),
@@ -146,7 +146,7 @@ class SplashScreenBody extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10.0,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF94A3B8),
+                color: Color(0xFF64748B),
                 letterSpacing: 2.0,
               ),
             ),
