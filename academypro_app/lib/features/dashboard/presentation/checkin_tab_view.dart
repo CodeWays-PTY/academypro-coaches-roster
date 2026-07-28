@@ -7,8 +7,6 @@ import '../controllers/checkin_controller.dart';
 import '../controllers/roster_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import 'qr_scanner_modal.dart';
-import 'create_squad_modal.dart';
-import 'add_player_modal.dart';
 
 class CheckInTabView extends ConsumerStatefulWidget {
   const CheckInTabView({Key? key}) : super(key: key);

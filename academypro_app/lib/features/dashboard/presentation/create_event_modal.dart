@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/app_toast.dart';
 import '../controllers/dashboard_controller.dart';
-import 'create_squad_modal.dart';
 
 class CreateEventModal extends ConsumerStatefulWidget {
   final CoachEvent? eventToEdit;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../auth/presentation/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
@@ -21,7 +22,6 @@ class ProfileTabView extends ConsumerStatefulWidget {
 
 class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
   late bool _pushNotifications;
-  bool _offlineDataMode = true;
   String _appVersion = '1.0.0';
   final ImagePicker _picker = ImagePicker();
 
@@ -246,6 +246,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
       if (context.mounted) {
         AppToast.showError(context, title: 'Email Dispatch Failed', message: 'Could not send verification code to $newEmail.');
       }
+      return Response(requestOptions: RequestOptions(path: '/api/auth/send-email-change-otp'));
     });
 
     showModalBottomSheet(
@@ -407,7 +408,6 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
   ) {
     final otpController = TextEditingController();
     bool verifying = false;
-    String? serverOtpCode;
 
     // Trigger SMS dispatch via API
     final apiClient = ref.read(apiClientProvider);
@@ -1315,22 +1315,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     );
   }
 
-  void _showInfoDialog(BuildContext context, String title, String content) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003EC7))),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _confirmLogout(BuildContext context) {
     HapticFeedback.mediumImpact();
