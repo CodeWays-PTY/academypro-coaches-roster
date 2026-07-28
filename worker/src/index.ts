@@ -1230,7 +1230,6 @@ app.get('/api/dashboard/events', async (c) => {
 // Route: Create Coach Command Event
 app.post('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
   if (!db) {
@@ -1244,29 +1243,55 @@ app.post('/api/dashboard/events', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
+  const schoolId = (jwtPayload?.schoolId || body.schoolId || '').trim();
+  if (!schoolId) {
+    return c.json({ success: false, message: 'School ID is required for event creation.' }, 401);
+  }
+
   const { id, title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
 
   const eventTitle = (title || '').trim();
-  const eventLoc = (location || '').trim() || 'Overkruin Sports Complex';
-  const eventTime = (startTime || '').trim() || '15:00';
-  const eventDt = (date || '').trim() || new Date().toISOString().split('T')[0];
-  
-  let evType = (eventType || '').trim();
+  const eventLoc = (location || '').trim();
+  const eventTime = (startTime || '').trim();
+  const eventDt = (date || '').trim();
+  const rawEventType = (eventType || '').trim();
+  const targetAgeGroup = (ageGroup || '').trim();
+  const assignedTeam = (team || '').trim();
+
+  // Strict Fail-Fast Validation (NO DUMMY FALLBACKS)
+  if (!eventTitle) {
+    return c.json({ success: false, message: 'Event title is required.' }, 400);
+  }
+  if (!rawEventType) {
+    return c.json({ success: false, message: 'Event type is required.' }, 400);
+  }
+  if (!eventTime) {
+    return c.json({ success: false, message: 'Start time is required.' }, 400);
+  }
+  if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(eventTime)) {
+    return c.json({ success: false, message: 'Start time must be formatted as HH:mm (e.g. 15:30).' }, 400);
+  }
+  if (!eventDt) {
+    return c.json({ success: false, message: 'Event date is required.' }, 400);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDt)) {
+    return c.json({ success: false, message: 'Event date must be formatted as YYYY-MM-DD.' }, 400);
+  }
+  if (!eventLoc) {
+    return c.json({ success: false, message: 'Event location is required.' }, 400);
+  }
+  if (!targetAgeGroup && !assignedTeam) {
+    return c.json({ success: false, message: 'Target age group or assigned team is required.' }, 400);
+  }
+
+  let evType = rawEventType;
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
   if (evType === 'Gym' || evType === 'Gym Practice') evType = 'Gym Session';
   if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
-  if (!evType) evType = 'Field Session';
-
-  if (!eventTitle) {
-    return c.json({
-      success: false,
-      message: 'Event title is required.'
-    }, 400);
-  }
 
   const eventId = id ? id.toString() : `EVT-${Date.now()}`;
-  const targetAgeGroup = ageGroup ? ageGroup.trim() : (team ? team.trim() : 'U15');
-  const assignedTeam = team ? team.trim() : targetAgeGroup;
+  const finalAgeGroup = targetAgeGroup || assignedTeam;
+  const finalTeam = assignedTeam || targetAgeGroup;
 
   const query = `
     INSERT INTO events (
@@ -1291,10 +1316,12 @@ app.post('/api/dashboard/events', async (c) => {
       intensity ? intensity.trim() : null,
       isImpVal,
       compCountVal,
-      targetAgeGroup,
-      assignedTeam,
+      finalAgeGroup,
+      finalTeam,
       workoutImagePath || null
     ).run();
+
+    console.log(`[Observer Log] Event '${eventId}' successfully created in Cloudflare D1 for school '${schoolId}'.`);
 
     return c.json({
       success: true,
@@ -1302,22 +1329,23 @@ app.post('/api/dashboard/events', async (c) => {
       data: {
         id: eventId,
         schoolId,
-        title,
-        eventType,
-        startTime,
-        date,
+        title: eventTitle,
+        eventType: evType,
+        startTime: eventTime,
+        date: eventDt,
         durationMins: durMinsVal,
-        location,
-        intensity: intensity || null,
+        location: eventLoc,
+        intensity: intensity ? intensity.trim() : null,
         isImportant: isImpVal === 1,
         completionCount: compCountVal,
-        ageGroup: ageGroup ? ageGroup.trim() : null,
-        team: assignedTeam,
+        ageGroup: finalAgeGroup,
+        team: finalTeam,
         workoutImagePath: workoutImagePath || null
       }
     }, 201);
   } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to create event', error: err.message }, 500);
+    console.error(`[Observer Error] Failed to create event '${eventId}':`, err);
+    return c.json({ success: false, message: 'Failed to create event in D1 database', error: err.message }, 500);
   }
 });
 
@@ -1337,8 +1365,50 @@ app.post('/api/dashboard/events/:id', async (c) => {
   }
 
   const { title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
+
+  const eventTitle = (title || '').trim();
+  const eventLoc = (location || '').trim();
+  const eventTime = (startTime || '').trim();
+  const eventDt = (date || '').trim();
+  const rawEventType = (eventType || '').trim();
+  const targetAgeGroup = (ageGroup || '').trim();
+  const assignedTeam = (team || '').trim();
+
+  // Strict Fail-Fast Validation (NO DUMMY FALLBACKS)
+  if (!eventTitle) {
+    return c.json({ success: false, message: 'Event title is required.' }, 400);
+  }
+  if (!rawEventType) {
+    return c.json({ success: false, message: 'Event type is required.' }, 400);
+  }
+  if (!eventTime) {
+    return c.json({ success: false, message: 'Start time is required.' }, 400);
+  }
+  if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(eventTime)) {
+    return c.json({ success: false, message: 'Start time must be formatted as HH:mm (e.g. 15:30).' }, 400);
+  }
+  if (!eventDt) {
+    return c.json({ success: false, message: 'Event date is required.' }, 400);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDt)) {
+    return c.json({ success: false, message: 'Event date must be formatted as YYYY-MM-DD.' }, 400);
+  }
+  if (!eventLoc) {
+    return c.json({ success: false, message: 'Event location is required.' }, 400);
+  }
+  if (!targetAgeGroup && !assignedTeam) {
+    return c.json({ success: false, message: 'Target age group or assigned team is required.' }, 400);
+  }
+
+  let evType = rawEventType;
+  if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
+  if (evType === 'Gym' || evType === 'Gym Practice') evType = 'Gym Session';
+  if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
+
   const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
   const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
+  const finalAgeGroup = targetAgeGroup || assignedTeam;
+  const finalTeam = assignedTeam || targetAgeGroup;
 
   try {
     const query = `
@@ -1348,13 +1418,16 @@ app.post('/api/dashboard/events/:id', async (c) => {
       WHERE CAST(id AS TEXT) = ? OR id = ?
     `;
     await db.prepare(query).bind(
-      title.trim(), eventType.trim(), startTime.trim(), date.trim(), durMinsVal,
-      location.trim(), intensity ? intensity.trim() : null, isImpVal, ageGroup ? ageGroup.trim() : null,
-      team ? team.trim() : (ageGroup ? ageGroup.trim() : null), workoutImagePath || null, id.toString(), id.toString()
+      eventTitle, evType, eventTime, eventDt, durMinsVal,
+      eventLoc, intensity ? intensity.trim() : null, isImpVal, finalAgeGroup,
+      finalTeam, workoutImagePath || null, id.toString(), id.toString()
     ).run();
+
+    console.log(`[Observer Log] Event '${id}' successfully updated in D1.`);
 
     return c.json({ success: true, message: 'Event updated successfully' });
   } catch (err: any) {
+    console.error(`[Observer Error] Failed updating event '${id}':`, err);
     return c.json({ success: false, message: 'Failed to update event', error: err.message }, 500);
   }
 });

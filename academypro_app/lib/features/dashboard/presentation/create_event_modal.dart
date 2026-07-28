@@ -320,8 +320,8 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
       } else {
         AppToast.showError(
           context,
-          title: 'Schedule Saved Offline',
-          message: 'Saved locally to queue. Will sync when connection is active.',
+          title: 'Event Save Failed',
+          message: 'Failed to save event to Cloudflare D1. Please verify all required fields and try again.',
         );
       }
     }

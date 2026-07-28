@@ -743,39 +743,26 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
   }) async {
     final String activeAge = (ageGroup != null && ageGroup.isNotEmpty)
         ? ageGroup
-        : (_ref.read(selectedAgeGroupProvider) ?? 'U15');
+        : (_ref.read(selectedAgeGroupProvider) ?? '');
     final String assignedTeam = (team != null && team.isNotEmpty) ? team : activeAge;
     final eventId = 'EVT-${DateTime.now().millisecondsSinceEpoch}';
-    final newEvent = CoachEvent(
-      id: eventId,
-      schoolId: 'OVK',
-      title: title,
-      eventType: eventType,
-      startTime: startTime,
-      date: date,
-      durationMins: durationMins,
-      location: location,
-      isImportant: isImportant,
-      recurrenceRule: recurrenceRule,
-      workoutImagePath: workoutImagePath,
-      team: assignedTeam,
-      ageGroup: activeAge,
-    );
+
+    // Strict client-side validation prior to network dispatch
+    if (title.trim().isEmpty || location.trim().isEmpty || startTime.trim().isEmpty || date.trim().isEmpty) {
+      print('[Create Event Error] Missing required fields in client payload.');
+      return false;
+    }
 
     final currentList = state.asData?.value ?? [];
-    final updatedList = [newEvent, ...currentList];
-    state = AsyncValue.data(updatedList);
-    await _updateHiveCache(updatedList, activeAge);
 
     try {
       final res = await _apiClient.post('/api/dashboard/events', data: {
         'id': eventId,
-        'schoolId': 'OVK',
-        'title': title,
-        'eventType': eventType,
-        'startTime': startTime,
-        'date': date,
-        'location': location.isNotEmpty ? location : 'Overkruin Sports Complex',
+        'title': title.trim(),
+        'eventType': eventType.trim(),
+        'startTime': startTime.trim(),
+        'date': date.trim(),
+        'location': location.trim(),
         'durationMins': durationMins,
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
@@ -783,29 +770,49 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'ageGroup': activeAge,
         'team': assignedTeam,
       });
+
       if (res.statusCode == 200 || res.statusCode == 201) {
+        final newEvent = CoachEvent(
+          id: eventId,
+          schoolId: res.data?['data']?['schoolId'] ?? '',
+          title: title.trim(),
+          eventType: eventType.trim(),
+          startTime: startTime.trim(),
+          date: date.trim(),
+          durationMins: durationMins,
+          location: location.trim(),
+          isImportant: isImportant,
+          recurrenceRule: recurrenceRule,
+          workoutImagePath: workoutImagePath,
+          team: assignedTeam,
+          ageGroup: activeAge,
+        );
+
+        final updatedList = [newEvent, ...currentList];
+        state = AsyncValue.data(updatedList);
+        await _updateHiveCache(updatedList, activeAge);
         await fetchEvents(ageGroup: activeAge);
         return true;
+      } else {
+        print('[Create Event Error] Backend rejected creation: ${res.data?['message']} (HTTP ${res.statusCode})');
+        return false;
       }
     } catch (e) {
-      print('[Create Event Error] Failed saving event to D1: $e');
+      print('[Create Event Error] Network failure or API exception saving to D1: $e');
+      return false;
     }
-    return true;
   }
 
   Future<bool> updateEvent(CoachEvent event) async {
     final currentList = state.asData?.value ?? [];
-    final updatedList = currentList.map((e) => e.id.toString() == event.id.toString() ? event : e).toList();
-    state = AsyncValue.data(updatedList);
-    await _updateHiveCache(updatedList, event.ageGroup);
 
     try {
-      await _apiClient.post('/api/dashboard/events/${event.id}', data: {
-        'title': event.title,
-        'eventType': event.eventType,
-        'startTime': event.startTime,
-        'date': event.date,
-        'location': event.location,
+      final res = await _apiClient.post('/api/dashboard/events/${event.id}', data: {
+        'title': event.title.trim(),
+        'eventType': event.eventType.trim(),
+        'startTime': event.startTime.trim(),
+        'date': event.date.trim(),
+        'location': event.location.trim(),
         'durationMins': event.durationMins,
         'isImportant': event.isImportant,
         'recurrenceRule': event.recurrenceRule,
@@ -813,21 +820,41 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'ageGroup': event.ageGroup,
         'team': event.team,
       });
-    } catch (_) {}
-    return true;
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final updatedList = currentList.map((e) => e.id.toString() == event.id.toString() ? event : e).toList();
+        state = AsyncValue.data(updatedList);
+        await _updateHiveCache(updatedList, event.ageGroup);
+        return true;
+      } else {
+        print('[Update Event Error] Backend rejected update: ${res.data?['message']} (HTTP ${res.statusCode})');
+        return false;
+      }
+    } catch (e) {
+      print('[Update Event Error] Exception updating event: $e');
+      return false;
+    }
   }
 
   Future<bool> deleteEvent(dynamic eventId) async {
     final targetIdStr = eventId.toString();
     final currentList = state.asData?.value ?? [];
-    final updatedList = currentList.where((e) => e.id.toString() != targetIdStr).toList();
-    state = AsyncValue.data(updatedList);
-    await _updateHiveCache(updatedList, null);
 
     try {
-      await _apiClient.post('/api/dashboard/events/$targetIdStr/delete');
-    } catch (_) {}
-    return true;
+      final res = await _apiClient.post('/api/dashboard/events/$targetIdStr/delete');
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final updatedList = currentList.where((e) => e.id.toString() != targetIdStr).toList();
+        state = AsyncValue.data(updatedList);
+        await _updateHiveCache(updatedList, null);
+        return true;
+      } else {
+        print('[Delete Event Error] Backend rejected deletion: ${res.data?['message']} (HTTP ${res.statusCode})');
+        return false;
+      }
+    } catch (e) {
+      print('[Delete Event Error] Exception deleting event: $e');
+      return false;
+    }
   }
 }
 
