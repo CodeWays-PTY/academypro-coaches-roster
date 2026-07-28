@@ -1579,6 +1579,27 @@ app.post('/api/dashboard/checkin', async (c) => {
     return c.json({ success: false, message: 'Date and checkedInPlayerIds array are required' }, 400);
   }
 
+  // Guard: Reject check-in for past dates
+  const todayStr = new Date().toISOString().split('T')[0];
+  let checkInDate = date;
+
+  if (eventId) {
+    try {
+      const ev: any = await db.prepare('SELECT date FROM events WHERE id = ?').bind(eventId).first();
+      if (ev && ev.date) {
+        checkInDate = ev.date;
+      }
+    } catch (_) {}
+  }
+
+  if (checkInDate < todayStr) {
+    console.warn(`[Observer Log] Blocked check-in attempt for past date '${checkInDate}' (Today is ${todayStr})`);
+    return c.json({
+      success: false,
+      message: 'Check-in is closed for past events. You can only record attendance for today\'s scheduled sessions.'
+    }, 400);
+  }
+
   const sessType = sessionType || 'Field';
   let recordedCount = 0;
 

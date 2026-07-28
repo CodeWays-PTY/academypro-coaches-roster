@@ -142,6 +142,12 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
   }
 
   void selectEvent(CoachEvent event) {
+    final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    if (event.date.compareTo(nowStr) < 0) {
+      // Past event check-in is disabled
+      return;
+    }
+
     final sessionType = event.eventType == 'Field Session'
         ? 'Field Practice'
         : (event.eventType == 'Gym Session' ? 'Gym Session' : 'Match Session');
@@ -269,9 +275,19 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
   }
 
   Future<bool> submitAttendance() async {
+    final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final eventDate = state.selectedEvent?.date ?? nowStr;
+
+    if (eventDate.compareTo(nowStr) < 0) {
+      state = state.copyWith(
+        loading: false,
+        error: 'Cannot submit check-in for past events. Check-in is closed.',
+      );
+      return false;
+    }
+
     state = state.copyWith(loading: true);
     try {
-      final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final checkedInIds = state.playerRecords.values
           .where((r) => r.isCheckedIn)
           .map((r) => r.player.id)
@@ -281,7 +297,7 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
         'eventId': state.selectedEvent?.id,
         'eventTitle': state.selectedEvent?.title,
         'sessionType': state.selectedEvent?.eventType ?? (state.sessionType == 'Field Practice' ? 'Field' : 'Gym'),
-        'date': state.selectedEvent?.date ?? nowStr,
+        'date': eventDate,
         'ageGroup': state.activeAgeGroup,
         'checkedInPlayerIds': checkedInIds,
       };
@@ -294,18 +310,10 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
         _ref.read(dashboardSummaryProvider.notifier).fetchSummary(ageGroup: state.activeAgeGroup);
         return true;
       }
-      await LocalStorage.queueMatchStats(payload);
-      return true;
+      return false;
     } catch (e) {
-      final payload = {
-        'eventId': state.selectedEvent?.id,
-        'sessionType': state.sessionType,
-        'ageGroup': state.activeAgeGroup,
-        'checkedInPlayerIds': state.playerRecords.values.where((r) => r.isCheckedIn).map((r) => r.player.id).toList(),
-      };
-      await LocalStorage.queueMatchStats(payload);
-      state = state.copyWith(loading: false);
-      return true;
+      state = state.copyWith(loading: false, error: 'Failed to submit attendance');
+      return false;
     }
   }
 }

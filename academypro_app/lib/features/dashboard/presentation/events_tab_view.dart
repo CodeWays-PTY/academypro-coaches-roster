@@ -541,24 +541,54 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                 const SizedBox(height: 16.0),
               ],
 
-              // Start Practice Check-In CTA Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    ref.read(checkInProvider.notifier).selectEvent(event);
-                    ref.read(dashboardTabProvider.notifier).state = 2;
-                  },
-                  icon: const Icon(Icons.qr_code_scanner, size: 18.0),
-                  label: const Text('Start Practice Check-In For This Event', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003EC7),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14.0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                  ),
-                ),
+              // Start Practice Check-In CTA Button (Disabled for past events)
+              Builder(
+                builder: (context) {
+                  final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                  final isPastEvent = event.date.compareTo(nowStr) < 0;
+
+                  if (isPastEvent) {
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.lock_clock_outlined, color: Color(0xFF64748B), size: 18.0),
+                          SizedBox(width: 8.0),
+                          Text(
+                            'Check-In Closed (Past Event)',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13.5),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ref.read(checkInProvider.notifier).selectEvent(event);
+                        ref.read(dashboardTabProvider.notifier).state = 2;
+                      },
+                      icon: const Icon(Icons.qr_code_scanner, size: 18.0),
+                      label: const Text('Start Practice Check-In For This Event', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003EC7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14.0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10.0),
 
