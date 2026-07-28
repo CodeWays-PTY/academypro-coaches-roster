@@ -2,8 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/storage/local_storage.dart';
-import '../../auth/presentation/auth_state.dart';
 import 'roster_controller.dart';
 import 'dashboard_controller.dart';
 
@@ -141,7 +139,7 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
     state = state.copyWith(sessionType: sessionType);
   }
 
-  void selectEvent(CoachEvent event) {
+  Future<void> selectEvent(CoachEvent event) async {
     final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
     if (event.date.compareTo(nowStr) < 0) {
       // Past event check-in is disabled
@@ -152,10 +150,44 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
         ? 'Field Practice'
         : (event.eventType == 'Gym Session' ? 'Gym Session' : 'Match Session');
 
+    final resetRecords = <String, CheckInPlayerRecord>{};
+    state.playerRecords.forEach((id, record) {
+      resetRecords[id] = CheckInPlayerRecord(
+        player: record.player,
+        isCheckedIn: false,
+        checkInTime: null,
+      );
+    });
+
     state = state.copyWith(
       selectedEvent: event,
       sessionType: sessionType,
+      playerRecords: resetRecords,
     );
+
+    await fetchEventAttendance(event.id);
+  }
+
+  Future<void> fetchEventAttendance(String eventId) async {
+    try {
+      final res = await _apiClient.getAndCache('/api/dashboard/events/$eventId/attendance');
+      if (res.statusCode == 200 && res.data['success'] == true) {
+        final List<dynamic> checkedInIds = res.data['data']['checkedInPlayerIds'] ?? [];
+        final checkedInSet = Set<String>.from(checkedInIds.map((e) => e.toString()));
+
+        final updatedRecords = <String, CheckInPlayerRecord>{};
+        state.playerRecords.forEach((id, record) {
+          final isChecked = checkedInSet.contains(id);
+          updatedRecords[id] = CheckInPlayerRecord(
+            player: record.player,
+            isCheckedIn: isChecked,
+            checkInTime: isChecked ? (record.checkInTime ?? DateTime.now()) : null,
+          );
+        });
+
+        state = state.copyWith(playerRecords: updatedRecords);
+      }
+    } catch (_) {}
   }
 
   CheckInScanResult toggleCheckIn(String playerId) {

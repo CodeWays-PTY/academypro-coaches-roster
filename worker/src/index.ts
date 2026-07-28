@@ -1706,6 +1706,37 @@ app.post('/api/dashboard/checkin', async (c) => {
   });
 });
 
+// Route: Get Attendance for a Specific Event
+app.get('/api/dashboard/events/:id/attendance', async (c) => {
+  const eventId = c.req.param('id');
+  const db = getDB(c);
+
+  if (!db) {
+    return c.json({ success: true, data: { eventId, checkedInPlayerIds: [] } });
+  }
+
+  try {
+    const ev: any = await db.prepare('SELECT date, event_type FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(eventId, eventId).first();
+    const targetDate = ev?.date || new Date().toISOString().split('T')[0];
+
+    const { results } = await db.prepare(`
+      SELECT player_id FROM attendance WHERE date = ? AND status = 'Present'
+    `).bind(targetDate).all();
+
+    const checkedInPlayerIds = (results || []).map((r: any) => r.player_id);
+    return c.json({
+      success: true,
+      data: {
+        eventId,
+        date: targetDate,
+        checkedInPlayerIds
+      }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to fetch event attendance', error: err.message }, 500);
+  }
+});
+
 // Route: Log Match Statistics
 app.post('/api/match-stats', async (c) => {
   const statsInput = await c.req.json();
