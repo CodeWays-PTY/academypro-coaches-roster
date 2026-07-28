@@ -8,14 +8,11 @@ import '../../../core/utils/phone_utils.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/roster_controller.dart';
 import '../../auth/presentation/auth_state.dart';
-import '../../auth/presentation/login_screen.dart';
 import 'roster_tab_view.dart';
 import 'checkin_tab_view.dart';
 import 'events_tab_view.dart';
 import 'profile_tab_view.dart';
-import 'create_event_modal.dart';
 import 'create_action_modal.dart';
-import 'create_squad_modal.dart';
 import 'manage_metrics_modal.dart';
 import 'batch_test_logger_modal.dart';
 
@@ -24,16 +21,13 @@ import '../../notifications/presentation/notifications_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  String _selectedAgeGroup = 'U15';
-  int _activeTab = 0;
-
   @override
   void initState() {
     super.initState();
@@ -46,21 +40,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
   }
 
-  void _handleLogout() async {
-    await ref.read(authProvider.notifier).logout();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final activeTab = ref.watch(dashboardTabProvider);
-    final selectedAgeGroup = ref.watch(selectedAgeGroupProvider);
     final summary = ref.watch(dashboardSummaryProvider);
     final flagsState = ref.watch(dashboardFlagsProvider);
     final starsState = ref.watch(risingStarsProvider);
@@ -384,7 +366,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               data: (players) {
                 // APPLY STRICT QUALIFICATION FILTER & AGE GROUP MATCHING
                 final qualifiedStars = players
-                    .where((p) => p.isQualifiedForRisingStar && p.ageGroup == _selectedAgeGroup)
+                    .where((p) => p.isQualifiedForRisingStar && p.ageGroup == ref.watch(selectedAgeGroupProvider))
                     .toList();
 
                 if (qualifiedStars.isEmpty) {
@@ -458,7 +440,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 flagsState.when(
                   data: (list) {
-                    final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup).toList();
+                    final filtered = list.where((p) => p.ageGroup == ref.watch(selectedAgeGroupProvider)).toList();
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                       decoration: BoxDecoration(
@@ -489,7 +471,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             flagsState.when(
               data: (list) {
-                final filtered = list.where((p) => p.ageGroup == _selectedAgeGroup).toList();
+                final filtered = list.where((p) => p.ageGroup == ref.watch(selectedAgeGroupProvider)).toList();
                 if (filtered.isEmpty) {
                   return Container(
                     width: double.infinity,
