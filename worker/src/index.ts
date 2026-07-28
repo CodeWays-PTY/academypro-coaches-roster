@@ -597,62 +597,85 @@ async function ensureSquadsTables(db: any) {
 }
 
 // Helper to get player IDs and squad codes owned by a coach
+// Helper to get player IDs and squad codes owned by a coach or accessible by role
 async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string, role?: string, ageGroupFilter?: string): Promise<{ squadIds: string[]; playerIds: string[]; squadCodes: string[] }> {
   await ensureSquadsTables(db);
 
-  if (role === 'SuperAdmin' || role === 'SchoolAdmin') {
-    let pQuery = 'SELECT id FROM players WHERE school_id = ?';
-    let pParams: any[] = [schoolId];
-    if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
-      pQuery = 'SELECT id FROM players WHERE school_id = ? AND (age_group = ? OR team = ?)';
-      pParams.push(ageGroupFilter, ageGroupFilter);
-    }
-    const { results } = await db.prepare(pQuery).bind(...pParams).all();
-    const playerIds = (results || []).map((r: any) => r.id);
-    return { squadIds: [], playerIds, squadCodes: ageGroupFilter ? [ageGroupFilter] : [] };
-  }
-
-  let sQuery = 'SELECT id, code, name FROM squads WHERE coach_id = ? AND school_id = ?';
-  let sParams: any[] = [coachId, schoolId];
-
-  if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
-    sQuery = 'SELECT id, code, name FROM squads WHERE coach_id = ? AND school_id = ? AND (code = ? OR name = ? OR id = ?)';
-    sParams.push(coachId, schoolId, ageGroupFilter, ageGroupFilter, ageGroupFilter);
-  }
-
   let squadRows: any[] = [];
   try {
+    let sQuery = 'SELECT id, code, name FROM squads WHERE school_id = ?';
+    let sParams: any[] = [schoolId];
+
+    if (role !== 'SuperAdmin' && role !== 'SchoolAdmin') {
+      sQuery = 'SELECT id, code, name FROM squads WHERE school_id = ? AND (coach_id = ? OR coach_id IS NULL)';
+      sParams = [schoolId, coachId];
+    }
+
+    if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
+      sQuery += ' AND (code = ? OR name = ? OR id = ?)';
+      sParams.push(ageGroupFilter, ageGroupFilter, ageGroupFilter);
+    }
+
     const { results } = await db.prepare(sQuery).bind(...sParams).all();
     squadRows = results || [];
   } catch (_) {}
-
-  if (squadRows.length === 0) {
-    return { squadIds: [], playerIds: [], squadCodes: [] };
-  }
 
   const squadIds = squadRows.map((s: any) => s.id);
   const squadCodes = squadRows.map((s: any) => s.code);
   const squadNames = squadRows.map((s: any) => s.name);
 
-  const squadPlaceholders = squadIds.map(() => '?').join(',');
-  const codePlaceholders = squadCodes.map(() => '?').join(',');
-  const namePlaceholders = squadNames.map(() => '?').join(',');
+  // Collect all potential squad keys
+  const allSquadKeys = Array.from(new Set([
+    ...squadIds,
+    ...squadCodes,
+    ...squadNames,
+    ...(ageGroupFilter && ageGroupFilter !== 'All' && ageGroupFilter !== 'None' ? [ageGroupFilter] : [])
+  ]));
 
-  const spQuery = `
-    SELECT player_id FROM squad_players WHERE squad_id IN (${squadPlaceholders})
-    UNION
-    SELECT id as player_id FROM players WHERE school_id = ? AND (age_group IN (${codePlaceholders}) OR team IN (${namePlaceholders}))
-  `;
-  const bindParams = [...squadIds, schoolId, ...squadCodes, ...squadNames];
-  let pRows: any[] = [];
-  try {
-    const { results } = await db.prepare(spQuery).bind(...bindParams).all();
-    pRows = results || [];
-  } catch (_) {}
+  const playerIdsSet = new Set<string>();
 
-  const playerIds = pRows.map((r: any) => r.player_id);
+  if (allSquadKeys.length > 0) {
+    const spPlaceholders = allSquadKeys.map(() => '?').join(',');
+    try {
+      const { results: spResults } = await db.prepare(`
+        SELECT DISTINCT player_id FROM squad_players WHERE squad_id IN (${spPlaceholders})
+      `).bind(...allSquadKeys).all();
+      for (const r of (spResults || [])) {
+        if (r.player_id) playerIdsSet.add(r.player_id);
+      }
+    } catch (_) {}
+  }
 
-  return { squadIds, playerIds, squadCodes };
+  // Also query players table by age_group / team if ageGroupFilter is active
+  if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
+    const filterKeys = Array.from(new Set([ageGroupFilter, ...squadCodes, ...squadNames, ...squadIds]));
+    const filterPlaceholders = filterKeys.map(() => '?').join(',');
+    try {
+      const { results: pResults } = await db.prepare(`
+        SELECT id FROM players
+        WHERE school_id = ? AND (age_group IN (${filterPlaceholders}) OR team IN (${filterPlaceholders}))
+      `).bind(schoolId, ...filterKeys, ...filterKeys).all();
+      for (const r of (pResults || [])) {
+        if (r.id) playerIdsSet.add(r.id);
+      }
+    } catch (_) {}
+  } else if (!ageGroupFilter || ageGroupFilter === 'All') {
+    try {
+      const { results: pResults } = await db.prepare(`
+        SELECT id FROM players WHERE school_id = ?
+      `).bind(schoolId).all();
+      for (const r of (pResults || [])) {
+        if (r.id) playerIdsSet.add(r.id);
+      }
+    } catch (_) {}
+  }
+
+  const playerIds = Array.from(playerIdsSet);
+  return {
+    squadIds,
+    playerIds,
+    squadCodes: squadCodes.length > 0 ? squadCodes : (ageGroupFilter ? [ageGroupFilter] : [])
+  };
 }
 
 // Route: Get Coach Squads
@@ -840,10 +863,40 @@ app.post('/api/players/:id/squads', async (c) => {
   await ensureSquadsTables(db);
 
   try {
+    let existingSquadIds: string[] = [];
+    try {
+      const { results } = await db.prepare('SELECT squad_id FROM squad_players WHERE player_id = ?').bind(playerId).all();
+      existingSquadIds = (results || []).map((r: any) => r.squad_id);
+    } catch (_) {}
+
     await db.prepare('DELETE FROM squad_players WHERE player_id = ?').bind(playerId).run();
 
     for (const squadId of squadIds) {
       await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squadId, playerId).run();
+      let squad: any = null;
+      try {
+        squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
+      } catch (_) {}
+      if (squad) {
+        await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squad.id, playerId).run();
+        await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squad.code, playerId).run();
+      }
+    }
+
+    const removedSquadIds = existingSquadIds.filter((id) => !squadIds.includes(id));
+    for (const removedId of removedSquadIds) {
+      let squad: any = null;
+      try {
+        squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(removedId, removedId, removedId).first();
+      } catch (_) {}
+      const codesToClear = Array.from(new Set([removedId, ...(squad ? [squad.id, squad.code, squad.name] : [])]));
+      const ph = codesToClear.map(() => '?').join(',');
+      await db.prepare(`
+        UPDATE players
+        SET age_group = CASE WHEN age_group IN (${ph}) THEN 'Unassigned' ELSE age_group END,
+            team = CASE WHEN team IN (${ph}) THEN NULL ELSE team END
+        WHERE id = ?
+      `).bind(...codesToClear, ...codesToClear, playerId).run();
     }
 
     console.log(`[Observer Log] Updated squad assignments for player '${playerId}' to [${squadIds.join(', ')}]`);
@@ -2299,6 +2352,31 @@ app.post('/api/squads/:squadId/players/add', async (c) => {
 
   try {
     await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squadId, playerId).run();
+
+    let squad: any = null;
+    try {
+      squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
+    } catch (_) {}
+
+    if (squad) {
+      await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squad.id, playerId).run();
+      await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squad.code, playerId).run();
+
+      await db.prepare(`
+        UPDATE players
+        SET age_group = CASE WHEN age_group IS NULL OR age_group = 'Unassigned' OR age_group = '' THEN ? ELSE age_group END,
+            team = CASE WHEN team IS NULL OR team = 'Unassigned' OR team = '' THEN ? ELSE team END
+        WHERE id = ?
+      `).bind(squad.code, squad.name, playerId).run();
+    } else {
+      await db.prepare(`
+        UPDATE players
+        SET age_group = CASE WHEN age_group IS NULL OR age_group = 'Unassigned' OR age_group = '' THEN ? ELSE age_group END,
+            team = CASE WHEN team IS NULL OR team = 'Unassigned' OR team = '' THEN ? ELSE team END
+        WHERE id = ?
+      `).bind(squadId, squadId, playerId).run();
+    }
+
     console.log(`[Observer Log] Added player '${playerId}' to squad '${squadId}'`);
 
     return c.json({
@@ -2325,29 +2403,22 @@ app.post('/api/squads/:squadId/players/remove', async (c) => {
   await ensureSquadsTables(db);
 
   try {
-    await db.prepare('DELETE FROM squad_players WHERE squad_id = ? AND player_id = ?').bind(squadId, playerId).run();
-
-    // Look up squad info to also clear age_group / team on players table if they matched
     let squad: any = null;
     try {
       squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
     } catch (_) {}
 
-    if (squad) {
-      await db.prepare(`
-        UPDATE players
-        SET age_group = CASE WHEN age_group = ? OR age_group = ? OR age_group = ? THEN 'Unassigned' ELSE age_group END,
-            team = CASE WHEN team = ? OR team = ? OR team = ? THEN NULL ELSE team END
-        WHERE id = ?
-      `).bind(squad.id, squad.code, squad.name, squad.id, squad.code, squad.name, playerId).run();
-    } else {
-      await db.prepare(`
-        UPDATE players
-        SET age_group = CASE WHEN age_group = ? THEN 'Unassigned' ELSE age_group END,
-            team = CASE WHEN team = ? THEN NULL ELSE team END
-        WHERE id = ?
-      `).bind(squadId, squadId, playerId).run();
-    }
+    const targetSquadKeys = Array.from(new Set([squadId, ...(squad ? [squad.id, squad.code, squad.name] : [])]));
+    const ph = targetSquadKeys.map(() => '?').join(',');
+
+    await db.prepare(`DELETE FROM squad_players WHERE player_id = ? AND squad_id IN (${ph})`).bind(playerId, ...targetSquadKeys).run();
+
+    await db.prepare(`
+      UPDATE players
+      SET age_group = CASE WHEN age_group IN (${ph}) THEN 'Unassigned' ELSE age_group END,
+          team = CASE WHEN team IN (${ph}) THEN NULL ELSE team END
+      WHERE id = ?
+    `).bind(...targetSquadKeys, ...targetSquadKeys, playerId).run();
 
     console.log(`[Observer Log] Removed player '${playerId}' from squad '${squadId}'`);
 
