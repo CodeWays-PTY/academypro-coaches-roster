@@ -61,7 +61,7 @@ class NotificationItem {
       case 'academic_flag':
         return Icons.warning_amber_rounded;
       case 'match_update':
-        return Icons.sports_rugby_outlined;
+        return Icons.sports_outlined;
       case 'event_schedule':
         return Icons.event_available_outlined;
       case 'system':

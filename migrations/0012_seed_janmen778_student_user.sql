@@ -1,5 +1,5 @@
 INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name)
-VALUES ('USR-STUDENT-JAN', 'OVK', 'janmen778@gmail.com', 'sha256$mockedhash', 'Student', 'Jan', 'Mentz')
+VALUES ('USR-STUDENT-JAN', 'OVK', 'janmen778@gmail.com', NULL, 'Student', 'Jan', 'Mentz')
 ON CONFLICT(email) DO UPDATE SET
   id = excluded.id,
   school_id = excluded.school_id,

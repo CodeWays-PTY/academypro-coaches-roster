@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/utils/app_toast.dart';
 import '../../../core/network/api_client.dart';
 import '../../student/controllers/student_controller.dart';
@@ -427,7 +428,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           const SizedBox(height: 28.0),
 
           // Priority Info Grid (Matches & Metrics)
-          _buildPriorityInfoGrid(studentName, latestGrade, powerIndex),
+          _buildPriorityInfoGrid(data, studentName, latestGrade, powerIndex),
           const SizedBox(height: 32.0),
 
           // Peace of Mind Feed Section
@@ -442,7 +443,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           const SizedBox(height: 16.0),
           _buildCoachQuoteCard(studentName),
           const SizedBox(height: 12.0),
-          _buildCampusCheckoutCard(studentName),
+          _buildCampusCheckoutCard(data, studentName),
         ],
       ),
     );
@@ -495,7 +496,17 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     );
   }
 
-  Widget _buildPriorityInfoGrid(String studentName, double latestGrade, int powerIndex) {
+  Widget _buildPriorityInfoGrid(StudentPortalData data, String studentName, double latestGrade, int powerIndex) {
+    final Map<String, dynamic>? match = data.matches.isNotEmpty
+        ? (data.matches.first is Map<String, dynamic> ? data.matches.first as Map<String, dynamic> : null)
+        : null;
+    final matchDate = match?['date'] ?? match?['time'] ?? 'No Scheduled Match';
+    final venue = match?['location'] ?? match?['venue'] ?? '--';
+    final courtInfo = match?['opponent'] != null
+        ? 'vs ${match!['opponent']} • ${match['court'] ?? match['jersey'] ?? 'Home Match'}'
+        : (match?['details'] ?? '--');
+    final matchStatus = match?['status'] ?? (match != null ? 'CONFIRMED' : 'PENDING');
+
     return Column(
       children: [
         // Ticket Match Card
@@ -541,9 +552,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20.0),
                         ),
-                        child: const Text(
-                          'CONFIRMED',
-                          style: TextStyle(
+                        child: Text(
+                          matchStatus.toString().toUpperCase(),
+                          style: const TextStyle(
                             fontSize: 9.0,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -560,9 +571,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                       color: Color(0xFFDDE1FF),
                     ),
                   ),
-                  const Text(
-                    'Sat, 10:00 AM',
-                    style: TextStyle(
+                  Text(
+                    matchDate.toString(),
+                    style: const TextStyle(
                       fontSize: 26.0,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -571,19 +582,19 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                   const SizedBox(height: 16.0),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Icon(Icons.location_on, color: Color(0xFFDDE1FF), size: 18.0),
-                      SizedBox(width: 6.0),
+                    children: [
+                      const Icon(Icons.location_on, color: Color(0xFFDDE1FF), size: 18.0),
+                      const SizedBox(width: 6.0),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'West Field Complex',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
+                            venue.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
                           ),
                           Text(
-                            'Court 4 • Home Jersey',
-                            style: TextStyle(color: Color(0xFFDDE1FF), fontSize: 12.0),
+                            courtInfo.toString(),
+                            style: const TextStyle(color: Color(0xFFDDE1FF), fontSize: 12.0),
                           ),
                         ],
                       )
@@ -670,7 +681,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
             _buildMetricItemCard(
               'Academics',
               latestGrade > 0 ? 'Term Avg: ${latestGrade.toStringAsFixed(1)}%' : 'No grades recorded',
-              latestGrade >= 60 ? 'On Track' : (latestGrade > 0 ? 'Needs Attention' : 'Pending'),
+              latestGrade >= AppConfig.academicPassCutoff ? 'On Track' : (latestGrade > 0 ? 'Needs Attention' : 'Pending'),
               'ACADEMIC PORTAL',
               Icons.school,
               const Color(0xFF16A34A),
@@ -901,7 +912,14 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     );
   }
 
-  Widget _buildCampusCheckoutCard(String studentName) {
+  Widget _buildCampusCheckoutCard(StudentPortalData data, String studentName) {
+    final Map<String, dynamic>? latestAttendance = data.attendance.isNotEmpty
+        ? (data.attendance.first is Map<String, dynamic> ? data.attendance.first as Map<String, dynamic> : null)
+        : null;
+    final checkoutTime = data.profile['checkoutTime'] ?? latestAttendance?['checkoutTime'] ?? latestAttendance?['time'] ?? '--';
+    final checkoutStatus = data.profile['checkoutStatus'] ?? latestAttendance?['status'] ?? (latestAttendance != null ? 'CHECKED OUT' : 'STATUS: SAFE');
+    final checkoutDesc = data.profile['checkoutDetails'] ?? '$studentName ${latestAttendance?['action'] ?? 'has checked out of training facility.'}';
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -932,7 +950,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Color(0xFF131B2E)),
                   ),
                   Text(
-                    '$studentName has checked out of training facility.',
+                    checkoutDesc.toString(),
                     style: const TextStyle(fontSize: 12.0, color: Color(0xFF434656)),
                   ),
                 ],
@@ -941,14 +959,14 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
+            children: [
               Text(
-                '4:15 PM',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0, color: Color(0xFF131B2E)),
+                checkoutTime.toString(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0, color: Color(0xFF131B2E)),
               ),
               Text(
-                'STATUS: SAFE',
-                style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                checkoutStatus.toString().toUpperCase(),
+                style: const TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
               ),
             ],
           )
@@ -997,8 +1015,8 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         final term = acad['term'] ?? 1;
 
         Color border = const Color(0xFF16A34A);
-        if (grade < 50) border = const Color(0xFFDC2626);
-        else if (grade < 60) border = const Color(0xFFD97706);
+        if (grade < AppConfig.academicWarningCutoff) border = const Color(0xFFDC2626);
+        else if (grade < AppConfig.academicPassCutoff) border = const Color(0xFFD97706);
 
         return Container(
           decoration: BoxDecoration(

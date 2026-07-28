@@ -62,7 +62,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       });
 
       if (response.data['success'] == true) {
-        final otpCode = response.data['otp']?.toString();
+        final otpCode = (response.data['devOtp'] ?? response.data['otp'])?.toString();
         state = state.copyWith(
           status: AuthStatus.otpSent,
           email: email.trim().toLowerCase(),

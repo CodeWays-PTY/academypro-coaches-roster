@@ -50,10 +50,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final userProfile = ref.watch(authProvider).userProfile ?? LocalStorage.getUserProfile() ?? {};
     final notifState = ref.watch(notificationProvider);
 
-    final firstName = userProfile['first_name'] ?? userProfile['firstName'] ?? 'Jan-Albert';
-    final lastName = userProfile['last_name'] ?? userProfile['lastName'] ?? 'Mentz';
+    final firstName = userProfile['first_name'] ?? userProfile['firstName'] ?? '--';
+    final lastName = userProfile['last_name'] ?? userProfile['lastName'] ?? '--';
     final avatarPath = userProfile['avatarUrl'] ?? userProfile['profile_pic'];
-    final initials = '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}';
+    final initials = '${firstName.isNotEmpty && firstName != '--' ? firstName[0] : ''}${lastName.isNotEmpty && lastName != '--' ? lastName[0] : ''}';
 
     return Scaffold(
       extendBody: true,
@@ -780,39 +780,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               context,
                               title: 'Phone Number Copied',
                               message: 'Parent contact phone (${item.parentPhone}) copied to clipboard.',
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
-                        const SizedBox(width: 10.0),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              launchUrl(Uri.parse('mailto:${item.parentEmail}'));
-                            },
-                            child: Text(
-                              item.parentEmail,
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy, size: 16.0, color: Color(0xFF003EC7)),
-                          tooltip: 'Copy Email Address',
-                          padding: const EdgeInsets.all(4.0),
-                          constraints: const BoxConstraints(),
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: item.parentEmail));
-                            HapticFeedback.lightImpact();
-                            AppToast.showInfo(
-                              context,
-                              title: 'Email Address Copied',
-                              message: 'Parent contact email (${item.parentEmail}) copied to clipboard.',
                             );
                           },
                         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/storage/local_storage.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/app_toast.dart';
 import 'features/auth/presentation/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
@@ -60,6 +61,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     if (!_initialized) {
       return MaterialApp(
+        navigatorKey: AppToast.navigatorKey,
         title: 'AcademyPro Athlete Command',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
@@ -86,6 +88,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     }
 
     return MaterialApp(
+      navigatorKey: AppToast.navigatorKey,
       title: 'AcademyPro Athlete Command',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

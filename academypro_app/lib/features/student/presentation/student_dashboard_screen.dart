@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/utils/app_toast.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/widgets/country_code_picker.dart';
@@ -292,7 +293,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   // ==========================================
   Widget _buildOverviewTab(StudentPortalData data) {
     final profile = data.profile;
-    final studentName = '${profile['firstName'] ?? 'Athlete'} ${profile['lastName'] ?? ''}'.trim();
+    final studentName = (profile['firstName'] != null || profile['lastName'] != null)
+        ? '${profile['firstName'] ?? ''} ${profile['lastName'] ?? ''}'.trim()
+        : '--';
     final team = profile['team'] ?? 'First Team';
     final ageGroup = profile['ageGroup'] ?? 'U15';
     final position = profile['position'] ?? 'Player';
@@ -397,7 +400,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         const SizedBox(height: 4.0),
                         Text(
                           (data.academics.isNotEmpty && latestGrade > 0)
-                              ? (latestGrade >= 85 ? 'A+' : (latestGrade >= 75 ? 'A' : (latestGrade >= 65 ? 'B+' : (latestGrade >= 55 ? 'B' : (latestGrade >= 45 ? 'C' : 'D')))))
+                              ? (latestGrade >= (AppConfig.academicHonorCutoff + 20) ? 'A+' : (latestGrade >= (AppConfig.academicHonorCutoff + 10) ? 'A' : (latestGrade >= AppConfig.academicHonorCutoff ? 'B+' : (latestGrade >= (AppConfig.academicHonorCutoff - 10) ? 'B' : (latestGrade >= (AppConfig.academicHonorCutoff - 20) ? 'C' : 'D')))))
                               : '--',
                           style: const TextStyle(
                             fontSize: 36.0,
@@ -490,10 +493,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             profile['ugroupsActive'] == 1 ? 'Active' : 'Inactive',
             Icons.church_outlined,
             const Color(0xFF952200),
-            () => setState(() {
-              _activeTab = 2;
-              _selectedStatsFilter = 0; // All Stats / Character in Stats Page
-            }),
+            () => _showSpiritDetailModal(context, data),
           ),
           const SizedBox(height: 28.0),
 
@@ -994,26 +994,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8.0),
-                    InkWell(
-                      onTap: () {
-                        launchUrl(Uri.parse('mailto:${item.parentEmail}'));
-                      },
-                      child: Row(
-                        children: [
-                          const Icon(Icons.email, color: Color(0xFF6366F1), size: 18.0),
-                          const SizedBox(width: 10.0),
-                          Text(
-                            item.parentEmail,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2563EB),
-                              fontSize: 13.0,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
@@ -1530,12 +1510,12 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         Color badgeBg = const Color(0xFFDCFCE7);
         String label = 'EXCELLENT';
 
-        if (grade < 50) {
+        if (grade < AppConfig.academicWarningCutoff) {
           cardBorderColor = const Color(0xFFDC2626);
           textBadgeColor = const Color(0xFF991B1B);
           badgeBg = const Color(0xFFFEE2E2);
           label = 'CRITICAL';
-        } else if (grade < 60) {
+        } else if (grade < AppConfig.academicPassCutoff) {
           cardBorderColor = const Color(0xFFD97706);
           textBadgeColor = const Color(0xFF92400E);
           badgeBg = const Color(0xFFFEF3C7);
@@ -1826,7 +1806,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
   final _dobController = TextEditingController();
   final _preferredPositionController = TextEditingController();
   bool _isSavingProfile = false;
@@ -1835,17 +1814,13 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
   Widget _buildProfileTab(StudentPortalData data) {
     final profile = data.profile;
-    final accountEmail = (ref.watch(authProvider).userProfile?['email'] ?? profile['email'] ?? '').toString().trim();
 
     if (_firstNameController.text.isEmpty && (profile['firstName'] != null || profile['name'] != null)) {
       _firstNameController.text = profile['firstName'] ?? profile['name']?.split(' ')[0] ?? '';
       _lastNameController.text = profile['lastName'] ?? (profile['name']?.split(' ')?.skip(1)?.join(' ') ?? '');
       _phoneController.text = profile['phone'] ?? '';
-      _emailController.text = accountEmail.isNotEmpty ? accountEmail : (profile['email'] ?? '');
       _dobController.text = profile['dob'] ?? '';
       _preferredPositionController.text = profile['preferredPosition'] ?? '';
-    } else if (accountEmail.isNotEmpty && _emailController.text != accountEmail) {
-      _emailController.text = accountEmail;
     }
 
     if (_dobController.text.isEmpty && profile['dob'] != null && profile['dob'].toString().isNotEmpty) {
@@ -1857,7 +1832,9 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     final officialPosition = profile['position'] != null && profile['position'].toString().isNotEmpty ? profile['position'] : 'Athlete';
 
     final profileImage = profile['profileImagePath'] ?? profile['avatarUrl'] ?? '';
-    final studentFullName = '${profile['firstName'] ?? 'Student'} ${profile['lastName'] ?? ''}'.trim();
+    final studentFullName = (profile['firstName'] != null || profile['lastName'] != null)
+        ? '${profile['firstName'] ?? ''} ${profile['lastName'] ?? ''}'.trim()
+        : '--';
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -1908,7 +1885,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   ),
                   const SizedBox(height: 2.0),
                   Text(
-                    'Athlete Profile • ${profile['id'] ?? 'OVK-ATHLETE'}',
+                    'Athlete Profile • ${profile['id'] ?? '--'}',
                     style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 4.0),
@@ -2098,25 +2075,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 const SizedBox(height: 14.0),
 
-                // Registered Account Email Address
-                TextFormField(
-                  controller: _emailController,
-                  readOnly: true,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Registered Account Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF003EC7)),
-                    suffixIcon: Icon(Icons.lock_outlined, color: Color(0xFF94A3B8), size: 18.0),
-                  ),
-                ),
-                const SizedBox(height: 4.0),
-                const Text(
-                  'Your profile email matches your registered account email address.',
-                  style: TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 14.0),
-
                 // Date of Birth (DOB) - Fast Dropdown/Direct Picker
                 TextFormField(
                   controller: _dobController,
@@ -2139,7 +2097,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                     labelText: 'Preferred Playing Position (Optional Preference)',
                     hintText: 'e.g. Flyhalf / Winger (Coach Preference)',
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.sports_rugby_outlined),
+                    prefixIcon: Icon(Icons.sports_outlined),
                   ),
                 ),
                 const SizedBox(height: 6.0),
@@ -2168,7 +2126,6 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                               'firstName': _firstNameController.text.trim(),
                               'lastName': _lastNameController.text.trim(),
                               'phone': fullPhone,
-                              'email': _emailController.text.trim(),
                               'dob': _dobController.text.trim(),
                               'preferredPosition': _preferredPositionController.text.trim(),
                             });
@@ -2508,8 +2465,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
 
   void _showQRCodeModal(BuildContext context, StudentPortalData data) {
     final profile = data.profile;
-    final studentName = '${profile['firstName'] ?? 'Jan'} ${profile['lastName'] ?? 'Mentz'}'.trim();
-    final studentId = profile['id'] ?? 'OVK-STUDENT-JAN';
+    final studentName = (profile['firstName'] != null || profile['lastName'] != null)
+        ? '${profile['firstName'] ?? ''} ${profile['lastName'] ?? ''}'.trim()
+        : '--';
+    final studentId = profile['id'] ?? '--';
     final ageGroup = profile['ageGroup'] ?? 'U15';
     final position = profile['position'] ?? 'Flyhalf';
 
@@ -2900,7 +2859,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         'accent': const Color(0xFFDC2626), // Crimson Red
         'badgeBg': const Color(0xFFFEF2F2),
         'badgeText': const Color(0xFF991B1B),
-        'icon': Icons.sports_rugby,
+        'icon': Icons.sports,
         'label': 'MATCH DAY',
       };
     } else if (lower.contains('gym') || lower.contains('strength')) {

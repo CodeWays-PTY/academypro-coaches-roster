@@ -157,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'assets/images/app_logo.png',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Icon(
-                        Icons.sports_rugby,
+                        Icons.sports,
                         size: 64.0,
                         color: Color(0xFF2563EB),
                       ),

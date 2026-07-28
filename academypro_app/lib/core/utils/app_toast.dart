@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppToast {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static OverlayEntry? _currentOverlay;
 
   /// Displays a modern, floating toast safe-area banner below the status bar.
-  static void showSuccess(BuildContext context, {required String title, String? message}) {
+  static void showSuccess(BuildContext? context, {required String title, String? message}) {
+    final ctx = context ?? navigatorKey.currentContext;
+    if (ctx == null) return;
     _showToast(
-      context,
+      ctx,
       title: title,
       message: message,
       icon: Icons.check_circle_rounded,
@@ -15,9 +18,11 @@ class AppToast {
     );
   }
 
-  static void showError(BuildContext context, {required String title, String? message}) {
+  static void showError(BuildContext? context, {required String title, String? message}) {
+    final ctx = context ?? navigatorKey.currentContext;
+    if (ctx == null) return;
     _showToast(
-      context,
+      ctx,
       title: title,
       message: message,
       icon: Icons.error_outline_rounded,
@@ -26,9 +31,11 @@ class AppToast {
     );
   }
 
-  static void showInfo(BuildContext context, {required String title, String? message}) {
+  static void showInfo(BuildContext? context, {required String title, String? message}) {
+    final ctx = context ?? navigatorKey.currentContext;
+    if (ctx == null) return;
     _showToast(
-      context,
+      ctx,
       title: title,
       message: message,
       icon: Icons.info_outline_rounded,

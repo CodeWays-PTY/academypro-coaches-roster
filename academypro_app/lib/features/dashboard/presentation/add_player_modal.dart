@@ -33,7 +33,6 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _positionController = TextEditingController();
   
   late String _selectedAgeGroup;
@@ -59,7 +58,6 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _emailController.dispose();
     _positionController.dispose();
     super.dispose();
   }
@@ -72,25 +70,27 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
 
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
-    final email = _emailController.text.trim();
     final position = _positionController.text.trim();
 
-    await ref.read(rosterProvider.notifier).addPlayer(
+    final success = await ref.read(rosterProvider.notifier).addPlayer(
       firstName: firstName,
       lastName: lastName,
       ageGroup: _selectedAgeGroup,
       position: position,
       team: _selectedTeam,
-      email: email,
     );
 
     if (mounted) {
-      Navigator.pop(context);
-      AppToast.showSuccess(
-        context,
-        title: 'Athlete Added to Roster',
-        message: '$firstName $lastName enrolled in $_selectedTeam${email.isNotEmpty ? " • Invite sent to $email" : ""}.',
-      );
+      if (success) {
+        Navigator.pop(context);
+        AppToast.showSuccess(
+          context,
+          title: 'Athlete Added to Roster',
+          message: '$firstName $lastName enrolled in $_selectedTeam.',
+        );
+      } else {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
@@ -281,35 +281,6 @@ class _AddPlayerModalState extends ConsumerState<AddPlayerModal> {
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter a primary position';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  // Mandatory Athlete Email
-                  const Text(
-                    'ATHLETE EMAIL (MANDATORY FOR ACCOUNT PROFILE)',
-                    style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
-                  ),
-                  const SizedBox(height: 6.0),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. athlete@example.com',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.0), borderSide: const BorderSide(color: Color(0xFF003EC7), width: 1.5)),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Athlete email address is required';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
-                        return 'Enter a valid email address';
                       }
                       return null;
                     },

@@ -143,8 +143,22 @@ app.onError((err, c) => {
   }, status);
 });
 
+// Helper for Secure Cryptographic OTP Generation
+function generateSecureOTP(): string {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  const otpNumber = 100000 + (array[0] % 900000);
+  return otpNumber.toString();
+}
+
 // Helper for JWT Secret Key
-const getSecret = (c: any) => c.env?.JWT_SECRET || 'usport-secret-key-928374';
+const getSecret = (c: any) => {
+  const secret = c.env?.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is missing.');
+  }
+  return secret;
+};
 
 // Helper for Auto-Score Calculation (TypeScript implementation)
 function calculateAutoScore(stats: {
@@ -302,7 +316,7 @@ app.post('/api/auth/send-otp', async (c) => {
   }
 
   // Generate 6-digit OTP code
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = generateSecureOTP();
 
   // Save OTP to KV cache with 5-minute TTL (300s)
   await kv.put(`otp:${email.trim().toLowerCase()}`, otp, { expirationTtl: 300 });
@@ -354,11 +368,9 @@ app.post('/api/auth/send-otp', async (c) => {
   // Keep printing directly to console/observer logs for easy retrieve in development
   console.log(`[EMAIL SEND] To: ${email} | Subject: AcademyPro Login OTP | Code: ${otp}`);
 
-  // Return success status along with the code in response (Only for sandbox dev ease! We log it)
   return c.json({
     success: true,
-    message: 'OTP sent successfully to email.',
-    _dev_otp: otp 
+    message: 'OTP sent successfully to email.'
   });
 });
 
@@ -428,7 +440,12 @@ app.post('/api/auth/verify-otp', async (c) => {
 
 app.post('/api/auth/profile', async (c) => {
   const db = getDB(c);
-  const body = await c.req.json();
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (_) {
+    return c.json({ success: false, message: 'Invalid payload' }, 400);
+  }
   const { id, email, firstName, first_name, lastName, last_name, phone } = body;
 
   const userEmail = (email || '').trim().toLowerCase();
@@ -447,7 +464,11 @@ app.post('/api/auth/profile', async (c) => {
     } catch (_) {}
   }
 
-  if (db && (userId || userEmail)) {
+  if (!userId && !userEmail) {
+    return c.json({ success: false, message: 'User ID or Email is required' }, 400);
+  }
+
+  if (db) {
     try {
       await db.prepare(`
         UPDATE users
@@ -456,8 +477,9 @@ app.post('/api/auth/profile', async (c) => {
             phone = COALESCE(?, phone)
         WHERE id = ? OR LOWER(email) = ?
       `).bind(fName || null, lName || null, phone || null, userId, userEmail).run();
-    } catch (err) {
+    } catch (err: any) {
       console.error('[API Error] Failed to update user profile in D1:', err);
+      return c.json({ success: false, message: 'Failed to update user profile in database', error: err.message }, 500);
     }
   }
 
@@ -486,7 +508,7 @@ app.post('/api/auth/send-email-change-otp', async (c) => {
     return c.json({ success: false, message: 'This email address is already registered to another account.' }, 400);
   }
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = generateSecureOTP();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
   await db.prepare(`
@@ -542,7 +564,6 @@ app.post('/api/auth/verify-new-email', async (c) => {
 
   try {
     await db.prepare('UPDATE users SET email = ? WHERE email = ?').bind(cleanNewEmail, cleanCurrentEmail).run();
-    await db.prepare('UPDATE players SET email = ? WHERE email = ?').bind(cleanNewEmail, cleanCurrentEmail).run();
     await db.prepare('UPDATE parent_child_links SET player_email = ? WHERE player_email = ?').bind(cleanNewEmail, cleanCurrentEmail).run();
     await db.prepare('DELETE FROM user_otps WHERE email = ?').bind(cleanNewEmail).run();
 
@@ -578,13 +599,25 @@ async function enforceJwtAuth(c: any, next: any) {
 }
 
 app.use('/api/rosters/*', enforceJwtAuth);
+app.use('/api/rosters', enforceJwtAuth);
 app.use('/api/dashboard/*', enforceJwtAuth);
+app.use('/api/dashboard', enforceJwtAuth);
 app.use('/api/match-stats/*', enforceJwtAuth);
 app.use('/api/match-stats', enforceJwtAuth);
 app.use('/api/squads/*', enforceJwtAuth);
 app.use('/api/squads', enforceJwtAuth);
 app.use('/api/student-portal/*', enforceJwtAuth);
 app.use('/api/student-portal', enforceJwtAuth);
+app.use('/api/parent/*', enforceJwtAuth);
+app.use('/api/parent', enforceJwtAuth);
+app.use('/api/player/*', enforceJwtAuth);
+app.use('/api/player', enforceJwtAuth);
+app.use('/api/admin/*', enforceJwtAuth);
+app.use('/api/admin', enforceJwtAuth);
+app.use('/api/school/*', enforceJwtAuth);
+app.use('/api/school', enforceJwtAuth);
+app.use('/api/notifications/*', enforceJwtAuth);
+app.use('/api/notifications', enforceJwtAuth);
 
 // Helper to ensure squads & squad_players D1 tables exist
 async function ensureSquadsTables(db: any) {
@@ -700,9 +733,13 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 app.get('/api/squads', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const coachId = jwtPayload?.sub;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId;
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
 
   await ensureSquadsTables(db);
 
@@ -738,17 +775,31 @@ app.get('/api/squads', async (c) => {
 app.post('/api/squads', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const coachId = jwtPayload?.sub;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
   if (!coachId) {
     return c.json({ success: false, message: 'Unauthorized session' }, 401);
   }
 
-  const body = await c.req.json();
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (_) {
+    return c.json({ success: false, message: 'Invalid payload' }, 400);
+  }
+
+  const schoolId = jwtPayload?.schoolId || body.schoolId;
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
+
   const { id, name, ageGroup, code, description } = body;
+  if (!code && !ageGroup) {
+    return c.json({ success: false, message: 'code or ageGroup is required' }, 400);
+  }
+
   const squadName = name || 'New Squad';
-  const squadCode = (code || ageGroup || 'U15').trim().toUpperCase();
+  const squadCode = (code || ageGroup).trim().toUpperCase();
   const squadId = id || `sq-${Date.now()}`;
 
   await ensureSquadsTables(db);
@@ -795,10 +846,14 @@ app.post('/api/squads', async (c) => {
 app.get('/api/rosters/:age_group', async (c) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
 
   if (!ageGroup || ageGroup === 'None' || ageGroup === 'Unassigned' || ageGroup === 'No Squad') {
     return c.json({
@@ -932,11 +987,15 @@ app.post('/api/players/:id/squads', async (c) => {
 // Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
 
   const { playerIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
 
@@ -1018,11 +1077,15 @@ app.get('/api/dashboard/summary', async (c) => {
 // Route: Get Flagged Players (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
 
   const { playerIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
 
@@ -1136,11 +1199,15 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
 // Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
 
   let query = 'SELECT * FROM events WHERE (school_id = ? OR school_id IS NULL OR school_id = "")';
   let params: any[] = [schoolId];
@@ -1213,8 +1280,8 @@ app.get('/api/dashboard/events', async (c) => {
       intensity: r.intensity,
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
-      ageGroup: r.age_group || 'U15',
-      team: r.team || r.age_group || 'U15',
+      ageGroup: r.age_group || '',
+      team: r.team || r.age_group || '',
       workoutImagePath: r.workout_image_path
     }));
 
@@ -1466,7 +1533,7 @@ app.get('/api/dashboard/actions', async (c) => {
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS action_plans (
         id TEXT PRIMARY KEY,
-        school_id TEXT DEFAULT 'OVK',
+        school_id TEXT,
         title TEXT NOT NULL,
         type TEXT NOT NULL,
         category TEXT,
@@ -1524,7 +1591,7 @@ app.post('/api/dashboard/actions', async (c) => {
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS action_plans (
         id TEXT PRIMARY KEY,
-        school_id TEXT DEFAULT 'OVK',
+        school_id TEXT,
         title TEXT NOT NULL,
         type TEXT NOT NULL,
         category TEXT,
@@ -1580,7 +1647,7 @@ app.post('/api/dashboard/actions/:id/toggle', async (c) => {
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS action_plans (
         id TEXT PRIMARY KEY,
-        school_id TEXT DEFAULT 'OVK',
+        school_id TEXT,
         title TEXT NOT NULL,
         type TEXT NOT NULL,
         category TEXT,
@@ -1617,9 +1684,13 @@ app.post('/api/dashboard/actions/:id/delete', async (c) => {
 // Route: Get Rising Stars (Top performers by age group)
 app.get('/api/dashboard/rising-stars', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
+  const schoolId = jwtPayload?.schoolId;
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
 
   let query = `
     SELECT 
@@ -1642,7 +1713,7 @@ app.get('/api/dashboard/rising-stars', async (c) => {
 
   try {
     let { results } = await db.prepare(query).bind(...params).all();
-    const grp = ageGroup || 'U15';
+    const grp = ageGroup || '';
 
     if (!results || results.length === 0) {
       return c.json({
@@ -1945,15 +2016,10 @@ app.get('/api/student-portal', async (c) => {
       player = await db.prepare('SELECT * FROM players WHERE user_id = ?').bind(userId).first();
       if (!player) {
         const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
-        if (u) {
-          if (u.phone) {
-            const cleanPhone = u.phone.replace(/[^\d]/g, '');
-            const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
-            player = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
-          }
-          if (!player && u.email) {
-            player = await db.prepare('SELECT * FROM players WHERE email = ?').bind(u.email).first();
-          }
+        if (u && u.phone) {
+          const cleanPhone = u.phone.replace(/[^\d]/g, '');
+          const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
+          player = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
         }
       }
     } else if (!player && (roleLower === 'parent' || roleLower.includes('parent'))) {
@@ -1976,9 +2042,9 @@ app.get('/api/student-portal', async (c) => {
           firstName: 'No Athlete Profile',
           lastName: '',
           team: 'Unassigned',
-          ageGroup: 'U15',
+          ageGroup: '',
           position: '--',
-          schoolId: jwtPayload?.schoolId || 'OVK'
+          schoolId: jwtPayload?.schoolId || ''
         },
         academics: [],
         fitness: {
@@ -2012,7 +2078,7 @@ app.get('/api/student-portal', async (c) => {
   let metricsCount = 0;
 
   try {
-    const { results: metricDefs } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? ORDER BY category, name ASC').bind(player.school_id || 'OVK').all();
+    const { results: metricDefs } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? ORDER BY category, name ASC').bind(player.school_id || '').all();
     if (metricDefs && metricDefs.length > 0) {
       for (const mDef of metricDefs) {
         const { results: logs } = await db.prepare('SELECT * FROM player_test_logs WHERE player_id = ? AND metric_id = ? ORDER BY test_date ASC').bind(playerId, mDef.id).all();
@@ -2129,42 +2195,44 @@ app.get('/api/student-portal', async (c) => {
   // 7. Fetch Team Events for Student (filtered by squad if specified)
   let events: any[] = [];
   try {
-    const schoolId = player.school_id || 'OVK';
-    const reqSquadId = c.req.query('squad_id') || c.req.query('squadId');
-    let eventsQuery = 'SELECT * FROM events WHERE school_id = ?';
-    let queryParams: any[] = [schoolId];
+    const schoolId = player.school_id || '';
+    if (schoolId) {
+      const reqSquadId = c.req.query('squad_id') || c.req.query('squadId');
+      let eventsQuery = 'SELECT * FROM events WHERE school_id = ?';
+      let queryParams: any[] = [schoolId];
 
-    if (reqSquadId && !reqSquadId.startsWith('default-')) {
-      const selectedSquad: any = await db.prepare('SELECT name, code FROM squads WHERE id = ?').bind(reqSquadId).first();
-      if (selectedSquad) {
-        eventsQuery += ' AND (team = ? OR age_group = ? OR age_group IS NULL OR age_group = "")';
-        queryParams.push(selectedSquad.name, selectedSquad.code);
+      if (reqSquadId && !reqSquadId.startsWith('default-')) {
+        const selectedSquad: any = await db.prepare('SELECT name, code FROM squads WHERE id = ?').bind(reqSquadId).first();
+        if (selectedSquad) {
+          eventsQuery += ' AND (team = ? OR age_group = ? OR age_group IS NULL OR age_group = "")';
+          queryParams.push(selectedSquad.name, selectedSquad.code);
+        } else {
+          eventsQuery += ' AND (age_group = ? OR age_group IS NULL OR age_group = "")';
+          queryParams.push(player.age_group);
+        }
       } else {
         eventsQuery += ' AND (age_group = ? OR age_group IS NULL OR age_group = "")';
         queryParams.push(player.age_group);
       }
-    } else {
-      eventsQuery += ' AND (age_group = ? OR age_group IS NULL OR age_group = "")';
-      queryParams.push(player.age_group);
-    }
-    eventsQuery += ' ORDER BY date ASC, start_time ASC';
+      eventsQuery += ' ORDER BY date ASC, start_time ASC';
 
-    const { results } = await db.prepare(eventsQuery).bind(...queryParams).all();
-    events = (results || []).map((r: any) => ({
-      id: r.id?.toString() || '',
-      schoolId: r.school_id,
-      title: r.title,
-      eventType: r.event_type,
-      startTime: r.start_time,
-      date: r.date,
-      durationMins: r.duration_mins,
-      location: r.location,
-      isImportant: r.is_important === 1,
-      completionCount: r.completion_count,
-      ageGroup: r.age_group || null,
-      team: r.team || r.age_group || null,
-      workoutImagePath: r.workout_image_path
-    }));
+      const { results } = await db.prepare(eventsQuery).bind(...queryParams).all();
+      events = (results || []).map((r: any) => ({
+        id: r.id?.toString() || '',
+        schoolId: r.school_id,
+        title: r.title,
+        eventType: r.event_type,
+        startTime: r.start_time,
+        date: r.date,
+        durationMins: r.duration_mins,
+        location: r.location,
+        isImportant: r.is_important === 1,
+        completionCount: r.completion_count,
+        ageGroup: r.age_group || null,
+        team: r.team || r.age_group || null,
+        workoutImagePath: r.workout_image_path
+      }));
+    }
   } catch (_) {}
 
   return c.json({
@@ -2272,15 +2340,10 @@ app.post('/api/student-portal/profile', async (c) => {
     }
     if (!targetPlayer) {
       const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
-      if (u) {
-        if (u.email) {
-          targetPlayer = await db.prepare('SELECT * FROM players WHERE email = ?').bind(u.email).first();
-        }
-        if (!targetPlayer && u.phone) {
-          const cleanPhone = u.phone.replace(/[^\d]/g, '');
-          const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
-          targetPlayer = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
-        }
+      if (u && u.phone) {
+        const cleanPhone = u.phone.replace(/[^\d]/g, '');
+        const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
+        targetPlayer = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
       }
     }
     if (!targetPlayer) {
@@ -2307,7 +2370,6 @@ app.post('/api/student-portal/profile', async (c) => {
       SET first_name = COALESCE(?, first_name),
           last_name = COALESCE(?, last_name),
           phone = COALESCE(?, phone),
-          email = COALESCE(?, email),
           dob = COALESCE(?, dob),
           preferred_position = COALESCE(?, preferred_position),
           user_id = COALESCE(user_id, ?)
@@ -2316,12 +2378,19 @@ app.post('/api/student-portal/profile', async (c) => {
       firstName || null,
       lastName || null,
       formattedPhone || null,
-      email || null,
       dob || null,
       preferredPosition || null,
       userId,
       targetPlayer.id
     ).run();
+
+    if (email && email.trim()) {
+      const cleanEmail = email.trim().toLowerCase();
+      const targetUserId = targetPlayer.user_id || userId;
+      try {
+        await db.prepare('UPDATE users SET email = ? WHERE id = ?').bind(cleanEmail, targetUserId).run();
+      } catch (_) {}
+    }
 
     return c.json({ success: true, message: 'Profile updated successfully', phone: formattedPhone, playerId: targetPlayer.id });
   } catch (err: any) {
@@ -2373,8 +2442,12 @@ app.post('/api/player/evaluation-baseline', async (c) => {
 // Route: Get Test Metric Definitions
 app.get('/api/test-metrics', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || c.req.query('school_id') || 'OVK';
+  const schoolId = jwtPayload?.schoolId || c.req.query('school_id');
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'school_id query parameter or JWT schoolId is required' }, 400);
+  }
 
   try {
     const { results } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? ORDER BY category, name ASC').bind(schoolId).all();
@@ -2399,7 +2472,6 @@ app.get('/api/test-metrics', async (c) => {
 // Route: Create/Update Test Metric Definition
 app.post('/api/test-metrics', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
   let body: any;
@@ -2407,6 +2479,11 @@ app.post('/api/test-metrics', async (c) => {
     body = await c.req.json();
   } catch (e) {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
+  }
+
+  const schoolId = jwtPayload?.schoolId || body.schoolId;
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
   }
 
   const { id, name, category, unit, goalDirection, targetBenchmark } = body;
@@ -2499,8 +2576,14 @@ app.post('/api/test-logs/batch', async (c) => {
 
 // Route: Get all players for admin configurator
 app.get('/api/admin/all-players', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
-  const schoolId = c.req.query('school_id') || 'OVK';
+  const schoolId = jwtPayload?.schoolId || c.req.query('school_id');
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'school_id parameter is required' }, 400);
+  }
+
   const query = 'SELECT id, first_name, last_name, age_group, team, position FROM players WHERE school_id = ? ORDER BY age_group, team, last_name, first_name';
   try {
     const { results } = await db.prepare(query).bind(schoolId).all();
@@ -2523,9 +2606,13 @@ app.get('/api/admin/all-players', async (c) => {
 // Route: Get school players for search & squad assignment
 app.get('/api/school/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || c.req.query('school_id') || 'OVK';
+  const schoolId = jwtPayload?.schoolId || c.req.query('school_id');
   const searchQuery = (c.req.query('q') || c.req.query('query') || '').trim();
   const db = getDB(c);
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'school_id parameter is required' }, 400);
+  }
 
   await ensureSquadsTables(db);
 
@@ -2781,6 +2868,7 @@ app.post('/api/admin/bulk-upload', async (c) => {
     }
   }
 
+  const statusCode = errorCount === 0 ? 200 : (successCount > 0 ? 207 : 400);
   return c.json({
     success: errorCount === 0,
     message: `Bulk upload completed. Success: ${successCount}, Errors: ${errorCount}`,
@@ -2789,7 +2877,7 @@ app.post('/api/admin/bulk-upload', async (c) => {
       errorCount,
       errors
     }
-  });
+  }, statusCode);
 });
 
 // Route: Get sports metrics configuration
@@ -2842,8 +2930,13 @@ app.post('/api/players/:id/position', async (c) => {
 // Route: Create Player & Pre-create User & Send Invite Email
 app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || 'OVK';
   const body = await c.req.json();
+  const schoolId = jwtPayload?.schoolId || body.schoolId;
+
+  if (!schoolId) {
+    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  }
+
   const { id, firstName, lastName, ageGroup, position, team, email } = body;
   const db = getDB(c);
 
@@ -2851,7 +2944,7 @@ app.post('/api/players', async (c) => {
     return c.json({ success: false, message: 'First name, last name, and age group are required' }, 400);
   }
 
-  const playerId = id || `OVK-${ageGroup}-${Date.now().toString().substring(7)}`;
+  const playerId = id || `PL-${Date.now().toString().substring(7)}`;
   const playerEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${firstName.toLowerCase().replace(/\s+/g, '')}.${lastName.toLowerCase().replace(/\s+/g, '')}@academypro.co.za`;
 
   try {
@@ -2970,8 +3063,19 @@ async function ensureParentLinksTable(db: any) {
 // Route: Parent sends link request to child via email
 app.post('/api/parent/link-request', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const parentUserId = jwtPayload?.sub || 'USR-PARENT-101';
-  const { childEmail } = await c.req.json();
+  const parentUserId = jwtPayload?.sub;
+  if (!parentUserId) {
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (_) {
+    return c.json({ success: false, message: 'Invalid payload' }, 400);
+  }
+
+  const { childEmail } = body;
   const db = getDB(c);
 
   if (!childEmail || !childEmail.trim()) {
@@ -2987,11 +3091,15 @@ app.post('/api/parent/link-request', async (c) => {
     if (!player) {
       const user = await db.prepare('SELECT id, first_name, last_name FROM users WHERE email = ?').bind(cleanChildEmail).first();
       if (user) {
-        player = await db.prepare('SELECT id, first_name, last_name FROM players WHERE user_id = ?').bind(user.id).first();
+        player = await db.prepare('SELECT id, first_name, last_name, user_id FROM players WHERE user_id = ?').bind(user.id).first();
       }
     }
 
-    const playerId = player ? player.id : `OVK-U15-${Date.now().toString().substring(7)}`;
+    if (!player) {
+      return c.json({ success: false, message: 'No registered athlete profile found for provided child email' }, 404);
+    }
+
+    const playerId = player.id;
 
     const existing = await db.prepare('SELECT id, status FROM parent_child_links WHERE parent_user_id = ? AND player_email = ?').bind(parentUserId, cleanChildEmail).first();
 
@@ -3009,12 +3117,14 @@ app.post('/api/parent/link-request', async (c) => {
       VALUES (?, ?, ?, ?, 'pending')
     `).bind(linkId, parentUserId, playerId, cleanChildEmail).run();
 
-    try {
-      await db.prepare(`
-        INSERT INTO notifications (user_id, title, body, type, is_read, created_at)
-        VALUES (?, 'Parent Link Request', 'A parent has requested to link to your athlete profile. Tap to review and accept.', 'link_request', 0, CURRENT_TIMESTAMP)
-      `).bind(player?.user_id || 'USR-STUDENT-01').run();
-    } catch (_) {}
+    if (player.user_id) {
+      try {
+        await db.prepare(`
+          INSERT INTO notifications (user_id, title, body, type, is_read, created_at)
+          VALUES (?, 'Parent Link Request', 'A parent has requested to link to your athlete profile. Tap to review and accept.', 'link_request', 0, CURRENT_TIMESTAMP)
+        `).bind(player.user_id).run();
+      } catch (_) {}
+    }
 
     return c.json({
       success: true,
@@ -3029,7 +3139,10 @@ app.post('/api/parent/link-request', async (c) => {
 // Route: Player fetches pending parent link requests
 app.get('/api/player/link-requests', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const userId = jwtPayload?.sub || 'USR-STUDENT-01';
+  const userId = jwtPayload?.sub;
+  if (!userId) {
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
   const db = getDB(c);
 
   await ensureParentLinksTable(db);
@@ -3331,7 +3444,7 @@ app.post('/api/sms/send-verification', async (c) => {
     return c.json({ success: false, message: 'Phone number is required' }, 400);
   }
 
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpCode = generateSecureOTP();
   
   // Format phone to digits-only (e.g. 27821234567) required by SMS gateway
   let digitsOnly = phone.replace(/[^\d]/g, '');
@@ -3341,7 +3454,10 @@ app.post('/api/sms/send-verification', async (c) => {
     digitsOnly = '27' + digitsOnly;
   }
 
-  const apiKey = c.env.INTERNAL_API_KEY || 'agua_internal_secret_key_102938';
+  const apiKey = c.env.INTERNAL_API_KEY;
+  if (!apiKey) {
+    return c.json({ success: false, message: 'Internal API Key binding missing' }, 500);
+  }
 
   try {
     const smsRes = await fetch('https://sms-service.codeways.co', {

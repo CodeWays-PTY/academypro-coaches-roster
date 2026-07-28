@@ -68,15 +68,15 @@ function start() {
 
   // 3. Seed Users (Coach)
   sqlStatements.push('-- Seed Coach User');
-  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-COACH-1', 'OVK', 'coach.ross@overkruin.co.za', 'sha256$mockedhash', 'Coach', 'Ross', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-COACH-1', 'OVK', 'coach.ross@overkruin.co.za', NULL, 'Coach', 'Ross', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   sqlStatements.push('-- Seed Student User');
-  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-STUDENT-1', 'OVK', 'student@overkruin.co.za', 'sha256$mockedhash', 'Student', 'Liam', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-STUDENT-1', 'OVK', 'student@overkruin.co.za', NULL, 'Student', 'Liam', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   sqlStatements.push('-- Seed Parent User');
-  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('PAR-OVK-001', 'OVK', 'parent@overkruin.co.za', 'sha256$mockedhash', 'Parent', 'Gerrit', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('PAR-OVK-001', 'OVK', 'parent@overkruin.co.za', NULL, 'Parent', 'Gerrit', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   // 4. Parse Player Register Sheet
@@ -119,7 +119,6 @@ function start() {
     const team = parseString(row[7]);
     const status = row[9] || 'Active';
     const parentName = parseString(row[10]);
-    const parentContact = parseString(row[11]);
     const parentId = parseString(row[12]);
     const uGroupsActive = (row[13] && String(row[13]).trim().toLowerCase() === 'yes') ? 1 : 0;
     const notes = parseString(row[14]);
@@ -142,8 +141,8 @@ function start() {
     });
 
     playerInserts.push(
-      `INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_contact, parent_id, ugroups_active, notes) ` +
-      `VALUES ('${normalizedId}', 'OVK', '${ageGroup}', '${firstName.replace(/'/g, "''")}', '${lastName.replace(/'/g, "''")}', ${grade}, ${age}, ${position}, ${team}, '${status}', ${parentName}, ${parentContact}, ${parentId}, ${uGroupsActive}, ${notes});`
+      `INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_id, ugroups_active, notes) ` +
+      `VALUES ('${normalizedId}', 'OVK', '${ageGroup}', '${firstName.replace(/'/g, "''")}', '${lastName.replace(/'/g, "''")}', ${grade}, ${age}, ${position}, ${team}, '${status}', ${parentName}, ${parentId}, ${uGroupsActive}, ${notes});`
     );
   }
 

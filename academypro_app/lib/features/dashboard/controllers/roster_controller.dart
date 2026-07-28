@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../core/utils/phone_utils.dart';
 
 class SquadInfo {
@@ -22,7 +23,6 @@ class RosterPlayer {
   final String id;
   final String firstName;
   final String lastName;
-  final String email;
   final String ageGroup;
   String position;
   final String team;
@@ -36,7 +36,6 @@ class RosterPlayer {
     required this.id,
     required this.firstName,
     required this.lastName,
-    this.email = '',
     required this.ageGroup,
     required this.position,
     required this.team,
@@ -49,13 +48,12 @@ class RosterPlayer {
         assignedSquads = assignedSquads ?? [];
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
-    final rawPhone = json['parentPhone'] ?? json['parentContact'];
+    final rawPhone = json['parentPhone'];
     final rawSquads = json['assignedSquads'] as List<dynamic>? ?? [];
     return RosterPlayer(
       id: json['id'] ?? '',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
-      email: json['email'] ?? '',
       ageGroup: json['ageGroup'] ?? '',
       position: json['position'] ?? '',
       team: json['team'] ?? '',
@@ -121,12 +119,14 @@ class RosterNotifier extends StateNotifier<RosterState> {
       } else {
         final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
         newMap[ageGroup] = newMap[ageGroup] ?? [];
-        state = state.copyWith(playersByAge: newMap, loading: false);
+        state = state.copyWith(playersByAge: newMap, loading: false, error: response.data?['message'] ?? 'Failed to load roster');
       }
     } catch (e) {
+      print('Error fetching roster for $ageGroup: $e');
       final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
       newMap[ageGroup] = newMap[ageGroup] ?? [];
-      state = state.copyWith(playersByAge: newMap, loading: false);
+      state = state.copyWith(playersByAge: newMap, loading: false, error: e.toString());
+      AppToast.showError(null, title: 'Network Error', message: 'Failed to load roster.');
     }
   }
 
@@ -140,8 +140,13 @@ class RosterNotifier extends StateNotifier<RosterState> {
         await fetchRoster(ageGroup);
         return true;
       }
-    } catch (_) {}
-    return false;
+      AppToast.showError(null, title: 'Update Failed', message: 'Could not update squad assignments.');
+      return false;
+    } catch (e) {
+      print('Error in updatePlayerSquads: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to update player squads.');
+      return false;
+    }
   }
 
   Future<List<RosterPlayer>> fetchSchoolPlayers([String query = '']) async {
@@ -152,7 +157,10 @@ class RosterNotifier extends StateNotifier<RosterState> {
         final List list = response.data['data'] ?? [];
         return list.map((x) => RosterPlayer.fromJson(x)).toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      print('Error in fetchSchoolPlayers: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to search school players.');
+    }
     return [];
   }
 
@@ -166,8 +174,13 @@ class RosterNotifier extends StateNotifier<RosterState> {
         await fetchRoster(currentAgeGroup);
         return true;
       }
-    } catch (_) {}
-    return false;
+      AppToast.showError(null, title: 'Squad Error', message: 'Could not add player to squad.');
+      return false;
+    } catch (e) {
+      print('Error in addPlayerToSquad: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to add player to squad.');
+      return false;
+    }
   }
 
   Future<bool> removePlayerFromSquad(String playerId, String squadId, String currentAgeGroup) async {
@@ -180,8 +193,13 @@ class RosterNotifier extends StateNotifier<RosterState> {
         await fetchRoster(currentAgeGroup);
         return true;
       }
-    } catch (_) {}
-    return false;
+      AppToast.showError(null, title: 'Squad Error', message: 'Could not remove player from squad.');
+      return false;
+    } catch (e) {
+      print('Error in removePlayerFromSquad: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to remove player from squad.');
+      return false;
+    }
   }
 
   Future<bool> updatePlayerPosition(RosterPlayer player, String newPosition) async {
@@ -220,7 +238,8 @@ class RosterNotifier extends StateNotifier<RosterState> {
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      // Local state already updated
+      print('Error updating position on server: $e');
+      AppToast.showError(null, title: 'Network Error', message: 'Position updated locally, but server sync failed.');
       return true;
     }
   }
@@ -231,10 +250,9 @@ class RosterNotifier extends StateNotifier<RosterState> {
     required String ageGroup,
     required String position,
     required String team,
-    String? email,
     String? parentPhone,
   }) async {
-    final newId = 'OVK-$ageGroup-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    final newId = '$ageGroup-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     final newPlayer = RosterPlayer(
       id: newId,
       firstName: firstName,
@@ -254,19 +272,25 @@ class RosterNotifier extends StateNotifier<RosterState> {
     state = state.copyWith(playersByAge: newMap);
 
     try {
-      await _apiClient.post('/api/players', data: {
+      final res = await _apiClient.post('/api/players', data: {
         'id': newId,
         'firstName': firstName,
         'lastName': lastName,
         'ageGroup': ageGroup,
         'position': position,
         'team': team,
-        'email': email,
         'parentPhone': parentPhone,
       });
-    } catch (_) {}
-
-    return true;
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return true;
+      }
+      AppToast.showError(null, title: 'Add Player Failed', message: res.data?['message'] ?? 'Failed to save player.');
+      return false;
+    } catch (e) {
+      print('Error in addPlayer: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to add player to server.');
+      return false;
+    }
   }
 }
 

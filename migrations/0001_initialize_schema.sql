@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS players (
     team TEXT,
     status TEXT CHECK(status IN ('Active', 'Injured', 'Inactive')) DEFAULT 'Active',
     parent_name TEXT,
-    parent_contact TEXT,
     parent_id TEXT UNIQUE,
     ugroups_active INTEGER CHECK(ugroups_active IN (0, 1)) DEFAULT 0,
     notes TEXT,

@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS players (
     parent_id TEXT,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
-    email TEXT,
     phone TEXT,
     parent_name TEXT,
     dob TEXT,

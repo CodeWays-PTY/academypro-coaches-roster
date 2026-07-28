@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/local_storage.dart';
+import '../../../core/utils/app_toast.dart';
 
 class DashboardSummaryState {
   final int attendancePercent;
@@ -92,10 +94,12 @@ class DashboardSummaryNotifier extends StateNotifier<DashboardSummaryState> {
           error: null,
         );
       } else {
-        state = state.copyWith(loading: false);
+        state = state.copyWith(loading: false, error: response.data?['message'] ?? 'Failed to load summary');
       }
     } catch (e) {
-      state = state.copyWith(loading: false);
+      print('Error in fetchSummary: $e');
+      state = state.copyWith(loading: false, error: e.toString());
+      AppToast.showError(null, title: 'Network Error', message: 'Failed to load dashboard summary.');
     }
   }
 }
@@ -208,7 +212,7 @@ class RisingStarPlayer {
         position = position ?? 'Forward',
         ageGroup = ageGroup ?? 'U15',
         gymConsistencyWeeks = gymConsistencyWeeks ?? streakWeeks,
-        gradeImprovement = gradeImprovement ?? 12,
+        gradeImprovement = gradeImprovement ?? AppConfig.gradeImprovementDefault,
         attendancePercent = attendancePercent ?? 0,
         gymProgressPercent = gymProgressPercent ?? 0;
 
@@ -274,7 +278,6 @@ class CoachActionItem {
   final String playerName;
   final String parentName;
   final String parentPhone;
-  final String parentEmail;
   final String playerPhone;
   final String notes;
 
@@ -288,10 +291,9 @@ class CoachActionItem {
     this.isCompleted = false,
     this.playerId,
     this.playerName = '',
-    this.parentName = 'Parent Contact',
-    this.parentPhone = '+27 82 555 0192',
-    this.parentEmail = 'parent@academypro.co.za',
-    this.playerPhone = '+27 71 444 8821',
+    this.parentName = '',
+    this.parentPhone = '',
+    this.playerPhone = '',
     this.notes = 'Follow up required with coaching staff.',
   })  : category = category ?? type,
         dateAdded = dateAdded ?? 'Today';
@@ -308,7 +310,6 @@ class CoachActionItem {
     String? playerName,
     String? parentName,
     String? parentPhone,
-    String? parentEmail,
     String? playerPhone,
     String? notes,
   }) {
@@ -324,7 +325,6 @@ class CoachActionItem {
       playerName: playerName ?? this.playerName,
       parentName: parentName ?? this.parentName,
       parentPhone: parentPhone ?? this.parentPhone,
-      parentEmail: parentEmail ?? this.parentEmail,
       playerPhone: playerPhone ?? this.playerPhone,
       notes: notes ?? this.notes,
     );
@@ -353,15 +353,17 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
           isCompleted: x['isCompleted'] == true,
           playerId: x['playerId'],
           playerName: x['playerName'] ?? '',
-          parentName: x['parentName'] ?? 'Parent Contact',
-          parentPhone: x['parentPhone'] ?? '+27 82 555 0192',
-          parentEmail: x['parentEmail'] ?? 'parent@academypro.co.za',
-          playerPhone: x['playerPhone'] ?? '+27 71 444 8821',
+          parentName: x['parentName'] ?? '',
+          parentPhone: x['parentPhone'] ?? '',
+          playerPhone: x['playerPhone'] ?? '',
           notes: x['notes'] ?? 'Follow up required with coaching staff.',
         )).toList();
         state = items;
       }
-    } catch (_) {}
+    } catch (e) {
+      print('Error in fetchActions: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to fetch coach actions.');
+    }
   }
 
   Future<void> addAction({
@@ -396,7 +398,10 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
         'playerName': playerName,
       });
       fetchActions();
-    } catch (_) {}
+    } catch (e) {
+      print('Error in addAction: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to add coach action.');
+    }
   }
 
   Future<void> toggleAction(String actionId) async {
@@ -409,7 +414,10 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
 
     try {
       await _apiClient.post('/api/dashboard/actions/$actionId/toggle');
-    } catch (_) {}
+    } catch (e) {
+      print('Error in toggleAction: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to toggle action status.');
+    }
   }
 }
 
@@ -476,7 +484,9 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
         await _updateHiveCache(finalSquads);
         return;
       }
-    } catch (_) {}
+    } catch (e) {
+      print('Error in fetchSquads: $e');
+    }
 
     if (state.isEmpty) {
       final cachedRaw = LocalStorage.getCachedData('/api/squads');
@@ -513,7 +523,10 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
         'ageGroup': formattedAge,
         'description': description,
       });
-    } catch (_) {}
+    } catch (e) {
+      print('Error in createSquad: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to create squad on server.');
+    }
 
     return newSquad;
   }
