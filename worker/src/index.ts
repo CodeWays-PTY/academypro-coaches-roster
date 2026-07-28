@@ -1246,10 +1246,21 @@ app.post('/api/dashboard/events', async (c) => {
 
   const { id, title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
 
-  if (!title || !eventType || !startTime || !date || !location) {
+  const eventTitle = (title || '').trim();
+  const eventLoc = (location || '').trim() || 'Overkruin Sports Complex';
+  const eventTime = (startTime || '').trim() || '15:00';
+  const eventDt = (date || '').trim() || new Date().toISOString().split('T')[0];
+  
+  let evType = (eventType || '').trim();
+  if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
+  if (evType === 'Gym' || evType === 'Gym Practice') evType = 'Gym Session';
+  if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
+  if (!evType) evType = 'Field Session';
+
+  if (!eventTitle) {
     return c.json({
       success: false,
-      message: 'Title, eventType, startTime, date, and location are required fields.'
+      message: 'Event title is required.'
     }, 400);
   }
 
@@ -1266,17 +1277,17 @@ app.post('/api/dashboard/events', async (c) => {
   try {
     const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
     const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
-    const compCountVal = eventType === 'Gym Session' ? 0 : null;
+    const compCountVal = evType === 'Gym Session' ? 0 : null;
 
     await db.prepare(query).bind(
       eventId,
       schoolId,
-      title.trim(),
-      eventType.trim(),
-      startTime.trim(),
-      date.trim(),
+      eventTitle,
+      evType,
+      eventTime,
+      eventDt,
       durMinsVal,
-      location.trim(),
+      eventLoc,
       intensity ? intensity.trim() : null,
       isImpVal,
       compCountVal,

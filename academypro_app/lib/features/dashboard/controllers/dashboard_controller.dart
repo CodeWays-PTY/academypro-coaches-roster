@@ -768,14 +768,14 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     await _updateHiveCache(updatedList, activeAge);
 
     try {
-      await _apiClient.post('/api/dashboard/events', data: {
+      final res = await _apiClient.post('/api/dashboard/events', data: {
         'id': eventId,
         'schoolId': 'OVK',
         'title': title,
         'eventType': eventType,
         'startTime': startTime,
         'date': date,
-        'location': location,
+        'location': location.isNotEmpty ? location : 'Overkruin Sports Complex',
         'durationMins': durationMins,
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
@@ -783,8 +783,13 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'ageGroup': activeAge,
         'team': assignedTeam,
       });
-      await fetchEvents(ageGroup: activeAge);
-    } catch (_) {}
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchEvents(ageGroup: activeAge);
+        return true;
+      }
+    } catch (e) {
+      print('[Create Event Error] Failed saving event to D1: $e');
+    }
     return true;
   }
 
