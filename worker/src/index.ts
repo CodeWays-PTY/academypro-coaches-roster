@@ -2081,7 +2081,37 @@ app.post('/api/student-portal/profile', async (c) => {
   }
 
   try {
-    const { firstName, lastName, phone, email, dob, preferredPosition } = await c.req.json();
+    const body = await c.req.json();
+    const { firstName, lastName, phone, email, dob, preferredPosition, playerId: reqPlayerId } = body;
+
+    let targetPlayer: any = null;
+    if (reqPlayerId) {
+      targetPlayer = await db.prepare('SELECT * FROM players WHERE id = ?').bind(reqPlayerId).first();
+    }
+    if (!targetPlayer) {
+      targetPlayer = await db.prepare('SELECT * FROM players WHERE user_id = ? OR id = ?').bind(userId, userId).first();
+    }
+    if (!targetPlayer) {
+      const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
+      if (u) {
+        if (u.email) {
+          targetPlayer = await db.prepare('SELECT * FROM players WHERE email = ?').bind(u.email).first();
+        }
+        if (!targetPlayer && u.phone) {
+          const cleanPhone = u.phone.replace(/[^\d]/g, '');
+          const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
+          targetPlayer = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ? OR parent_phone = ? OR parent_phone LIKE ?').bind(u.phone, `%${suffix}%`, u.phone, `%${suffix}%`).first();
+        }
+      }
+    }
+    if (!targetPlayer) {
+      targetPlayer = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
+    }
+
+    if (!targetPlayer) {
+      return c.json({ success: false, message: 'Player record not found' }, 404);
+    }
+
     let formattedPhone = phone;
     if (phone && phone.trim().length > 0) {
       let clean = phone.replace(/[^\d+]/g, '');
@@ -2100,12 +2130,23 @@ app.post('/api/student-portal/profile', async (c) => {
           phone = COALESCE(?, phone),
           email = COALESCE(?, email),
           dob = COALESCE(?, dob),
-          preferred_position = COALESCE(?, preferred_position)
-      WHERE user_id = ? OR id = ?
-    `).bind(firstName, lastName, formattedPhone, email, dob, preferredPosition, userId, userId).run();
+          preferred_position = COALESCE(?, preferred_position),
+          user_id = COALESCE(user_id, ?)
+      WHERE id = ?
+    `).bind(
+      firstName || null,
+      lastName || null,
+      formattedPhone || null,
+      email || null,
+      dob || null,
+      preferredPosition || null,
+      userId,
+      targetPlayer.id
+    ).run();
 
-    return c.json({ success: true, message: 'Profile updated successfully', phone: formattedPhone });
+    return c.json({ success: true, message: 'Profile updated successfully', phone: formattedPhone, playerId: targetPlayer.id });
   } catch (err: any) {
+    console.error('[API Error] Profile save error:', err);
     return c.json({ success: false, message: 'Failed to update profile', error: err.message }, 500);
   }
 });

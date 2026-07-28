@@ -2164,7 +2164,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                             }
 
                             final apiClient = ref.read(apiClientProvider);
-                            final res = await apiClient.dio.post('/api/student-portal/profile', data: {
+                            final res = await apiClient.post('/api/student-portal/profile', data: {
                               'firstName': _firstNameController.text.trim(),
                               'lastName': _lastNameController.text.trim(),
                               'phone': fullPhone,
