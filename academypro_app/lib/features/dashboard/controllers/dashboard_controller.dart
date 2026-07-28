@@ -659,8 +659,9 @@ class CoachEvent {
 
 class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>> {
   final ApiClient _apiClient;
+  final Ref _ref;
 
-  DashboardEventsNotifier(this._apiClient)
+  DashboardEventsNotifier(this._apiClient, this._ref)
       : super(const AsyncValue.loading()) {
     fetchEvents();
   }
@@ -826,5 +827,5 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
 
 final dashboardEventsProvider = StateNotifierProvider<DashboardEventsNotifier, AsyncValue<List<CoachEvent>>>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return DashboardEventsNotifier(apiClient);
+  return DashboardEventsNotifier(apiClient, ref);
 });
