@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/local_storage.dart';
-import '../../auth/presentation/auth_state.dart';
 
 class DashboardSummaryState {
   final int attendancePercent;
@@ -742,9 +741,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     String? ageGroup,
     String? team,
   }) async {
-    final activeAge = ageGroup ?? _ref.read(selectedAgeGroupProvider);
+    final String activeAge = (ageGroup != null && ageGroup.isNotEmpty)
+        ? ageGroup
+        : (_ref.read(selectedAgeGroupProvider) ?? 'U15');
+    final String assignedTeam = (team != null && team.isNotEmpty) ? team : activeAge;
     final eventId = 'EVT-${DateTime.now().millisecondsSinceEpoch}';
-    final assignedTeam = (team != null && team.isNotEmpty) ? team : activeAge;
     final newEvent = CoachEvent(
       id: eventId,
       schoolId: 'OVK',
