@@ -1140,24 +1140,57 @@ app.get('/api/dashboard/events', async (c) => {
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
-  const team = c.req.query('team');
   const db = getDB(c);
 
-  const { squadCodes } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
-
-  if (role === 'Coach' && squadCodes.length === 0 && ageGroup && ageGroup !== 'All') {
-    return c.json({
-      success: true,
-      data: []
-    });
-  }
-
-  let query = 'SELECT * FROM events WHERE school_id = ? ORDER BY date ASC, start_time ASC';
+  let query = 'SELECT * FROM events WHERE school_id = ?';
   let params: any[] = [schoolId];
-  if (ageGroup && ageGroup !== 'All') {
-    query = 'SELECT * FROM events WHERE school_id = ? AND (age_group = ? OR team = ?) ORDER BY date ASC, start_time ASC';
-    params.push(ageGroup, ageGroup);
+
+  if (role !== 'SuperAdmin' && role !== 'SchoolAdmin') {
+    // Coach role: strictly filter to squads managed by this coach
+    const { squadCodes, squadIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
+    
+    let managedSquadKeys: string[] = [];
+    try {
+      const { results: sqRes } = await db.prepare('SELECT id, code, name FROM squads WHERE school_id = ? AND (coach_id = ? OR coach_id IS NULL)').bind(schoolId, coachId).all();
+      if (sqRes && sqRes.length > 0) {
+        for (const s of sqRes) {
+          if (s.id) managedSquadKeys.push(s.id);
+          if (s.code) managedSquadKeys.push(s.code);
+          if (s.name) managedSquadKeys.push(s.name);
+        }
+      }
+    } catch (_) {}
+
+    managedSquadKeys = Array.from(new Set([...managedSquadKeys, ...squadCodes, ...squadIds]));
+
+    if (managedSquadKeys.length === 0) {
+      return c.json({
+        success: true,
+        data: []
+      });
+    }
+
+    if (ageGroup && ageGroup !== 'All') {
+      const matchesManaged = managedSquadKeys.some(k => k.toLowerCase() === ageGroup.toLowerCase());
+      if (!matchesManaged) {
+        return c.json({ success: true, data: [] });
+      }
+      query += ' AND (age_group = ? OR team = ?)';
+      params.push(ageGroup, ageGroup);
+    } else {
+      const placeholders = managedSquadKeys.map(() => '?').join(',');
+      query += ` AND (age_group IN (${placeholders}) OR team IN (${placeholders}))`;
+      params.push(...managedSquadKeys, ...managedSquadKeys);
+    }
+  } else {
+    // Admin role
+    if (ageGroup && ageGroup !== 'All') {
+      query += ' AND (age_group = ? OR team = ?)';
+      params.push(ageGroup, ageGroup);
+    }
   }
+
+  query += ' ORDER BY date ASC, start_time ASC';
 
   try {
     const { results } = await db.prepare(query).bind(...params).all();
