@@ -1345,9 +1345,6 @@ app.get('/api/dashboard/actions', async (c) => {
         is_completed INTEGER DEFAULT 0,
         player_id TEXT,
         player_name TEXT,
-        parent_name TEXT,
-        parent_phone TEXT,
-        parent_email TEXT,
         player_phone TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -1367,9 +1364,6 @@ app.get('/api/dashboard/actions', async (c) => {
         isCompleted: Boolean(row.is_completed),
         playerId: row.player_id,
         playerName: row.player_name || '',
-        parentName: row.parent_name || '',
-        parentPhone: row.parent_phone || '',
-        parentEmail: row.parent_email || '',
         playerPhone: row.player_phone || '',
         notes: row.notes || ''
       }))
@@ -1409,9 +1403,6 @@ app.post('/api/dashboard/actions', async (c) => {
         is_completed INTEGER DEFAULT 0,
         player_id TEXT,
         player_name TEXT,
-        parent_name TEXT,
-        parent_phone TEXT,
-        parent_email TEXT,
         player_phone TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -1468,9 +1459,6 @@ app.post('/api/dashboard/actions/:id/toggle', async (c) => {
         is_completed INTEGER DEFAULT 0,
         player_id TEXT,
         player_name TEXT,
-        parent_name TEXT,
-        parent_phone TEXT,
-        parent_email TEXT,
         player_phone TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -1769,14 +1757,6 @@ app.get('/api/student-portal', async (c) => {
       }
     } else if (!player && (roleLower === 'parent' || roleLower.includes('parent'))) {
       player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();
-      if (!player) {
-        const u: any = await db.prepare('SELECT phone, email FROM users WHERE id = ?').bind(userId).first();
-        if (u && u.phone) {
-          const cleanPhone = u.phone.replace(/[^\d]/g, '');
-          const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
-          player = await db.prepare('SELECT * FROM players WHERE parent_phone = ? OR parent_phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
-        }
-      }
     }
   } catch (_) {}
 
@@ -2004,8 +1984,6 @@ app.get('/api/student-portal', async (c) => {
         age: player.age,
         ugroupsActive: player.ugroups_active,
         notes: player.notes,
-        parentName: player.parent_name,
-        parentContact: player.parent_contact,
         assignedSquads: assignedSquads
       },
       academics: academics.map((a: any) => ({
@@ -2100,7 +2078,7 @@ app.post('/api/student-portal/profile', async (c) => {
         if (!targetPlayer && u.phone) {
           const cleanPhone = u.phone.replace(/[^\d]/g, '');
           const suffix = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : cleanPhone;
-          targetPlayer = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ? OR parent_phone = ? OR parent_phone LIKE ?').bind(u.phone, `%${suffix}%`, u.phone, `%${suffix}%`).first();
+          targetPlayer = await db.prepare('SELECT * FROM players WHERE phone = ? OR phone LIKE ?').bind(u.phone, `%${suffix}%`).first();
         }
       }
     }
@@ -2665,7 +2643,7 @@ app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || 'OVK';
   const body = await c.req.json();
-  const { id, firstName, lastName, ageGroup, position, team, email, parentPhone } = body;
+  const { id, firstName, lastName, ageGroup, position, team, email } = body;
   const db = getDB(c);
 
   if (!firstName || !lastName || !ageGroup) {
@@ -2678,9 +2656,9 @@ app.post('/api/players', async (c) => {
   try {
     // 1. Insert into D1 players table
     await db.prepare(`
-      INSERT OR REPLACE INTO players (id, school_id, first_name, last_name, age_group, position, team, status, parent_contact)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', ?)
-    `).bind(playerId, schoolId, firstName, lastName, ageGroup, position || 'Athlete', team || `${ageGroup} Squad`, parentPhone || '').run();
+      INSERT OR REPLACE INTO players (id, school_id, first_name, last_name, age_group, position, team, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')
+    `).bind(playerId, schoolId, firstName, lastName, ageGroup, position || 'Athlete', team || `${ageGroup} Squad`).run();
 
     // 2. Pre-create Player user account in users table if not exists
     const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(playerEmail).first();

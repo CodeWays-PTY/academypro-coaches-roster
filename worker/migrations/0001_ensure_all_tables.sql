@@ -18,8 +18,6 @@ CREATE TABLE IF NOT EXISTS players (
     email TEXT,
     phone TEXT,
     parent_name TEXT,
-    parent_phone TEXT,
-    parent_contact TEXT,
     dob TEXT,
     preferred_position TEXT,
     age_group TEXT DEFAULT 'U15',
