@@ -1667,19 +1667,33 @@ app.post('/api/dashboard/checkin', async (c) => {
   for (const playerId of allSessionPlayerIds) {
     const isPresent = checkedInSet.has(playerId);
     const statusVal = isPresent ? 'Present' : 'Absent';
+    const evtIdStr = eventId ? eventId.toString() : `evt-${date}-${sessType}`;
 
     try {
       const sql = `
-        INSERT INTO attendance (player_id, session_type, date, status, created_at)
-        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(player_id, session_type, date) DO UPDATE SET
+        INSERT INTO attendance (player_id, session_type, date, status, event_id, created_at)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(player_id, event_id) DO UPDATE SET
           status = ?,
+          date = ?,
+          session_type = ?,
           created_at = CURRENT_TIMESTAMP
       `;
-      await db.prepare(sql).bind(playerId, sessType, date, statusVal, statusVal).run();
+      await db.prepare(sql).bind(playerId, sessType, date, statusVal, evtIdStr, statusVal, date, sessType).run();
       if (isPresent) recordedCount++;
     } catch (e) {
-      console.warn(`[API WARN] Failed attendance record for ${playerId}:`, e);
+      try {
+        const legacySql = `
+          INSERT INTO attendance (player_id, session_type, date, status, event_id, created_at)
+          VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(player_id, session_type, date) DO UPDATE SET
+            status = ?,
+            event_id = ?,
+            created_at = CURRENT_TIMESTAMP
+        `;
+        await db.prepare(legacySql).bind(playerId, sessType, date, statusVal, evtIdStr, statusVal, evtIdStr).run();
+        if (isPresent) recordedCount++;
+      } catch (_) {}
     }
   }
 
@@ -1719,11 +1733,12 @@ app.get('/api/dashboard/events/:id/attendance', async (c) => {
     const ev: any = await db.prepare('SELECT date, event_type FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(eventId, eventId).first();
     const targetDate = ev?.date || new Date().toISOString().split('T')[0];
 
-    const { results } = await db.prepare(`
-      SELECT player_id FROM attendance WHERE date = ? AND status = 'Present'
-    `).bind(targetDate).all();
+    const { results: evtResults } = await db.prepare(`
+      SELECT player_id FROM attendance WHERE (CAST(event_id AS TEXT) = ? OR event_id = ?) AND status = 'Present'
+    `).bind(eventId.toString(), eventId.toString()).all();
 
-    const checkedInPlayerIds = (results || []).map((r: any) => r.player_id);
+    const checkedInPlayerIds = (evtResults || []).map((r: any) => r.player_id);
+
     return c.json({
       success: true,
       data: {
