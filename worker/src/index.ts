@@ -1142,7 +1142,7 @@ app.get('/api/dashboard/events', async (c) => {
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
-  let query = 'SELECT * FROM events WHERE school_id = ?';
+  let query = 'SELECT * FROM events WHERE (school_id = ? OR school_id IS NULL OR school_id = "")';
   let params: any[] = [schoolId];
 
   if (role !== 'SuperAdmin' && role !== 'SchoolAdmin') {
@@ -1175,17 +1175,17 @@ app.get('/api/dashboard/events', async (c) => {
       if (!matchesManaged) {
         return c.json({ success: true, data: [] });
       }
-      query += ' AND (age_group = ? OR team = ?)';
+      query += ' AND (age_group = ? OR team = ? OR age_group IS NULL OR age_group = "")';
       params.push(ageGroup, ageGroup);
     } else {
       const placeholders = managedSquadKeys.map(() => '?').join(',');
-      query += ` AND (age_group IN (${placeholders}) OR team IN (${placeholders}))`;
+      query += ` AND (age_group IN (${placeholders}) OR team IN (${placeholders}) OR age_group IS NULL OR age_group = "")`;
       params.push(...managedSquadKeys, ...managedSquadKeys);
     }
   } else {
     // Admin role
     if (ageGroup && ageGroup !== 'All') {
-      query += ' AND (age_group = ? OR team = ?)';
+      query += ' AND (age_group = ? OR team = ? OR age_group IS NULL OR age_group = "")';
       params.push(ageGroup, ageGroup);
     }
   }
@@ -1203,7 +1203,7 @@ app.get('/api/dashboard/events', async (c) => {
 
     let events = (results || []).map((r: any) => ({
       id: r.id?.toString() || '',
-      schoolId: r.school_id,
+      schoolId: r.school_id || schoolId,
       title: r.title,
       eventType: r.event_type,
       startTime: r.start_time,
@@ -1213,28 +1213,24 @@ app.get('/api/dashboard/events', async (c) => {
       intensity: r.intensity,
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
-      ageGroup: r.age_group || null,
-      team: r.team || r.age_group || null,
+      ageGroup: r.age_group || 'U15',
+      team: r.team || r.age_group || 'U15',
       workoutImagePath: r.workout_image_path
     }));
-
-    if (team) {
-      events = events.filter((e: any) => e.team && e.team.toLowerCase().trim() === team.toLowerCase().trim());
-    }
 
     return c.json({
       success: true,
       data: events
     });
   } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to retrieve events', error: err.message }, 500);
+    return c.json({ success: false, message: 'Failed to fetch events', error: err.message }, 500);
   }
 });
 
 // Route: Create Coach Command Event
 app.post('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || null;
+  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
   if (!db) {
@@ -1258,7 +1254,8 @@ app.post('/api/dashboard/events', async (c) => {
   }
 
   const eventId = id ? id.toString() : `EVT-${Date.now()}`;
-  const assignedTeam = team ? team.trim() : (ageGroup ? ageGroup.trim() : null);
+  const targetAgeGroup = ageGroup ? ageGroup.trim() : (team ? team.trim() : 'U15');
+  const assignedTeam = team ? team.trim() : targetAgeGroup;
 
   const query = `
     INSERT INTO events (
@@ -1283,7 +1280,7 @@ app.post('/api/dashboard/events', async (c) => {
       intensity ? intensity.trim() : null,
       isImpVal,
       compCountVal,
-      ageGroup ? ageGroup.trim() : null,
+      targetAgeGroup,
       assignedTeam,
       workoutImagePath || null
     ).run();

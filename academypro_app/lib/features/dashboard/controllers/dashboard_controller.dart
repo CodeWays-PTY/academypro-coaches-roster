@@ -741,11 +741,12 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     String? ageGroup,
     String? team,
   }) async {
+    final activeAge = ageGroup ?? _ref.read(selectedAgeGroupProvider);
     final eventId = 'EVT-${DateTime.now().millisecondsSinceEpoch}';
-    final assignedTeam = team ?? ageGroup ?? '';
+    final assignedTeam = (team != null && team.isNotEmpty) ? team : activeAge;
     final newEvent = CoachEvent(
       id: eventId,
-      schoolId: '',
+      schoolId: 'OVK',
       title: title,
       eventType: eventType,
       startTime: startTime,
@@ -756,17 +757,18 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
       recurrenceRule: recurrenceRule,
       workoutImagePath: workoutImagePath,
       team: assignedTeam,
-      ageGroup: ageGroup ?? 'U15',
+      ageGroup: activeAge,
     );
 
     final currentList = state.asData?.value ?? [];
     final updatedList = [newEvent, ...currentList];
     state = AsyncValue.data(updatedList);
-    await _updateHiveCache(updatedList, ageGroup);
+    await _updateHiveCache(updatedList, activeAge);
 
     try {
       await _apiClient.post('/api/dashboard/events', data: {
         'id': eventId,
+        'schoolId': 'OVK',
         'title': title,
         'eventType': eventType,
         'startTime': startTime,
@@ -776,9 +778,10 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'isImportant': isImportant,
         'recurrenceRule': recurrenceRule,
         'workoutImagePath': workoutImagePath,
-        'ageGroup': ageGroup ?? 'U15',
+        'ageGroup': activeAge,
         'team': assignedTeam,
       });
+      await fetchEvents(ageGroup: activeAge);
     } catch (_) {}
     return true;
   }
