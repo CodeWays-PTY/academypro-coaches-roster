@@ -313,7 +313,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Expanded(
                   child: _buildKpiCard(
                     'PERFORMANCE avg',
-                    '${summary.teamPerformanceAvg}/5',
+                    '${summary.teamPerformanceAvg}%',
                     Icons.sports_score,
                     summary.loading,
                   ),
