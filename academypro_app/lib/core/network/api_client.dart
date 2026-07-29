@@ -40,40 +40,7 @@ class ApiClient {
         }
         return handler.next(options);
       },
-      onError: (DioException e, handler) async {
-        if (e.type == DioExceptionType.connectionError ||
-            e.type == DioExceptionType.connectionTimeout) {
-          final reqOptions = e.requestOptions;
-          final candidates = [..._candidateLocalBaseUrls, _productionUrl];
-
-          for (final candidate in candidates) {
-            if (reqOptions.baseUrl == candidate) continue;
-
-            try {
-              final newOptions = Options(
-                method: reqOptions.method,
-                headers: reqOptions.headers,
-                responseType: reqOptions.responseType,
-                contentType: reqOptions.contentType,
-              );
-
-              final cleanPath = reqOptions.path.startsWith('/') ? reqOptions.path : '/${reqOptions.path}';
-              final newUrl = '$candidate$cleanPath';
-
-              final response = await dio.request(
-                newUrl,
-                data: reqOptions.data,
-                queryParameters: reqOptions.queryParameters,
-                options: newOptions,
-              );
-
-              _activeBaseUrl = candidate;
-              return handler.resolve(response);
-            } catch (_) {
-              // Continue checking next candidate
-            }
-          }
-        }
+      onError: (DioException e, handler) {
         return handler.next(e);
       },
     ));
