@@ -192,21 +192,9 @@
 
                     } catch (e) {
                         console.error('Failed to load dynamic config:', e);
-                        // Fallback configurations
-                        this.players = [
-                            { id: 'OVK-U16-001', firstName: 'Marcus', lastName: 'Sterling', ageGroup: 'U16', team: 'A Team', position: 'Flanker' },
-                            { id: 'OVK-U16-002', firstName: 'Elena', lastName: 'Rodriguez', ageGroup: 'U16', team: 'A Team', position: 'Flyhalf' },
-                            { id: 'OVK-U15-001', firstName: 'Jonas', lastName: 'Khan', ageGroup: 'U15', team: 'B Team', position: 'Scrumhalf' }
-                        ];
-                        this.squads = [
-                            { name: 'U16 A Team', active: true, ageGroup: 'U16' },
-                            { name: 'U15 B Team', active: true, ageGroup: 'U15' }
-                        ];
-                        this.metrics = [
-                            { key: 'tackles_made', label: 'Tackles Made', category: 'Performance', icon: 'fitness_center', checked: true },
-                            { key: 'carries', label: 'Carries', category: 'Agility', icon: 'directions_run', checked: true },
-                            { key: 'metres_gained', label: 'Metres Gained', category: 'Volume', icon: 'straighten', checked: false }
-                        ];
+                        this.players = [];
+                        this.squads = [];
+                        this.metrics = [];
                     } finally {
                         this.loading = false;
                     }
