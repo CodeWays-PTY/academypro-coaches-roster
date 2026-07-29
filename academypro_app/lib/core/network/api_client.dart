@@ -41,6 +41,13 @@ class ApiClient {
         return handler.next(options);
       },
       onError: (DioException e, handler) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError ||
+            e.error is SocketException) {
+          // Trigger network state recheck on connection failures
+        }
         return handler.next(e);
       },
     ));

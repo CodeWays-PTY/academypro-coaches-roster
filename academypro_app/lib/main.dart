@@ -11,6 +11,9 @@ import 'features/parent/presentation/parent_dashboard_screen.dart';
 
 import 'package:flutter/services.dart';
 
+import 'core/services/network_service.dart';
+import 'core/presentation/network_error_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -65,7 +68,18 @@ class _MyAppState extends ConsumerState<MyApp> {
         title: 'AcademyPro Athlete Command',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: SplashScreenBody(),
+        home: const SplashScreenBody(),
+      );
+    }
+
+    final isOnline = ref.watch(networkStatusProvider);
+    if (!isOnline) {
+      return MaterialApp(
+        navigatorKey: AppToast.navigatorKey,
+        title: 'AcademyPro Athlete Command',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const NetworkErrorScreen(),
       );
     }
 
