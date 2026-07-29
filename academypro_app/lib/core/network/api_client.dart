@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import '../storage/local_storage.dart';
 
 class ApiClient {
-  static const String _productionUrl = 'https://academypro-api.codeways.co';
+  static const String _productionUrl = 'https://academypro-api.tata-elash34.workers.dev';
   
   static List<String> get _candidateLocalBaseUrls {
     final host = (!kIsWeb && Platform.isAndroid) ? '10.0.2.2' : 'localhost';
