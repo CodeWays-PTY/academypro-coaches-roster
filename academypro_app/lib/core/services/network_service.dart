@@ -18,8 +18,8 @@ class NetworkStatusNotifier extends StateNotifier<bool> {
       _checkRealConnection();
     });
 
-    // Periodic check every 15 seconds to ensure continuous monitoring
-    _periodicCheckTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    // Periodic check every 30 seconds to ensure continuous monitoring
+    _periodicCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _checkRealConnection();
     });
   }
@@ -36,29 +36,54 @@ class NetworkStatusNotifier extends StateNotifier<bool> {
         return false;
       }
 
-      // Perform a lightweight lookup to confirm active data route
-      final result = await InternetAddress.lookup('academypro-api.codeways.co')
-          .timeout(const Duration(seconds: 4));
-      final hasConnection = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      
+      // Perform resilient lookup against active API domain and primary fallbacks
+      final hostsToTry = [
+        'academypro-api.tata-elash34.workers.dev',
+        'google.com',
+        'cloudflare.com',
+      ];
+
+      bool hasConnection = false;
+      for (final host in hostsToTry) {
+        try {
+          final result = await InternetAddress.lookup(host)
+              .timeout(const Duration(seconds: 5));
+          if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+            hasConnection = true;
+            break;
+          }
+        } catch (_) {
+          continue;
+        }
+      }
+
+      // If domain lookups fail due to DNS latency, test direct IP socket connection to DNS servers
+      if (!hasConnection) {
+        try {
+          final socket = await Socket.connect('1.1.1.1', 53, timeout: const Duration(seconds: 4));
+          socket.destroy();
+          hasConnection = true;
+        } catch (_) {
+          try {
+            final socket = await Socket.connect('8.8.8.8', 53, timeout: const Duration(seconds: 4));
+            socket.destroy();
+            hasConnection = true;
+          } catch (_) {
+            hasConnection = false;
+          }
+        }
+      }
+
       if (state != hasConnection) {
         state = hasConnection;
       }
       return hasConnection;
     } catch (_) {
-      // Direct lookup fallback check to secondary DNS/Host
-      try {
-        final fallback = await InternetAddress.lookup('one.one.one.one')
-            .timeout(const Duration(seconds: 3));
-        final hasConnection = fallback.isNotEmpty && fallback[0].rawAddress.isNotEmpty;
-        if (state != hasConnection) {
-          state = hasConnection;
-        }
-        return hasConnection;
-      } catch (_) {
-        if (state != false) state = false;
-        return false;
-      }
+      // On unexpected exceptions, check if physical interface is connected
+      final results = await _connectivity.checkConnectivity();
+      final isConnected = results.isNotEmpty && results.any((r) => r != ConnectivityResult.none);
+      if (state != isConnected) state = isConnected;
+      return isConnected;
     }
   }
 
