@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/checkin_controller.dart';
 import 'create_event_modal.dart';
+import 'batch_test_logger_modal.dart';
 
 class EventsTabView extends ConsumerStatefulWidget {
   const EventsTabView({Key? key}) : super(key: key);
@@ -538,7 +539,30 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                     child: _buildWorkoutPreviewWidget(event.workoutImagePath!),
                   ),
                 ),
-                const SizedBox(height: 16.0),
+              // Log Test Scores CTA Button (Prominent for Test Day events)
+              if (event.eventType.toLowerCase().contains('test')) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      BatchTestLoggerModal.show(
+                        context,
+                        ageGroup: event.team.isNotEmpty ? event.team : 'U15',
+                        initialEvent: event,
+                      );
+                    },
+                    icon: const Icon(Icons.speed, size: 18.0),
+                    label: const Text('Log Test Scores for this Event', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD97706),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10.0),
               ],
 
               // Start Practice Check-In CTA Button (Disabled for past events)
