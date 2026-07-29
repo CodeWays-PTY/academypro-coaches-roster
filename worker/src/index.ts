@@ -722,11 +722,6 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     let sQuery = 'SELECT id, code, name FROM squads WHERE school_id = ?';
     let sParams: any[] = [schoolId];
 
-    if (role !== 'SuperAdmin' && role !== 'SchoolAdmin') {
-      sQuery = 'SELECT id, code, name FROM squads WHERE school_id = ? AND (coach_id = ? OR coach_id IS NULL)';
-      sParams = [schoolId, coachId];
-    }
-
     if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
       sQuery += ' AND (code = ? OR name = ? OR id = ?)';
       sParams.push(ageGroupFilter, ageGroupFilter, ageGroupFilter);
@@ -773,9 +768,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 app.get('/api/squads', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const coachId = jwtPayload?.sub;
-  const schoolId = jwtPayload?.schoolId;
-  const role = jwtPayload?.role || 'Coach';
+  const schoolId = jwtPayload?.schoolId || 'OVK';
   const db = getDB(c);
 
   if (!schoolId) {
@@ -784,12 +777,15 @@ app.get('/api/squads', async (c) => {
 
   await ensureSquadsTables(db);
 
-  let query = 'SELECT * FROM squads WHERE coach_id = ? AND school_id = ? ORDER BY name ASC';
-  let params: any[] = [coachId, schoolId];
-  if (role === 'SuperAdmin' || role === 'SchoolAdmin') {
-    query = 'SELECT * FROM squads WHERE school_id = ? ORDER BY name ASC';
-    params = [schoolId];
-  }
+  let query = `
+    SELECT s.*, COUNT(DISTINCT sp.player_id) as playerCount
+    FROM squads s
+    LEFT JOIN squad_players sp ON (sp.squad_id = s.id OR sp.squad_id = s.code OR sp.squad_id = s.name)
+    WHERE s.school_id = ?
+    GROUP BY s.id
+    ORDER BY s.name ASC
+  `;
+  let params: any[] = [schoolId];
 
   let results: any[] = [];
   try {
@@ -803,6 +799,7 @@ app.get('/api/squads', async (c) => {
     ageGroup: s.code,
     code: s.code,
     description: s.description || '',
+    playerCount: s.playerCount || 0,
     createdAt: s.created_at
   }));
 
