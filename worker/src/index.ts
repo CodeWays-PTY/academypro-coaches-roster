@@ -1203,6 +1203,7 @@ app.get('/api/dashboard/events', async (c) => {
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
+  const eventTypeParam = c.req.query('event_type') || c.req.query('eventType');
   const db = getDB(c);
 
   if (!schoolId) {
@@ -1211,6 +1212,15 @@ app.get('/api/dashboard/events', async (c) => {
 
   let query = 'SELECT * FROM events WHERE (school_id = ? OR school_id IS NULL OR school_id = "")';
   let params: any[] = [schoolId];
+
+  if (eventTypeParam) {
+    if (eventTypeParam === 'Fitness Test' || eventTypeParam === 'Test Day') {
+      query += " AND (event_type = 'Fitness Test' OR event_type = 'Test Day' OR LOWER(event_type) LIKE '%test%')";
+    } else {
+      query += ' AND event_type = ?';
+      params.push(eventTypeParam);
+    }
+  }
 
   if (role !== 'SuperAdmin' && role !== 'SchoolAdmin') {
     // Coach role: strictly filter to squads managed by this coach
@@ -1355,6 +1365,7 @@ app.post('/api/dashboard/events', async (c) => {
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
   if (evType === 'Gym' || evType === 'Gym Practice') evType = 'Gym Session';
   if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
+  if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
 
   const eventId = id ? id.toString() : `EVT-${Date.now()}`;
   const finalAgeGroup = targetAgeGroup || assignedTeam;
@@ -1471,6 +1482,7 @@ app.post('/api/dashboard/events/:id', async (c) => {
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
   if (evType === 'Gym' || evType === 'Gym Practice') evType = 'Gym Session';
   if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
+  if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
 
   const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
   const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
