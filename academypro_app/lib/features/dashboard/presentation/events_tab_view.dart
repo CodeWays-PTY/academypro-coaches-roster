@@ -539,6 +539,8 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                     child: _buildWorkoutPreviewWidget(event.workoutImagePath!),
                   ),
                 ),
+                const SizedBox(height: 16.0),
+              ],
               // Log Test Scores CTA Button (Prominent for Test Day events)
               if (event.eventType.toLowerCase().contains('test')) ...[
                 SizedBox(
