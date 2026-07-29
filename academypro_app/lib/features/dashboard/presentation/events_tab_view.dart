@@ -269,12 +269,13 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
         iconData = Icons.fitness_center;
         badgeText = 'Gym';
         break;
+      case 'Fitness Test':
       case 'Test Day':
         leftBorderColor = const Color(0xFFD97706);
         badgeBgColor = const Color(0xFFFEF3C7);
         badgeTextColor = const Color(0xFF92400E);
         iconData = Icons.timer_outlined;
-        badgeText = 'Test Day';
+        badgeText = 'Fitness Test';
         break;
       case 'Match':
       case 'Match Day':

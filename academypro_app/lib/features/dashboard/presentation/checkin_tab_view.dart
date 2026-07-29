@@ -452,7 +452,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         } else if (event.eventType == 'Match') {
                           eventIcon = Icons.sports_score;
                           accentColor = const Color(0xFF166534);
-                        } else if (event.eventType == 'Test Day') {
+                        } else if (event.eventType == 'Fitness Test' || event.eventType == 'Test Day') {
                           eventIcon = Icons.timer_outlined;
                           accentColor = const Color(0xFFD97706);
                         }

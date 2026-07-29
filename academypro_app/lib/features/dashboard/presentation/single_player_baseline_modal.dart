@@ -315,7 +315,7 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
                   ? [
                       const DropdownMenuItem<String>(
                         value: null,
-                        child: Text('No Test Day events found', style: TextStyle(fontSize: 12.0, color: Colors.grey)),
+                        child: Text('No Fitness Test events found', style: TextStyle(fontSize: 12.0, color: Colors.grey)),
                       )
                     ]
                   : _testEvents.map((evt) {

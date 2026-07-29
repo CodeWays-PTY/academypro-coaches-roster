@@ -341,7 +341,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                   ),
                   SizedBox(height: 2.0),
                   Text(
-                    'Select a team & Test Day event to enter metrics',
+                    'Select a team & Fitness Test event to enter metrics',
                     style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
                   ),
                 ],
@@ -411,7 +411,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                         ? [
                             const DropdownMenuItem<String>(
                               value: null,
-                              child: Text('No Test Day events found', style: TextStyle(fontSize: 12.0, color: Colors.grey)),
+                              child: Text('No Fitness Test events found', style: TextStyle(fontSize: 12.0, color: Colors.grey)),
                             )
                           ]
                         : _testEvents.map((evt) {

@@ -50,7 +50,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
 
   final List<String> _eventTypes = [
     'Field',
-    'Test Day',
+    'Fitness Test',
     'Gym',
     'Match',
   ];
@@ -501,7 +501,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         final isSel = _selectedEventType == type;
                         IconData typeIcon = Icons.sports_soccer;
                         if (type == 'Gym') typeIcon = Icons.fitness_center;
-                        if (type == 'Test Day') typeIcon = Icons.timer_outlined;
+                        if (type == 'Fitness Test' || type == 'Test Day') typeIcon = Icons.timer_outlined;
                         if (type == 'Match') typeIcon = Icons.emoji_events_outlined;
 
                         return Expanded(
@@ -512,7 +512,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                                 HapticFeedback.selectionClick();
                                 setState(() {
                                   _selectedEventType = type;
-                                  if (type == 'Match' || type == 'Test Day') {
+                                  if (type == 'Match' || type == 'Fitness Test' || type == 'Test Day') {
                                     _isImportant = true;
                                   } else {
                                     _isImportant = false;
