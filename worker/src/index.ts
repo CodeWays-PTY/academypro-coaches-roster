@@ -697,30 +697,6 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     } catch (_) {}
   }
 
-  // Also query players table by age_group / team if ageGroupFilter is active
-  if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
-    const filterKeys = Array.from(new Set([ageGroupFilter, ...squadCodes, ...squadNames, ...squadIds]));
-    const filterPlaceholders = filterKeys.map(() => '?').join(',');
-    try {
-      const { results: pResults } = await db.prepare(`
-        SELECT id FROM players
-        WHERE school_id = ? AND (age_group IN (${filterPlaceholders}) OR team IN (${filterPlaceholders}))
-      `).bind(schoolId, ...filterKeys, ...filterKeys).all();
-      for (const r of (pResults || [])) {
-        if (r.id) playerIdsSet.add(r.id);
-      }
-    } catch (_) {}
-  } else if (!ageGroupFilter || ageGroupFilter === 'All') {
-    try {
-      const { results: pResults } = await db.prepare(`
-        SELECT id FROM players WHERE school_id = ?
-      `).bind(schoolId).all();
-      for (const r of (pResults || [])) {
-        if (r.id) playerIdsSet.add(r.id);
-      }
-    } catch (_) {}
-  }
-
   const playerIds = Array.from(playerIdsSet);
   return {
     squadIds,
