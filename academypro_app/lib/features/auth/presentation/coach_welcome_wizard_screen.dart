@@ -8,7 +8,7 @@ import '../../dashboard/presentation/dashboard_screen.dart';
 import 'auth_state.dart';
 
 class CoachWelcomeWizardScreen extends ConsumerStatefulWidget {
-  const CoachWelcomeWizardScreen({Key? key}) : super(key: key);
+  const CoachWelcomeWizardScreen({super.key});
 
   @override
   ConsumerState<CoachWelcomeWizardScreen> createState() => _CoachWelcomeWizardScreenState();
