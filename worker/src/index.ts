@@ -658,9 +658,52 @@ app.get('/api/coaches', async (c) => {
         firstName: u.first_name,
         lastName: u.last_name,
         email: u.email,
-        role: u.role
       }))
     });
+  } catch (e: any) {
+    return c.json({ success: false, message: e.message }, 500);
+  }
+});
+
+app.post('/api/coaches', async (c) => {
+  const db = getDB(c);
+  try {
+    const body = await c.req.json();
+    const { name, firstName, lastName, email, role, phone, schoolId } = body;
+    const coachEmail = (email || '').trim().toLowerCase();
+    if (!coachEmail) {
+      return c.json({ success: false, message: 'Email is required for coach registration' }, 400);
+    }
+    const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
+    const fName = firstName || fullParts[0] || 'Coach';
+    const lName = lastName || fullParts.slice(1).join(' ') || '';
+    const coachRole = role || 'Coach';
+    const targetSchool = schoolId || 'OVK';
+    const userId = body.id || `cch_${Date.now()}`;
+
+    await db.prepare(`
+      INSERT INTO users (id, school_id, first_name, last_name, email, role, phone_number)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        first_name = excluded.first_name,
+        last_name = excluded.last_name,
+        email = excluded.email,
+        role = excluded.role,
+        phone_number = excluded.phone_number
+    `).bind(userId, targetSchool, fName, lName, coachEmail, coachRole, phone || '').run();
+
+    return c.json({ success: true, message: 'Coach saved successfully', data: { id: userId, email: coachEmail, name: `${fName} ${lName}`.trim() } });
+  } catch (e: any) {
+    return c.json({ success: false, message: e.message }, 500);
+  }
+});
+
+app.delete('/api/coaches/:id', async (c) => {
+  const db = getDB(c);
+  const id = c.req.param('id');
+  try {
+    await db.prepare('DELETE FROM users WHERE id = ? OR email = ?').bind(id, id).run();
+    return c.json({ success: true, message: 'Coach deleted successfully' });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }

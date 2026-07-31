@@ -206,7 +206,9 @@ class RosterNotifier extends StateNotifier<RosterState> {
     final cleanPosition = newPosition.trim();
     if (cleanPosition.isEmpty) return false;
 
-    // Mutate state immediately for instant UI update
+    final previousState = state;
+
+    // Optimistic UI mutation
     final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
     final playersList = newMap[player.ageGroup] ?? [];
     
@@ -236,11 +238,19 @@ class RosterNotifier extends StateNotifier<RosterState> {
         '/api/players/${player.id}/position',
         data: {'position': cleanPosition},
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchRoster(player.ageGroup);
+        return true;
+      } else {
+        state = previousState;
+        AppToast.showError(null, title: 'Sync Failure', message: 'Failed to update position on server.');
+        return false;
+      }
     } catch (e) {
+      state = previousState;
       print('Error updating position on server: $e');
-      AppToast.showError(null, title: 'Network Error', message: 'Position updated locally, but server sync failed.');
-      return true;
+      AppToast.showError(null, title: 'Network Failure', message: 'Server sync failed. Position change reverted.');
+      return false;
     }
   }
 

@@ -385,10 +385,11 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
       playerName: playerName,
       isCompleted: false,
     );
-    state = [newItem, ...state];
+    final previousState = state;
+    state = [newItem, ...previousState];
 
     try {
-      await _apiClient.post('/api/dashboard/actions', data: {
+      final res = await _apiClient.post('/api/dashboard/actions', data: {
         'id': newId,
         'title': title,
         'type': type,
@@ -397,14 +398,21 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
         'playerId': playerId,
         'playerName': playerName,
       });
-      fetchActions();
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchActions();
+      } else {
+        state = previousState;
+        AppToast.showError(null, title: 'Action Error', message: 'Failed to save action to server.');
+      }
     } catch (e) {
+      state = previousState;
       print('Error in addAction: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to add coach action.');
     }
   }
 
   Future<void> toggleAction(String actionId) async {
+    final previousState = state;
     state = state.map((item) {
       if (item.id == actionId) {
         return item.copyWith(isCompleted: !item.isCompleted);
@@ -413,8 +421,13 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
     }).toList();
 
     try {
-      await _apiClient.post('/api/dashboard/actions/$actionId/toggle');
+      final res = await _apiClient.post('/api/dashboard/actions/$actionId/toggle');
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        state = previousState;
+        AppToast.showError(null, title: 'Toggle Failed', message: 'Could not toggle action status.');
+      }
     } catch (e) {
+      state = previousState;
       print('Error in toggleAction: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to toggle action status.');
     }
