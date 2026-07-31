@@ -736,7 +736,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                     List dynamicMetrics = [];
                     String gpa = '--';
                     int powerIndex = 0;
-                    String uGroups = player.ugroupsActive == 1 ? 'ACTIVE' : 'INACTIVE';
                     String gymAtt = '0%';
                     String? preferredPos;
 
@@ -932,14 +931,6 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                 subtext: 'Power Index',
                                 icon: Icons.fitness_center,
                                 color: const Color(0xFF16A34A),
-                              ),
-                              _buildBentoCard(
-                                title: 'SPIRIT\n(UGROUP)',
-                                value: uGroups,
-                                subtext: 'Character Dev',
-                                icon: Icons.diversity_3,
-                                color: const Color(0xFF952200),
-                                hasLeftBorder: true,
                               ),
                               _buildBentoCard(
                                 title: 'GYM\nATTENDANCE',
