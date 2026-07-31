@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/utils/app_toast.dart';
 import 'features/auth/presentation/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/coach_welcome_wizard_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/student/presentation/student_dashboard_screen.dart';
 import 'features/parent/presentation/parent_dashboard_screen.dart';
@@ -92,8 +93,16 @@ class _MyAppState extends ConsumerState<MyApp> {
     Widget homeScreen = const LoginScreen();
     if (isAuthenticated && profile != null) {
       final rawRole = (profile['role'] ?? '').toString().toLowerCase();
+      final firstName = (profile['first_name'] ?? '').toString().trim();
+      final lastName = (profile['last_name'] ?? profile['surname'] ?? '').toString().trim();
+      final isFirstTime = profile['is_first_time'] == true || profile['is_first_time'] == 1 || (firstName.isEmpty && lastName.isEmpty);
+
       if (rawRole.contains('coach')) {
-        homeScreen = const DashboardScreen();
+        if (isFirstTime) {
+          homeScreen = const CoachWelcomeWizardScreen();
+        } else {
+          homeScreen = const DashboardScreen();
+        }
       } else if (rawRole.contains('parent')) {
         homeScreen = const ParentDashboardScreen();
       } else {

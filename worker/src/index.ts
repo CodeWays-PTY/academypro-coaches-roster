@@ -446,11 +446,12 @@ app.post('/api/auth/profile', async (c) => {
   } catch (_) {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
-  const { id, email, firstName, first_name, lastName, last_name, phone } = body;
+  const { id, email, firstName, first_name, lastName, last_name, phone, avatar_url, avatarUrl, is_first_time, isFirstTime } = body;
 
   const userEmail = (email || '').trim().toLowerCase();
   const fName = firstName || first_name;
   const lName = lastName || last_name;
+  const avatar = avatar_url || avatarUrl;
 
   let userId = id || '';
   const authHeader = c.req.header('Authorization');
@@ -474,9 +475,10 @@ app.post('/api/auth/profile', async (c) => {
         UPDATE users
         SET first_name = COALESCE(?, first_name),
             last_name = COALESCE(?, last_name),
-            phone = COALESCE(?, phone)
+            phone = COALESCE(?, phone),
+            avatar_url = COALESCE(?, avatar_url)
         WHERE id = ? OR LOWER(email) = ?
-      `).bind(fName || null, lName || null, phone || null, userId, userEmail).run();
+      `).bind(fName || null, lName || null, phone || null, avatar || null, userId, userEmail).run();
     } catch (err: any) {
       console.error('[API Error] Failed to update user profile in D1:', err);
       return c.json({ success: false, message: 'Failed to update user profile in database', error: err.message }, 500);

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/app_toast.dart';
 import 'auth_state.dart';
+import 'coach_welcome_wizard_screen.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import '../../student/presentation/student_dashboard_screen.dart';
 import '../../parent/presentation/parent_dashboard_screen.dart';
@@ -88,10 +89,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (success) {
       final profile = ref.read(authProvider).userProfile;
       final rawRole = (profile?['role'] ?? 'student').toString().toLowerCase();
+      final firstName = (profile?['first_name'] ?? '').toString().trim();
+      final lastName = (profile?['last_name'] ?? profile?['surname'] ?? '').toString().trim();
+      final isFirstTime = profile?['is_first_time'] == true || profile?['is_first_time'] == 1 || (firstName.isEmpty && lastName.isEmpty);
       
       Widget targetScreen = const StudentDashboardScreen();
       if (rawRole.contains('coach')) {
-        targetScreen = const DashboardScreen();
+        if (isFirstTime) {
+          targetScreen = const CoachWelcomeWizardScreen();
+        } else {
+          targetScreen = const DashboardScreen();
+        }
       } else if (rawRole.contains('parent')) {
         targetScreen = const ParentDashboardScreen();
       } else {
