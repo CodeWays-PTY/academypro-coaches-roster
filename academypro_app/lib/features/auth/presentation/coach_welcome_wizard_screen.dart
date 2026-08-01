@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/utils/app_toast.dart';
+import '../../../core/network/api_client.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import 'auth_state.dart';
 
@@ -206,6 +207,19 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
 
       if (phone.isNotEmpty) {
         updatedFields['phone'] = phone;
+        try {
+          final apiClient = ref.read(apiClientProvider);
+          await apiClient.post('/api/coach/send-sms-otp', {'phone': phone});
+          if (mounted) {
+            AppToast.showSuccess(
+              context,
+              title: 'Verification SMS Sent',
+              message: 'Verification code sent to +$phone!',
+            );
+          }
+        } catch (smsError) {
+          print('[Coach Onboarding] SMS Dispatch note: $smsError');
+        }
       }
 
       if (!isSkippingOptional && _selectedImage != null) {
@@ -589,7 +603,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                                     child: CircularProgressIndicator(strokeWidth: 2.0, color: Colors.white),
                                   )
                                 : const Text(
-                                    'Finish Setup & Launch Command',
+                                    'Finish',
                                     style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
                           ),
