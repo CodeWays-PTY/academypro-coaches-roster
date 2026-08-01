@@ -548,7 +548,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                                   ],
                                   decoration: InputDecoration(
                                     labelText: 'Phone Number',
-                                    hintText: 'e.g. 0769616131',
+                                    hintText: 'e.g. 82 000 0000',
                                     prefixIcon: InkWell(
                                       onTap: () {
                                         CountryCodePicker.show(
