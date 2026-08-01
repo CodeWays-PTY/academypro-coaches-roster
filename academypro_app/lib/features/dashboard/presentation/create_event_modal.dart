@@ -47,6 +47,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   String _selectedTeam = '';
 
   Map<String, List<String>> _userLocationHistory = {};
+  Map<String, List<String>> _userTitleHistory = {};
 
   final List<String> _eventTypes = [
     'Field',
@@ -61,6 +62,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   void initState() {
     super.initState();
     _loadLocationHistory();
+    _loadTitleHistory();
 
     if (widget.eventToEdit != null) {
       final e = widget.eventToEdit!;
@@ -99,6 +101,20 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     }
   }
 
+  Future<void> _loadTitleHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyMap = <String, List<String>>{};
+    for (final type in _eventTypes) {
+      final saved = prefs.getStringList('user_titles_$type') ?? [];
+      historyMap[type] = saved;
+    }
+    if (mounted) {
+      setState(() {
+        _userTitleHistory = historyMap;
+      });
+    }
+  }
+
   Future<void> _saveLocationToHistory(String type, String loc) async {
     final cleanLoc = loc.trim();
     if (cleanLoc.isEmpty) return;
@@ -108,6 +124,18 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     if (!current.contains(cleanLoc)) {
       final updated = [cleanLoc, ...current].take(8).toList();
       await prefs.setStringList('user_locations_$type', updated);
+    }
+  }
+
+  Future<void> _saveTitleToHistory(String type, String title) async {
+    final cleanTitle = title.trim();
+    if (cleanTitle.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getStringList('user_titles_$type') ?? [];
+    if (!current.contains(cleanTitle)) {
+      final updated = [cleanTitle, ...current].take(8).toList();
+      await prefs.setStringList('user_titles_$type', updated);
     }
   }
 
@@ -263,8 +291,9 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     final dateStr = _formatDateStr(_selectedDate);
     final timeStr = _formatTimeStr(_selectedTime);
 
-    // Save location to user history for this training type
+    // Save title & location to user history for this training type
     await _saveLocationToHistory(_selectedEventType, location);
+    await _saveTitleToHistory(_selectedEventType, title);
 
     bool success = false;
 
@@ -591,6 +620,35 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 8.0),
+
+                    // Displays user's previously entered event titles for this training type
+                    if ((_userTitleHistory[_selectedEventType] ?? []).isNotEmpty) ...[
+                      const Text(
+                        'Recent Event Titles:',
+                        style: TextStyle(fontSize: 11.0, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 4.0),
+                      Wrap(
+                        spacing: 6.0,
+                        runSpacing: 6.0,
+                        children: (_userTitleHistory[_selectedEventType]!).map((t) {
+                          return ActionChip(
+                            avatar: const Icon(Icons.history, size: 13.0, color: Color(0xFF003EC7)),
+                            label: Text(t),
+                            backgroundColor: const Color(0xFFEFF6FF),
+                            labelStyle: const TextStyle(color: Color(0xFF003EC7), fontSize: 11.5, fontWeight: FontWeight.w600),
+                            side: const BorderSide(color: Color(0xFFBFDBFE)),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _titleController.text = t;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
 
                     const SizedBox(height: 20.0),
 

@@ -799,8 +799,19 @@ app.delete('/api/coaches/:id', async (c) => {
 app.get('/api/test-results', async (c) => {
   const db = getDB(c);
   try {
-    const { results } = await db.prepare('SELECT * FROM player_test_logs ORDER BY test_date DESC LIMIT 50').all();
-    return c.json({ success: true, data: results || [] });
+    const { results } = await db.prepare('SELECT * FROM player_test_logs ORDER BY test_date DESC LIMIT 100').all();
+    const formatted = (results || []).map((r: any) => ({
+      id: r.id,
+      eventId: r.event_id || '',
+      athleteId: r.player_id || '',
+      athleteName: r.athlete_name || '',
+      testName: r.test_name || r.session_name || '',
+      category: r.category || 'General',
+      unit: r.unit || '',
+      scoreValue: r.score_value !== null && r.score_value !== undefined ? r.score_value : (r.score || 0),
+      testDate: r.test_date || ''
+    }));
+    return c.json({ success: true, data: formatted });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }

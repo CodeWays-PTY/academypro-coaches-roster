@@ -492,9 +492,9 @@
                                 <template x-for="(p, index) in previewPlayers.slice(0, 5)" :key="p.id">
                                     <tr class="hover:bg-surface-container-low transition-colors">
                                         <td class="border border-outline-variant p-sm text-xs text-outline" x-text="index + 1">1</td>
-                                        <td class="border border-outline-variant p-sm text-sm font-medium" x-text="p.firstName + ' ' + p.lastName">Marcus Sterling</td>
+                                        <td class="border border-outline-variant p-sm text-sm font-medium" x-text="p.firstName + ' ' + p.lastName">--</td>
                                         <template x-if="includeId">
-                                            <td class="border border-outline-variant p-sm text-sm text-outline" x-text="p.id">ID-88219</td>
+                                            <td class="border border-outline-variant p-sm text-sm text-outline" x-text="p.id">--</td>
                                         </template>
                                         <template x-for="m in selectedMetrics" :key="m.key">
                                             <td class="border border-outline-variant p-sm bg-primary-container/5"></td>

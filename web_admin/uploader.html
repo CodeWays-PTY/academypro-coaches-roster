@@ -161,12 +161,7 @@
                         }
                     } catch (e) {
                         console.error('Failed to load roster:', e);
-                        // Roster Mock fallback
-                        this.players = [
-                            { id: 'OVK-U16-001', firstName: 'Marcus', lastName: 'Sterling', ageGroup: 'U16', team: 'A Team', position: 'Flanker' },
-                            { id: 'OVK-U16-002', firstName: 'Elena', lastName: 'Rodriguez', ageGroup: 'U16', team: 'A Team', position: 'Flyhalf' },
-                            { id: 'OVK-U15-001', firstName: 'Jonas', lastName: 'Khan', ageGroup: 'U15', team: 'B Team', position: 'Scrumhalf' }
-                        ];
+                        this.players = [];
                     }
                 },
 
@@ -621,11 +616,11 @@
                                             DUP
                                         </span>
                                     </td>
-                                    <td class="px-6 py-3 font-medium text-on-surface" x-text="item.data.name">Marcus Rodriguez</td>
-                                    <td class="px-6 py-3" :class="item.status === 'ERROR' ? 'text-error font-semibold' : 'text-outline'" x-text="item.data.id">#ATH-2938</td>
-                                    <td class="px-6 py-3 text-on-surface" x-text="item.data.vertical">32.5</td>
-                                    <td class="px-6 py-3 text-on-surface" x-text="item.data.dash40yd">4.52</td>
-                                    <td class="px-6 py-3 text-on-surface" x-text="item.data.gpa">3.8</td>
+                                    <td class="px-6 py-3 font-medium text-on-surface" x-text="item.data.name">--</td>
+                                    <td class="px-6 py-3" :class="item.status === 'ERROR' ? 'text-error font-semibold' : 'text-outline'" x-text="item.data.id">--</td>
+                                    <td class="px-6 py-3 text-on-surface" x-text="item.data.vertical">--</td>
+                                    <td class="px-6 py-3 text-on-surface" x-text="item.data.dash40yd">--</td>
+                                    <td class="px-6 py-3 text-on-surface" x-text="item.data.gpa">--</td>
                                     <td class="px-6 py-3 text-right">
                                         <template x-if="item.status === 'ERROR'">
                                             <button @click="fixRow(item.index)" class="px-3 py-1 bg-error text-on-error text-xs rounded font-bold hover:bg-tertiary transition-colors shadow-sm">FIX</button>
