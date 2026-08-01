@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/utils/app_toast.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/widgets/country_code_picker.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import 'auth_state.dart';
 
@@ -26,6 +27,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
   int _currentStep = 0;
   XFile? _selectedImage;
   bool _isSubmitting = false;
+  CountryCode _selectedCountry = CountryCodePicker.defaultCountries[0]; // Defaults to RSA (🇿🇦 +27)
 
   @override
   void initState() {
@@ -197,7 +199,9 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
     try {
       final firstName = _firstNameController.text.trim();
       final lastName = _lastNameController.text.trim();
-      final phone = isSkippingOptional ? '' : _phoneController.text.trim();
+      final rawPhone = isSkippingOptional ? '' : _phoneController.text.trim();
+      final cleanedPhone = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
+      final fullPhone = cleanedPhone.isNotEmpty ? '${_selectedCountry.dialCode}$cleanedPhone' : '';
 
       final updatedFields = <String, dynamic>{
         'first_name': firstName,
@@ -205,16 +209,16 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
         'is_first_time': false,
       };
 
-      if (phone.isNotEmpty) {
-        updatedFields['phone'] = phone;
+      if (fullPhone.isNotEmpty) {
+        updatedFields['phone'] = fullPhone;
         try {
           final apiClient = ref.read(apiClientProvider);
-          await apiClient.post('/api/coach/send-sms-otp', data: {'phone': phone});
+          await apiClient.post('/api/coach/send-sms-otp', data: {'phone': fullPhone});
           if (mounted) {
             AppToast.showSuccess(
               context,
               title: 'Verification SMS Sent',
-              message: 'Verification code sent to +$phone!',
+              message: 'Verification code sent to $fullPhone!',
             );
           }
         } catch (smsError) {
@@ -542,10 +546,42 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: 'Phone Number',
-                                    hintText: 'e.g. 0821234567',
-                                    prefixIcon: Icon(Icons.phone_outlined, color: Color(0xFF64748B)),
+                                    hintText: 'e.g. 0769616131',
+                                    prefixIcon: InkWell(
+                                      onTap: () {
+                                        CountryCodePicker.show(
+                                          context,
+                                          onSelected: (code) {
+                                            setState(() {
+                                              _selectedCountry = code;
+                                            });
+                                          },
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(_selectedCountry.flag, style: const TextStyle(fontSize: 18.0)),
+                                            const SizedBox(width: 4.0),
+                                            Text(
+                                              _selectedCountry.dialCode,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14.0,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                            const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B), size: 20.0),
+                                            const SizedBox(width: 8.0),
+                                            Container(width: 1.0, height: 20.0, color: const Color(0xFFCBD5E1)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
