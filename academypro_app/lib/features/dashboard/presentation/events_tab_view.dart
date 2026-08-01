@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/app_toast.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/checkin_controller.dart';
 import 'create_event_modal.dart';
@@ -97,6 +98,23 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                         ),
                       ),
                       const SizedBox(width: 8.0),
+                      IconButton(
+                        onPressed: () async {
+                          HapticFeedback.mediumImpact();
+                          await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);
+                          if (mounted) {
+                            AppToast.showSuccess(context, title: 'Refreshed', message: 'Refreshed latest events from D1 DB!');
+                          }
+                        },
+                        icon: const Icon(Icons.sync, color: Color(0xFF003EC7), size: 20.0),
+                        tooltip: 'Refresh Events from D1 Database',
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFEFF4FF),
+                          padding: const EdgeInsets.all(10.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                        ),
+                      ),
+                      const SizedBox(width: 6.0),
                       ElevatedButton.icon(
                         onPressed: () {
                           HapticFeedback.lightImpact();

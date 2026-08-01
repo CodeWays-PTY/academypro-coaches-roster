@@ -691,8 +691,8 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
   DashboardEventsNotifier(this._apiClient, this._ref)
       : super(const AsyncValue.loading()) {
     fetchEvents();
-    // Live automatic sync: polls D1 every 8 seconds so new events appear live without pull-to-refresh
-    _pollingTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+    // Live automatic sync: polls D1 every 20 seconds (with ETag CDN edge caching for zero-cost)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       fetchEvents(silent: true);
     });
   }
