@@ -183,12 +183,22 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
   }
 
   Future<void> _submitWizard({bool isSkippingOptional = false}) async {
-    if (!_step1FormKey.currentState!.validate()) {
-      _pageController.animateToPage(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+
+    if (firstName.isEmpty || lastName.isEmpty) {
+      if (mounted) {
+        AppToast.showError(
+          context,
+          title: 'Missing Required Info',
+          message: 'Please enter your first name and surname in Step 1.',
+        );
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
       return;
     }
 
@@ -197,8 +207,6 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
     });
 
     try {
-      final firstName = _firstNameController.text.trim();
-      final lastName = _lastNameController.text.trim();
       final rawPhone = isSkippingOptional ? '' : _phoneController.text.trim();
       final cleanedPhone = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
       final fullPhone = cleanedPhone.isNotEmpty ? '${_selectedCountry.dialCode}$cleanedPhone' : '';
