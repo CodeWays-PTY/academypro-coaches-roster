@@ -209,7 +209,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
         updatedFields['phone'] = phone;
         try {
           final apiClient = ref.read(apiClientProvider);
-          await apiClient.post('/api/coach/send-sms-otp', {'phone': phone});
+          await apiClient.post('/api/coach/send-sms-otp', data: {'phone': phone});
           if (mounted) {
             AppToast.showSuccess(
               context,
