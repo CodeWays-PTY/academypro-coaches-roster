@@ -286,7 +286,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _currentStep == 0 ? 'Step 1 of 2: Personal Details' : 'Step 2 of 2: Optional Contact & Avatar',
+                        _currentStep == 0 ? 'Step 1 of 2: Personal Details' : 'Step 2 of 2: Phone Number & Profile Picture',
                         style: const TextStyle(
                           fontSize: 13.0,
                           fontWeight: FontWeight.w600,
@@ -504,7 +504,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                         const SizedBox(height: 16.0),
                         const Center(
                           child: Text(
-                            'Add Optional Details',
+                            'Phone Number & Profile Picture',
                             style: TextStyle(
                               fontSize: 22.0,
                               fontWeight: FontWeight.bold,
@@ -543,7 +543,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
                                   decoration: const InputDecoration(
-                                    labelText: 'Phone Number (Optional)',
+                                    labelText: 'Phone Number',
                                     hintText: 'e.g. 0821234567',
                                     prefixIcon: Icon(Icons.phone_outlined, color: Color(0xFF64748B)),
                                   ),
