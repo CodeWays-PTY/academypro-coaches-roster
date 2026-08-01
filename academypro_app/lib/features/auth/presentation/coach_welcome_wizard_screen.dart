@@ -214,6 +214,9 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
       final updatedFields = <String, dynamic>{
         'first_name': firstName,
         'last_name': lastName,
+        'firstName': firstName,
+        'lastName': lastName,
+        'name': '$firstName $lastName'.trim(),
         'is_first_time': false,
       };
 

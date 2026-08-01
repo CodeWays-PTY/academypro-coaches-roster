@@ -132,6 +132,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final currentProfile = state.userProfile ?? LocalStorage.getUserProfile() ?? {};
     final newProfile = Map<String, dynamic>.from(currentProfile)..addAll(updatedFields);
 
+    final userEmail = state.email ?? newProfile['email'] ?? currentProfile['email'];
+    if (userEmail != null) {
+      updatedFields['email'] = userEmail;
+    }
+
     final token = LocalStorage.getToken() ?? '';
     await LocalStorage.saveSession(token, newProfile);
 
