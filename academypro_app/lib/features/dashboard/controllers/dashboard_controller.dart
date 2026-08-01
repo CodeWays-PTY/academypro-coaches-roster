@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
@@ -685,10 +686,21 @@ class CoachEvent {
 class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>> {
   final ApiClient _apiClient;
   final Ref _ref;
+  Timer? _pollingTimer;
 
   DashboardEventsNotifier(this._apiClient, this._ref)
       : super(const AsyncValue.loading()) {
     fetchEvents();
+    // Live automatic sync: polls D1 every 8 seconds so new events appear live without pull-to-refresh
+    _pollingTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      fetchEvents(silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _updateHiveCache(List<CoachEvent> events, String? ageGroup) async {
@@ -715,9 +727,9 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
     }
   }
 
-  Future<void> fetchEvents({String? ageGroup}) async {
+  Future<void> fetchEvents({String? ageGroup, bool silent = false}) async {
     final currentEvents = state.asData?.value ?? [];
-    if (currentEvents.isEmpty) {
+    if (currentEvents.isEmpty && !silent) {
       state = const AsyncValue.loading();
     }
     try {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
@@ -174,21 +175,38 @@ class StudentPortalData {
 
 class StudentController extends StateNotifier<AsyncValue<StudentPortalData>> {
   final ApiClient _apiClient;
+  Timer? _pollingTimer;
+  String? _lastSquadId;
 
-  StudentController(this._apiClient) : super(const AsyncValue.loading());
+  StudentController(this._apiClient) : super(const AsyncValue.loading()) {
+    // Live automatic sync: polls D1 every 8 seconds so new events appear live without pull-to-refresh
+    _pollingTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      fetchStudentData(squadId: _lastSquadId, silent: true);
+    });
+  }
 
-  Future<void> fetchStudentData({String? squadId}) async {
-    state = const AsyncValue.loading();
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchStudentData({String? squadId, bool silent = false}) async {
+    _lastSquadId = squadId;
+    if (!silent && state.asData?.value == null) {
+      state = const AsyncValue.loading();
+    }
     try {
       final queryParam = (squadId != null && squadId.isNotEmpty) ? '?squad_id=$squadId' : '';
       final response = await _apiClient.getAndCache('/api/student-portal$queryParam');
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = StudentPortalData.fromJson(response.data['data']);
         state = AsyncValue.data(data);
-      } else {
+      } else if (!silent) {
         state = AsyncValue.error(response.data['message'] ?? 'Failed to load data', StackTrace.current);
       }
     } catch (err, stack) {
+      if (silent) return; // Keep existing UI intact during silent background poll
       String cleanMessage = 'Failed to load dashboard. Please try again.';
       if (err is DioException) {
         if (err.response?.data != null && err.response?.data is Map && err.response?.data['message'] != null) {
