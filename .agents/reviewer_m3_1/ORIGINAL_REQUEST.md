@@ -1,19 +1,10 @@
-## 2026-08-03T10:04:45Z
-You are Reviewer 1 for Milestone 3 (Frontend & Documentation Synchronization).
+## 2026-08-03T11:46:43Z
+Perform a code review of the `web_admin` changes (`web_admin/index.html`, `web_admin/uploader.html`).
+Working directory: `c:\Development\academypro\.agents\reviewer_m3_1`.
+Read Worker handoff: `c:\Development\academypro\.agents\worker_m3\handoff.md`.
 
-Your Working Directory: `c:\Development\academypro\.agents\reviewer_m3_1`
-
-Task:
-Review the work product completed by Worker M3 for Milestone 3:
-1. Inspect `c:\Development\academypro\DATABASE_SCHEMA.md`:
-   - Verify Section 1 and Section 2 summary table reflect exactly 16 active D1 tables.
-   - Confirm `fitness_baselines` and `fitness_progression` sections have been removed.
-   - Confirm dropped columns (`players.parent_id`, `players.parent_name`, `players.ugroups_active`, `parent_child_links.parent_phone`, `parent_child_links.parent_email`) are removed.
-2. Inspect Flutter app code in `c:\Development\academypro\academypro_app\lib`:
-   - Inspect `roster_controller.dart`, `checkin_controller.dart`, `add_existing_player_modal.dart`, `dashboard_controller.dart`, `dashboard_screen.dart`.
-   - Verify `ugroupsActive` and `parentPhone` fields and UI elements are purged.
-3. Run verification:
-   - Run `cmd /c flutter analyze` in `c:\Development\academypro\academypro_app`.
-   - Confirm zero errors/warnings.
-
-Write your review report to `c:\Development\academypro\.agents\reviewer_m3_1\handoff.md` with explicit verdict (APPROVE / REJECT) and report back via `send_message`.
+Tasks:
+1. Inspect `web_admin/index.html` and `web_admin/uploader.html`.
+2. Verify that Alpine.js loading state integration (`x-show="loading"`, `[x-cloak]`) is clean, valid, and free of UI glitches.
+3. Confirm all API fetch requests (`/api/admin/all-players`, `/api/admin/sports-config`, `/api/admin/bulk-upload`) accurately match live Worker API routes.
+4. Report findings and verdict (APPROVE / REJECT) in `c:\Development\academypro\.agents\reviewer_m3_1\handoff.md`.

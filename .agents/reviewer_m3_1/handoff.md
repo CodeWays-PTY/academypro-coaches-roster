@@ -1,79 +1,111 @@
-# Handoff Report — Reviewer M3 1
+# Review Handoff Report: Web Admin Code Review (`web_admin/index.html`, `web_admin/uploader.html`)
+
+**Agent Role**: Reviewer & Critic (`reviewer_m3_1`)  
+**Working Directory**: `c:\Development\academypro\.agents\reviewer_m3_1`  
+**Date**: 2026-08-03  
+**Verdict**: **REJECT / REQUEST_CHANGES**
+
+---
 
 ## 1. Observation
 
-### Database Schema (`c:\Development\academypro\DATABASE_SCHEMA.md`)
-- **Table Count**: Exactly 16 active D1 database tables listed in Section 1 (SQL DDL) and Section 2 (Summary Table): `schools`, `users`, `sports`, `players`, `squads`, `squad_players`, `test_metric_definitions`, `player_test_logs`, `academic_logs`, `match_stats`, `attendance`, `events`, `action_plans`, `notifications`, `parent_child_links`, `medical_records`.
-- **Fitness Tables Removal**: `fitness_baselines` and `fitness_progression` sections have been completely purged from the documentation. `grep` search for `fitness_` in `DATABASE_SCHEMA.md` returned 0 results.
-- **Dropped Columns**: `players.parent_id`, `players.parent_name`, `players.ugroups_active`, `parent_child_links.parent_phone`, and `parent_child_links.parent_email` have been removed from table schemas and summaries. `grep` search for `parent_id|parent_name|ugroups_active|parent_phone|parent_email` in `DATABASE_SCHEMA.md` returned 0 results.
+### Observation 1: Missing Authentication Headers and `school_id` Parameters in API Fetch Requests
+- **`web_admin/index.html:151`**: `const res = await fetch(\`${apiBase}/api/admin/all-players\`);`
+- **`web_admin/index.html:160`**: `const sportsRes = await fetch(\`${apiBase}/api/admin/sports-config\`);`
+- **`web_admin/uploader.html:158`**: `const res = await fetch(\`${apiBase}/api/admin/all-players\`);`
+- **`web_admin/uploader.html:412`**: `const res = await fetch(\`${apiBase}/api/admin/bulk-upload\`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ records: validRecords }) });`
+- **`worker/src/index.ts:677`**: `app.use('/api/admin/*', enforceJwtAuth);`
+- **`worker/src/index.ts:649-661`**: 
+  ```ts
+  async function enforceJwtAuth(c: any, next: any) {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) { ... }
+    return c.json({ success: false, message: 'Unauthorized session' }, 401);
+  }
+  ```
+- **`worker/src/index.ts:2819-2826`**:
+  ```ts
+  app.get('/api/admin/all-players', async (c) => {
+    const jwtPayload = c.get('jwtPayload') as any;
+    const schoolId = jwtPayload?.schoolId || c.req.query('school_id');
+    if (!schoolId) {
+      return c.json({ success: false, message: 'school_id parameter is required' }, 400);
+    }
+  ```
+- **Direct Quoted Evidence**: None of the 4 fetch calls in `web_admin/index.html` or `web_admin/uploader.html` send an `Authorization` header with a Bearer token or pass `school_id` as a query parameter (`?school_id=...`).
 
-### Flutter Codebase (`c:\Development\academypro\academypro_app\lib`)
-- **Inspected Files**:
-  - `lib/features/dashboard/controllers/roster_controller.dart`
-  - `lib/features/dashboard/controllers/checkin_controller.dart`
-  - `lib/features/dashboard/presentation/add_existing_player_modal.dart`
-  - `lib/features/dashboard/controllers/dashboard_controller.dart`
-  - `lib/features/dashboard/presentation/dashboard_screen.dart`
-- **Field Purge Verification**:
-  - `grep` search across all `.dart` files for `ugroupsActive`, `ugroups_active`, `parentPhone`, `parent_phone`, `parentEmail`, `parent_email`, `parentId`, `parent_id`, `parentName`, `parent_name` returned **0 results**.
-  - All references to active micro-groups (`ugroupsActive`) and legacy parent contact fields have been successfully removed from models, state notifiers, and UI widgets.
+### Observation 2: Native Browser `alert()` in `web_admin/index.html`
+- **`web_admin/index.html:243`**: `alert('No players found in the selected squads!');`
+- **Rule Constraint Violation**: User Global Rule specifies: *"Alerts: Use custom Modals/Toasts only (No `alert()` or `confirm()` popups)."*
 
-### Automated Static Analysis (`cmd /c flutter analyze`)
-- Executed `cmd /c flutter analyze` in `c:\Development\academypro\academypro_app`.
-- **Result**: Command completed with exit code `1`.
-- **Summary**: `183 issues found.` (0 errors, 1 warning, 182 info-level notices).
-- **Warning Details**:
-  - `warning - Unused import: 'package:flutter/foundation.dart'. Try removing the import directive - lib\core\network\api_client.dart:2:8 - unused_import`
+### Observation 3: Alpine.js Loading State & UI Glitch in `index.html`
+- **`web_admin/index.html:143`**: `loading: false` initialized in state object.
+- **`web_admin/index.html:147`**: `this.loading = true;` set inside async `init()`.
+- **`web_admin/index.html:418`**: `<div class="grid grid-cols-12 gap-lg" x-show="!loading">` (Lacks `x-cloak`).
+- **Direct Quoted Evidence**: Because `loading` starts as `false`, the empty Bento layout container is briefly evaluated as visible before `init()` executes and sets `this.loading = true`. This causes an initial un-rendered flicker / layout shift on page load. Furthermore, `uploader.html:156` does not set `this.loading = true` during its initial player roster fetch in `init()`.
+
+### Observation 4: Verified Compliances
+- **Alpine.js Version Pinning**: Both files pin Alpine.js and plugins to `@3.14.0` (`index.html:299,301`, `uploader.html:438,440`).
+- **Alpine.js Loading Order**: Custom logic defined in `<head>` via `alpine:init`, plugins loaded with `defer` before core, core loaded `defer` last.
+- **`[x-cloak]` Rule**: `<style>[x-cloak] { display: none !important; }</style>` declared in both HTML headers (`index.html:109`, `uploader.html:32,134`).
+- **Route Endpoint Alignment**: Route paths (`/api/admin/all-players`, `/api/admin/sports-config`, `/api/admin/bulk-upload`) nominally match live Hono endpoint paths in `worker/src/index.ts`.
+- **TypeScript Build Check**: `cmd /c npx tsc --noEmit` in `worker/` returned 0 errors.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Schema Consistency**: The changes in `DATABASE_SCHEMA.md` accurately match the 16 active D1 tables and purge all references to deprecated tables (`fitness_baselines`, `fitness_progression`) and legacy columns (`players.parent_id`, `players.parent_name`, `players.ugroups_active`, `parent_child_links.parent_phone`, `parent_child_links.parent_email`).
-2. **Frontend Synchronization**: The Flutter app codebase in `academypro_app/lib` has removed all models, fields, and UI references to `ugroupsActive` and `parentPhone`.
-3. **Verification Criterion Violation**: Requirement 3 explicitly states: *"Run `cmd /c flutter analyze` in `c:\Development\academypro\academypro_app`. Confirm zero errors/warnings."* However, static analysis returned 1 warning (`unused_import` in `lib/core/network/api_client.dart:2:8`). As a result, the requirement for 0 warnings is not met.
+1. **Authentication Guard Incompatibility**:
+   - `worker/src/index.ts:677` protects all `/api/admin/*` routes with `enforceJwtAuth`.
+   - `enforceJwtAuth` rejects any incoming request missing a valid `Authorization: Bearer <token>` header with HTTP `401 Unauthorized`.
+   - Since `index.html` (lines 151, 160) and `uploader.html` (lines 158, 412) invoke `fetch()` without supplying `Authorization` headers (or reading `localStorage.getItem('token')`), all API requests to the Worker backend fail with HTTP 401.
+
+2. **Missing `school_id` Scope Parameter**:
+   - `/api/admin/all-players` explicitly enforces `if (!schoolId) return c.json({ success: false, message: 'school_id parameter is required' }, 400);`.
+   - Without token context or `?school_id=...` parameter, even unauthenticated requests fail with HTTP 400.
+   - Consequently, player roster and sports configuration data fails to populate during initialization, leaving empty arrays `[]` in state.
+
+3. **UI Glitch & Loading Flicker**:
+   - In `index.html`, initial state sets `loading: false`. The main layout container uses `x-show="!loading"` without `x-cloak`.
+   - On page render, the container is briefly rendered before `init()` executes `this.loading = true`, resulting in a flash of empty layout before the spinner displays.
+
+4. **UX Rule Non-Conformance**:
+   - `index.html:243` triggers a native browser popup `alert('...')`, violating project UX standards requiring custom toasts/modals.
 
 ---
 
-## 3. Review & Challenge Summary
+## 3. Caveats
 
-### Verdict: REJECT (REQUEST_CHANGES)
-
-### Findings
-
-#### [Minor] Finding 1: Unused import warning in `api_client.dart`
-- **What**: `flutter analyze` reports 1 warning.
-- **Where**: `c:\Development\academypro\academypro_app\lib\core\network\api_client.dart:2:8`
-- **Why**: `import 'package:flutter/foundation.dart';` is unused in `api_client.dart`, causing `flutter analyze` to emit a warning and exit with code 1, violating the zero warning requirement.
-- **Suggestion**: Remove line 2 (`import 'package:flutter/foundation.dart';`) in `lib/core/network/api_client.dart`.
-
-### Verified Claims
-- Section 1 and Section 2 summary table reflect exactly 16 active D1 tables → Verified via `view_file` & `grep_search` → PASS
-- `fitness_baselines` and `fitness_progression` sections removed → Verified via `grep_search` → PASS
-- Dropped columns removed from schema → Verified via `grep_search` → PASS
-- `ugroupsActive` and `parentPhone` fields and UI elements purged from Flutter code → Verified via `grep_search` → PASS
-- `flutter analyze` zero errors/warnings → Verified via `run_command` → **FAIL** (1 warning found)
-
-### Coverage Gaps
-- None. Static analysis and manual inspection covered all required files.
+- **Network Isolation**: Tests were conducted via static code inspection and TypeScript compiler verification in CODE_ONLY mode.
+- **Token Availability**: If an upstream authentication gateway or Cloudflare Access injects tokens, the Worker's `enforceJwtAuth` middleware specifically looks for `req.header('Authorization')`, which the frontend JavaScript `fetch` code explicitly omits.
 
 ---
 
-## 4. Caveats
+## 4. Conclusion
 
-- As a Reviewer agent, I am operating under strict `Review-only — do NOT modify implementation code` constraints and cannot directly delete the unused import in `api_client.dart`.
-- Once Worker M3 removes line 2 of `lib/core/network/api_client.dart`, `flutter analyze` will pass with 0 errors and 0 warnings.
+**Verdict: REJECT / REQUEST_CHANGES**
+
+While route names match and Alpine.js script tag ordering/versioning is compliant, `web_admin` implementation cannot communicate with the live Worker API because fetch requests omit necessary `Authorization` headers and `school_id` parameters. Additionally, `index.html` exhibits a loading state flicker and uses a native `alert()`.
+
+### Required Fixes:
+1. **Add Auth Headers & Query Params to Fetch Requests**:
+   - Update `index.html` and `uploader.html` fetch calls to extract token (e.g. `const token = localStorage.getItem('token') || localStorage.getItem('jwt_token');`) and include headers: `headers: { 'Authorization': `Bearer ${token}` }`.
+   - Append `?school_id=...` or ensure JWT payload includes `schoolId`.
+2. **Fix Loading Flicker in `index.html`**:
+   - Set initial state `loading: true` in `Alpine.data('configurator', ...)` or add `x-cloak` to `<div class="grid grid-cols-12 gap-lg" x-show="!loading" x-cloak>`.
+   - Set `this.loading = true` during initial roster fetch in `uploader.html:init()`.
+3. **Replace Native `alert()`**:
+   - Replace `alert(...)` at `index.html:243` with custom toast or modal notification.
 
 ---
 
-## 5. Conclusion
+## 5. Verification Method
 
-Work on Milestone 3 is **REJECTED / REQUESTS CHANGES** solely due to the single remaining warning in `flutter analyze` (`lib/core/network/api_client.dart:2:8`). All schema document updates and Flutter code field purges are fully compliant and verified.
-
----
-
-## 6. Verification Method
-
-To independently verify after Worker M3 fixes the warning:
-1. Run `cmd /c flutter analyze` in `c:\Development\academypro\academypro_app`.
-2. Confirm output contains `No issues found!` or only `info` level notices with 0 warnings and 0 errors.
+1. **Inspect `web_admin/index.html` & `web_admin/uploader.html`**:
+   Verify that all `fetch()` calls include `Authorization: Bearer <token>` in headers and pass required query parameters.
+2. **Inspect Worker Middleware & Route Guards**:
+   `worker/src/index.ts:677` (`app.use('/api/admin/*', enforceJwtAuth)`).
+3. **Run TypeScript Verification**:
+   ```bash
+   cmd /c npx tsc --noEmit
+   ```

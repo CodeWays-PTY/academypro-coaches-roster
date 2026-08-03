@@ -1,48 +1,50 @@
-# BRIEFING — 2026-08-03T12:05:55Z
+# BRIEFING — 2026-08-03T11:47:57Z
 
 ## Mission
-Review Worker M3's work product for Milestone 3 (Frontend & Documentation Synchronization).
+Code review of web_admin changes (`web_admin/index.html`, `web_admin/uploader.html`) against Worker implementation and design/rule constraints.
 
 ## 🔒 My Identity
-- Archetype: Teamwork agent
+- Archetype: reviewer & critic
 - Roles: reviewer, critic
 - Working directory: c:\Development\academypro\.agents\reviewer_m3_1
-- Original parent: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Milestone: Milestone 3
-- Instance: 1 of 2
+- Original parent: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Milestone: m3_1
+- Instance: 1 of 1
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Network restriction: CODE_ONLY mode (no external web access)
-- Strict production data architecture checks (no dummy data/fallbacks, clean schema synchronization)
+- Check user rules & integrity violations (hardcoded test results, facade implementations, dummy fallbacks)
+- Verify Alpine.js loading state & x-cloak integration
+- Confirm API fetch routes match Worker routes
+- Output verdict in handoff.md and send_message to parent
 
 ## Current Parent
-- Conversation ID: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Updated: 2026-08-03T12:05:55Z
+- Conversation ID: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Updated: 2026-08-03T11:47:57Z
 
 ## Review Scope
-- **Files to review**: `c:\Development\academypro\DATABASE_SCHEMA.md`, Flutter app code in `c:\Development\academypro\academypro_app\lib` (`roster_controller.dart`, `checkin_controller.dart`, `add_existing_player_modal.dart`, `dashboard_controller.dart`, `dashboard_screen.dart`, etc.)
-- **Interface contracts**: PROJECT.md / SCOPE.md / DATABASE_SCHEMA.md
-- **Review criteria**: Schema sync, purging dropped columns/tables, zero flutter analyze errors/warnings.
-
-## Key Decisions Made
-- Inspected DATABASE_SCHEMA.md: Confirmed exactly 16 active tables, removed fitness baselines/progression, removed dropped columns.
-- Inspected Flutter codebase: Confirmed ugroupsActive, parentPhone, parentEmail, parentId, parentName and fitness table references are completely purged.
-- Executed `flutter analyze`: Discovered 0 errors, 1 warning (`lib/core/network/api_client.dart:2:8`), and 182 infos.
-- Determined verdict: REJECT / REQUEST_CHANGES due to non-zero warning count in `flutter analyze`.
-
-## Artifact Index
-- c:\Development\academypro\.agents\reviewer_m3_1\ORIGINAL_REQUEST.md — Original request log
-- c:\Development\academypro\.agents\reviewer_m3_1\BRIEFING.md — Working memory
-- c:\Development\academypro\.agents\reviewer_m3_1\progress.md — Progress log
-- c:\Development\academypro\.agents\reviewer_m3_1\handoff.md — Handoff report
+- **Files to review**: `web_admin/index.html`, `web_admin/uploader.html`
+- **Worker handoff**: `c:\Development\academypro\.agents\worker_m3\handoff.md`
+- **Worker codebase**: `worker/src/index.ts`
 
 ## Review Checklist
-- **Items reviewed**: DATABASE_SCHEMA.md, Flutter codebase (roster_controller.dart, checkin_controller.dart, add_existing_player_modal.dart, dashboard_controller.dart, dashboard_screen.dart, api_client.dart, etc.)
+- **Items reviewed**: `web_admin/index.html`, `web_admin/uploader.html`, `worker/src/index.ts`
 - **Verdict**: REJECT / REQUEST_CHANGES
-- **Unverified claims**: 0 warnings in `flutter analyze` failed (1 warning found).
+- **Unverified claims**: None
 
 ## Attack Surface
-- **Hypotheses tested**: Checked for residual dropped column references, unused imports, lint errors, facade implementations.
-- **Vulnerabilities found**: 1 warning (`unused_import` in `lib/core/network/api_client.dart:2:8`).
-- **Untested angles**: Runtime Flutter UI rendering (tested static analysis via flutter analyze).
+- **Hypotheses tested**: 
+  1. API route alignment and authentication guards (FAILED - fetch calls omit Authorization header and school_id param required by Worker `enforceJwtAuth` middleware and `all-players` route)
+  2. Alpine.js loading state and x-cloak flicker (FAILED - initial layout shift in index.html, missing loading indicator in uploader.html init)
+  3. UX rule compliance (FAILED - native alert() used at index.html:243)
+- **Vulnerabilities found**: Unauthenticated fetch calls will receive HTTP 401 Unauthorized from live Worker backend.
+- **Untested angles**: None
+
+## Key Decisions Made
+- Concluded code review with REJECT / REQUEST_CHANGES verdict based on missing auth headers, missing school_id param, UI loading flicker, and native alert() rule violation.
+- Documented findings and verification steps in handoff.md.
+
+## Artifact Index
+- `.agents/reviewer_m3_1/ORIGINAL_REQUEST.md` — Original user request
+- `.agents/reviewer_m3_1/BRIEFING.md` — Current working memory briefing
+- `.agents/reviewer_m3_1/handoff.md` — Final review handoff report

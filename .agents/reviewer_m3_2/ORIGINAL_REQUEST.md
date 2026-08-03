@@ -1,12 +1,12 @@
-## 2026-08-03T10:04:45Z
-You are Reviewer 2 for Milestone 3 (Frontend & Documentation Synchronization).
+## 2026-08-03T11:46:43Z
+<USER_REQUEST>
+Perform a review of `API_SPECIFICATION.md` (`c:\Development\academypro\API_SPECIFICATION.md`).
+Working directory: `c:\Development\academypro\.agents\reviewer_m3_2`.
+Read Worker handoff: `c:\Development\academypro\.agents\worker_m3\handoff.md`.
 
-Your Working Directory: `c:\Development\academypro\.agents\reviewer_m3_2`
-
-Task:
-Perform an independent code and schema review for Milestone 3:
-1. Inspect `c:\Development\academypro\DATABASE_SCHEMA.md` for complete schema accuracy and alignment with 16 active D1 production tables.
-2. Inspect `c:\Development\academypro\academypro_app\lib` for clean removal of obsolete fields (`ugroupsActive`, `parentPhone`) across models, controllers, and presentation widgets.
-3. Run `cmd /c flutter analyze` in `c:\Development\academypro\academypro_app` to verify static analysis compliance.
-
-Write your review report to `c:\Development\academypro\.agents\reviewer_m3_2\handoff.md` with explicit verdict (APPROVE / REJECT) and report back via `send_message`.
+Tasks:
+1. Inspect `API_SPECIFICATION.md` against `worker/src/index.ts`.
+2. Verify that all 51 active endpoints across 7 modules (Auth/OTP, Squads/School, Dashboard/Events, Performance/Metrics, Student Portal/Parent, Admin/Storage/SMS, Notifications) are accurately documented with correct HTTP methods, request payloads, and response structures.
+3. Confirm that all 4 obsolete endpoints (`POST /api/auth/login`, `POST /api/attendance`, `GET /api/players/:id/dashboard`, `GET /api/players/flagged`) have been completely removed.
+4. Report findings and verdict (APPROVE / REJECT) in `c:\Development\academypro\.agents\reviewer_m3_2\handoff.md`.
+</USER_REQUEST>

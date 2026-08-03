@@ -1,0 +1,488 @@
+[
+  {
+    "line": 22,
+    "method": "USE",
+    "route": "*",
+    "rawLine": "app.use('*', async (c, next) => {"
+  },
+  {
+    "line": 123,
+    "method": "USE",
+    "route": "*",
+    "rawLine": "app.use('*', cors({"
+  },
+  {
+    "line": 133,
+    "method": "USE",
+    "route": "*",
+    "rawLine": "app.use('*', async (c, next) => {"
+  },
+  {
+    "line": 307,
+    "method": "POST",
+    "route": "/api/auth/send-otp",
+    "rawLine": "app.post('/api/auth/send-otp', async (c) => {"
+  },
+  {
+    "line": 393,
+    "method": "POST",
+    "route": "/api/auth/verify-otp",
+    "rawLine": "app.post('/api/auth/verify-otp', async (c) => {"
+  },
+  {
+    "line": 457,
+    "method": "GET",
+    "route": "/api/auth/profile",
+    "rawLine": "app.get('/api/auth/profile', async (c) => {"
+  },
+  {
+    "line": 503,
+    "method": "POST",
+    "route": "/api/auth/profile",
+    "rawLine": "app.post('/api/auth/profile', async (c) => {"
+  },
+  {
+    "line": 557,
+    "method": "POST",
+    "route": "/api/auth/send-email-change-otp",
+    "rawLine": "app.post('/api/auth/send-email-change-otp', async (c) => {"
+  },
+  {
+    "line": 606,
+    "method": "POST",
+    "route": "/api/auth/verify-new-email",
+    "rawLine": "app.post('/api/auth/verify-new-email', async (c) => {"
+  },
+  {
+    "line": 663,
+    "method": "USE",
+    "route": "/api/rosters/*",
+    "rawLine": "app.use('/api/rosters/*', enforceJwtAuth);"
+  },
+  {
+    "line": 664,
+    "method": "USE",
+    "route": "/api/rosters",
+    "rawLine": "app.use('/api/rosters', enforceJwtAuth);"
+  },
+  {
+    "line": 665,
+    "method": "USE",
+    "route": "/api/dashboard/*",
+    "rawLine": "app.use('/api/dashboard/*', enforceJwtAuth);"
+  },
+  {
+    "line": 666,
+    "method": "USE",
+    "route": "/api/dashboard",
+    "rawLine": "app.use('/api/dashboard', enforceJwtAuth);"
+  },
+  {
+    "line": 667,
+    "method": "USE",
+    "route": "/api/match-stats/*",
+    "rawLine": "app.use('/api/match-stats/*', enforceJwtAuth);"
+  },
+  {
+    "line": 668,
+    "method": "USE",
+    "route": "/api/match-stats",
+    "rawLine": "app.use('/api/match-stats', enforceJwtAuth);"
+  },
+  {
+    "line": 669,
+    "method": "USE",
+    "route": "/api/squads/*",
+    "rawLine": "app.use('/api/squads/*', enforceJwtAuth);"
+  },
+  {
+    "line": 670,
+    "method": "USE",
+    "route": "/api/squads",
+    "rawLine": "app.use('/api/squads', enforceJwtAuth);"
+  },
+  {
+    "line": 671,
+    "method": "USE",
+    "route": "/api/student-portal/*",
+    "rawLine": "app.use('/api/student-portal/*', enforceJwtAuth);"
+  },
+  {
+    "line": 672,
+    "method": "USE",
+    "route": "/api/student-portal",
+    "rawLine": "app.use('/api/student-portal', enforceJwtAuth);"
+  },
+  {
+    "line": 673,
+    "method": "USE",
+    "route": "/api/parent/*",
+    "rawLine": "app.use('/api/parent/*', enforceJwtAuth);"
+  },
+  {
+    "line": 674,
+    "method": "USE",
+    "route": "/api/parent",
+    "rawLine": "app.use('/api/parent', enforceJwtAuth);"
+  },
+  {
+    "line": 675,
+    "method": "USE",
+    "route": "/api/player/*",
+    "rawLine": "app.use('/api/player/*', enforceJwtAuth);"
+  },
+  {
+    "line": 676,
+    "method": "USE",
+    "route": "/api/player",
+    "rawLine": "app.use('/api/player', enforceJwtAuth);"
+  },
+  {
+    "line": 677,
+    "method": "USE",
+    "route": "/api/admin/*",
+    "rawLine": "app.use('/api/admin/*', enforceJwtAuth);"
+  },
+  {
+    "line": 678,
+    "method": "USE",
+    "route": "/api/admin",
+    "rawLine": "app.use('/api/admin', enforceJwtAuth);"
+  },
+  {
+    "line": 679,
+    "method": "USE",
+    "route": "/api/school/*",
+    "rawLine": "app.use('/api/school/*', enforceJwtAuth);"
+  },
+  {
+    "line": 680,
+    "method": "USE",
+    "route": "/api/school",
+    "rawLine": "app.use('/api/school', enforceJwtAuth);"
+  },
+  {
+    "line": 681,
+    "method": "USE",
+    "route": "/api/notifications/*",
+    "rawLine": "app.use('/api/notifications/*', enforceJwtAuth);"
+  },
+  {
+    "line": 682,
+    "method": "USE",
+    "route": "/api/notifications",
+    "rawLine": "app.use('/api/notifications', enforceJwtAuth);"
+  },
+  {
+    "line": 802,
+    "method": "GET",
+    "route": "/api/squads",
+    "rawLine": "app.get('/api/squads', async (c) => {"
+  },
+  {
+    "line": 852,
+    "method": "POST",
+    "route": "/api/squads",
+    "rawLine": "app.post('/api/squads', async (c) => {"
+  },
+  {
+    "line": 923,
+    "method": "GET",
+    "route": "/api/rosters/:age_group",
+    "rawLine": "app.get('/api/rosters/:age_group', async (c) => {"
+  },
+  {
+    "line": 1051,
+    "method": "POST",
+    "route": "/api/players/:id/squads",
+    "rawLine": "app.post('/api/players/:id/squads', async (c) => {"
+  },
+  {
+    "line": 1113,
+    "method": "GET",
+    "route": "/api/dashboard/summary",
+    "rawLine": "app.get('/api/dashboard/summary', async (c) => {"
+  },
+  {
+    "line": 1203,
+    "method": "GET",
+    "route": "/api/dashboard/flags",
+    "rawLine": "app.get('/api/dashboard/flags', async (c) => {"
+  },
+  {
+    "line": 1323,
+    "method": "GET",
+    "route": "/api/dashboard/events",
+    "rawLine": "app.get('/api/dashboard/events', async (c) => {"
+  },
+  {
+    "line": 1432,
+    "method": "POST",
+    "route": "/api/dashboard/events",
+    "rawLine": "app.post('/api/dashboard/events', async (c) => {"
+  },
+  {
+    "line": 1559,
+    "method": "POST",
+    "route": "/api/dashboard/events/:id",
+    "rawLine": "app.post('/api/dashboard/events/:id', async (c) => {"
+  },
+  {
+    "line": 1643,
+    "method": "DELETE",
+    "route": "/api/dashboard/events/:id",
+    "rawLine": "app.delete('/api/dashboard/events/:id', async (c) => {"
+  },
+  {
+    "line": 1654,
+    "method": "POST",
+    "route": "/api/dashboard/events/:id/delete",
+    "rawLine": "app.post('/api/dashboard/events/:id/delete', async (c) => {"
+  },
+  {
+    "line": 1666,
+    "method": "GET",
+    "route": "/api/dashboard/actions",
+    "rawLine": "app.get('/api/dashboard/actions', async (c) => {"
+  },
+  {
+    "line": 1740,
+    "method": "POST",
+    "route": "/api/dashboard/actions",
+    "rawLine": "app.post('/api/dashboard/actions', async (c) => {"
+  },
+  {
+    "line": 1810,
+    "method": "POST",
+    "route": "/api/dashboard/actions/:id/toggle",
+    "rawLine": "app.post('/api/dashboard/actions/:id/toggle', async (c) => {"
+  },
+  {
+    "line": 1849,
+    "method": "POST",
+    "route": "/api/dashboard/actions/:id/delete",
+    "rawLine": "app.post('/api/dashboard/actions/:id/delete', async (c) => {"
+  },
+  {
+    "line": 1861,
+    "method": "GET",
+    "route": "/api/dashboard/rising-stars",
+    "rawLine": "app.get('/api/dashboard/rising-stars', async (c) => {"
+  },
+  {
+    "line": 1931,
+    "method": "POST",
+    "route": "/api/dashboard/checkin",
+    "rawLine": "app.post('/api/dashboard/checkin', async (c) => {"
+  },
+  {
+    "line": 2052,
+    "method": "GET",
+    "route": "/api/dashboard/events/:id/attendance",
+    "rawLine": "app.get('/api/dashboard/events/:id/attendance', async (c) => {"
+  },
+  {
+    "line": 2084,
+    "method": "POST",
+    "route": "/api/match-stats",
+    "rawLine": "app.post('/api/match-stats', async (c) => {"
+  },
+  {
+    "line": 2162,
+    "method": "GET",
+    "route": "/api/student-portal",
+    "rawLine": "app.get('/api/student-portal', async (c) => {"
+  },
+  {
+    "line": 2491,
+    "method": "POST",
+    "route": "/api/student-portal/profile",
+    "rawLine": "app.post('/api/student-portal/profile', async (c) => {"
+  },
+  {
+    "line": 2582,
+    "method": "POST",
+    "route": "/api/player/evaluation-baseline",
+    "rawLine": "app.post('/api/player/evaluation-baseline', async (c) => {"
+  },
+  {
+    "line": 2624,
+    "method": "GET",
+    "route": "/api/test-metrics",
+    "rawLine": "app.get('/api/test-metrics', async (c) => {"
+  },
+  {
+    "line": 2654,
+    "method": "POST",
+    "route": "/api/test-metrics",
+    "rawLine": "app.post('/api/test-metrics', async (c) => {"
+  },
+  {
+    "line": 2703,
+    "method": "DELETE",
+    "route": "/api/test-metrics/:id",
+    "rawLine": "app.delete('/api/test-metrics/:id', async (c) => {"
+  },
+  {
+    "line": 2715,
+    "method": "POST",
+    "route": "/api/dashboard/test-logs/batch",
+    "rawLine": "app.post('/api/dashboard/test-logs/batch', async (c) => {"
+  },
+  {
+    "line": 2720,
+    "method": "POST",
+    "route": "/api/dashboard/test-logs",
+    "rawLine": "app.post('/api/dashboard/test-logs', async (c) => {"
+  },
+  {
+    "line": 2725,
+    "method": "POST",
+    "route": "/api/test-logs",
+    "rawLine": "app.post('/api/test-logs', async (c) => {"
+  },
+  {
+    "line": 2732,
+    "method": "POST",
+    "route": "/api/test-logs/batch",
+    "rawLine": "app.post('/api/test-logs/batch', async (c) => {"
+  },
+  {
+    "line": 2819,
+    "method": "GET",
+    "route": "/api/admin/all-players",
+    "rawLine": "app.get('/api/admin/all-players', async (c) => {"
+  },
+  {
+    "line": 2848,
+    "method": "GET",
+    "route": "/api/school/players",
+    "rawLine": "app.get('/api/school/players', async (c) => {"
+  },
+  {
+    "line": 2919,
+    "method": "POST",
+    "route": "/api/squads/:squadId/players/add",
+    "rawLine": "app.post('/api/squads/:squadId/players/add', async (c) => {"
+  },
+  {
+    "line": 2971,
+    "method": "POST",
+    "route": "/api/squads/:squadId/players/remove",
+    "rawLine": "app.post('/api/squads/:squadId/players/remove', async (c) => {"
+  },
+  {
+    "line": 3014,
+    "method": "POST",
+    "route": "/api/upload",
+    "rawLine": "app.post('/api/upload', async (c) => {"
+  },
+  {
+    "line": 3042,
+    "method": "POST",
+    "route": "/api/admin/bulk-upload",
+    "rawLine": "app.post('/api/admin/bulk-upload', async (c) => {"
+  },
+  {
+    "line": 3143,
+    "method": "GET",
+    "route": "/api/admin/sports-config",
+    "rawLine": "app.get('/api/admin/sports-config', async (c) => {"
+  },
+  {
+    "line": 3161,
+    "method": "POST",
+    "route": "/api/players/:id/position",
+    "rawLine": "app.post('/api/players/:id/position', async (c) => {"
+  },
+  {
+    "line": 3190,
+    "method": "POST",
+    "route": "/api/players",
+    "rawLine": "app.post('/api/players', async (c) => {"
+  },
+  {
+    "line": 3323,
+    "method": "POST",
+    "route": "/api/parent/link-request",
+    "rawLine": "app.post('/api/parent/link-request', async (c) => {"
+  },
+  {
+    "line": 3399,
+    "method": "GET",
+    "route": "/api/player/link-requests",
+    "rawLine": "app.get('/api/player/link-requests', async (c) => {"
+  },
+  {
+    "line": 3436,
+    "method": "POST",
+    "route": "/api/player/link-requests/:id/respond",
+    "rawLine": "app.post('/api/player/link-requests/:id/respond', async (c) => {"
+  },
+  {
+    "line": 3463,
+    "method": "GET",
+    "route": "/api/parent/children",
+    "rawLine": "app.get('/api/parent/children', async (c) => {"
+  },
+  {
+    "line": 3505,
+    "method": "GET",
+    "route": "/api/notifications",
+    "rawLine": "app.get('/api/notifications', async (c) => {"
+  },
+  {
+    "line": 3583,
+    "method": "POST",
+    "route": "/api/notifications/:id/read",
+    "rawLine": "app.post('/api/notifications/:id/read', async (c) => {"
+  },
+  {
+    "line": 3598,
+    "method": "POST",
+    "route": "/api/notifications/read-all",
+    "rawLine": "app.post('/api/notifications/read-all', async (c) => {"
+  },
+  {
+    "line": 3627,
+    "method": "DELETE",
+    "route": "/api/notifications/:id",
+    "rawLine": "app.delete('/api/notifications/:id', async (c) => {"
+  },
+  {
+    "line": 3641,
+    "method": "POST",
+    "route": "/api/notifications/:id/delete",
+    "rawLine": "app.post('/api/notifications/:id/delete', async (c) => {"
+  },
+  {
+    "line": 3656,
+    "method": "POST",
+    "route": "/api/notifications/send",
+    "rawLine": "app.post('/api/notifications/send', async (c) => {"
+  },
+  {
+    "line": 3713,
+    "method": "POST",
+    "route": "/api/coach/send-sms-otp",
+    "rawLine": "app.post('/api/coach/send-sms-otp', async (c) => {"
+  },
+  {
+    "line": 3720,
+    "method": "POST",
+    "route": "/api/sms/send-verification",
+    "rawLine": "app.post('/api/sms/send-verification', async (c) => {"
+  },
+  {
+    "line": 3790,
+    "method": "POST",
+    "route": "/api/coach/verify-sms-otp",
+    "rawLine": "app.post('/api/coach/verify-sms-otp', async (c) => {"
+  },
+  {
+    "line": 3797,
+    "method": "POST",
+    "route": "/api/sms/verify-code",
+    "rawLine": "app.post('/api/sms/verify-code', async (c) => {"
+  }
+]

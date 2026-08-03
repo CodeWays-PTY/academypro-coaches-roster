@@ -191,6 +191,36 @@ class RosterNotifier extends StateNotifier<RosterState> {
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to remove player from squad.');
       return false;
     }
+  Future<bool> registerAndAddPlayer({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String ageGroup,
+    required String squadId,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/players',
+        data: {
+          'firstName': firstName.trim(),
+          'lastName': lastName.trim(),
+          'email': email.trim(),
+          'ageGroup': ageGroup,
+          'squadId': squadId,
+          'position': 'Athlete',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchRoster(ageGroup);
+        return true;
+      }
+      AppToast.showError(null, title: 'Registration Error', message: response.data?['message'] ?? 'Could not register new player.');
+      return false;
+    } catch (e) {
+      print('Error in registerAndAddPlayer: $e');
+      AppToast.showError(null, title: 'Network Failure', message: 'Failed to register player.');
+      return false;
+    }
   }
 
   Future<bool> updatePlayerPosition(RosterPlayer player, String newPosition) async {
