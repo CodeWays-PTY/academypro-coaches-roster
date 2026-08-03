@@ -179,7 +179,7 @@ class StudentController extends StateNotifier<AsyncValue<StudentPortalData>> {
   String? _lastSquadId;
 
   StudentController(this._apiClient) : super(const AsyncValue.loading()) {
-    // Live automatic sync: polls D1 every 20 seconds (with ETag CDN edge caching for zero-cost)
+    // Live automatic sync: polls database every 20 seconds (with ETag CDN edge caching for zero-cost)
     _pollingTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       fetchStudentData(squadId: _lastSquadId, silent: true);
     });

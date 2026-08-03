@@ -1072,7 +1072,7 @@
         async onSquadChange() {
           await this.fetchTestMetricsFromApi();
           
-          // Dynamically fetch events for the selected squad from D1 DB
+          // Dynamically fetch events for the selected squad
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events?ageGroup=${encodeURIComponent(this.currentSquad)}&eventType=Fitness Test`);
             if (res.ok) {
@@ -1636,7 +1636,7 @@
         </div>
 
         <div x-show="eventSubTab === 'upcoming'" class="flex items-center gap-md">
-          <button @click="fetchEventsFromApi(true); triggerToast('Events refreshed live from Cloudflare D1!', 'success')" class="bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface px-3.5 py-2.5 rounded-xl font-label-md text-xs font-bold shadow-sm transition-all flex items-center gap-1.5" title="Refresh Events from Cloudflare D1 Database">
+          <button @click="fetchEventsFromApi(true); triggerToast('Events refreshed live!', 'success')" class="bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface px-3.5 py-2.5 rounded-xl font-label-md text-xs font-bold shadow-sm transition-all flex items-center gap-1.5" title="Refresh Events">
             <span class="material-symbols-outlined text-[18px]">sync</span>
             <span>Refresh</span>
           </button>
@@ -2345,7 +2345,7 @@
             </div>
           </div>
 
-          <!-- Dynamic Panel Content loaded from Cloudflare D1 test_metrics -->
+          <!-- Dynamic Panel Content loaded from test_metrics -->
           <div class="flex-1 overflow-y-auto p-lg custom-scrollbar space-y-md">
             <template x-for="metric in testMetrics" :key="metric.id">
               <div class="bg-surface-container-low p-md rounded-xl border border-outline-variant">
@@ -2364,7 +2364,7 @@
             </template>
 
             <div x-show="testMetrics.length === 0" class="text-center py-6 text-xs text-outline">
-              Loading test evaluation metrics from Cloudflare D1...
+              Loading test evaluation metrics...
             </div>
 
             <!-- Audit Observation Notes -->
@@ -2785,7 +2785,7 @@
       </form>
     </div>
   </div>
-  <!-- MODAL: MANAGE TEAM TEST METRICS (Cloudflare D1 DB) -->
+  <!-- MODAL: MANAGE TEAM TEST METRICS -->
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" x-cloak>
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md">
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">

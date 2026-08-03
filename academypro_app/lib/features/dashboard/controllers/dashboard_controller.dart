@@ -699,7 +699,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
   DashboardEventsNotifier(this._apiClient, this._ref)
       : super(const AsyncValue.loading()) {
     fetchEvents();
-    // Live automatic sync: polls D1 every 20 seconds (with ETag CDN edge caching for zero-cost)
+    // Live automatic sync: polls database every 20 seconds (with ETag CDN edge caching for zero-cost)
     _pollingTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       fetchEvents(silent: true);
     });
@@ -844,7 +844,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         return false;
       }
     } catch (e) {
-      debugPrint('[Create Event Error] Network failure or API exception saving to D1: $e');
+      debugPrint('[Create Event Error] Network failure or API exception saving to database: $e');
       return false;
     }
   }
