@@ -1657,7 +1657,8 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
     }
   }
 }// Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
-app.get('/api/dashboard/events', async (c) => {
+// Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
+const handleGetEvents = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1708,7 +1709,9 @@ app.get('/api/dashboard/events', async (c) => {
       completionCount: r.completion_count,
       ageGroup: r.age_group || '',
       team: r.team || r.age_group || '',
-      workoutImagePath: r.workout_image_path
+      workoutImagePath: r.workout_image_path,
+      recurrenceRule: r.recurrence_rule || 'Does Not Repeat',
+      recurrenceEndDate: r.recurrence_end_date || null
     }));
 
     return c.json({
@@ -1718,10 +1721,13 @@ app.get('/api/dashboard/events', async (c) => {
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to fetch events', error: err.message }, 500);
   }
-});
+};
+
+app.get('/api/dashboard/events', handleGetEvents);
+app.get('/api/events', handleGetEvents);
 
 // Route: Create Coach Command Event
-app.post('/api/dashboard/events', async (c) => {
+const handleCreateEvent = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
 
@@ -1738,7 +1744,7 @@ app.post('/api/dashboard/events', async (c) => {
 
   const schoolId = (jwtPayload?.schoolId || body?.schoolId || '1').trim();
 
-  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath } = body;
+  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -1787,11 +1793,13 @@ app.post('/api/dashboard/events', async (c) => {
   const eventId = id ? id.toString() : `EVT-${Date.now()}`;
   const finalAgeGroup = targetAgeGroup || assignedTeam;
   const finalTeam = assignedTeam || targetAgeGroup;
+  const recRuleVal = (recurrenceRule || body.recurrence_rule || 'Does Not Repeat').trim();
+  const recEndDateVal = (recurrenceEndDate || body.recurrence_end_date || null);
 
   const query = `
     INSERT INTO events (
-      id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, completion_count, age_group, team, workout_image_path
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, completion_count, age_group, team, workout_image_path, recurrence_rule, recurrence_end_date
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
       event_type = excluded.event_type,
@@ -1802,7 +1810,9 @@ app.post('/api/dashboard/events', async (c) => {
       is_important = excluded.is_important,
       age_group = excluded.age_group,
       team = excluded.team,
-      workout_image_path = excluded.workout_image_path
+      workout_image_path = excluded.workout_image_path,
+      recurrence_rule = excluded.recurrence_rule,
+      recurrence_end_date = excluded.recurrence_end_date
   `;
 
   try {
@@ -1823,7 +1833,9 @@ app.post('/api/dashboard/events', async (c) => {
       compCountVal,
       finalAgeGroup,
       finalTeam,
-      workoutImagePath || null
+      workoutImagePath || null,
+      recRuleVal,
+      recEndDateVal
     ).run();
 
     console.log(`[Observer Log] Event '${eventId}' successfully created in Cloudflare D1 for school '${schoolId}'.`);
@@ -1844,14 +1856,19 @@ app.post('/api/dashboard/events', async (c) => {
         completionCount: compCountVal,
         ageGroup: finalAgeGroup,
         team: finalTeam,
-        workoutImagePath: workoutImagePath || null
+        workoutImagePath: workoutImagePath || null,
+        recurrenceRule: recRuleVal,
+        recurrenceEndDate: recEndDateVal
       }
     }, 201);
   } catch (err: any) {
     console.error(`[Observer Error] Failed to create event '${eventId}':`, err);
     return c.json({ success: false, message: 'Failed to create event', error: err.message }, 500);
   }
-});
+};
+
+app.post('/api/dashboard/events', handleCreateEvent);
+app.post('/api/events', handleCreateEvent);
 
 // Route: Update Coach Command Event (Supports POST & PUT aliases)
 const handleUpdateEvent = async (c: any) => {
@@ -1868,7 +1885,7 @@ const handleUpdateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath } = body;
+  const { title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -1914,18 +1931,21 @@ const handleUpdateEvent = async (c: any) => {
   const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
   const finalAgeGroup = targetAgeGroup || assignedTeam;
   const finalTeam = assignedTeam || targetAgeGroup;
+  const recRuleVal = (recurrenceRule || body.recurrence_rule || 'Does Not Repeat').trim();
+  const recEndDateVal = (recurrenceEndDate || body.recurrence_end_date || null);
 
   try {
     const query = `
       UPDATE events SET 
         title = ?, event_type = ?, start_time = ?, date = ?, duration_mins = ?, 
-        location = ?, is_important = ?, age_group = ?, team = ?, workout_image_path = ?
+        location = ?, is_important = ?, age_group = ?, team = ?, workout_image_path = ?,
+        recurrence_rule = ?, recurrence_end_date = ?
       WHERE CAST(id AS TEXT) = ? OR id = ?
     `;
     await db.prepare(query).bind(
       eventTitle, evType, eventTime, eventDt, durMinsVal,
       eventLoc, isImpVal, finalAgeGroup,
-      finalTeam, workoutImagePath || null, id.toString(), id.toString()
+      finalTeam, workoutImagePath || null, recRuleVal, recEndDateVal, id.toString(), id.toString()
     ).run();
 
     console.log(`[Observer Log] Event '${id}' successfully updated in D1.`);
@@ -1943,7 +1963,7 @@ app.post('/api/events/:id', handleUpdateEvent);
 app.put('/api/events/:id', handleUpdateEvent);
 
 // Route: Delete Coach Command Event
-app.delete('/api/dashboard/events/:id', async (c) => {
+const handleDeleteEvent = async (c: any) => {
   const id = c.req.param('id');
   const db = getDB(c);
   try {
@@ -1952,18 +1972,12 @@ app.delete('/api/dashboard/events/:id', async (c) => {
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to delete event', error: err.message }, 500);
   }
-});
+};
 
-app.post('/api/dashboard/events/:id/delete', async (c) => {
-  const id = c.req.param('id');
-  const db = getDB(c);
-  try {
-    await db.prepare('DELETE FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(id.toString(), id.toString()).run();
-    return c.json({ success: true, message: 'Event deleted successfully' });
-  } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to delete event', error: err.message }, 500);
-  }
-});
+app.delete('/api/dashboard/events/:id', handleDeleteEvent);
+app.post('/api/dashboard/events/:id/delete', handleDeleteEvent);
+app.delete('/api/events/:id', handleDeleteEvent);
+app.post('/api/events/:id/delete', handleDeleteEvent);
 
 // Route: Get Coach Action Plans from D1
 app.get('/api/dashboard/actions', async (c) => {

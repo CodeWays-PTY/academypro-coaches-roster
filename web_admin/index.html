@@ -287,7 +287,7 @@
         loggedInCoach: JSON.parse(localStorage.getItem('academypro_logged_in_coach') || JSON.stringify({
           id: 'USR-COACH-JAN777',
           name: 'Jan-Albert Mentz',
-          role: 'Head Academy Coach',
+          role: 'Coach',
           email: 'janmen777@gmail.com',
           schoolName: 'OVK Rugby Academy'
         })),
@@ -371,10 +371,9 @@
         showDeleteCoachConfirm: false,
         coachToDelete: null,
         coachSearchQuery: '',
-        coachRoleFilter: '',
 
-        newCoach: { name: '', role: 'Head Rugby Coach', email: '', phone: '', schoolName: 'OVK Academy' },
-        editCoachItem: { id: '', name: '', role: '', email: '', phone: '', schoolName: 'OVK Academy' },
+        newCoach: { name: '', email: '', phone: '', schoolName: 'OVK Academy' },
+        editCoachItem: { id: '', name: '', email: '', phone: '', schoolName: 'OVK Academy' },
 
         showAddModal: false,
         showEditModal: false,
@@ -1153,6 +1152,7 @@
             unit: this.newMetricForm.unit.trim(),
             goalDirection: this.newMetricForm.goalDirection || 'HIGHER_IS_BETTER',
             targetBenchmark: parseFloat(this.newMetricForm.targetBenchmark) || 0,
+            schoolId: '1',
             squadId: this.currentSquad
           };
 
@@ -1168,15 +1168,20 @@
 
           const metricName = created.name;
           this.newMetricForm = { name: '', category: 'Speed', unit: 'sec', goalDirection: 'HIGHER_IS_BETTER', targetBenchmark: '', squadId: '' };
-          this.triggerToast(`Test metric '${metricName}' added for ${this.currentSquad}!`, 'info');
+          this.triggerToast(`Test metric '${metricName}' added for ${this.currentSquad || 'squad'}!`, 'success');
 
           try {
-            await fetch(`${this.apiBaseUrl}/api/test-metrics`, {
+            const res = await fetch(`${this.apiBaseUrl}/api/test-metrics`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(created)
             });
-            await this.fetchTestMetricsFromApi();
+            const data = await res.json();
+            if (res.ok && data.success) {
+              await this.fetchTestMetricsFromApi();
+            } else {
+              this.triggerToast(data.message || 'Failed to save test metric to server', 'error');
+            }
           } catch (e) { console.log('Metric POST error:', e); }
         },
 
@@ -1283,19 +1288,18 @@
 
         // Coaches CRUD
         openAddCoach() {
-          this.newCoach = { name: '', role: 'Head Rugby Coach', email: '', phone: '', schoolName: 'OVK Academy' };
+          this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
           this.showAddCoachModal = true;
         },
 
         async saveNewCoach() {
-          if (!this.newCoach.name || !this.newCoach.role || !this.newCoach.email) {
-            this.triggerToast('Please fill in Name, Role, and Email Address', 'error');
+          if (!this.newCoach.name || !this.newCoach.email) {
+            this.triggerToast('Please fill in Name and Email Address', 'error');
             return;
           }
           const created = {
             id: `cch_${Date.now()}`,
             name: this.newCoach.name.trim(),
-            role: this.newCoach.role.trim(),
             email: this.newCoach.email.toLowerCase().trim(),
             phone: (this.newCoach.phone || '').trim(),
             schoolName: this.newCoach.schoolName || 'OVK Academy'
@@ -1313,7 +1317,7 @@
               this.coaches.push(coachData);
               this.saveCoachesToStorage();
               this.showAddCoachModal = false;
-              this.newCoach = { name: '', role: 'Head Rugby Coach', email: '', phone: '', schoolName: 'OVK Academy' };
+              this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
               this.triggerToast(`Coach ${coachData.name} registered successfully!`, 'success');
             } else {
               this.triggerToast(data.message || data.error || 'Failed to register coach on server', 'error');
@@ -1488,7 +1492,7 @@
             coach = {
               id: `cch_${Date.now()}`,
               name: target === 'janmen777@gmail.com' ? 'Jan-Albert Mentz' : target.split('@')[0],
-              role: 'Head Academy Coach',
+              role: 'Coach',
               email: target,
               schoolName: 'OVK Rugby Academy'
             };
@@ -2532,7 +2536,7 @@
       <div class="flex justify-between items-center">
         <div>
           <h2 class="font-headline-lg font-extrabold text-2xl text-on-surface">Coaches Directory</h2>
-          <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Manage academy coaches, technical roles, and assignments.</p>
+          <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Manage academy coaches and assignments.</p>
         </div>
         <button @click="openAddCoach()" class="bg-primary text-on-primary px-lg py-2.5 rounded-xl font-label-md text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
           <span class="material-symbols-outlined text-sm">person_add</span> + Register Coach
@@ -2549,7 +2553,6 @@
                 <span x-show="loggedInCoach && loggedInCoach.email === coach.email" class="bg-primary text-on-primary px-2.5 py-0.5 rounded-full text-[10px] font-bold">Active Profile</span>
               </div>
               <h3 class="font-bold text-on-surface text-base" x-text="coach.name"></h3>
-              <p class="text-xs text-outline font-semibold" x-text="coach.role || 'Head Coach'"></p>
 
               <div class="text-xs text-on-surface-variant space-y-1 pt-2 mt-2 border-t border-outline-variant/60">
                 <div>Academy: <span class="font-bold text-on-surface" x-text="coach.schoolName || 'OVK Academy'"></span></div>
@@ -2624,10 +2627,6 @@
         <div>
           <label class="block text-xs font-bold text-outline mb-1">Coach Name *</label>
           <input x-model="newCoach.name" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="text"/>
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-outline mb-1">Role *</label>
-          <input x-model="newCoach.role" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="text"/>
         </div>
         <div>
           <label class="block text-xs font-bold text-outline mb-1">Email Address *</label>
@@ -2762,7 +2761,6 @@
         <div>
           <p class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : ''"></p>
           <p class="text-[11px] text-primary font-semibold" x-text="loggedInCoach ? loggedInCoach.email : ''"></p>
-          <p class="text-[10px] text-outline" x-text="loggedInCoach ? loggedInCoach.role : ''"></p>
         </div>
       </div>
 
