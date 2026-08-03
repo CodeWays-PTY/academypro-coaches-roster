@@ -818,11 +818,14 @@ app.put('/api/athletes/:id', async (c) => {
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
 
+    const teamVal = body.team !== undefined && body.team !== null ? body.team : null;
+
     await db.prepare(`
       UPDATE players
-      SET first_name = ?, last_name = ?, email = ?, position = ?, status = ?, team = ?
+      SET first_name = ?, last_name = ?, email = ?, position = ?, status = ?,
+          team = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE team END
       WHERE id = ? OR (email = ? AND email != '')
-    `).bind(fName, lName, email || '', position || '', status || 'Active', team || '', id, id).run();
+    `).bind(fName, lName, email || '', position || '', status || 'Active', teamVal, teamVal, teamVal, id, id).run();
 
     return c.json({ success: true, message: 'Athlete updated successfully' });
   } catch (e: any) {
@@ -895,7 +898,7 @@ const handlePostCoach = async (c: any) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 'OVK';
+    const targetSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id || 'OVK';
     const userId = body.id || `cch_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     await db.prepare(`
@@ -1259,6 +1262,26 @@ const handlePostSquads = async (c: any) => {
 
 app.post('/api/squads', handlePostSquads);
 app.post('/api/dashboard/squads', handlePostSquads);
+
+// Route: Delete Squad
+const handleDeleteSquad = async (c: any) => {
+  const squadId = c.req.param('id');
+  const db = getDB(c);
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+  await ensureSquadsTables(db);
+  try {
+    await db.prepare('DELETE FROM squads WHERE id = ? OR name = ? OR code = ?').bind(squadId, squadId, squadId).run();
+    await db.prepare('DELETE FROM squad_players WHERE squad_id = ? OR squad_id = ?').bind(squadId, squadId).run();
+    return c.json({ success: true, message: 'Squad deleted successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to delete squad', error: err.message }, 500);
+  }
+};
+
+app.delete('/api/squads/:id', handleDeleteSquad);
+app.delete('/api/dashboard/squads/:id', handleDeleteSquad);
 
 // Route: Get Team Roster (Restricted to Coach's Owned Squads)
 app.get('/api/rosters/:age_group', async (c) => {
@@ -2424,7 +2447,7 @@ const handleGetCheckins = async (c: any) => {
   const db = getDB(c);
 
   if (!db) {
-    return c.json({ success: true, data: { eventId, checkedInPlayerIds: [] } });
+    return c.json({ success: true, data: [], eventId, checkedInPlayerIds: [] });
   }
 
   try {
@@ -2437,14 +2460,18 @@ const handleGetCheckins = async (c: any) => {
       `).bind(eventId.toString(), eventId.toString()).all();
 
       const checkedInPlayerIds = (evtResults || []).map((r: any) => r.player_id);
+      const checkinArray = (evtResults || []).map((r: any) => ({
+        eventId,
+        athleteId: r.player_id,
+        status: 'Checked In'
+      }));
 
       return c.json({
         success: true,
-        data: {
-          eventId,
-          date: targetDate,
-          checkedInPlayerIds
-        }
+        data: checkinArray,
+        eventId,
+        date: targetDate,
+        checkedInPlayerIds
       });
     }
 
@@ -3090,7 +3117,7 @@ app.delete('/api/test-metrics/:id', async (c) => {
   const metricId = c.req.param('id');
   const db = getDB(c);
   try {
-    await db.prepare('DELETE FROM test_metric_definitions WHERE id = ?').bind(metricId).run();
+    await db.prepare('DELETE FROM test_metric_definitions WHERE id = ? OR name = ?').bind(metricId, metricId).run();
     console.log(`[Observer Log] Test metric '${metricId}' deleted.`);
     return c.json({ success: true, message: 'Test metric deleted successfully' });
   } catch (err: any) {
@@ -3424,44 +3451,26 @@ const handleAddSquadMember = async (c: any) => {
     body = await c.req.json();
   } catch (_) {}
 
-  const squadId = (body.squadId || body.squad_id || body.squadName || '').toString().trim();
-  const playerId = (body.athleteId || body.athlete_id || body.playerId || body.player_id || '').toString().trim();
+  const { squadId, squadName, athleteId, playerId } = body;
+  const targetPlayerId = athleteId || playerId;
+  const targetSquadId = squadId || squadName;
 
-  if (!squadId || !playerId) {
-    return c.json({ success: false, message: 'squadId and athleteId/playerId are required' }, 400);
+  if (!targetSquadId || !targetPlayerId) {
+    return c.json({ success: false, message: 'squadId/squadName and athleteId/playerId are required' }, 400);
   }
 
   await ensureSquadsTables(db);
 
   try {
-    let squad: any = null;
-    try {
-      squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
-    } catch (_) {}
-
-    const squadKey = squad ? squad.id : squadId;
-    const squadName = squad ? squad.name : (body.squadName || squadId);
-
-    await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squadKey, playerId).run();
-    if (squad && squad.code) {
-      await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squad.code, playerId).run();
-    }
-
-    await db.prepare(`
-      UPDATE players
-      SET team = ?
-      WHERE id = ?
-    `).bind(squadName, playerId).run();
-
-    console.log(`[Observer Log] Added athlete '${playerId}' to squad '${squadName}' (${squadKey})`);
+    await db.prepare('INSERT INTO squad_players (squad_id, player_id) VALUES (?, ?) ON CONFLICT DO NOTHING').bind(targetSquadId, targetPlayerId).run();
+    await db.prepare('UPDATE players SET team = ? WHERE id = ?').bind(targetSquadId, targetPlayerId).run();
 
     return c.json({
       success: true,
-      message: 'Athlete added to squad successfully',
-      data: { squadId: squadKey, squadName, athleteId: playerId }
+      message: 'Member added to squad'
     });
   } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to add athlete to squad', error: err.message }, 500);
+    return c.json({ success: false, message: 'Failed to add member to squad', error: err.message }, 500);
   }
 };
 
@@ -3476,46 +3485,26 @@ const handleRemoveSquadMember = async (c: any) => {
     body = await c.req.json();
   } catch (_) {}
 
-  const squadId = (body.squadId || body.squad_id || body.squadName || c.req.query('squadId') || c.req.query('squad_id') || '').toString().trim();
-  const playerId = (body.athleteId || body.athlete_id || body.playerId || body.player_id || c.req.query('athleteId') || c.req.query('playerId') || '').toString().trim();
+  const { squadId, athleteId, playerId } = body;
+  const targetPlayerId = athleteId || playerId;
+  const targetSquadId = squadId;
 
-  if (!playerId) {
-    return c.json({ success: false, message: 'athleteId/playerId is required' }, 400);
+  if (!targetSquadId || !targetPlayerId) {
+    return c.json({ success: false, message: 'squadId and athleteId/playerId are required' }, 400);
   }
 
   await ensureSquadsTables(db);
 
   try {
-    let squad: any = null;
-    if (squadId) {
-      try {
-        squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
-      } catch (_) {}
-    }
-
-    if (squadId) {
-      const targetSquadKeys = Array.from(new Set([squadId, ...(squad ? [squad.id, squad.code, squad.name] : [])]));
-      const ph = targetSquadKeys.map(() => '?').join(',');
-      await db.prepare(`DELETE FROM squad_players WHERE player_id = ? AND squad_id IN (${ph})`).bind(playerId, ...targetSquadKeys).run();
-    } else {
-      await db.prepare('DELETE FROM squad_players WHERE player_id = ?').bind(playerId).run();
-    }
-
-    await db.prepare(`
-      UPDATE players
-      SET team = 'Unassigned'
-      WHERE id = ?
-    `).bind(playerId).run();
-
-    console.log(`[Observer Log] Removed athlete '${playerId}' from squad '${squadId || 'all'}'`);
+    await db.prepare('DELETE FROM squad_players WHERE squad_id = ? AND player_id = ?').bind(targetSquadId, targetPlayerId).run();
+    await db.prepare('UPDATE players SET team = NULL WHERE id = ? AND team = ?').bind(targetPlayerId, targetSquadId).run();
 
     return c.json({
       success: true,
-      message: 'Athlete removed from squad successfully',
-      data: { squadId, athleteId: playerId }
+      message: 'Member removed from squad'
     });
   } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to remove athlete from squad', error: err.message }, 500);
+    return c.json({ success: false, message: 'Failed to remove member from squad', error: err.message }, 500);
   }
 };
 
