@@ -606,7 +606,8 @@ async function enforceJwtAuth(c: any, next: any) {
   // Soft fallback for web admin requests without Auth header
   c.set('jwtPayload', {
     sub: 'USR-COACH-1',
-    schoolId: 'OVK',
+    schoolId: 1,
+    school_id: 1,
     role: 'SuperAdmin'
   });
   await next();
@@ -1062,7 +1063,7 @@ app.post('/api/squads', async (c) => {
 app.get('/api/rosters/:age_group', async (c) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 'OVK';
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
   const coachId = jwtPayload?.sub || 'USR-COACH-001';
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
