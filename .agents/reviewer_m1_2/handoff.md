@@ -1,173 +1,101 @@
-# Handoff Report: Reviewer 2 - Milestone 1: D1 Database SQL Migration & Cleanup
-
-## Review Summary
-
-**Verdict**: **APPROVE**
-
-Milestone 1 (`migrations/0020_cleanup_obsolete_schema.sql` and remote D1 database schema cleanup) has been thoroughly reviewed and independently verified against the live remote Cloudflare D1 database `academypro-db`. All obsolete tables (`fitness_baselines`, `fitness_progression`) and obsolete columns (`ugroups_active`, `parent_name`, `parent_id` from `players`, `parent_phone`, `parent_email` from `parent_child_links`) have been dropped and are completely absent from the remote schema. The SQL migration file is syntactically sound and valid for SQLite / Cloudflare D1.
-
----
+# Handoff Report — Reviewer 2 (Milestone 1 Backend API Pruning)
 
 ## 1. Observation
+- **File Examined**: `worker/src/index.ts`
+- **Git Diff Analysis**: Worker 1 removed 205 lines containing 14 route handlers.
+- **Pruned Handler Analysis**:
+  1. `GET /api/coach/profile` (line 499) — Legacy redirect route.
+  2. `GET /api/athletes` (former lines 686–707) — Legacy player list route.
+  3. `POST /api/athletes` (former lines 709–737) — Legacy player create route.
+  4. `PUT /api/athletes/:id` (former lines 739–759) — Legacy player update route.
+  5. `DELETE /api/athletes/:id` (former lines 761–771) — Legacy player delete route.
+  6. `POST /api/test-results` (former lines 1105–1124) — Unreferenced test log route.
+  7. `GET /api/coaches` (former lines 1126–1144) — Legacy coach list route.
+  8. `POST /api/coaches` (former lines 1146–1178) — Legacy coach create route.
+  9. `DELETE /api/coaches/:id` (former lines 1180–1189) — Legacy coach delete route.
+  10. `GET /api/test-results` (former lines 1191–1210) — Legacy test log fetch route.
+  11. `GET /api/test-metrics` (former lines 1212–1220) — Duplicate unauthenticated route (authenticated version retained at line 2551).
+  12. `GET /api/events` (former lines 1466–1470) — Legacy route alias for `/api/dashboard/events`.
+  13. `POST /api/dashboard/events/:id/delete` (former lines 1807–1816) — **ACTIVE ROUTE IN FLUTTER APP**.
+  14. `POST /api/notifications/:id/delete` (former lines 3791–3805) — **PRIMARY DELETE ROUTE IN FLUTTER APP**.
 
-### 1.1 Local File Inspection
-File examined: `c:\Development\academypro\migrations\0020_cleanup_obsolete_schema.sql` (26 lines):
-```sql
-1: -- Migration: 0020_cleanup_obsolete_schema.sql
-2: -- Description: Drop obsolete tables (fitness_baselines, fitness_progression) and prune legacy columns from players and parent_child_links.
-3: 
-4: PRAGMA foreign_keys = OFF;
-5: 
-6: -- ==========================================
-7: -- 1. DROP OBSOLETE TABLES
-8: -- ==========================================
-9: DROP TABLE IF EXISTS fitness_baselines;
-10: DROP TABLE IF EXISTS fitness_progression;
-11: 
-12: -- ==========================================
-13: -- 2. PRUNE OBSOLETE COLUMNS FROM PLAYERS
-14: -- ==========================================
-15: ALTER TABLE players DROP COLUMN ugroups_active;
-16: ALTER TABLE players DROP COLUMN parent_name;
-17: ALTER TABLE players DROP COLUMN parent_id;
-18: 
-19: -- ==========================================
-20: -- 3. PRUNE OBSOLETE COLUMNS FROM PARENT_CHILD_LINKS
-21: -- ==========================================
-22: ALTER TABLE parent_child_links DROP COLUMN parent_phone;
-23: ALTER TABLE parent_child_links DROP COLUMN parent_email;
-24: 
-25: PRAGMA foreign_keys = ON;
-```
+- **Mobile Client Calls (`academypro_app/lib`)**:
+  - `academypro_app/lib/features/dashboard/controllers/dashboard_controller.dart:899`:
+    ```dart
+    final res = await _apiClient.post('/api/dashboard/events/$targetIdStr/delete');
+    ```
+    Flutter mobile client calls `POST /api/dashboard/events/$targetIdStr/delete` exclusively to delete events. There is NO fallback to `DELETE /api/dashboard/events/$targetIdStr`.
+  - `academypro_app/lib/features/notifications/controllers/notification_controller.dart:128`:
+    ```dart
+    await _apiClient.dio.post('/api/notifications/$id/delete');
+    ```
+    Flutter mobile client calls `POST /api/notifications/$id/delete` as its primary deletion method before fallback.
 
-### 1.2 Remote D1 Database Queries & Results
+- **Web Admin Calls (`web_admin/`)**:
+  - `web_admin/index.html:150`: `GET /api/admin/all-players` (intact at line 2746).
+  - `web_admin/index.html:159`: `GET /api/admin/sports-config` (intact at line 3070).
+  - `web_admin/uploader.html:411`: `POST /api/admin/bulk-upload` (intact at line 2969).
 
-#### Command 1: Table List Query
-Command executed:
-`cmd.exe /c "npx wrangler d1 execute academypro-db --remote --command=""SELECT name FROM sqlite_master WHERE type='table';"""`
-
-Verbatim Output (tables returned):
-`_cf_KV`, `coaches`, `athletes`, `custom_actions`, `student_otps`, `coach_otps`, `events`, `squad_members`, `users`, `players`, `squad_players`, `academic_logs`, `sqlite_sequence`, `test_metric_definitions`, `player_test_logs`, `match_stats`, `attendance`, `action_plans`, `notifications`, `parent_child_links`, `squads`, `test_results`, `test_metrics`, `event_checkins`, `schools`, `squad_coaches`.
-
-- `fitness_baselines`: **ABSENT**
-- `fitness_progression`: **ABSENT**
-
-#### Command 2: `players` Table Columns Info
-Command executed:
-`cmd.exe /c "npx wrangler d1 execute academypro-db --remote --command=""PRAGMA table_info(players);"""`
-
-Verbatim Output (columns returned):
-- cid 0: `id` (TEXT, PK: 1)
-- cid 1: `school_id` (TEXT)
-- cid 2: `user_id` (TEXT)
-- cid 3: `first_name` (TEXT, NOT NULL)
-- cid 4: `last_name` (TEXT, NOT NULL)
-- cid 5: `phone` (TEXT)
-- cid 6: `dob` (TEXT)
-- cid 7: `preferred_position` (TEXT)
-- cid 8: `age_group` (TEXT)
-- cid 9: `position` (TEXT)
-- cid 10: `team` (TEXT)
-- cid 11: `grade` (INTEGER)
-- cid 12: `age` (INTEGER)
-- cid 13: `notes` (TEXT)
-- cid 14: `status` (TEXT)
-- cid 15: `created_at` (DATETIME)
-
-- `ugroups_active`: **ABSENT**
-- `parent_name`: **ABSENT**
-- `parent_id`: **ABSENT**
-
-#### Command 3: `parent_child_links` Table Columns Info
-Command executed:
-`cmd.exe /c "npx wrangler d1 execute academypro-db --remote --command=""PRAGMA table_info(parent_child_links);"""`
-
-Verbatim Output (columns returned):
-- cid 0: `id` (INTEGER, PK: 1)
-- cid 1: `player_id` (TEXT)
-- cid 2: `player_email` (TEXT)
-- cid 3: `status` (TEXT)
-- cid 4: `created_at` (DATETIME)
-
-- `parent_phone`: **ABSENT**
-- `parent_email`: **ABSENT**
+- **Typecheck**: `cmd.exe /c "npx tsc --noEmit"` in `worker/` passed with 0 errors.
 
 ---
 
 ## 2. Logic Chain
-
-1. **Syntax Compatibility**:
-   - SQLite version 3.35.0+ (supported natively by Cloudflare D1 engines) supports `ALTER TABLE ... DROP COLUMN ...` statement directly.
-   - Using `PRAGMA foreign_keys = OFF;` around DDL schema modifications prevents CASCADE / FK restriction errors during column removal.
-   - `DROP TABLE IF EXISTS` ensures idempotent execution without failing if tables were previously dropped.
-
-2. **Schema Verification**:
-   - Direct execution of `SELECT name FROM sqlite_master WHERE type='table';` on remote database `academypro-db` returned 26 tables. Neither `fitness_baselines` nor `fitness_progression` is present.
-   - `PRAGMA table_info(players)` returned 16 active columns. `ugroups_active`, `parent_name`, and `parent_id` are absent.
-   - `PRAGMA table_info(parent_child_links)` returned 5 active columns. `parent_phone` and `parent_email` are absent.
-
-3. **Integrity Violation & Self-Certifying Work Check**:
-   - Zero hardcoded test results, facade implementations, or fake mock data exist in `0020_cleanup_obsolete_schema.sql`.
-   - Results are verified directly against the remote production Cloudflare D1 environment.
+1. **Observation**: `POST /api/dashboard/events/:id/delete` was removed from `worker/src/index.ts`.
+2. **Analysis**: Inspection of `academypro_app/lib/features/dashboard/controllers/dashboard_controller.dart` line 899 confirms that event deletion in the Flutter mobile application relies on issuing an HTTP POST to `/api/dashboard/events/$targetIdStr/delete`.
+3. **Deduction**: Deleting this handler causes Cloudflare Worker to respond with HTTP 404 Not Found on all event deletion requests from mobile clients.
+4. **Impact**: Users attempting to delete scheduled events in the Flutter mobile app will experience silent or explicit deletion failures.
+5. **Observation**: `POST /api/notifications/:id/delete` was also removed from `worker/src/index.ts`.
+6. **Analysis**: Inspection of `academypro_app/lib/features/notifications/controllers/notification_controller.dart` line 128 shows Flutter calls `POST /api/notifications/$id/delete` as its primary request. When it returns 404, it catches the error and executes `DELETE /api/notifications/$id`.
+7. **Deduction**: While notification deletion eventually succeeds via fallback, it incurs an unnecessary network 404 error on every notification delete call.
+8. **Conclusion**: The removal of `POST /api/dashboard/events/:id/delete` is a critical regression that breaks active core functionality in the mobile app.
 
 ---
 
 ## 3. Caveats
-
-- **Worker Code Dependency**: `worker/src/index.ts` still contains a legacy `INSERT INTO fitness_baselines` query on line 3231 within a bulk upload route. While `SELECT` statements on lines 2473/2479 are wrapped in `try/catch` blocks, line 3240 will throw a D1 SQL error if invoked before the Worker Refactoring task is completed. This is expected and scoped for Milestone 2 / Worker Refactoring.
+- No caveats. Codebase analysis was performed across both `academypro_app/lib` (Flutter mobile client) and `web_admin/` (Web admin client).
 
 ---
 
-## 4. Conclusion
+## 4. Conclusion & Review Verdict
 
-The D1 database SQL migration (`migrations/0020_cleanup_obsolete_schema.sql`) and remote database state meet all requirements for Milestone 1:
-- `fitness_baselines` and `fitness_progression` tables are dropped and absent.
-- Obsolete columns `ugroups_active`, `parent_name`, `parent_id`, `parent_phone`, and `parent_email` are dropped and absent.
-- Syntax is 100% compliant with Cloudflare D1 / SQLite.
+**Verdict**: **REQUEST_CHANGES**
 
-**Verdict**: **APPROVE**
+### Findings Summary
+
+#### [Critical] Finding 1: Active Route Removal Breaks Mobile Event Deletion
+- **What**: Removal of `app.post('/api/dashboard/events/:id/delete')`.
+- **Where**: `worker/src/index.ts` (former lines 1807–1816).
+- **Why**: `academypro_app/lib/features/dashboard/controllers/dashboard_controller.dart:899` executes `POST /api/dashboard/events/$targetIdStr/delete`. Without this endpoint, event deletion in the Flutter app fails with HTTP 404.
+- **Suggestion**: Reinstate `app.post('/api/dashboard/events/:id/delete')` in `worker/src/index.ts`.
+
+#### [Major] Finding 2: Primary Route Removal Degrades Notification Deletion
+- **What**: Removal of `app.post('/api/notifications/:id/delete')`.
+- **Where**: `worker/src/index.ts` (former lines 3791–3805).
+- **Why**: `academypro_app/lib/features/notifications/controllers/notification_controller.dart:128` calls `POST /api/notifications/$id/delete` first. Its removal causes an extra network round-trip and 404 error log on every notification deletion.
+- **Suggestion**: Reinstate `app.post('/api/notifications/:id/delete')` in `worker/src/index.ts`.
+
+#### [Minor] Finding 3: Code Formatting Glitch
+- **What**: Function closing brace `}` and single-line comment `// Route: Get Coach Command Events...` are merged on line 1257 without a newline separator.
+- **Where**: `worker/src/index.ts:1257`.
+- **Why**: Formatting artifact from deleting adjacent code.
+- **Suggestion**: Add a newline after `}` on line 1257.
 
 ---
 
 ## 5. Verification Method
 
-To independently re-verify the remote database schema state, execute the following commands in terminal:
-
-1. **Verify Table Absences**:
+1. **Verify TypeScript Compilation**:
    ```bash
-   cmd.exe /c "npx wrangler d1 execute academypro-db --remote --command=\"SELECT name FROM sqlite_master WHERE type='table' AND name IN ('fitness_baselines', 'fitness_progression');\""
+   cd worker
+   cmd.exe /c "npx tsc --noEmit"
    ```
-   *Expected Result*: `[]` (0 rows returned).
-
-2. **Verify `players` Column Absences**:
-   ```bash
-   cmd.exe /c "npx wrangler d1 execute academypro-db --remote --command=\"PRAGMA table_info(players);\""
+2. **Verify Mobile Client Route References**:
+   ```powershell
+   grep -rn "/api/dashboard/events/" academypro_app/lib/
+   grep -rn "/api/notifications/" academypro_app/lib/
    ```
-   *Expected Result*: Results list should not contain `ugroups_active`, `parent_name`, or `parent_id`.
-
-3. **Verify `parent_child_links` Column Absences**:
-   ```bash
-   cmd.exe /c "npx wrangler d1 execute academypro-db --remote --command=\"PRAGMA table_info(parent_child_links);\""
+3. **Verify Web Admin Endpoints**:
+   ```powershell
+   grep -rn "/api/admin/" web_admin/
    ```
-   *Expected Result*: Results list should not contain `parent_phone` or `parent_email`.
-
----
-
-## Findings & Verified Claims Matrix
-
-| Claim / Item | Verification Method | Result | Status |
-|---|---|---|---|
-| Migration `0020_cleanup_obsolete_schema.sql` syntax | Code Review & SQLite DDL Specification | Valid DDL | **PASS** |
-| `fitness_baselines` table removed | Remote D1 `sqlite_master` query | Absent | **PASS** |
-| `fitness_progression` table removed | Remote D1 `sqlite_master` query | Absent | **PASS** |
-| `players.ugroups_active` column removed | Remote D1 `PRAGMA table_info(players)` | Absent | **PASS** |
-| `players.parent_name` column removed | Remote D1 `PRAGMA table_info(players)` | Absent | **PASS** |
-| `players.parent_id` column removed | Remote D1 `PRAGMA table_info(players)` | Absent | **PASS** |
-| `parent_child_links.parent_phone` column removed | Remote D1 `PRAGMA table_info(parent_child_links)` | Absent | **PASS** |
-| `parent_child_links.parent_email` column removed | Remote D1 `PRAGMA table_info(parent_child_links)` | Absent | **PASS** |
-
-## Coverage Gaps
-- None for database schema review scope. (Worker refactoring will address `worker/src/index.ts` references in subsequent milestone).
-
-## Unverified Items
-- None.

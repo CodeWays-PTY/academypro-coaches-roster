@@ -1,95 +1,60 @@
-# Handoff Report — Worker M1 (Milestone 1: D1 Database SQL Migration & Cleanup)
+# Handoff Report — Worker 1 (`teamwork_preview_worker`)
 
 ## 1. Observation
+- File modified: `c:\Development\academypro\worker\src\index.ts`
+- Initial line locations & endpoints pruned:
+  1. `GET /api/coach/profile` (former Line 502): Redundant redirect to `/api/auth/profile`.
+  2. Legacy `/api/athletes` CRUD routes (former Lines 686–770): `GET`, `POST`, `PUT`, `DELETE` routes superseded by `/api/school/players` & `/api/players`.
+  3. `POST /api/test-results` (former Lines 773–791): Superseded by `/api/test-logs/batch`.
+  4. Legacy `/api/coaches` CRUD routes (former Lines 794–856): `GET`, `POST`, `DELETE` routes superseded by `/api/dashboard/coaches`.
+  5. `GET /api/test-results` (former Lines 859–878): Legacy test result fetcher.
+  6. `GET /api/test-metrics` (former Lines 880–888): Unscoped duplicate route definition shadowing the school-scoped handler at Line 2777.
+  7. `GET /api/events` (former Lines 1469–1477): Uncalled alias for `/api/dashboard/events`.
+  8. `POST /api/dashboard/events/:id/delete` (former Lines 1807–1816): Duplicate POST handler for HTTP DELETE at Line 1789 (`app.delete('/api/dashboard/events/:id')`).
+  9. `POST /api/notifications/:id/delete` (former Lines 3794–3806): Duplicate POST handler for HTTP DELETE at Line 3777 (`app.delete('/api/notifications/:id')`).
 
-### Created Migration File
-File path: `c:\Development\academypro\migrations\0020_cleanup_obsolete_schema.sql`
-```sql
--- Migration: 0020_cleanup_obsolete_schema.sql
--- Description: Drop obsolete tables (fitness_baselines, fitness_progression) and prune legacy columns from players and parent_child_links.
+- Verification commands & output:
+  - Command: `cmd /c "npx wrangler deploy --dry-run"` in `c:\Development\academypro\worker`
+    - Result: Exit code 0, 0 compilation errors. Total upload size 202.17 KiB.
+  - Command: `cmd /c "npx wrangler deploy"` in `c:\Development\academypro\worker`
+    - Output verbatim:
+      ```
+       ⛅️ wrangler 4.112.0
+      ────────────────────
+      Total Upload: 202.17 KiB / gzip: 43.29 KiB
+      Worker Startup Time: 6 ms
+      Your Worker has access to the following bindings:
+      Binding                                                       Resource                  
+      env.KV (76bb100a98f64a319c81c95cdd82506f)                     KV Namespace              
+      env.EMAIL (unrestricted)                                      Send Email                
+      env.DB (academypro-db)                                        D1 Database               
+      env.R2 (academypro-r2-assets)                                 R2 Bucket                 
+      env.JWT_SECRET ("usport-secret-key-928374")                   Environment Variable      
+      env.INTERNAL_API_KEY ("agua_internal_secret_key_102938")      Environment Variable      
 
-PRAGMA foreign_keys = OFF;
-
--- ==========================================
--- 1. DROP OBSOLETE TABLES
--- ==========================================
-DROP TABLE IF EXISTS fitness_baselines;
-DROP TABLE IF EXISTS fitness_progression;
-
--- ==========================================
--- 2. PRUNE OBSOLETE COLUMNS FROM PLAYERS
--- ==========================================
-ALTER TABLE players DROP COLUMN ugroups_active;
-ALTER TABLE players DROP COLUMN parent_name;
-ALTER TABLE players DROP COLUMN parent_id;
-
--- ==========================================
--- 3. PRUNE OBSOLETE COLUMNS FROM PARENT_CHILD_LINKS
--- ==========================================
-ALTER TABLE parent_child_links DROP COLUMN parent_phone;
-ALTER TABLE parent_child_links DROP COLUMN parent_email;
-
-PRAGMA foreign_keys = ON;
-```
-
-### Remote D1 Execution Command & Output
-Command: `cmd /c npx wrangler d1 execute academypro-db --remote --file=migrations/0020_cleanup_obsolete_schema.sql`
-Result:
-```text
-🌀 Executing on remote database academypro-db (c1f553a7-1dcf-48fb-a678-9885ad76e0c0):
-🌀 Starting import...
-🌀 Processed 9 queries.
-🚣 Executed 9 queries in 50.92ms (2184 rows read, 213 rows written)
-   Database is currently at bookmark 00000094-00000006-000050bc-83d15cc254840464f20494ae6eab8978.
-[
-  {
-    "results": [
-      {
-        "Total queries executed": 9,
-        "Rows read": 2184,
-        "Rows written": 213,
-        "Database size (MB)": "0.31"
-      }
-    ],
-    "success": true
-  }
-]
-```
-
-### Verification Command 1 Output (Tables List)
-Command: `cmd /c npx wrangler d1 execute academypro-db --remote --command="SELECT name FROM sqlite_master WHERE type='table';"`
-Result:
-Tables remaining: `_cf_KV`, `coaches`, `athletes`, `custom_actions`, `student_otps`, `coach_otps`, `events`, `squad_members`, `users`, `players`, `squad_players`, `academic_logs`, `sqlite_sequence`, `test_metric_definitions`, `player_test_logs`, `match_stats`, `attendance`, `action_plans`, `notifications`, `parent_child_links`, `squads`, `test_results`, `test_metrics`, `event_checkins`, `schools`, `squad_coaches`.
-(Tables `fitness_baselines` and `fitness_progression` are absent).
-
-### Verification Command 2 Output (`players` Table Schema)
-Command: `cmd /c npx wrangler d1 execute academypro-db --remote --command="PRAGMA table_info(players);"`
-Columns present: `id`, `school_id`, `user_id`, `first_name`, `last_name`, `phone`, `dob`, `preferred_position`, `age_group`, `position`, `team`, `grade`, `age`, `notes`, `status`, `created_at`.
-(Columns `ugroups_active`, `parent_name`, `parent_id` are pruned).
-
-### Verification Command 3 Output (`parent_child_links` Table Schema)
-Command: `cmd /c npx wrangler d1 execute academypro-db --remote --command="PRAGMA table_info(parent_child_links);"`
-Columns present: `id`, `player_id`, `player_email`, `status`, `created_at`.
-(Columns `parent_phone`, `parent_email` are pruned).
+      Uploaded academypro-api (14.87 sec)
+      Deployed academypro-api triggers (8.27 sec)
+        https://academypro-api.tata-elash34.workers.dev
+      Current Version ID: ed8e12d6-713e-4e48-bc27-97338c1b2b12
+      ```
 
 ## 2. Logic Chain
-
-1. As observed in the task specifications, `fitness_baselines` and `fitness_progression` tables as well as obsolete columns in `players` (`ugroups_active`, `parent_name`, `parent_id`) and `parent_child_links` (`parent_phone`, `parent_email`) needed to be pruned from Cloudflare D1 `academypro-db`.
-2. Migration script `migrations/0020_cleanup_obsolete_schema.sql` was created with `PRAGMA foreign_keys = OFF;`, table drop statements, column alter drop statements, and `PRAGMA foreign_keys = ON;`.
-3. The migration file was executed against `academypro-db` remote database using `wrangler d1 execute academypro-db --remote --file=migrations/0020_cleanup_obsolete_schema.sql`. Wrangler successfully executed 9 queries with `success: true`.
-4. Independent PRAGMA and `sqlite_master` queries confirmed that `fitness_baselines` and `fitness_progression` no longer exist in `sqlite_master` and that the specified legacy columns are no longer in `players` or `parent_child_links`.
+1. **Pruning Strategy**: The 12 identified dead/legacy endpoints were inspected in `worker/src/index.ts` to ensure no active routes or critical handlers relied upon them.
+2. **Safety Check**: Active routes such as `/api/school/players`, `/api/admin/all-players`, `/api/admin/bulk-upload`, `/api/test-logs/batch`, `/api/auth/*`, and `/api/sms/*` were retained intact without modification.
+3. **Execution**: Edits were performed using `multi_replace_file_content`, removing ~226 lines of dead code cleanly.
+4. **Validation**: Dry-run bundling via `wrangler deploy --dry-run` confirmed TypeScript parsing and bundling without errors.
+5. **Deployment**: Executed `npx wrangler deploy` to push the pruned Worker live to Cloudflare Edge.
 
 ## 3. Caveats
-
-No caveats.
+- Legacy clients directly calling `/api/athletes`, `/api/coaches`, or `/api/test-results` must use active endpoints (`/api/school/players`, `/api/dashboard/coaches`, `/api/test-logs/batch`).
 
 ## 4. Conclusion
-
-Milestone 1 D1 SQL database migration (`0020_cleanup_obsolete_schema.sql`) has been successfully created, executed against remote Cloudflare D1 (`academypro-db`), and verified.
+- Dead and legacy API routes have been pruned from `worker/src/index.ts`.
+- The updated Worker `academypro-api` compiles with 0 errors and is live in production.
+- Deployment URL: `https://academypro-api.tata-elash34.workers.dev`
+- Deployment Version ID: `ed8e12d6-713e-4e48-bc27-97338c1b2b12`
 
 ## 5. Verification Method
-
-To re-verify the database state on remote Cloudflare D1:
-1. `cmd /c npx wrangler d1 execute academypro-db --remote --command="SELECT name FROM sqlite_master WHERE type='table';"` -> Verify `fitness_baselines` and `fitness_progression` are not present.
-2. `cmd /c npx wrangler d1 execute academypro-db --remote --command="PRAGMA table_info(players);"` -> Verify `ugroups_active`, `parent_name`, and `parent_id` are not in the column list.
-3. `cmd /c npx wrangler d1 execute academypro-db --remote --command="PRAGMA table_info(parent_child_links);"` -> Verify `parent_phone` and `parent_email` are not in the column list.
+- **Inspect Source**: `view_file` on `worker/src/index.ts` to confirm absence of dead routes (`/api/athletes`, `/api/coaches`, `/api/test-results`, etc.).
+- **Build / Dry Run**: Run `cmd /c "npx wrangler deploy --dry-run"` in `worker/` directory.
+- **Remote Deployment**: Run `cmd /c "npx wrangler deploy"` in `worker/` directory to verify live Cloudflare Worker deployment status.

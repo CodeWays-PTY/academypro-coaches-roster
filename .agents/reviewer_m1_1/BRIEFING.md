@@ -1,48 +1,50 @@
-# BRIEFING — 2026-08-03T11:44:28Z
+# BRIEFING — 2026-08-03T11:17:14Z
 
 ## Mission
-Review Milestone 1: D1 Database SQL Migration & Cleanup (`0020_cleanup_obsolete_schema.sql` and remote D1 schema verification).
+Review code changes made in worker/src/index.ts by Worker 1 for Milestone 1 Backend API Pruning.
 
 ## 🔒 My Identity
-- Archetype: reviewer_critic
+- Archetype: reviewer & critic
 - Roles: reviewer, critic
 - Working directory: c:\Development\academypro\.agents\reviewer_m1_1
-- Original parent: e4d87988-e6ba-48a4-81ec-c09683273fb0
-- Milestone: Milestone 1: D1 Database SQL Migration & Cleanup
-- Instance: 1 of 2
+- Original parent: 9114f8fd-8891-49da-aa45-95f42d83a37f
+- Milestone: Milestone 1 Backend API Pruning
+- Instance: 1 of 1
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Evidence-based review; verify all claims directly
-- Check for integrity violations (hardcoded output, shortcuts, facade implementations, self-certifying work)
+- Check git diff/file changes in worker/src/index.ts
+- Verify pruning of 12 target dead routes
+- Verify active routes remain intact
+- Verify TypeScript build status
+- Write handoff.md and send message to orchestrator parent
 
 ## Current Parent
-- Conversation ID: e4d87988-e6ba-48a4-81ec-c09683273fb0
-- Updated: 2026-08-03T11:44:28Z
+- Conversation ID: 9114f8fd-8891-49da-aa45-95f42d83a37f
+- Updated: 2026-08-03T11:17:14Z
 
 ## Review Scope
-- **Files to review**: `migrations/0020_cleanup_obsolete_schema.sql`
-- **Interface contracts**: Remote D1 database schema for `academypro-db`
-- **Review criteria**: Schema cleanup accuracy, syntax compatibility, absence of obsolete tables (`fitness_baselines`, `fitness_progression`) and obsolete columns (`ugroups_active`, `parent_name`, `parent_id`, `parent_phone`, `parent_email` in `players`).
+- **Files to review**: `worker/src/index.ts`
+- **Interface contracts**: PROJECT.md / SCOPE.md
+- **Review criteria**: Correctness, integrity, safety of pruned routes, active route integrity, TS build status
 
 ## Review Checklist
-- **Items reviewed**: `migrations/0020_cleanup_obsolete_schema.sql` (verified), remote D1 schema tables (verified), remote D1 `players` table info (verified), remote D1 `parent_child_links` table info (verified)
+- **Items reviewed**: `worker/src/index.ts`, `worker_m1/handoff.md`, `git diff worker/src/index.ts`, `npx wrangler deploy --dry-run`
 - **Verdict**: APPROVE
-- **Unverified claims**: none
+- **Unverified claims**: None (all claims verified independently)
 
 ## Attack Surface
-- **Hypotheses tested**: D1 SQLite syntax compatibility for DROP TABLE and ALTER TABLE DROP COLUMN
-- **Vulnerabilities found**: none
-- **Untested angles**: non-idempotent re-execution of ALTER TABLE DROP COLUMN (handled by Cloudflare D1 migration registry)
+- **Hypotheses tested**: Checked for syntax errors, accidental deletion of active endpoints, dangling helpers, facade code, integrity violations
+- **Vulnerabilities found**: None critical; minor formatting note on line 1260 (`}` concatenated with line comment)
+- **Untested angles**: None
 
 ## Key Decisions Made
-- Initialized review process for Milestone 1.
-- Executed 3 live CLI queries against remote Cloudflare D1 database.
-- Issued verdict: APPROVE.
-- Completed handoff report at `c:\Development\academypro\.agents\reviewer_m1_1\handoff.md`.
+- Confirmed all 12 target dead/legacy endpoints (~226 lines) safely removed from `worker/src/index.ts`
+- Confirmed all active routes remain intact
+- Confirmed TypeScript compilation via dry-run deploy passes with 0 errors
+- Issued verdict: APPROVE
 
 ## Artifact Index
-- `c:\Development\academypro\.agents\reviewer_m1_1\ORIGINAL_REQUEST.md` — Original prompt copy
-- `c:\Development\academypro\.agents\reviewer_m1_1\BRIEFING.md` — Working memory briefing
-- `c:\Development\academypro\.agents\reviewer_m1_1\progress.md` — Heartbeat progress file
-- `c:\Development\academypro\.agents\reviewer_m1_1\handoff.md` — Final handoff review report
+- c:\Development\academypro\.agents\reviewer_m1_1\ORIGINAL_REQUEST.md — original prompt
+- c:\Development\academypro\.agents\reviewer_m1_1\BRIEFING.md — working memory
+- c:\Development\academypro\.agents\reviewer_m1_1\handoff.md — review handoff report

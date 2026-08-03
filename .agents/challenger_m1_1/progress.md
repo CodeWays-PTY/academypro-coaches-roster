@@ -1,11 +1,7 @@
-# Progress Log — Challenger 1 (Milestone 1)
-
-Last visited: 2026-08-03T11:45:00Z
-
-- [x] Initialized workspace and briefing
-- [x] Execute remote query on `fitness_baselines` (verified failure with "no such table: fitness_baselines")
-- [x] Execute remote query on `fitness_progression` (verified failure with "no such table: fitness_progression")
-- [x] Execute remote query on `players` (verified success)
-- [x] Execute remote query on `parent_child_links` (verified success)
-- [x] Execute remote query on `player_test_logs` (verified success)
-- [x] Generate final `handoff.md` and report to parent agent
+# Progress
+Last visited: 2026-08-03T13:19:00Z
+- Milestone 1 TypeScript compilation & Worker deployment health verification completed.
+- Step 1: `npx tsc --noEmit` clean compilation confirmed (0 errors).
+- Step 2: `npx wrangler deploy --dry-run` and remote deployment listing verified (10 active deployments logged).
+- Step 3: Live endpoint empirical testing completed against `https://academypro-api.tata-elash34.workers.dev` (9/9 endpoints passed with 0 500 errors).
+- Step 4: Verification handoff report generated at `c:\Development\academypro\.agents\challenger_m1_1\handoff.md`.

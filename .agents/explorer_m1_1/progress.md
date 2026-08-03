@@ -1,10 +1,11 @@
-# Progress Log - Explorer M1 (Milestone 1)
+# Progress Log
 
-Last visited: 2026-08-03T09:42:05Z
+Last visited: 2026-08-03T11:12:55Z
 
-- [x] Workspace initialized (ORIGINAL_REQUEST.md, BRIEFING.md, progress.md)
-- [x] Inspect wrangler config files for D1 database name & binding (`academypro-db`, binding `DB`, database_id `c1f553a7-1dcf-48fb-a678-9885ad76e0c0`)
-- [x] Inspect existing migration files in `migrations/` (19 files found, next file `0020_cleanup_obsolete_schema.sql`)
-- [x] Inspect references to targeted obsolete tables/columns (`fitness_baselines`, `fitness_progression`, `players.ugroups_active`, `players.parent_name`, `players.parent_id`, `parent_child_links.parent_phone`, `parent_child_links.parent_email`)
-- [x] Formulate SQL statements for `migrations/0020_cleanup_obsolete_schema.sql`
-- [x] Write `analysis.md` and `handoff.md`
+- [x] Received task: Audit worker/src/index.ts against academypro_app/lib/
+- [x] Initialized ORIGINAL_REQUEST.md, BRIEFING.md, and progress.md
+- [x] Read worker/src/index.ts and extract all 70 API route endpoints
+- [x] Search academypro_app/lib/ for references to each route endpoint
+- [x] Classify routes into ACTIVE (38), UNKNOWN (31), DEAD / LEGACY (1)
+- [x] Write api_audit_flutter.md and handoff.md
+- [x] Send summary message to parent

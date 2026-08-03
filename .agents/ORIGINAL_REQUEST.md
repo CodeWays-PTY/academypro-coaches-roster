@@ -1,45 +1,45 @@
 # Original User Request
 
-## Initial Request — 2026-08-03T09:39:03Z
+## 2026-08-03T11:10:07Z
 
-Perform a complete database schema audit and migration cleanup to remove redundant, obsolete tables and columns across Cloudflare D1 SQL database, Worker API, and Flutter frontend models.
+Perform a comprehensive codebase audit to identify and eliminate unused, dead, and redundant API endpoints in Cloudflare Worker (`worker/src/index.ts`) as well as unused frontend screens, widgets, controllers, and functions in `academypro_app` (Flutter) and `web_admin`.
 
 Working directory: c:\Development\academypro
 
-## Preliminary Audit Findings (Discovered Entities & Target Cleanup)
+## Audit Scope & Targets
 
-1. **Obsolete Tables to Drop / Deprecate**:
-   - `fitness_baselines`: Superseded by dynamic `test_metric_definitions` & `player_test_logs`.
-   - `fitness_progression`: Superseded by time-series `player_test_logs`.
+1. **Backend API Endpoints Audit (`worker/src/index.ts`)**:
+   - Identify legacy, uncalled, or duplicate API routes (e.g. legacy `/api/athletes`, `/api/coaches`, `/api/test-results` superseded by `/api/school/players`, `/api/test-metrics`, `/api/test-logs`).
+   - Prune unreferenced endpoints while preserving active API routes used by `academypro_app`, `web_admin`, and automated seed scripts.
+   - Verify TypeScript compilation and deploy clean Worker via `wrangler deploy`.
 
-2. **Unused / Obsolete Columns to Drop**:
-   - `players.ugroups_active`: Unused legacy flag (never read or written in Worker or Flutter app).
-   - `players.parent_name` / `players.parent_id`: Superseded by `users` accounts & `parent_child_links`.
-   - `parent_child_links.parent_phone` / `parent_child_links.parent_email`: Replaced by `parent_user_id` and `player_email`.
+2. **Flutter Frontend Codebase Audit (`academypro_app`)**:
+   - Scan `lib/features/` (`auth`, `dashboard`, `notifications`, `parent`, `student`) and `lib/core/` for unreferenced widgets, dead screens, unused models, orphaned controller methods, and dead helper utilities.
+   - Remove dead code safely while preserving active UI routes and state management.
+   - Validate Flutter codebase integrity with `flutter analyze`.
 
-3. **Schema Alignment & Migration**:
-   - Update `DATABASE_SCHEMA.md` to reflect the clean 16 active production tables.
-   - Generate raw D1 SQL migration script to drop obsolete tables/columns and sync remote Cloudflare D1.
+3. **Web Admin Audit (`web_admin`)**:
+   - Audit `web_admin/index.html` and `web_admin/uploader.html` to remove obsolete script references or orphaned API integrations.
 
 ## Requirements
 
-### R1. D1 Database SQL Migration & Cleanup
-Create a SQL migration script (`migrations/0020_cleanup_obsolete_schema.sql`) to drop obsolete tables (`fitness_baselines`, `fitness_progression`) and drop/prune unused columns from `players` and `parent_child_links`. Execute against Cloudflare D1 remote database.
+### R1. Worker API Pruning & Verification
+Audit `worker/src/index.ts` to identify and remove dead/uncalled API routes that are no longer invoked by any client application or internal service. Ensure all remaining active endpoints pass TypeScript compilation and deploy to Cloudflare Workers.
 
-### R2. Backend Worker API Refactoring
-Refactor `worker/src/index.ts` to remove legacy queries selecting from `fitness_baselines` and `fitness_progression`, redirecting all fitness evaluation data access to `player_test_logs`. Deploy the updated worker.
+### R2. Flutter App Code Pruning & Static Analysis
+Audit `academypro_app/lib/` for unused classes, dead functions, unreferenced widgets, and orphaned models/controllers. Remove dead code and verify that `flutter analyze` passes with zero errors and zero warnings.
 
-### R3. Frontend & Documentation Synchronization
-Update `DATABASE_SCHEMA.md` and any affected models in `academypro_app` to remove references to dropped tables and columns.
+### R3. Web Admin & Documentation Alignment
+Audit `web_admin` files for dead endpoints or orphaned JS functions. Update `API_SPECIFICATION.md` to document only the active, clean API routes.
 
 ## Acceptance Criteria
 
-### D1 Migration Verification
-- [ ] Raw SQL script executes cleanly on Cloudflare D1 without foreign key or dependency errors.
-- [ ] Obsolete tables `fitness_baselines` and `fitness_progression` are removed from D1 schema.
-- [ ] Unused column `ugroups_active` is purged from `players` table.
+### API Integrity
+- [ ] `worker/src/index.ts` builds cleanly without TypeScript compiler errors.
+- [ ] Live Cloudflare Worker deployment succeeds (`wrangler deploy`).
+- [ ] No active frontend API calls break due to endpoint pruning.
 
-### API & App Integrity
-- [ ] Worker API builds and deploys to Cloudflare Workers (`wrangler deploy`) with zero typescript/compilation errors.
-- [ ] Fitness testing endpoints return dynamic evaluation data from `player_test_logs`.
-- [ ] Flutter app builds cleanly (`flutter build` or `flutter analyze`) without missing property errors.
+### Flutter App Cleanliness
+- [ ] All unreferenced files, unused functions, and dead models in `academypro_app` are safely removed.
+- [ ] `flutter analyze` completes with 0 errors and 0 warnings.
+- [ ] All primary user workflows (Coach Dashboard, Student Portal, Parent Linking, Notifications) remain 100% operational.

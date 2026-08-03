@@ -1,30 +1,54 @@
-# Execution Plan
+# Execution Plan: Codebase Audit & Dead-Code Elimination
 
-## Overview
-Perform database schema audit and migration cleanup across Cloudflare D1 SQL database, Worker API (`worker/src/index.ts`), and Flutter application (`academypro_app`).
+## Objectives
+1. **Backend API (`worker/src/index.ts`)**: Identify and remove uncalled/dead API endpoints. Ensure TypeScript compilation passes and deploy via `wrangler deploy`.
+2. **Flutter Frontend (`academypro_app`)**: Identify and prune dead screens, widgets, models, controllers, unused functions, and unused imports. Ensure `flutter analyze` passes with 0 errors and 0 warnings.
+3. **Web Admin & Documentation (`web_admin` & `API_SPECIFICATION.md`)**: Audit `web_admin` HTML/JS for obsolete script references and dead endpoints. Update `API_SPECIFICATION.md` to reflect all remaining active routes.
 
-## Milestones
+---
 
-### Milestone 1: D1 Database SQL Migration & Cleanup
-- **Goal**: Create `migrations/0020_cleanup_obsolete_schema.sql` to drop obsolete tables (`fitness_baselines`, `fitness_progression`) and drop unused columns (`players.ugroups_active`, `players.parent_name`, `players.parent_id`, `parent_child_links.parent_phone`, `parent_child_links.parent_email`).
-- **Action**: Execute raw D1 SQL script against remote Cloudflare D1 database (`npx wrangler d1 execute academypro-db --remote --file=...`).
-- **Verification**: Query remote database schema to verify table and column removal.
+## Milestone 1: Backend API Endpoints Audit & Pruning (`worker/src/index.ts`)
+- **Phase 1A: Exploration & Static Route Mapping**
+  - Explorer scans `worker/src/index.ts` for all route definitions.
+  - Cross-references all routes against `academypro_app/lib/`, `web_admin/`, and seed/test scripts to identify truly active vs dead/legacy routes.
+  - Output: `dead_api_routes.md` listing endpoints to prune and active endpoints to preserve.
+- **Phase 1B: Implementation & Deployment**
+  - Worker prunes identified dead routes from `worker/src/index.ts`.
+  - Worker runs TypeScript type checking / compilation (`npx tsc --noEmit` or `npm run build`).
+  - Worker executes `wrangler deploy` to deploy the clean Worker to remote Cloudflare.
+- **Phase 1C: Verification & Audit**
+  - Reviewers (2) review diffs and build/deploy outputs.
+  - Challengers (2) empirically verify API route health and active endpoint compatibility.
+  - Forensic Auditor performs integrity check (no dummy fallbacks, authentic code removal).
+  - Gate check.
 
-### Milestone 2: Backend Worker API Refactoring
-- **Goal**: Update `worker/src/index.ts` to remove references to dropped tables and columns, redirecting all fitness evaluation queries to `player_test_logs`.
-- **Action**: Refactor Worker API, verify type safety / compilation (`npm run build` or `npx tsc`), and deploy worker (`npx wrangler deploy`).
-- **Verification**: Worker builds cleanly without TypeScript errors, deploys successfully, and endpoints return dynamic evaluation data from `player_test_logs`.
+---
 
-### Milestone 3: Frontend & Documentation Synchronization
-- **Goal**: Update `DATABASE_SCHEMA.md` to reflect 16 active production tables. Update Flutter frontend models in `academypro_app` to remove obsolete field references.
-- **Action**: Modify `DATABASE_SCHEMA.md` and `academypro_app` models. Run `flutter analyze` or `flutter build` to ensure clean build with zero missing property errors.
-- **Verification**: Flutter app builds without errors; documentation is completely aligned.
+## Milestone 2: Flutter App Audit & Dead-Code Elimination (`academypro_app`)
+- **Phase 2A: Exploration & Dead-Code Scan**
+  - Explorer scans `academypro_app/lib/` for unreferenced files (screens, widgets, models, controllers, services) and dead functions/variables.
+  - Uses static analysis insights and grep tools to confirm zero references.
+  - Output: `dead_flutter_code.md` listing files and code chunks to remove.
+- **Phase 2B: Implementation & Static Analysis**
+  - Worker safely removes dead files and unused functions/imports.
+  - Worker runs `flutter analyze` to ensure 0 errors and 0 warnings.
+- **Phase 2C: Verification & Audit**
+  - Reviewers (2) verify code changes and `flutter analyze` results.
+  - Challengers (2) independently run `flutter analyze` and check app integrity.
+  - Forensic Auditor performs integrity check.
+  - Gate check.
 
-## Orchestration Strategy
-For each milestone:
-1. Dispatch Explorer subagent to investigate codebase and produce execution plan.
-2. Dispatch Worker subagent to perform modifications, run builds/migrations, and report results.
-3. Dispatch 2 Reviewer subagents to review changes independently.
-4. Dispatch 2 Challenger subagents to verify functionality and stress-test.
-5. Dispatch Auditor subagent to perform forensic integrity check.
-6. Gate check: If all pass, proceed to next milestone. If audit or verification fails, loop back with Explorer.
+---
+
+## Milestone 3: Web Admin Audit & API Specification Alignment
+- **Phase 3A: Exploration & Alignment Scan**
+  - Explorer scans `web_admin/index.html` and `web_admin/uploader.html` for obsolete JS or dead endpoint calls.
+  - Explorer compares active Worker endpoints against `API_SPECIFICATION.md`.
+- **Phase 3B: Implementation & Spec Update**
+  - Worker updates `web_admin` files to remove obsolete code.
+  - Worker updates `API_SPECIFICATION.md` to document active endpoints cleanly.
+- **Phase 3C: Verification & Audit**
+  - Reviewers (2) check `web_admin` and `API_SPECIFICATION.md`.
+  - Challengers (2) verify spec completeness and HTML/JS cleanliness.
+  - Forensic Auditor performs final integrity check across all milestones.
+  - Gate check & Final Sentinel Notification.

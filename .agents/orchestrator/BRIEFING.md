@@ -1,86 +1,72 @@
-# BRIEFING — 2026-08-03T12:00:15Z
+# BRIEFING — 2026-08-03T13:21:10Z
 
 ## Mission
-Perform a complete database schema audit and migration cleanup to remove redundant, obsolete tables and columns across Cloudflare D1 SQL database, Worker API, and Flutter frontend models.
+Lead and orchestrate a comprehensive codebase audit and dead-code elimination across Backend Worker API (`worker/src/index.ts`), Flutter Frontend (`academypro_app`), Web Admin (`web_admin`), and `API_SPECIFICATION.md`.
 
 ## 🔒 My Identity
 - Archetype: teamwork_orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: c:\Development\academypro\.agents\orchestrator
 - Original parent: top-level
-- Original parent conversation ID: d7e7e039-d77d-4e17-8040-6e0cda5bb431
+- Original parent conversation ID: 4b5a65b3-7180-4375-bf58-d7577b114001
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern
 - **Scope document**: c:\Development\academypro\.agents\orchestrator\PROJECT.md
 1. **Decompose**:
-   - Milestone 1: D1 Database SQL Migration (`migrations/0020_cleanup_obsolete_schema.sql`) and remote D1 execution. [DONE]
-   - Milestone 2: Backend Worker API Refactoring (`worker/src/index.ts`) & Wrangler Deployment. [DONE]
-   - Milestone 3: Frontend & Documentation Synchronization (`DATABASE_SCHEMA.md` and `academypro_app`). [IN_PROGRESS]
-2. **Dispatch & Execute**: Direct iteration loop (Explorer → Worker → Reviewers → Challengers → Auditor → Gate) for each milestone.
+   - Milestone 1: Backend API Endpoints Audit & Pruning (`worker/src/index.ts`), TypeScript compile, `wrangler deploy`. [IN_PROGRESS]
+   - Milestone 2: Flutter Frontend Codebase Audit (`academypro_app`), dead code pruning, `flutter analyze` 0 errors / 0 warnings. [PLANNED]
+   - Milestone 3: Web Admin Audit & `API_SPECIFICATION.md` Alignment. [PLANNED]
+2. **Dispatch & Execute**: Direct iteration loop per milestone (Explorer → Worker → Reviewers → Challengers → Auditor → Gate).
 3. **On failure**: Retry → Replace → Skip → Redistribute → Redesign.
 4. **Succession**: Self-succeed at 16 subagent spawns.
 - **Work items**:
-  1. Milestone 1: D1 SQL Migration & Remote Sync [done]
-  2. Milestone 2: Backend Worker API Refactoring [done]
-  3. Milestone 3: Frontend & Doc Sync & Verification [done]
-- **Current phase**: 3 (Project Complete)
-- **Current focus**: Project Completion & Final Report
+  1. Milestone 1: Backend API Audit & Pruning [in-progress - remediation]
+  2. Milestone 2: Flutter App Audit & Pruning [planned]
+  3. Milestone 3: Web Admin & API Spec Sync [planned]
+- **Current phase**: 1 (Milestone 1 Remediation)
+- **Current focus**: Reinstating POST delete endpoints for Flutter compatibility in `worker/src/index.ts`
 
 ## 🔒 Key Constraints
 - Never write or edit source code directly (only metadata in .agents/ folder).
 - Always delegate work via invoke_subagent.
 - Require workers to run builds and test commands and report output.
 - Pass full audit reports on retries; audit failure is a binary veto.
-- Obey user global rules: D1 migration execution, Worker deployment, no fake fallback data.
+- Deploy Worker via `wrangler deploy` after TypeScript compilation passes.
+- Ensure `flutter analyze` has 0 errors and 0 warnings.
 
 ## Current Parent
-- Conversation ID: d7e7e039-d77d-4e17-8040-6e0cda5bb431
-- Updated: 2026-08-03T12:09:30Z
+- Conversation ID: 4b5a65b3-7180-4375-bf58-d7577b114001
+- Updated: 2026-08-03T13:21:10Z
 
 ## Key Decisions Made
-- Decomposed project into 3 sequential milestones.
-- Milestone 1 (D1 Migration), Milestone 2 (Worker API), and Milestone 3 (App & Docs Sync) all 100% completed and verified.
+- Forensic Auditor rendered verdict CLEAN.
+- Reviewer 2 & Challenger 2 flagged `POST /api/dashboard/events/:id/delete` and `POST /api/notifications/:id/delete` as required by Flutter controllers.
+- Dispatched Worker 2 (`60ef3154-3dfa-4596-a6d2-c6a1da0b057d`) for M1 remediation.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m1_1 | teamwork_preview_explorer | Explore M1 Database Schema & Migration | completed | fd55f674-2ad2-4cbd-8705-5925cfe520d6 |
-| worker_m1 | teamwork_preview_worker | Implement M1 D1 Migration & Remote Execution | completed | 6f903f13-c18f-452e-a1e5-7a8df3e28775 |
-| reviewer_m1_1 | teamwork_preview_reviewer | Review M1 D1 Migration | completed | bc54e359-cb0a-410a-a8fb-bbe7688cfff7 |
-| reviewer_m1_2 | teamwork_preview_reviewer | Review M1 D1 Migration | completed | f754b3ee-8c80-421c-8e04-b7f08608021e |
-| challenger_m1_1 | teamwork_preview_challenger | Empirically Verify M1 D1 Schema | completed | 51dba5e9-20e0-441f-ac54-13b6a92c2600 |
-| challenger_m1_2 | teamwork_preview_challenger | Verify FK & Integrity on Remote D1 | completed | 79673952-c025-4edf-9cd1-57157927c35d |
-| auditor_m1 | teamwork_preview_auditor | Forensic Integrity Audit M1 | completed | 02086b79-31e0-405c-8731-0c14c20c9c1c |
-| explorer_m2_1 | teamwork_preview_explorer | Explore M2 Backend Worker API Refactoring | completed | 215382eb-382d-4c54-87f7-ebe43b333edd |
-| worker_m2 | teamwork_preview_worker | Refactor Worker API & Deploy | completed | 453cccea-68d1-445b-ae0b-7407bf36973c |
-| reviewer_m2_1 | teamwork_preview_reviewer | Review M2 Worker API Refactoring | completed | 36a01152-819d-43e1-b8a4-1aa128a52508 |
-| reviewer_m2_2 | teamwork_preview_reviewer | Review M2 Worker API Refactoring | completed | e30db082-48d1-449f-9c84-24ad4448e5d8 |
-| challenger_m2_1 | teamwork_preview_challenger | Empirically Verify M2 Worker Code | completed | ce19f4db-ec60-4fd8-abd4-c55e467e110f |
-| challenger_m2_2 | teamwork_preview_challenger | Verify Worker Build & Deployment | completed | 09ec9a56-deab-4d5a-a9a9-891f80bc0e64 |
-| auditor_m2 | teamwork_preview_auditor | Forensic Integrity Audit M2 | completed | 131989ba-fbf2-4731-a0fa-83fcf47c5fd3 |
-| worker_m2_fix | teamwork_preview_worker | Remediate M2 Worker Code Defects & Deploy | completed | c14af6a2-5069-486a-9a49-50a36e490930 |
-| explorer_m3_1 | teamwork_preview_explorer | Explore M3 Frontend & Docs Sync | completed | 04bcfe1e-b505-4680-a86d-47b5ab522d37 |
-| worker_m3 | teamwork_preview_worker | Implement M3 App & Docs Sync | completed | abece969-8c43-446b-be15-6e7c16cb62f2 |
-| reviewer_m3_1 | teamwork_preview_reviewer | Review M3 App & Docs Sync | completed | 949218f8-ffeb-4b41-89ad-5ebc33f0a589 |
-| reviewer_m3_2 | teamwork_preview_reviewer | Review M3 App & Docs Sync | completed | edf02740-cd31-4ed1-b526-fd7e9961ec94 |
-| challenger_m3_1 | teamwork_preview_challenger | Verify Flutter Static Analysis | completed | af42624d-b1ae-424f-a17e-490b11651940 |
-| challenger_m3_2 | teamwork_preview_challenger | Verify Docs vs Remote D1 Schema | completed | bd2dea16-6929-4b73-8aac-35f49a989df6 |
-| auditor_m3 | teamwork_preview_auditor | Forensic Integrity Audit M3 | completed | e9d2d7fd-ba59-461e-b2ad-ba687dfd93f8 |
-| worker_m3_fix | teamwork_preview_worker | Remediate M3 Unused Import & Doc Label | completed | dd3bc4ab-8c1e-4264-b236-a74a5d97f9aa |
-| reviewer_m3_3 | teamwork_preview_reviewer | Verify M3 Remediation | completed | 4ce6beda-7843-4afe-beb8-fd4597d36e3e |
-| challenger_m3_3 | teamwork_preview_challenger | Verify M3 Static Analysis | completed | ef4c9015-a2f7-47d3-ae88-fe1a12cd1e7d |
-| auditor_m3_2 | teamwork_preview_auditor | Forensic Integrity Audit M3 Remediation | completed | 42139e06-9b59-4667-bd02-24bbbafda52d |
+| explorer_m1_1 | teamwork_preview_explorer | Audit Worker API vs Flutter App | completed | d51227ef-27ce-4760-a1dd-943b32c2c5f9 |
+| explorer_m1_2 | teamwork_preview_explorer | Audit Worker API vs Web Admin & Scripts | completed | 5b0f6ca4-b01c-4530-9aa7-7d36f9460722 |
+| explorer_m1_3 | teamwork_preview_explorer | Worker Structural & Route Line Audit | completed | e08658c8-270c-4229-89bf-551b27b55d8d |
+| worker_m1 | teamwork_preview_worker | Prune Worker Dead Endpoints & Deploy | completed | bdbe971f-cd76-47f8-b1d2-35e8d58c57b1 |
+| reviewer_m1_1 | teamwork_preview_reviewer | Review M1 Code Changes & Safety | completed | 52ba7a6d-65a3-4a70-8e20-0fbc946b1579 |
+| reviewer_m1_2 | teamwork_preview_reviewer | Review M1 Client Compatibility | completed | 8424027b-9181-413c-9efe-209cfec7f7e2 |
+| challenger_m1_1 | teamwork_preview_challenger | Verify Worker Build & Wrangler Deploy | completed | 96fcff90-8ddb-4eb7-a4bc-58da6a93a1b5 |
+| challenger_m1_2 | teamwork_preview_challenger | Verify API Route Integrity | completed | e2c8921f-e4ba-4c64-8a29-c14e8f23b8d0 |
+| auditor_m1 | teamwork_preview_auditor | Forensic Integrity Audit M1 | completed | 9f8ca9c6-f36e-42cb-8307-4e912c34546e |
+| worker_m1_fix | teamwork_preview_worker | Remediate POST Delete Endpoints | in-progress | 60ef3154-3dfa-4596-a6d2-c6a1da0b057d |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 0 / 16 (Generation 2)
-- Pending subagents: none
-- Predecessor: gen1
+- Spawn count: 10 / 16 (Generation 3)
+- Pending subagents: 60ef3154-3dfa-4596-a6d2-c6a1da0b057d
+- Predecessor: gen2
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-14 (cron: */10 * * * *)
+- Heartbeat cron: task-21 (cron: */10 * * * *)
 - Safety timer: none
 
 ## Artifact Index

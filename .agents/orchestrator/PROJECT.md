@@ -1,27 +1,26 @@
-# Project: Database Schema Audit & Migration Cleanup
+# Project: Codebase Audit & Dead-Code Elimination
 
 ## Architecture
-- Database: Cloudflare D1 (Relational Database)
-- Backend: Cloudflare Workers (TypeScript, ES modules in `worker/src/index.ts`)
-- Frontend: Flutter mobile application in `academypro_app/`
-- Documentation: `DATABASE_SCHEMA.md`
+- Backend API: Cloudflare Worker (`worker/src/index.ts`) with D1 SQL integration
+- Flutter Frontend: `academypro_app/` mobile client (Dart / Flutter)
+- Web Admin Portal: `web_admin/` (HTML / JS)
+- API Documentation: `API_SPECIFICATION.md`
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | D1 Database SQL Migration | Create `migrations/0020_cleanup_obsolete_schema.sql`, execute against remote D1 | None | DONE |
-| 2 | Backend Worker API Refactoring | Refactor `worker/src/index.ts` to use `player_test_logs`, deploy worker | M1 | DONE |
-| 3 | Frontend & Documentation Sync | Update `DATABASE_SCHEMA.md` & `academypro_app` models, verify Flutter build | M1, M2 | DONE |
+| 1 | Backend API Audit & Pruning | Audit `worker/src/index.ts`, prune dead endpoints, compile TypeScript & deploy via `wrangler deploy` | None | PLANNED |
+| 2 | Flutter App Audit & Pruning | Audit `academypro_app`, prune dead screens, widgets, models, controllers & functions, pass `flutter analyze` | M1 | PLANNED |
+| 3 | Web Admin & API Spec Sync | Audit `web_admin` HTML/JS, remove obsolete code, update `API_SPECIFICATION.md` to reflect active routes | M1, M2 | PLANNED |
 
 ## Interface Contracts
-### Worker API ↔ D1 Database
-- Table `player_test_logs` serves all dynamic fitness evaluation log queries.
-- `fitness_baselines` and `fitness_progression` are removed.
-- `players` table no longer has `ugroups_active`, `parent_name`, `parent_id`.
-- `parent_child_links` table no longer has `parent_phone`, `parent_email`.
+### Client ↔ Worker API
+- All endpoints pruned from `worker/src/index.ts` must be verified as unreferenced by `academypro_app`, `web_admin`, and automated seed scripts.
+- Active routes must retain their standard parameters, payload schemas, and response formats.
+- `API_SPECIFICATION.md` must accurately document all active routes post-cleanup.
 
 ## Code Layout
-- `migrations/` - SQL migration scripts for Cloudflare D1
 - `worker/src/index.ts` - Cloudflare Worker API entrypoint
-- `DATABASE_SCHEMA.md` - Complete schema documentation
-- `academypro_app/` - Flutter mobile application codebase
+- `academypro_app/lib/` - Flutter mobile application codebase
+- `web_admin/` - Web admin HTML & JS portal
+- `API_SPECIFICATION.md` - API documentation
