@@ -135,24 +135,6 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       }
     }
   }
-
-  Future<void> sendTestNotification({
-    required String title,
-    required String body,
-    String type = 'system',
-  }) async {
-    try {
-      await _apiClient.dio.post('/api/notifications/send', data: {
-        'title': title,
-        'body': body,
-        'type': type,
-      });
-      await fetchNotifications();
-    } catch (e) {
-      print('Error in sendTestNotification: $e');
-      AppToast.showError(null, title: 'Network Failure', message: 'Failed to send test notification.');
-    }
-  }
 }
 
 final notificationProvider =

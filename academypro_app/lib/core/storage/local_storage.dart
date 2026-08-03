@@ -4,13 +4,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 class LocalStorage {
   static const String sessionBoxName = 'session_box';
   static const String cacheBoxName = 'cache_box';
-  static const String syncQueueBoxName = 'sync_queue_box';
 
   static Future<void> init() async {
     await Hive.initFlutter();
     await Hive.openBox(sessionBoxName);
     await Hive.openBox(cacheBoxName);
-    await Hive.openBox(syncQueueBoxName);
   }
 
   // ==========================================
@@ -52,35 +50,5 @@ class LocalStorage {
     final rawData = _cacheBox.get(key) as String?;
     if (rawData == null) return null;
     return jsonDecode(rawData);
-  }
-
-  // ==========================================
-  // OFFLINE SYNC METHODS (Queue)
-  // ==========================================
-
-  static Box get _syncBox => Hive.box(syncQueueBoxName);
-
-  static Future<void> queueMatchStats(Map<String, dynamic> payload) async {
-    // Generate unique key using timestamp
-    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-    await _syncBox.put(timestamp, jsonEncode(payload));
-  }
-
-  static List<Map<String, dynamic>> getSyncQueue() {
-    final list = <Map<String, dynamic>>[];
-    for (var key in _syncBox.keys) {
-      final val = _syncBox.get(key) as String?;
-      if (val != null) {
-        list.add({
-          'key': key,
-          'payload': jsonDecode(val),
-        });
-      }
-    }
-    return list;
-  }
-
-  static Future<void> dequeueItem(dynamic key) async {
-    await _syncBox.delete(key);
   }
 }

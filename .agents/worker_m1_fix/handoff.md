@@ -37,14 +37,15 @@
   - Output: Exit code 0, 0 compilation errors.
 
 - Cloudflare Worker Deployment Command & Result:
-  - Command: `cmd /c "npx wrangler deploy"` in directory `c:\Development\academypro\worker`
+  - Command: `npx wrangler deploy` in directory `c:\Development\academypro\worker`
   - Output:
     ```text
-    Total Upload: 433.87 KiB / gzip: 74.51 KiB
-    Worker Startup Time: 0 ms
-    Uploaded academypro-worker (2.41 sec)
-    Deployed academypro-worker triggers (2.87 sec)
-      https://academypro-worker.jrobertse1.workers.dev
+    Total Upload: 203.17 KiB / gzip: 43.39 KiB
+    Worker Startup Time: 6 ms
+    Uploaded academypro-api (13.36 sec)
+    Deployed academypro-api triggers (6.98 sec)
+      https://academypro-api.tata-elash34.workers.dev
+    Current Version ID: dedf1d02-e6b9-42cd-8bab-7ccf201ad570
     ```
 
 ## 2. Logic Chain
@@ -52,7 +53,7 @@
 2. The Worker backend originally only exposed `DELETE /api/dashboard/events/:id` and `DELETE /api/notifications/:id`, resulting in HTTP 404 client route mismatches when called from Flutter clients.
 3. Adding identical POST handler logic for `app.post('/api/dashboard/events/:id/delete', ...)` and `app.post('/api/notifications/:id/delete', ...)` alongside their HTTP DELETE equivalents restores complete dual-route backend compatibility without modifying client-side logic.
 4. Running `npx tsc --noEmit` verified that all types, Hono routing, and async handler signatures compile cleanly without type errors.
-5. Deploying via `npx wrangler deploy` uploaded and activated the updated worker script to `https://academypro-worker.jrobertse1.workers.dev`, ensuring live remote API endpoints process requests for both HTTP DELETE and POST alias routes.
+5. Deploying via `npx wrangler deploy` uploaded and activated the updated worker script to `https://academypro-api.tata-elash34.workers.dev`, ensuring live remote API endpoints process requests for both HTTP DELETE and POST alias routes.
 
 ## 3. Caveats
 - No caveats.
@@ -63,4 +64,4 @@ The client route mismatches for events and notifications delete operations have 
 ## 5. Verification Method
 - Code Inspection: View `worker/src/index.ts` lines 1592-1601 and lines 3579-3589.
 - Type Check: Run `cmd /c "npx tsc --noEmit"` inside `worker/`.
-- Deployment Check: `npx wrangler deploy` successfully deployed `academypro-worker` to `https://academypro-worker.jrobertse1.workers.dev`.
+- Deployment Check: `npx wrangler deploy` successfully deployed `academypro-api` to `https://academypro-api.tata-elash34.workers.dev` (Version ID: `dedf1d02-e6b9-42cd-8bab-7ccf201ad570`).

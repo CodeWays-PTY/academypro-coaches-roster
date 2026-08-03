@@ -1,94 +1,76 @@
-# Handoff Report: Backend Worker API Refactoring (Milestone 2)
-
-**Author**: Explorer Agent (`explorer_m2_1`)  
-**Target Agent / Role**: Implementer / Parent Agent  
-**Date**: 2026-08-03  
-**Working Directory**: `c:\Development\academypro\.agents\explorer_m2_1`  
-
----
+# Handoff Report — Explorer M2_1 (Flutter Features Audit)
 
 ## 1. Observation
 
-Direct code audits and command executions on `worker/src/index.ts` revealed the following exact locations of obsolete database table and column references:
+### 1.1 Unreferenced / Dead Modal Files:
+- **`academypro_app/lib/features/dashboard/presentation/add_player_modal.dart`**:
+  - Contains class `AddPlayerModal` (lines 9–395).
+  - Search command: `grep_search(Query: "add_player_modal.dart")` -> `0 results`.
+  - Search command: `grep_search(Query: "AddPlayerModal")` -> Only matches lines within `add_player_modal.dart` itself.
+- **`academypro_app/lib/features/dashboard/presentation/create_squad_modal.dart`**:
+  - Contains class `CreateSquadModal` (lines 10–363).
+  - Search command: `grep_search(Query: "create_squad_modal.dart")` -> `0 results`.
+  - Search command: `grep_search(Query: "CreateSquadModal")` -> Only matches lines within `create_squad_modal.dart` itself.
 
-1. **`fitness_baselines`**:
-   - `worker/src/index.ts:2473`: `baseline = await db.prepare('SELECT * FROM fitness_baselines WHERE player_id = ?').bind(playerId).first();` inside `GET /api/student-portal`.
-   - `worker/src/index.ts:3231`: `INSERT INTO fitness_baselines (player_id, vertical_jump, speed_40m, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)...` inside `POST /api/admin/bulk-upload`.
+### 1.2 Dead / Orphaned Controller Methods & Providers:
+- **`CheckInNotifier.resetSession()`**:
+  - File: `academypro_app/lib/features/dashboard/controllers/checkin_controller.dart:300`
+  - Search command: `grep_search(Query: "resetSession")` -> Exactly 1 match (definition line 300).
+- **`CheckInNotifier.changeSessionType(String)`**:
+  - File: `academypro_app/lib/features/dashboard/controllers/checkin_controller.dart:138`
+  - Search command: `grep_search(Query: "changeSessionType")` -> Exactly 1 match (definition line 138).
+- **`RosterNotifier.addPlayer(...)`**:
+  - File: `academypro_app/lib/features/dashboard/controllers/roster_controller.dart:247`
+  - Search command: `grep_search(Query: "addPlayer(")` -> Exactly 2 matches: declaration on line 247 and call on line 75 of dead file `add_player_modal.dart`.
+- **`NotificationNotifier.sendTestNotification(...)`**:
+  - File: `academypro_app/lib/features/notifications/controllers/notification_controller.dart:139`
+  - Search command: `grep_search(Query: "sendTestNotification")` -> Exactly 1 match (definition line 139).
+- **`playerActionTasksProvider`**:
+  - File: `academypro_app/lib/features/dashboard/controllers/dashboard_controller.dart:606`
+  - Search command: `grep_search(Query: "playerActionTasksProvider")` -> Exactly 1 match (definition line 606).
 
-2. **`fitness_progression`**:
-   - `worker/src/index.ts:2479`: `const { results } = await db.prepare('SELECT * FROM fitness_progression WHERE player_id = ? ORDER BY week ASC').bind(playerId).all();` inside `GET /api/student-portal`.
-
-3. **`players.ugroups_active`**:
-   - `worker/src/index.ts:1186`: `ugroupsActive: p.ugroups_active,` inside `GET /api/players` response mapper.
-   - `worker/src/index.ts:2583`: `ugroupsActive: player.ugroups_active,` inside `GET /api/student-portal` profile response mapper.
-
-4. **`players.parent_id`**:
-   - `worker/src/index.ts:2355`: `player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();` inside `GET /api/student-portal`.
-
-5. **`parent_name`, `parent_phone`, `parent_email`**:
-   - `players.parent_name`: 0 occurrences found in `worker/src/index.ts`.
-   - `parent_child_links.parent_phone`: 0 occurrences found in `worker/src/index.ts`.
-   - `parent_child_links.parent_email`: Line 3546 uses `u.email as parent_email` from joined `users u` table (valid; no reference to `parent_child_links.parent_email` column).
-
-6. **Wrangler Dry-Run Execution**:
-   - Command: `cmd /c npx wrangler deploy --dry-run` in `c:\Development\academypro\worker`
-   - Result: `Total Upload: 210.81 KiB / gzip: 44.52 KiB`, `Your Worker has access to the following bindings: env.KV, env.EMAIL, env.DB (academypro-db), env.R2, env.JWT_SECRET, env.INTERNAL_API_KEY`, `--dry-run: exiting now.` (Exit Code 0).
+### 1.3 Unused State Variables & Model Properties:
+- **`AuthState.devOtp`**: File `features/auth/presentation/auth_state.dart:11`. Populated in `sendOtp` but never read in any UI screen.
+- **`NotificationItem.actionRoute`**: File `features/notifications/models/notification_item.dart:10`. Parsed from JSON but never handled in notification onTap.
+- **`CoachEvent.completionCount`**: File `features/dashboard/controllers/dashboard_controller.dart:626`. Parsed from JSON but never rendered.
+- **`StudentEvent.completionCount`**: File `features/student/controllers/student_controller.dart:63`. Parsed from JSON but never rendered.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Observation 1 & 2** show that `GET /api/student-portal` attempts to query dropped tables `fitness_baselines` and `fitness_progression`. Since both tables were dropped in Milestone 1 (`0020_cleanup_obsolete_schema.sql`), executing these queries on production D1 fails with SQL errors. Therefore, `GET /api/student-portal` must be refactored to fetch dynamic metrics and time-series evaluation logs from `player_test_logs` and `test_metric_definitions`.
-
-2. **Observation 1** shows that `POST /api/admin/bulk-upload` attempts to execute `INSERT INTO fitness_baselines`. Since `fitness_baselines` does not exist in D1, bulk uploads fail. Therefore, bulk upload must be refactored to write vertical jump and 40m sprint scores directly into `player_test_logs` using default metric IDs (`m_vertical_jump` and `m_speed_40m`).
-
-3. **Observation 3** shows that `GET /api/players` and `GET /api/student-portal` attempt to map `ugroups_active` from the `players` table. Since `ugroups_active` column was dropped, mapping `p.ugroups_active` evaluates to undefined. Removing these property mappings cleans up response payloads.
-
-4. **Observation 4** shows that `GET /api/student-portal` attempts to query `players WHERE parent_id = ?`. Since `parent_id` column was dropped from `players`, parent lookups fail. Replacing this with a `JOIN parent_child_links pcl` correctly resolves linked children for parents.
-
-5. **Observation 6** demonstrates that `cmd /c npx wrangler deploy --dry-run` successfully bundles and type-checks the worker project.
+1. **Step 1**: All 27 Dart files under `academypro_app/lib/features/` (`auth`, `dashboard`, `notifications`, `parent`, `student`) were listed and individually inspected using `view_file`.
+2. **Step 2**: Every exported class, widget, modal, controller method, provider, state property, and helper was extracted.
+3. **Step 3**: Using project-wide `grep_search` across `academypro_app/lib/`, each symbol was cross-referenced to verify if it is imported, instantiated, or invoked in any active widget or controller.
+4. **Step 4**: `AddPlayerModal` and `CreateSquadModal` were confirmed to have zero imports/instantiations in any active feature or core file.
+5. **Step 5**: Controller methods (`resetSession`, `changeSessionType`, `sendTestNotification`, `addPlayer`) and provider `playerActionTasksProvider` were confirmed to have zero callers/watchers outside declarations.
+6. **Step 6**: Unused model properties (`devOtp`, `actionRoute`, `completionCount`) were confirmed to be write-only (set or parsed, but never read in UI).
 
 ---
 
 ## 3. Caveats
 
-- **Seed Metric IDs**: `POST /api/admin/bulk-upload` uses metric IDs `m_vertical_jump` and `m_speed_40m`, which match the seeded metric definitions in `migrations/0011_dynamic_fitness_metrics.sql`. If custom metric IDs are added in the future, bulk upload could dynamically query `test_metric_definitions`.
-- **Read-Only Scope**: Per explorer guidelines, no direct modifications were applied to `worker/src/index.ts` during this turn. All changes are documented as precise diff specifications in `analysis.md` and this report.
+- **API Compatibility**: Model properties such as `completionCount`, `devOtp`, and `actionRoute` are parsed from remote JSON APIs. While they are dead on the Flutter client side, removing them from Dart models is safe, but server API response structure does not depend on their removal.
+- **Read-Only Scope**: In compliance with Explorer role rules, no source code files in `academypro_app/lib/` were modified or deleted.
 
 ---
 
 ## 4. Conclusion
 
-`worker/src/index.ts` contains 5 specific locations requiring refactoring:
-- 2 legacy table queries (`fitness_baselines`, `fitness_progression`) in `/api/student-portal`
-- 1 legacy insert query (`fitness_baselines`) in `/api/admin/bulk-upload`
-- 2 legacy column mappings (`ugroups_active`) in `/api/players` and `/api/student-portal`
-- 1 legacy column query (`parent_id`) in `/api/student-portal`
-
-The exact modification specifications provided in `analysis.md` redirect all fitness evaluation data access to `player_test_logs` and `test_metric_definitions` while restoring complete functionality for parent portal lookups and bulk uploads.
+- **Unused Files to Remove**: 2 files (`features/dashboard/presentation/add_player_modal.dart`, `features/dashboard/presentation/create_squad_modal.dart`).
+- **Dead Controller Code to Refactor/Clean**: 4 controller methods (`resetSession`, `changeSessionType`, `addPlayer`, `sendTestNotification`) and 1 provider (`playerActionTasksProvider`).
+- **Clean Model Properties**: `AuthState.devOtp`, `NotificationItem.actionRoute`, `CoachEvent.completionCount`, `StudentEvent.completionCount`.
+- Full findings documented in `c:\Development\academypro\.agents\explorer_m2_1\flutter_features_audit.md`.
 
 ---
 
 ## 5. Verification Method
 
-To independently verify the analysis and refactoring specifications:
-
-1. **Inspect Code Modifications**:
-   - Compare `c:\Development\academypro\.agents\explorer_m2_1\analysis.md` Section 3 diff specifications against lines 1186, 2355, 2470–2481, 2583, and 3229–3240 in `worker/src/index.ts`.
-
-2. **Verify Local Bundle Build**:
-   - Run in `c:\Development\academypro\worker`:
-     ```cmd
-     cmd /c npx wrangler deploy --dry-run
-     ```
-   - Confirm exit code 0 and successful upload size output.
-
-3. **Verify Deployment & Remote D1 Execution**:
-   - Run deployment:
-     ```cmd
-     cmd /c npx wrangler deploy
-     ```
-   - Test endpoints `GET /api/student-portal` and `POST /api/admin/bulk-upload` against remote database `academypro-db`.
-
-4. **Invalidation Conditions**:
-   - Any remaining reference to `fitness_baselines`, `fitness_progression`, `players.ugroups_active`, or `players.parent_id` in `worker/src/index.ts`.
+1. Inspect `c:\Development\academypro\.agents\explorer_m2_1\flutter_features_audit.md`.
+2. Re-run ripgrep searches across `academypro_app/lib`:
+   - `grep_search(Query: "add_player_modal.dart", SearchPath: "c:\\Development\\academypro\\academypro_app\\lib")` -> 0 results
+   - `grep_search(Query: "create_squad_modal.dart", SearchPath: "c:\\Development\\academypro\\academypro_app\\lib")` -> 0 results
+   - `grep_search(Query: "resetSession", SearchPath: "c:\\Development\\academypro\\academypro_app\\lib")` -> 1 result
+   - `grep_search(Query: "changeSessionType", SearchPath: "c:\\Development\\academypro\\academypro_app\\lib")` -> 1 result
+   - `grep_search(Query: "playerActionTasksProvider", SearchPath: "c:\\Development\\academypro\\academypro_app\\lib")` -> 1 result
+   - `grep_search(Query: "sendTestNotification", SearchPath: "c:\\Development\\academypro\\academypro_app\\lib")` -> 1 result

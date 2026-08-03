@@ -243,51 +243,6 @@ class RosterNotifier extends StateNotifier<RosterState> {
       return false;
     }
   }
-
-  Future<bool> addPlayer({
-    required String firstName,
-    required String lastName,
-    required String ageGroup,
-    required String position,
-    required String team,
-  }) async {
-    final newId = '$ageGroup-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-    final newPlayer = RosterPlayer(
-      id: newId,
-      firstName: firstName,
-      lastName: lastName,
-      ageGroup: ageGroup,
-      position: position,
-      team: team,
-      status: 'Active',
-    );
-
-    final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
-    final currentList = newMap[ageGroup] ?? [];
-    newMap[ageGroup] = [newPlayer, ...currentList];
-
-    state = state.copyWith(playersByAge: newMap);
-
-    try {
-      final res = await _apiClient.post('/api/players', data: {
-        'id': newId,
-        'firstName': firstName,
-        'lastName': lastName,
-        'ageGroup': ageGroup,
-        'position': position,
-        'team': team,
-      });
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        return true;
-      }
-      AppToast.showError(null, title: 'Add Player Failed', message: res.data?['message'] ?? 'Failed to save player.');
-      return false;
-    } catch (e) {
-      print('Error in addPlayer: $e');
-      AppToast.showError(null, title: 'Network Failure', message: 'Failed to add player to server.');
-      return false;
-    }
-  }
 }
 
 final rosterProvider = StateNotifierProvider<RosterNotifier, RState>((ref) {

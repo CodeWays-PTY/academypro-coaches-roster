@@ -1,30 +1,56 @@
-# Soft Handoff Report — Project Orchestrator (Generation 1 -> Generation 2)
+# Soft Handoff Report — Project Orchestrator (Generation 3 → Generation 4)
 
-## Milestone State
-- **Milestone 1**: D1 Database SQL Migration & Cleanup (`migrations/0020_cleanup_obsolete_schema.sql`) — **DONE** (Executed on remote Cloudflare D1 `academypro-db`, 100% verified by Reviewers, Challengers, and Forensic Auditor).
-- **Milestone 2**: Backend Worker API Refactoring (`worker/src/index.ts`) — **DONE** (Refactored to use `player_test_logs`, strict auth guards enforced, compiled with 0 TS errors, deployed live to Cloudflare Workers `https://worker.usport.co.za`).
-- **Milestone 3**: Frontend & Documentation Synchronization (`DATABASE_SCHEMA.md` and `academypro_app`) — **IN_PROGRESS** (Explorer M3 investigation complete; ready for Worker M3 to apply updates to `DATABASE_SCHEMA.md` and `academypro_app`, followed by Reviewers, Challengers, Auditor).
+**From**: Project Orchestrator (Generation 3, Conv ID: `9114f8fd-8891-49da-aa45-95f42d83a37f`)
+**To**: Successor Project Orchestrator (Generation 4)
+**Date**: 2026-08-03
+**Working Directory**: `c:\Development\academypro\.agents\orchestrator`
 
-## Active Subagents
-- None. All 16 spawned subagents have completed and delivered their handoffs.
+---
 
-## Pending Decisions
-- None.
+## 1. Milestone State
 
-## Remaining Work for Successor
-1. Dispatch Worker M3 (`teamwork_preview_worker`) to:
-   - Update `DATABASE_SCHEMA.md` to reflect 16 active tables and remove dropped table/column descriptions.
-   - Update Flutter codebase `academypro_app/lib` to purge obsolete fields (`ugroupsActive`, `parentPhone`) from `roster_controller.dart`, `checkin_controller.dart`, `add_existing_player_modal.dart`, and `dashboard_screen.dart`.
-   - Run `flutter analyze` in `academypro_app/` to verify zero static analysis / compilation errors.
-2. Dispatch verification subagents (Reviewers, Challengers, Forensic Auditor) for Milestone 3.
-3. Perform gate check for Milestone 3.
-4. Mark Milestone 3 as completed in `progress.md` and `PROJECT.md`.
-5. Report final project completion / victory to the Sentinel (Parent: `d7e7e039-d77d-4e17-8040-6e0cda5bb431`).
+| # | Milestone | Status | Details |
+|---|-----------|--------|---------|
+| 1 | Backend API Audit & Pruning (`worker/src/index.ts`) | **DONE** | 12 dead endpoints pruned, POST delete aliases retained, TypeScript build passed, Worker deployed live to Cloudflare Edge (`https://academypro-api.tata-elash34.workers.dev`, Version `dedf1d02-e6b9-42cd-8bab-7ccf201ad570`). Verified by Reviewers, Challengers, and Forensic Auditor. |
+| 2 | Flutter App Audit & Pruning (`academypro_app`) | **IMPLEMENTED** | Dead files (`permission_service.dart`, `add_player_modal.dart`, `create_squad_modal.dart`) deleted. Unused methods/constants pruned. `flutter analyze` verified with **0 errors and 0 warnings**. Needs Reviewer, Challenger, and Forensic Auditor verification. |
+| 3 | Web Admin & API Spec Sync (`web_admin` & `API_SPECIFICATION.md`) | **PLANNED** | Audit `web_admin` HTML/JS for obsolete code and update `API_SPECIFICATION.md` to reflect active endpoints. |
 
-## Key Artifacts
-- `c:\Development\academypro\.agents\ORIGINAL_REQUEST.md` — Original User Request
-- `c:\Development\academypro\.agents\orchestrator\BRIEFING.md` — Orchestrator Briefing
-- `c:\Development\academypro\.agents\orchestrator\progress.md` — Progress Tracking Log
-- `c:\Development\academypro\.agents\orchestrator\plan.md` — Detailed Execution Plan
-- `c:\Development\academypro\.agents\orchestrator\PROJECT.md` — Project Scope & Architecture
-- `c:\Development\academypro\.agents\explorer_m3_1\handoff.md` — Explorer M3 Analysis & Update Specifications
+---
+
+## 2. Active Subagents & Spawn Status
+
+- **Spawn Count**: 16 / 16 (Succession Threshold reached).
+- **Active Subagents**: None (all subagents have completed and delivered handoffs).
+
+---
+
+## 3. Pending Decisions & Remaining Work for Successor
+
+### Immediate Next Steps:
+1. **Milestone 2 Verification**:
+   - Spawn 2 Reviewers (`teamwork_preview_reviewer`) to review Flutter file deletions and `flutter analyze` report.
+   - Spawn 2 Challengers (`teamwork_preview_challenger`) to independently run `flutter analyze` in `academypro_app/` and verify Flutter build integrity.
+   - Spawn 1 Forensic Auditor (`teamwork_preview_auditor`) to verify zero cheating and authentic code removal in `academypro_app`.
+   - Gate check for Milestone 2.
+
+2. **Milestone 3: Web Admin & API Spec Sync**:
+   - Spawn Explorer for `web_admin/` audit and `API_SPECIFICATION.md` review.
+   - Spawn Worker to prune obsolete `web_admin` JS/HTML code and update `API_SPECIFICATION.md`.
+   - Run Reviewer, Challenger, Auditor verification panel.
+   - Milestone 3 Gate check.
+
+3. **Project Completion**:
+   - Verify all milestones are DONE.
+   - Send final comprehensive report to parent / Sentinel (`4b5a65b3-7180-4375-bf58-d7577b114001`).
+
+---
+
+## 4. Key Artifact Index
+
+- Original Request: `c:\Development\academypro\.agents\ORIGINAL_REQUEST.md`
+- Scope & Architecture: `c:\Development\academypro\.agents\orchestrator\PROJECT.md`
+- Execution Plan: `c:\Development\academypro\.agents\orchestrator\plan.md`
+- Progress Log: `c:\Development\academypro\.agents\orchestrator\progress.md`
+- Briefing: `c:\Development\academypro\.agents\orchestrator\BRIEFING.md`
+- Worker M1 Handoff: `c:\Development\academypro\.agents\worker_m1_fix\handoff.md`
+- Worker M2 Handoff: `c:\Development\academypro\.agents\worker_m2\handoff.md`

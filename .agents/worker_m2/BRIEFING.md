@@ -1,39 +1,51 @@
-# BRIEFING — 2026-08-03T11:50:50Z
+# BRIEFING — 2026-08-03T13:33:30Z
 
 ## Mission
-Refactor `worker/src/index.ts` to eliminate references to dropped tables (`fitness_baselines`, `fitness_progression`) and dropped columns (`players.ugroups_active`, `players.parent_id`), verify with dry-run build, deploy to Cloudflare Workers, and document test results.
+Execute Milestone 2 dead-code elimination in `academypro_app/`, prune specified dead files/widgets/methods/constants, clean up unused imports/variables, fix all warnings/lints, and ensure `flutter analyze` passes with 0 errors and 0 warnings.
 
 ## 🔒 My Identity
 - Archetype: implementer / qa
 - Roles: implementer, qa
 - Working directory: c:\Development\academypro\.agents\worker_m2
-- Original parent: e4d87988-e6ba-48a4-81ec-c09683273fb0
-- Milestone: Milestone 2 - Backend Worker API Refactoring
+- Original parent: 9114f8fd-8891-49da-aa45-95f42d83a37f
+- Milestone: Milestone 2 - Flutter Dead-Code Elimination & Lint Cleanup
 
 ## 🔒 Key Constraints
 - DO NOT CHEAT. All implementations must be genuine.
 - Minimal change principle.
 - No dummy/fake data or fallbacks.
-- Immediate deployment of worker (`npx wrangler deploy`).
+- Ensure `flutter analyze` reports 0 errors and 0 warnings.
 - Report findings and updates via `send_message` to parent.
 
 ## Current Parent
-- Conversation ID: e4d87988-e6ba-48a4-81ec-c09683273fb0
-- Updated: 2026-08-03T11:50:50Z
+- Conversation ID: 9114f8fd-8891-49da-aa45-95f42d83a37f
+- Updated: 2026-08-03T13:33:30Z
 
 ## Task Summary
-- **What to build**: Refactor backend worker `worker/src/index.ts` to match schema updates (dropped tables `fitness_baselines`, `fitness_progression`, dropped columns `players.ugroups_active`, `players.parent_id`).
+- **What to build**: Dead-code elimination and lint cleanup in `academypro_app`.
+- **Target Files Deleted**:
+  1. `lib/core/services/permission_service.dart` (Deleted)
+  2. `lib/features/dashboard/presentation/add_player_modal.dart` (Deleted)
+  3. `lib/features/dashboard/presentation/create_squad_modal.dart` (Deleted)
+- **Target Methods & Constants Pruned**:
+  1. `lib/core/storage/local_storage.dart`: `queueMatchStats`, `getSyncQueue`, `dequeueItem`, `syncQueueBoxName`
+  2. `lib/core/config/app_config.dart`: `academicHonorCutoff`, `ratingHighThreshold`, `ratingMidThreshold`, `ratingLowThreshold`, `sportIdentifier`
+  3. `lib/features/dashboard/controllers/checkin_controller.dart`: `resetSession()`, `changeSessionType()`
+  4. `lib/features/dashboard/controllers/roster_controller.dart`: `addPlayer()`
+  5. `lib/features/notifications/controllers/notification_controller.dart`: `sendTestNotification()`
+  6. `lib/features/dashboard/controllers/dashboard_controller.dart`: `playerActionTasksProvider`
 - **Success criteria**:
-  1. TypeScript dry run (`npx wrangler deploy --dry-run`) builds without errors. (PASSED)
-  2. Deployment to Cloudflare (`npx wrangler deploy`) succeeds. (PASSED: Version 6ebf3e79-caea-46b0-9515-fb17e735e589)
-  3. API endpoints handle student portal, player list, and bulk upload using dynamic metric logs (`player_test_logs`, `test_metric_definitions`, `parent_child_links`). (PASSED)
-  4. Handoff report and progress.md created/updated. (PASSED)
+  1. 3 target files verified to have 0 references and deleted. (PASSED)
+  2. All specified target methods and constants pruned. (PASSED)
+  3. Clean up all unused imports or dead code resulting from pruning. (PASSED)
+  4. `flutter analyze` returns 0 errors, 0 warnings. (PASSED)
+  5. Handoff report in `handoff.md` and `progress.md` updated. (PASSED)
+  6. Completion message sent to orchestrator via `send_message`. (PENDING)
 
 ## Key Decisions Made
-- Replaced `fitness_baselines` and `fitness_progression` queries in `GET /api/student-portal` with dynamic fitness metric queries joining `player_test_logs` and `test_metric_definitions`.
-- Refactored `GET /api/student-portal` parent player lookup to join `parent_child_links`.
-- Removed `ugroupsActive` property mapping in `GET /api/players` and `GET /api/student-portal`.
-- Replaced `fitness_baselines` insert in `POST /api/admin/bulk-upload` with dynamic metric logs inserted into `player_test_logs`.
+- Confirmed 0 external references before file deletion.
+- Pruned target methods/constants cleanly while preserving file structures.
+- Verified `flutter analyze` completed with 0 errors and 0 warnings.
 
 ## Artifact Index
 - `c:\Development\academypro\.agents\worker_m2\ORIGINAL_REQUEST.md` — Original request log
@@ -42,14 +54,14 @@ Refactor `worker/src/index.ts` to eliminate references to dropped tables (`fitne
 - `c:\Development\academypro\.agents\worker_m2\handoff.md` — Final handoff report
 
 ## Change Tracker
-- **Files modified**: `worker/src/index.ts`
-- **Build status**: `npx wrangler deploy --dry-run` PASSED (212.26 KiB bundle)
-- **Deployment status**: `npx wrangler deploy` SUCCESS (Version 6ebf3e79-caea-46b0-9515-fb17e735e589)
+- **Files deleted**: `lib/core/services/permission_service.dart`, `lib/features/dashboard/presentation/add_player_modal.dart`, `lib/features/dashboard/presentation/create_squad_modal.dart`
+- **Files modified**: `lib/core/storage/local_storage.dart`, `lib/core/config/app_config.dart`, `lib/features/dashboard/controllers/checkin_controller.dart`, `lib/features/dashboard/controllers/roster_controller.dart`, `lib/features/notifications/controllers/notification_controller.dart`, `lib/features/dashboard/controllers/dashboard_controller.dart`
+- **Build status**: `flutter analyze` PASSED with 0 errors, 0 warnings.
 
 ## Quality Status
 - **Build/test result**: PASSED
-- **Lint status**: CLEAN
-- **Tests added/modified**: Verified via dry-run bundling and Cloudflare Worker deployment
+- **Lint status**: 0 errors, 0 warnings
+- **Tests added/modified**: N/A
 
 ## Loaded Skills
 - None

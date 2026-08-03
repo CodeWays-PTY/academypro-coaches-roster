@@ -1,11 +1,10 @@
-# Progress Heartbeat
+# Progress Log
 
-Last visited: 2026-08-03T11:50:50Z
+Last visited: 2026-08-03T13:33:30Z
 
-- [x] Step 1: Initialize workspace briefing, request log, and progress tracker.
-- [x] Step 2: Inspect `worker/src/index.ts` around target lines and references to `fitness_baselines`, `fitness_progression`, `ugroups_active`, and `parent_id`.
-- [x] Step 3: Inspect database schema and helper types/endpoints related to `player_test_logs`, `test_metric_definitions`, `parent_child_links`.
-- [x] Step 4: Refactor `worker/src/index.ts` according to task instructions.
-- [x] Step 5: Execute build check `npx wrangler deploy --dry-run` in `worker/`.
-- [x] Step 6: Deploy worker via `npx wrangler deploy` in `worker/`.
-- [x] Step 7: Document code changes, build/deploy logs, and test results in `handoff.md`.
+## Milestones
+- [x] Received Milestone 2 dead-code elimination & flutter analyze task
+- [x] Verify 0 references & delete target dead files (`permission_service.dart`, `add_player_modal.dart`, `create_squad_modal.dart`)
+- [x] Prune target unused methods and constants (`local_storage.dart`, `app_config.dart`, `checkin_controller.dart`, `roster_controller.dart`, `notification_controller.dart`, `dashboard_controller.dart`)
+- [x] Run `flutter analyze` & clean up any unused imports or syntax issues (0 errors, 0 warnings)
+- [x] Document results in `handoff.md` and send completion message to orchestrator

@@ -603,16 +603,6 @@ final coachActionProvider = StateNotifierProvider<CoachActionNotifier, List<Coac
   return CoachActionNotifier(apiClient);
 });
 
-final playerActionTasksProvider = Provider.family<List<CoachActionItem>, String?>((ref, playerId) {
-  final allActions = ref.watch(coachActionProvider);
-  if (playerId == null || playerId.isEmpty) {
-    return allActions;
-  }
-  return allActions.where((item) =>
-      item.playerId == playerId ||
-      item.playerName.toLowerCase().contains(playerId.toLowerCase())).toList();
-});
-
 class CoachEvent {
   final String id;
   final String schoolId;

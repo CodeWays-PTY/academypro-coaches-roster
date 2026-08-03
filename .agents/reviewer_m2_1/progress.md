@@ -1,12 +1,14 @@
-# Progress Log - Reviewer M2-1
+# Progress Log
 
-Last visited: 2026-08-03T11:52:24+02:00
+Last visited: 2026-08-03T11:34:29Z
 
-- [x] Initialized workspace and briefing
-- [x] Inspect worker codebase for obsolete tables (`fitness_baselines`, `fitness_progression`)
-- [x] Inspect worker codebase for obsolete columns (`ugroups_active`, `parent_id`)
-- [x] Verify `GET /api/student-portal` uses `player_test_logs` and `test_metric_definitions`
-- [x] Verify `POST /api/admin/bulk-upload` uses `player_test_logs` and `test_metric_definitions`
-- [x] Run `npx wrangler deploy --dry-run` in `worker/`
-- [x] Perform stress testing & adversarial review
-- [x] Finalize `BRIEFING.md`, `handoff.md`, and report verdict to parent
+- [x] Initialized ORIGINAL_REQUEST.md and BRIEFING.md
+- [ ] Read worker_m2 handoff report (`c:\Development\academypro\.agents\worker_m2\handoff.md`)
+- [ ] Inspect git diff or deleted/pruned code changes
+- [ ] Verify deleted files had 0 external references
+- [ ] Inspect pruned constants/methods across 6 modified files
+- [ ] Run static analysis / build (`flutter analyze` or `dart analyze`)
+- [ ] Verify no active business logic, UI navigation, state management, or API calls were broken
+- [ ] Check for integrity violations or facade implementations
+- [ ] Formulate verdict and write handoff report (`handoff.md`)
+- [ ] Send message back to parent agent

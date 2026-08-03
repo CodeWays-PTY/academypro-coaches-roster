@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-03T13:21:10Z
+# BRIEFING — 2026-08-03T13:34:30Z
 
 ## Mission
 Lead and orchestrate a comprehensive codebase audit and dead-code elimination across Backend Worker API (`worker/src/index.ts`), Flutter Frontend (`academypro_app`), Web Admin (`web_admin`), and `API_SPECIFICATION.md`.
@@ -14,18 +14,18 @@ Lead and orchestrate a comprehensive codebase audit and dead-code elimination ac
 - **Pattern**: Project Pattern
 - **Scope document**: c:\Development\academypro\.agents\orchestrator\PROJECT.md
 1. **Decompose**:
-   - Milestone 1: Backend API Endpoints Audit & Pruning (`worker/src/index.ts`), TypeScript compile, `wrangler deploy`. [IN_PROGRESS]
-   - Milestone 2: Flutter Frontend Codebase Audit (`academypro_app`), dead code pruning, `flutter analyze` 0 errors / 0 warnings. [PLANNED]
+   - Milestone 1: Backend API Endpoints Audit & Pruning (`worker/src/index.ts`), TypeScript compile, `wrangler deploy`. [DONE]
+   - Milestone 2: Flutter Frontend Codebase Audit (`academypro_app`), dead code pruning, `flutter analyze` 0 errors / 0 warnings. [IN_PROGRESS - Verification Panel]
    - Milestone 3: Web Admin Audit & `API_SPECIFICATION.md` Alignment. [PLANNED]
 2. **Dispatch & Execute**: Direct iteration loop per milestone (Explorer → Worker → Reviewers → Challengers → Auditor → Gate).
 3. **On failure**: Retry → Replace → Skip → Redistribute → Redesign.
 4. **Succession**: Self-succeed at 16 subagent spawns.
 - **Work items**:
-  1. Milestone 1: Backend API Audit & Pruning [in-progress - remediation]
-  2. Milestone 2: Flutter App Audit & Pruning [planned]
+  1. Milestone 1: Backend API Audit & Pruning [done]
+  2. Milestone 2: Flutter App Audit & Pruning [implemented, executing verification panel]
   3. Milestone 3: Web Admin & API Spec Sync [planned]
-- **Current phase**: 1 (Milestone 1 Remediation)
-- **Current focus**: Reinstating POST delete endpoints for Flutter compatibility in `worker/src/index.ts`
+- **Current phase**: 2 (Milestone 2 Verification Panel)
+- **Current focus**: Dispatch Reviewers 1 & 2, Challengers 1 & 2, and Forensic Auditor for M2 Verification Panel
 
 ## 🔒 Key Constraints
 - Never write or edit source code directly (only metadata in .agents/ folder).
@@ -37,36 +37,31 @@ Lead and orchestrate a comprehensive codebase audit and dead-code elimination ac
 
 ## Current Parent
 - Conversation ID: 4b5a65b3-7180-4375-bf58-d7577b114001
-- Updated: 2026-08-03T13:21:10Z
+- Updated: 2026-08-03T13:34:30Z
 
 ## Key Decisions Made
-- Forensic Auditor rendered verdict CLEAN.
-- Reviewer 2 & Challenger 2 flagged `POST /api/dashboard/events/:id/delete` and `POST /api/notifications/:id/delete` as required by Flutter controllers.
-- Dispatched Worker 2 (`60ef3154-3dfa-4596-a6d2-c6a1da0b057d`) for M1 remediation.
+- Milestone 1 DONE & verified.
+- Milestone 2 dead code pruned by Worker 3 (`645184af-e2b4-432c-97b6-0bc0b6263267`). `flutter analyze` passed with 0 errors and 0 warnings.
+- Generation 4 Orchestrator active. Dispatching Milestone 2 Verification Panel.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m1_1 | teamwork_preview_explorer | Audit Worker API vs Flutter App | completed | d51227ef-27ce-4760-a1dd-943b32c2c5f9 |
-| explorer_m1_2 | teamwork_preview_explorer | Audit Worker API vs Web Admin & Scripts | completed | 5b0f6ca4-b01c-4530-9aa7-7d36f9460722 |
-| explorer_m1_3 | teamwork_preview_explorer | Worker Structural & Route Line Audit | completed | e08658c8-270c-4229-89bf-551b27b55d8d |
-| worker_m1 | teamwork_preview_worker | Prune Worker Dead Endpoints & Deploy | completed | bdbe971f-cd76-47f8-b1d2-35e8d58c57b1 |
-| reviewer_m1_1 | teamwork_preview_reviewer | Review M1 Code Changes & Safety | completed | 52ba7a6d-65a3-4a70-8e20-0fbc946b1579 |
-| reviewer_m1_2 | teamwork_preview_reviewer | Review M1 Client Compatibility | completed | 8424027b-9181-413c-9efe-209cfec7f7e2 |
-| challenger_m1_1 | teamwork_preview_challenger | Verify Worker Build & Wrangler Deploy | completed | 96fcff90-8ddb-4eb7-a4bc-58da6a93a1b5 |
-| challenger_m1_2 | teamwork_preview_challenger | Verify API Route Integrity | completed | e2c8921f-e4ba-4c64-8a29-c14e8f23b8d0 |
-| auditor_m1 | teamwork_preview_auditor | Forensic Integrity Audit M1 | completed | 9f8ca9c6-f36e-42cb-8307-4e912c34546e |
-| worker_m1_fix | teamwork_preview_worker | Remediate POST Delete Endpoints | in-progress | 60ef3154-3dfa-4596-a6d2-c6a1da0b057d |
+| reviewer_m2_1 | teamwork_preview_reviewer | Review Flutter M2 Code Pruning & Safety | in-progress | c606323a-4f47-42df-95f7-f924c3924d73 |
+| reviewer_m2_2 | teamwork_preview_reviewer | Review Flutter State & Route Integrity | in-progress | fbfa09bd-4812-4df8-812d-c65bf53f5607 |
+| challenger_m2_1 | teamwork_preview_challenger | Run `flutter analyze` verification | completed | 17e18038-c69f-4aa4-8951-f04e63431ccc |
+| challenger_m2_2 | teamwork_preview_challenger | Empirical Verification of Pruned Calls | in-progress | f45e9ac0-9184-4d54-b008-b05bbb36caaf |
+| auditor_m2 | teamwork_preview_auditor | Forensic Integrity Audit M2 | in-progress | 528198f8-a696-4aa2-ab84-b4e05ad5455b |
 
 ## Succession Status
-- Succession required: no
-- Spawn count: 10 / 16 (Generation 3)
-- Pending subagents: 60ef3154-3dfa-4596-a6d2-c6a1da0b057d
-- Predecessor: gen2
+- Succession required: NO
+- Spawn count: 5 / 16 (Generation 4)
+- Pending subagents: c606323a-4f47-42df-95f7-f924c3924d73, fbfa09bd-4812-4df8-812d-c65bf53f5607, 17e18038-c69f-4aa4-8951-f04e63431ccc, f45e9ac0-9184-4d54-b008-b05bbb36caaf, 528198f8-a696-4aa2-ab84-b4e05ad5455b
+- Predecessor: gen3 (`9114f8fd-8891-49da-aa45-95f42d83a37f`)
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-21 (cron: */10 * * * *)
+- Heartbeat cron: task-15 (every 10 min)
 - Safety timer: none
 
 ## Artifact Index
@@ -74,3 +69,4 @@ Lead and orchestrate a comprehensive codebase audit and dead-code elimination ac
 - c:\Development\academypro\.agents\orchestrator\PROJECT.md — Project Plan & Architecture
 - c:\Development\academypro\.agents\orchestrator\progress.md — Progress Tracking & Heartbeat
 - c:\Development\academypro\.agents\orchestrator\plan.md — Detailed Execution Plan
+- c:\Development\academypro\.agents\orchestrator\handoff.md — Handoff Record

@@ -135,9 +135,6 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
     }
   }
 
-  void changeSessionType(String sessionType) {
-    state = state.copyWith(sessionType: sessionType);
-  }
 
   Future<void> selectEvent(CoachEvent event) async {
     final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -297,13 +294,6 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
     return res;
   }
 
-  void resetSession() {
-    final updatedMap = <String, CheckInPlayerRecord>{};
-    state.playerRecords.forEach((id, record) {
-      updatedMap[id] = record.copyWith(isCheckedIn: false, checkInTime: null);
-    });
-    state = state.copyWith(playerRecords: updatedMap);
-  }
 
   Future<bool> submitAttendance() async {
     final nowStr = DateFormat('yyyy-MM-dd').format(DateTime.now());

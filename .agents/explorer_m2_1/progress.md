@@ -1,14 +1,11 @@
-# Progress Log - Explorer M2 (Backend Worker API Refactoring)
+# Progress Log - Explorer M2_1
 
-Last visited: 2026-08-03T09:47:55Z
-
-## Status Overview
-- Investigation, analysis, and handoff completed successfully for Milestone 2: Backend Worker API Refactoring.
-
-## Steps Completed
-- [x] Initialized `ORIGINAL_REQUEST.md`, `BRIEFING.md`, and `progress.md`.
-- [x] Inspect `worker/` files for target deprecated tables/columns (`fitness_baselines`, `fitness_progression`, `ugroups_active`, `parent_name`, `parent_id`, `parent_phone`, `parent_email`).
-- [x] Analyze dynamic test metrics & `player_test_logs` implementation.
-- [x] Formulate exact diff specifications for refactoring `worker/src/index.ts`.
-- [x] Document build and deployment instructions (`cmd /c npx wrangler deploy --dry-run`, `cmd /c npx wrangler deploy`).
-- [x] Create `analysis.md` and `handoff.md`.
+- **Last visited**: 2026-08-03T13:30:02Z
+- **Status**: Completed Flutter Features Audit
+- **Completed**:
+  - Examined all 27 files under `academypro_app/lib/features/` across 5 subfolders (`auth`, `dashboard`, `notifications`, `parent`, `student`)
+  - Cross-referenced all widget instantiations, route registrations, imports, controller methods, state variables, and model properties across `academypro_app/lib/`
+  - Identified 2 unreferenced modal widget files, 4 dead controller methods, 1 unused Riverpod provider, and 4 write-only/unused model properties
+  - Created `c:\Development\academypro\.agents\explorer_m2_1\flutter_features_audit.md`
+  - Created `c:\Development\academypro\.agents\explorer_m2_1\handoff.md`
+  - Updated `BRIEFING.md`
