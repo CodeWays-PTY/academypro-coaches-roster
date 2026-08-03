@@ -151,6 +151,14 @@ function generateSecureOTP(): string {
   return otpNumber.toString();
 }
 
+// Standard Helper for Primary Key (PK) Generation
+function generatePrimaryKey(prefix: string = 'id'): string {
+  const uuid = typeof crypto !== 'undefined' && crypto.randomUUID 
+    ? crypto.randomUUID().replace(/-/g, '').substring(0, 8) 
+    : Math.random().toString(36).substring(2, 10);
+  return `${prefix}_${Date.now()}_${uuid}`;
+}
+
 // Helper for JWT Secret Key
 const getSecret = (c: any) => {
   const secret = c.env?.JWT_SECRET;
@@ -2658,22 +2666,24 @@ app.post('/api/player/evaluation-baseline', async (c) => {
   const dateStr = testDate || new Date().toISOString().split('T')[0];
 
   try {
+    const existing = await db.prepare('SELECT id FROM player_test_logs WHERE player_id = ? AND metric_id = ? AND test_date = ?').bind(playerId, metricId, dateStr).first();
+    const targetId = existing?.id || `ptl_${playerId}_${metricId}_${dateStr}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+
     await db.prepare(`
-      INSERT INTO player_test_logs (player_id, metric_id, test_date, session_name, score, notes)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(player_id, metric_id, test_date) DO UPDATE SET
+      INSERT INTO player_test_logs (id, player_id, metric_id, score, test_date, session_name, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
         score = excluded.score,
         session_name = excluded.session_name,
         notes = excluded.notes
     `).bind(
-      playerId, metricId, dateStr, sessionName || 'Baseline Evaluation',
-      parseFloat(score.toString()), notes || null
+      targetId, playerId, metricId, parseFloat(score.toString()), dateStr, sessionName || 'Baseline Evaluation', notes || null
     ).run();
 
     return c.json({
       success: true,
       message: 'Evaluation baseline updated successfully',
-      data: { playerId, metricId, score, testDate: dateStr }
+      data: { id: targetId, playerId, metricId, score, testDate: dateStr }
     });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to update evaluation baseline', error: err.message }, 500);
