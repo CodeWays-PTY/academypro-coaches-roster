@@ -140,15 +140,26 @@
                 customMetricCategory: 'Custom',
                 showCustomModal: false,
                 players: [],
-                loading: false,
+                loading: true,
+                toast: { show: false, message: '', type: 'error' },
+
+                showToast(message, type = 'error') {
+                    this.toast.message = message;
+                    this.toast.type = type;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 4000);
+                },
 
                 async init() {
                     try {
                         this.loading = true;
                         const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
-                        
+                        const token = localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
+                        const schoolId = localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || 'OVK';
+                        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
                         // 1. Fetch Roster Players
-                        const res = await fetch(`${apiBase}/api/admin/all-players`);
+                        const res = await fetch(`${apiBase}/api/admin/all-players?school_id=${encodeURIComponent(schoolId)}`, { headers });
                         const json = await res.json();
                         if (json.success) {
                             this.players = json.data;
@@ -157,7 +168,7 @@
                         }
 
                         // 2. Fetch Sports Config
-                        const sportsRes = await fetch(`${apiBase}/api/admin/sports-config`);
+                        const sportsRes = await fetch(`${apiBase}/api/admin/sports-config`, { headers });
                         const sportsJson = await sportsRes.json();
                         if (sportsJson.success && sportsJson.data.length > 0) {
                             const config = sportsJson.data[0].config; // Default to first sport (Rugby)
@@ -240,7 +251,7 @@
                     const targetPlayers = this.players.filter(p => activeGroups.includes(p.ageGroup));
 
                     if (targetPlayers.length === 0) {
-                        alert('No players found in the selected squads!');
+                        this.showToast('No players found in the selected squads!', 'error');
                         return;
                     }
 
@@ -301,6 +312,12 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
 </head>
 <body class="bg-background text-on-surface font-body-md overflow-hidden" x-data="configurator()">
+
+<!-- Toast Notification -->
+<div x-show="toast.show" x-transition class="fixed top-5 right-5 z-[100] px-lg py-sm rounded-lg shadow-lg flex items-center gap-sm text-white" :class="toast.type === 'success' ? 'bg-success' : 'bg-error'" x-cloak>
+    <span class="material-symbols-outlined" x-text="toast.type === 'success' ? 'check_circle' : 'error'">check_circle</span>
+    <span class="font-label-md" x-text="toast.message"></span>
+</div>
 
 <!-- Side Navigation Bar -->
 <aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-surface-container flex flex-col border-r border-outline-variant shadow-sm z-50">
@@ -415,7 +432,7 @@
         </div>
 
         <!-- Bento Layout Workspace -->
-        <div class="grid grid-cols-12 gap-lg" x-show="!loading">
+        <div class="grid grid-cols-12 gap-lg" x-show="!loading" x-cloak>
             <!-- Step 1: Metric Selection -->
             <section class="col-span-12 lg:col-span-7 space-y-md">
                 <div class="flex items-center gap-sm">

@@ -1012,13 +1012,9 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 app.get('/api/squads', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId');
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
   const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
   const db = getDB(c);
-
-  if (!schoolId) {
-    return c.json({ success: false, message: 'schoolId parameter or token claim is required' }, 400);
-  }
 
   await ensureSquadsTables(db);
 
@@ -1533,16 +1529,12 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
 }// Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const eventTypeParam = c.req.query('event_type') || c.req.query('eventType');
   const db = getDB(c);
-
-  if (!schoolId) {
-    return c.json({ success: false, message: 'schoolId is required' }, 400);
-  }
 
   let query = 'SELECT * FROM events WHERE 1=1';
   let params: any[] = [];
