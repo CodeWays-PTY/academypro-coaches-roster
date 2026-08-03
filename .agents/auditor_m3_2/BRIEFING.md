@@ -1,45 +1,62 @@
-# BRIEFING — 2026-08-03T10:08:35Z
+# BRIEFING — 2026-08-03T11:56:15Z
 
 ## Mission
-Final forensic integrity audit on Milestone 3 remediation.
+Perform a forensic integrity audit on Milestone 3 remediation (`web_admin` & `API_SPECIFICATION.md`).
 
 ## 🔒 My Identity
 - Archetype: forensic_auditor
 - Roles: critic, specialist, auditor
 - Working directory: c:\Development\academypro\.agents\auditor_m3_2
-- Original parent: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Target: Milestone 3 Remediation Verification
+- Original parent: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Target: Milestone 3 remediation (`web_admin` & `API_SPECIFICATION.md`)
 
 ## 🔒 Key Constraints
 - Audit-only — do NOT modify implementation code
 - Trust NOTHING — verify everything independently
-- Strict zero dummy / fake data policy enforcement
-- Full vertical slice persistence and Flutter UI/API integrity check
+- Code-only network mode (no external network requests)
 
 ## Current Parent
-- Conversation ID: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Updated: 2026-08-03T10:08:35Z
+- Conversation ID: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Updated: 2026-08-03T11:56:15Z
 
 ## Audit Scope
-- **Work product**: `api_client.dart` and `DATABASE_SCHEMA.md` in `academypro` repository
-- **Profile loaded**: General Project / Forensic Audit
+- **Work product**: Milestone 3 remediation (`web_admin`, `API_SPECIFICATION.md`, `worker/`)
+- **Profile loaded**: General Project (Forensic Integrity)
 - **Audit type**: forensic integrity check
 
 ## Audit Progress
 - **Phase**: reporting
 - **Checks completed**:
-  - Inspected `api_client.dart`: confirmed line 2 `import 'package:flutter/foundation.dart';` was removed, all remaining imports used, no fake fallbacks or dev bypasses.
-  - Inspected `DATABASE_SCHEMA.md`: confirmed Section 2 summary table row 1 (`schools`) updated from `id (TEXT)` to `id (INTEGER)`, perfectly matching DDL (`id INTEGER PRIMARY KEY AUTOINCREMENT`) and remote D1 schema.
-  - Executed `cmd /c flutter analyze` in `academypro_app`: verified genuine pass with **0 errors** and **0 warnings** (182 info-level lints only).
-  - Executed forensic Integrity Forensics checks across code: 0 violations, clean.
+  1. Authorization header handling verification (Implemented in web_admin)
+  2. Custom toast notification verification (Implemented, 0 alert/confirm popups)
+  3. Route alignment verification (100% 67/67 routes aligned and tested via Hono)
+  4. `npx tsc --noEmit` in `worker/` (0 errors)
+  5. Prohibited patterns check (FOUND hardcoded string fallback `schoolId || 'OVK'` in web_admin index.html & uploader.html, violating USER_RULES)
 - **Checks remaining**: None
-- **Findings so far**: CLEAN — Explicit verdict is CLEAN.
+- **Findings so far**: INTEGRITY VIOLATION due to explicit prohibited fallback pattern `schoolId || 'OVK'` in `web_admin/index.html:158` and `web_admin/uploader.html:160` masking missing parameters.
 
 ## Key Decisions Made
-- Confirmed genuine pass of static analysis and total integrity compliance.
+- Confirmed Authorization headers, toast notifications, route parity, and tsc static analysis pass empirically.
+- Identified hardcoded string fallback `schoolId || 'OVK'` in `web_admin/index.html` and `web_admin/uploader.html`, violating strict USER_RULES (`NEVER use over-defensive string fallbacks (e.g., team || 'U15 Academy Elite', schoolId || 'OVK')`).
+- Issued final verdict: INTEGRITY VIOLATION.
 
 ## Artifact Index
-- ORIGINAL_REQUEST.md — Prompt record
-- BRIEFING.md — Persistent context briefing
-- progress.md — Liveness heartbeat and step logger
-- handoff.md — Final audit handoff report
+- `c:\Development\academypro\.agents\auditor_m3_2\ORIGINAL_REQUEST.md` — Original request text
+- `c:\Development\academypro\.agents\auditor_m3_2\BRIEFING.md` — Working memory
+- `c:\Development\academypro\.agents\auditor_m3_2\progress.md` — Progress heartbeat log
+- `c:\Development\academypro\.agents\auditor_m3_2\handoff.md` — Final audit report
+
+## Attack Surface
+- **Hypotheses tested**:
+  - `Authorization` header present on admin API calls: PASS
+  - Custom Alpine.js toast used instead of native popups: PASS
+  - `API_SPECIFICATION.md` has 100% parity with `worker/src/index.ts`: PASS
+  - `npx tsc --noEmit` passes with 0 errors: PASS
+  - Prohibited fallback data check: FAIL (`schoolId || 'OVK'` fallback detected)
+- **Vulnerabilities found**:
+  - Over-defensive string fallback `schoolId || 'OVK'` used in `web_admin/index.html:158` and `web_admin/uploader.html:160`.
+  - Over-defensive string fallback `p.team || 'Squad'` used in `web_admin/index.html:194`.
+- **Untested angles**: None within audit scope.
+
+## Loaded Skills
+- None

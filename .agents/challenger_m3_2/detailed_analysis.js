@@ -49,7 +49,7 @@ specLines.forEach((line, idx) => {
     if (parts.length >= 4) {
       const rawRoute = parts[2].replace(/`/g, '');
       const rawMethod = parts[3].replace(/`/g, '');
-      if (rawRoute && rawMethod && rawRoute !== 'Route') {
+      if (rawRoute && rawMethod && rawRoute !== 'Route' && !rawRoute.startsWith('---')) {
         const methods = rawMethod.split(/[\/,]/).map(m => m.trim().toUpperCase()).filter(Boolean);
         methods.forEach(m => {
           specTableRoutes.push({

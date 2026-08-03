@@ -47,6 +47,10 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 | | `/api/school/players` | GET | Filtered school player directory |
 | | `/api/players` | POST | Register a new player profile |
 | | `/api/players/:id/position` | POST | Update primary playing position for athlete |
+| | `/api/athletes` | GET / POST | Fetch or register athlete profiles |
+| | `/api/athletes/:id` | PUT / DELETE | Update or delete athlete profile |
+| | `/api/coaches` | GET / POST | Fetch or register coach profiles |
+| | `/api/coaches/:id` | DELETE | Delete coach profile |
 | **Module 3** | `/api/dashboard/summary` | GET | Squad performance summary & baseline stats |
 | | `/api/dashboard/flags` | GET | List flagged at-risk players |
 | | `/api/dashboard/events` | GET / POST | List or create training & match events |
@@ -67,6 +71,7 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 | | `/api/dashboard/test-logs` | POST | Log single athlete test score metric (alias) |
 | | `/api/test-logs/batch` | POST | Batch log athlete test score metrics |
 | | `/api/dashboard/test-logs/batch` | POST | Batch log athlete test score metrics (alias) |
+| | `/api/test-results` | GET / POST | Fetch or log raw test result logs |
 | **Module 5** | `/api/student-portal` | GET | 360-degree athlete portal dataset |
 | | `/api/student-portal/profile` | POST | Update student self-managed profile info |
 | | `/api/parent/link-request` | POST | Initiate parent-child account link request |
@@ -351,6 +356,26 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 }
 ```
 
+#### 2.11 Fetch or Create Athletes
+* **Method:** `GET` or `POST`
+* **Route:** `/api/athletes`
+* **Headers:** `Authorization: Bearer <JWT>`
+
+#### 2.12 Update or Delete Athlete
+* **Method:** `PUT` or `DELETE`
+* **Route:** `/api/athletes/:id`
+* **Headers:** `Authorization: Bearer <JWT>`
+
+#### 2.13 Fetch or Create Coaches
+* **Method:** `GET` or `POST`
+* **Route:** `/api/coaches`
+* **Headers:** `Authorization: Bearer <JWT>`
+
+#### 2.14 Delete Coach
+* **Method:** `DELETE`
+* **Route:** `/api/coaches/:id`
+* **Headers:** `Authorization: Bearer <JWT>`
+
 ---
 
 ### Module 3: Coach Dashboard, Events & Action Plans (`/api/dashboard/*`)
@@ -593,6 +618,11 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
   ]
 }
 ```
+
+#### 4.7 Fetch or Create Test Results
+* **Method:** `GET` or `POST`
+* **Route:** `/api/test-results`
+* **Headers:** `Authorization: Bearer <JWT>`
 
 ---
 

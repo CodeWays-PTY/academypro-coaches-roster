@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-03T13:34:30Z
+# BRIEFING — 2026-08-03T13:57:30Z
 
 ## Mission
 Lead and orchestrate a comprehensive codebase audit and dead-code elimination across Backend Worker API (`worker/src/index.ts`), Flutter Frontend (`academypro_app`), Web Admin (`web_admin`), and `API_SPECIFICATION.md`.
@@ -16,16 +16,16 @@ Lead and orchestrate a comprehensive codebase audit and dead-code elimination ac
 1. **Decompose**:
    - Milestone 1: Backend API Endpoints Audit & Pruning (`worker/src/index.ts`), TypeScript compile, `wrangler deploy`. [DONE]
    - Milestone 2: Flutter Frontend Codebase Audit (`academypro_app`), dead code pruning, `flutter analyze` 0 errors / 0 warnings. [DONE]
-   - Milestone 3: Web Admin Audit & `API_SPECIFICATION.md` Alignment. [IN_PROGRESS - Discovery & Pruning]
+   - Milestone 3: Web Admin Audit & `API_SPECIFICATION.md` Alignment. [IN_PROGRESS - Remediation 2]
 2. **Dispatch & Execute**: Direct iteration loop per milestone (Explorer → Worker → Reviewers → Challengers → Auditor → Gate).
 3. **On failure**: Retry → Replace → Skip → Redistribute → Redesign.
 4. **Succession**: Self-succeed at 16 subagent spawns.
 - **Work items**:
   1. Milestone 1: Backend API Audit & Pruning [done]
   2. Milestone 2: Flutter App Audit & Pruning [done]
-  3. Milestone 3: Web Admin & API Spec Sync [in-progress]
+  3. Milestone 3: Web Admin & API Spec Sync [in-progress - Remediation 2]
 - **Current phase**: 3 (Milestone 3 Execution)
-- **Current focus**: Milestone 3 Discovery & Pruning (Web Admin & API Spec Sync)
+- **Current focus**: Milestone 3 Remediation 2: Remove `|| 'OVK'` prohibited fallbacks from `web_admin/index.html` and `web_admin/uploader.html`, followed by Reviewer, Challenger, Auditor verification panel.
 
 ## 🔒 Key Constraints
 - Never write or edit source code directly (only metadata in .agents/ folder).
@@ -37,40 +37,27 @@ Lead and orchestrate a comprehensive codebase audit and dead-code elimination ac
 
 ## Current Parent
 - Conversation ID: 4b5a65b3-7180-4375-bf58-d7577b114001
-- Updated: 2026-08-03T13:38:40Z
+- Updated: 2026-08-03T13:57:30Z
 
 ## Key Decisions Made
 - Milestone 1 DONE & verified.
-- Milestone 2 DONE & verified (Reviewers APPROVE, Challengers PASS, Auditor CLEAN).
-- Beginning Milestone 3: Web Admin Audit & `API_SPECIFICATION.md` Alignment.
+- Milestone 2 DONE & verified.
+- Milestone 3: Remediation 2 in progress — removing prohibited `|| 'OVK'` fallbacks from `web_admin/index.html:158` and `web_admin/uploader.html:160`.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| reviewer_m2_1 | teamwork_preview_reviewer | Review Flutter M2 Code Pruning & Safety | completed | c606323a-4f47-42df-95f7-f924c3924d73 |
-| reviewer_m2_2 | teamwork_preview_reviewer | Review Flutter State & Route Integrity | completed | fbfa09bd-4812-4df8-812d-c65bf53f5607 |
-| challenger_m2_1 | teamwork_preview_challenger | Run `flutter analyze` verification | completed | 17e18038-c69f-4aa4-8951-f04e63431ccc |
-| challenger_m2_2 | teamwork_preview_challenger | Empirical Verification of Pruned Calls | completed | f45e9ac0-9184-4d54-b008-b05bbb36caaf |
-| auditor_m2 | teamwork_preview_auditor | Forensic Integrity Audit M2 | completed | 528198f8-a696-4aa2-ab84-b4e05ad5455b |
-| explorer_m3_1 | teamwork_preview_explorer | Audit Web Admin HTML & JS | completed | fe91a99a-baaf-4776-957c-1525ef9439d5 |
-| explorer_m3_2 | teamwork_preview_explorer | Audit API Spec vs Active Worker Routes | completed | c9b2cd85-6b40-486f-80b2-ed076eff7f31 |
-| worker_m3 | teamwork_preview_worker | Web Admin Clean & API Spec Alignment | completed | 686a7678-5bb7-40b3-9fc9-680f65c7b706 |
-| reviewer_m3_1 | teamwork_preview_reviewer | Review Web Admin HTML & JS Changes | in-progress | 843e9e2f-41ce-4e77-94cb-8d841943de67 |
-| reviewer_m3_2 | teamwork_preview_reviewer | Review API Specification Content | completed | f9837a1f-3ead-46ed-a274-7f92aa77521a |
-| challenger_m3_1 | teamwork_preview_challenger | Verify TypeScript & Syntax | completed | 676359a2-f3cf-4ac3-a888-9fdcf9fb6b12 |
-| challenger_m3_2 | teamwork_preview_challenger | Cross-Check 100% Route Coverage | completed | 9fbac1a1-f43b-429c-a520-7e3cd0cdb808 |
-| auditor_m3 | teamwork_preview_auditor | Forensic Integrity Audit M3 | completed | ed31d7c3-a1ea-481f-8908-a04161c5627c |
-| worker_m3_fix | teamwork_preview_worker | Remediation for Web Admin & API Spec | in-progress | 63b7041f-151a-40c6-ae38-4560c8b5866c |
+| worker_m3_rem2 | teamwork_preview_worker | Remove `|| 'OVK'` fallbacks from web_admin | in-progress | 78800e21-1dca-4e66-898a-acac7a7784fc |
 
 ## Succession Status
 - Succession required: NO
-- Spawn count: 14 / 16 (Generation 4)
-- Pending subagents: 63b7041f-151a-40c6-ae38-4560c8b5866c
-- Predecessor: gen3 (`9114f8fd-8891-49da-aa45-95f42d83a37f`)
+- Spawn count: 1 / 16 (Generation 5)
+- Pending subagents: none
+- Predecessor: gen4 (`af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf`)
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-15 (every 10 min)
+- Heartbeat cron: task-17 (every 10 min)
 - Safety timer: none
 
 ## Artifact Index

@@ -1,11 +1,5 @@
 [
   {
-    "line": 35,
-    "method": "---",
-    "route": "---",
-    "raw": "| --- | --- | --- | --- |"
-  },
-  {
     "line": 36,
     "method": "POST",
     "route": "/api/auth/send-otp",
@@ -104,227 +98,305 @@
   {
     "line": 50,
     "method": "GET",
+    "route": "/api/athletes",
+    "raw": "| | `/api/athletes` | GET / POST | Fetch or register athlete profiles |"
+  },
+  {
+    "line": 50,
+    "method": "POST",
+    "route": "/api/athletes",
+    "raw": "| | `/api/athletes` | GET / POST | Fetch or register athlete profiles |"
+  },
+  {
+    "line": 51,
+    "method": "PUT",
+    "route": "/api/athletes/:id",
+    "raw": "| | `/api/athletes/:id` | PUT / DELETE | Update or delete athlete profile |"
+  },
+  {
+    "line": 51,
+    "method": "DELETE",
+    "route": "/api/athletes/:id",
+    "raw": "| | `/api/athletes/:id` | PUT / DELETE | Update or delete athlete profile |"
+  },
+  {
+    "line": 52,
+    "method": "GET",
+    "route": "/api/coaches",
+    "raw": "| | `/api/coaches` | GET / POST | Fetch or register coach profiles |"
+  },
+  {
+    "line": 52,
+    "method": "POST",
+    "route": "/api/coaches",
+    "raw": "| | `/api/coaches` | GET / POST | Fetch or register coach profiles |"
+  },
+  {
+    "line": 53,
+    "method": "DELETE",
+    "route": "/api/coaches/:id",
+    "raw": "| | `/api/coaches/:id` | DELETE | Delete coach profile |"
+  },
+  {
+    "line": 54,
+    "method": "GET",
     "route": "/api/dashboard/summary",
     "raw": "| **Module 3** | `/api/dashboard/summary` | GET | Squad performance summary & baseline stats |"
   },
   {
-    "line": 51,
+    "line": 55,
     "method": "GET",
     "route": "/api/dashboard/flags",
     "raw": "| | `/api/dashboard/flags` | GET | List flagged at-risk players |"
   },
   {
-    "line": 52,
+    "line": 56,
     "method": "GET",
     "route": "/api/dashboard/events",
     "raw": "| | `/api/dashboard/events` | GET / POST | List or create training & match events |"
   },
   {
-    "line": 52,
+    "line": 56,
     "method": "POST",
     "route": "/api/dashboard/events",
     "raw": "| | `/api/dashboard/events` | GET / POST | List or create training & match events |"
   },
   {
-    "line": 53,
+    "line": 57,
     "method": "POST",
     "route": "/api/dashboard/events/:id",
     "raw": "| | `/api/dashboard/events/:id` | POST | Update details for existing scheduled event |"
   },
   {
-    "line": 54,
+    "line": 58,
     "method": "DELETE",
-    "route": "/api/dashboard/events/:id/delete",
-    "raw": "| | `/api/dashboard/events/:id/delete` | DELETE / POST | Delete scheduled event |"
+    "route": "/api/dashboard/events/:id",
+    "raw": "| | `/api/dashboard/events/:id` | DELETE | Delete scheduled event |"
   },
   {
-    "line": 54,
+    "line": 59,
     "method": "POST",
     "route": "/api/dashboard/events/:id/delete",
-    "raw": "| | `/api/dashboard/events/:id/delete` | DELETE / POST | Delete scheduled event |"
+    "raw": "| | `/api/dashboard/events/:id/delete` | POST | Delete scheduled event (POST endpoint) |"
   },
   {
-    "line": 55,
+    "line": 60,
     "method": "GET",
     "route": "/api/dashboard/actions",
     "raw": "| | `/api/dashboard/actions` | GET / POST | List or create player action plan items |"
   },
   {
-    "line": 55,
+    "line": 60,
     "method": "POST",
     "route": "/api/dashboard/actions",
     "raw": "| | `/api/dashboard/actions` | GET / POST | List or create player action plan items |"
   },
   {
-    "line": 56,
+    "line": 61,
     "method": "POST",
     "route": "/api/dashboard/actions/:id/toggle",
     "raw": "| | `/api/dashboard/actions/:id/toggle` | POST | Toggle action plan completion state (24h purge) |"
   },
   {
-    "line": 57,
+    "line": 62,
     "method": "POST",
     "route": "/api/dashboard/actions/:id/delete",
     "raw": "| | `/api/dashboard/actions/:id/delete` | POST | Delete action plan item |"
   },
   {
-    "line": 58,
+    "line": 63,
     "method": "GET",
     "route": "/api/dashboard/rising-stars",
     "raw": "| | `/api/dashboard/rising-stars` | GET | Retrieve top-performing rising star athletes |"
   },
   {
-    "line": 59,
+    "line": 64,
     "method": "POST",
     "route": "/api/dashboard/checkin",
     "raw": "| | `/api/dashboard/checkin` | POST | Log attendance check-in for practice/match |"
   },
   {
-    "line": 60,
+    "line": 65,
     "method": "GET",
     "route": "/api/dashboard/events/:id/attendance",
     "raw": "| | `/api/dashboard/events/:id/attendance` | GET | Retrieve attendance record for an event |"
   },
   {
-    "line": 61,
+    "line": 66,
     "method": "POST",
     "route": "/api/match-stats",
     "raw": "| | `/api/match-stats` | POST | Log match stats & execute Auto-Score engine |"
   },
   {
-    "line": 62,
+    "line": 67,
     "method": "POST",
     "route": "/api/player/evaluation-baseline",
     "raw": "| **Module 4** | `/api/player/evaluation-baseline` | POST | Record physical testing evaluation baseline |"
   },
   {
-    "line": 63,
+    "line": 68,
     "method": "GET",
     "route": "/api/test-metrics",
-    "raw": "| | `/api/test-metrics` | GET / POST / DELETE | List, create, or delete custom test metrics |"
+    "raw": "| | `/api/test-metrics` | GET / POST | List or create custom test metrics |"
   },
   {
-    "line": 63,
+    "line": 68,
     "method": "POST",
     "route": "/api/test-metrics",
-    "raw": "| | `/api/test-metrics` | GET / POST / DELETE | List, create, or delete custom test metrics |"
+    "raw": "| | `/api/test-metrics` | GET / POST | List or create custom test metrics |"
   },
   {
-    "line": 63,
+    "line": 69,
     "method": "DELETE",
-    "route": "/api/test-metrics",
-    "raw": "| | `/api/test-metrics` | GET / POST / DELETE | List, create, or delete custom test metrics |"
+    "route": "/api/test-metrics/:id",
+    "raw": "| | `/api/test-metrics/:id` | DELETE | Delete custom test metric |"
   },
   {
-    "line": 64,
+    "line": 70,
     "method": "POST",
     "route": "/api/test-logs",
-    "raw": "| | `/api/test-logs` | POST | Log single athlete test score metric (alias: `/api/dashboard/test-logs`) |"
+    "raw": "| | `/api/test-logs` | POST | Log single athlete test score metric |"
   },
   {
-    "line": 65,
+    "line": 71,
+    "method": "POST",
+    "route": "/api/dashboard/test-logs",
+    "raw": "| | `/api/dashboard/test-logs` | POST | Log single athlete test score metric (alias) |"
+  },
+  {
+    "line": 72,
     "method": "POST",
     "route": "/api/test-logs/batch",
-    "raw": "| | `/api/test-logs/batch` | POST | Batch log athlete test score metrics (alias: `/api/dashboard/test-logs/batch`) |"
+    "raw": "| | `/api/test-logs/batch` | POST | Batch log athlete test score metrics |"
   },
   {
-    "line": 66,
+    "line": 73,
+    "method": "POST",
+    "route": "/api/dashboard/test-logs/batch",
+    "raw": "| | `/api/dashboard/test-logs/batch` | POST | Batch log athlete test score metrics (alias) |"
+  },
+  {
+    "line": 74,
+    "method": "GET",
+    "route": "/api/test-results",
+    "raw": "| | `/api/test-results` | GET / POST | Fetch or log raw test result logs |"
+  },
+  {
+    "line": 74,
+    "method": "POST",
+    "route": "/api/test-results",
+    "raw": "| | `/api/test-results` | GET / POST | Fetch or log raw test result logs |"
+  },
+  {
+    "line": 75,
     "method": "GET",
     "route": "/api/student-portal",
     "raw": "| **Module 5** | `/api/student-portal` | GET | 360-degree athlete portal dataset |"
   },
   {
-    "line": 67,
+    "line": 76,
     "method": "POST",
     "route": "/api/student-portal/profile",
     "raw": "| | `/api/student-portal/profile` | POST | Update student self-managed profile info |"
   },
   {
-    "line": 68,
+    "line": 77,
     "method": "POST",
     "route": "/api/parent/link-request",
     "raw": "| | `/api/parent/link-request` | POST | Initiate parent-child account link request |"
   },
   {
-    "line": 69,
+    "line": 78,
     "method": "GET",
     "route": "/api/player/link-requests",
     "raw": "| | `/api/player/link-requests` | GET | List pending parent link requests for athlete |"
   },
   {
-    "line": 70,
+    "line": 79,
     "method": "POST",
     "route": "/api/player/link-requests/:id/respond",
     "raw": "| | `/api/player/link-requests/:id/respond` | POST | Accept or decline parent link request |"
   },
   {
-    "line": 71,
+    "line": 80,
     "method": "GET",
     "route": "/api/parent/children",
     "raw": "| | `/api/parent/children` | GET | List linked child profiles for parent |"
   },
   {
-    "line": 72,
+    "line": 81,
     "method": "POST",
     "route": "/api/upload",
     "raw": "| **Module 6** | `/api/upload` | POST | Upload media / document asset to R2 storage |"
   },
   {
-    "line": 73,
+    "line": 82,
     "method": "GET",
     "route": "/api/admin/sports-config",
     "raw": "| | `/api/admin/sports-config` | GET | Retrieve school sports configuration |"
   },
   {
-    "line": 74,
+    "line": 83,
     "method": "POST",
     "route": "/api/admin/bulk-upload",
     "raw": "| | `/api/admin/bulk-upload` | POST | Ingest bulk stats/grades via CSV or JSON array |"
   },
   {
-    "line": 75,
+    "line": 84,
     "method": "POST",
     "route": "/api/sms/send-verification",
-    "raw": "| | `/api/sms/send-verification` | POST | Dispatch SMS OTP verification code (alias: `/api/coach/send-sms-otp`) |"
+    "raw": "| | `/api/sms/send-verification` | POST | Dispatch SMS OTP verification code |"
   },
   {
-    "line": 76,
+    "line": 85,
+    "method": "POST",
+    "route": "/api/coach/send-sms-otp",
+    "raw": "| | `/api/coach/send-sms-otp` | POST | Dispatch SMS OTP verification code (alias) |"
+  },
+  {
+    "line": 86,
     "method": "POST",
     "route": "/api/sms/verify-code",
-    "raw": "| | `/api/sms/verify-code` | POST | Verify SMS OTP code (alias: `/api/coach/verify-sms-otp`) |"
+    "raw": "| | `/api/sms/verify-code` | POST | Verify SMS OTP code |"
   },
   {
-    "line": 77,
+    "line": 87,
+    "method": "POST",
+    "route": "/api/coach/verify-sms-otp",
+    "raw": "| | `/api/coach/verify-sms-otp` | POST | Verify SMS OTP code (alias) |"
+  },
+  {
+    "line": 88,
     "method": "GET",
     "route": "/api/notifications",
     "raw": "| **Module 7** | `/api/notifications` | GET | Retrieve user notification stream |"
   },
   {
-    "line": 78,
+    "line": 89,
     "method": "POST",
     "route": "/api/notifications/:id/read",
     "raw": "| | `/api/notifications/:id/read` | POST | Mark single notification as read |"
   },
   {
-    "line": 79,
+    "line": 90,
     "method": "POST",
     "route": "/api/notifications/read-all",
     "raw": "| | `/api/notifications/read-all` | POST | Mark all notifications as read |"
   },
   {
-    "line": 80,
+    "line": 91,
     "method": "DELETE",
-    "route": "/api/notifications/:id/delete",
-    "raw": "| | `/api/notifications/:id/delete` | DELETE / POST | Delete notification |"
+    "route": "/api/notifications/:id",
+    "raw": "| | `/api/notifications/:id` | DELETE | Delete notification |"
   },
   {
-    "line": 80,
+    "line": 92,
     "method": "POST",
     "route": "/api/notifications/:id/delete",
-    "raw": "| | `/api/notifications/:id/delete` | DELETE / POST | Delete notification |"
+    "raw": "| | `/api/notifications/:id/delete` | POST | Delete notification (POST endpoint) |"
   },
   {
-    "line": 81,
+    "line": 93,
     "method": "POST",
     "route": "/api/notifications/send",
     "raw": "| | `/api/notifications/send` | POST | Dispatch notification to target user or group |"
