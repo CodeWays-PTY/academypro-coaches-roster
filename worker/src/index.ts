@@ -1664,14 +1664,23 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
 // Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 const handleGetEvents = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const reqSchoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId');
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const eventTypeParam = c.req.query('event_type') || c.req.query('eventType');
   const db = getDB(c);
 
-  const sId = String(schoolId);
-  let query = 'SELECT * FROM events WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?)';
-  let params: any[] = [sId, sId];
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
+  let query = 'SELECT * FROM events WHERE 1=1';
+  let params: any[] = [];
+
+  if (reqSchoolId && reqSchoolId !== 'ALL' && reqSchoolId !== 'all') {
+    const sId = String(reqSchoolId);
+    query += ' AND (school_id = ? OR CAST(school_id AS TEXT) = ? OR school_id = "OVK" OR school_id = "1" OR school_id IS NULL)';
+    params.push(sId, sId);
+  }
 
   if (eventTypeParam) {
     const etLower = eventTypeParam.toLowerCase().trim();

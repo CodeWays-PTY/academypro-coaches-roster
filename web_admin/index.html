@@ -963,6 +963,15 @@
             });
             const data = await res.json();
             if (res.ok && data.success) {
+              const savedEvent = data.data || created;
+              const existingIdx = (this.events || []).findIndex(e => e.id === savedEvent.id);
+              if (existingIdx >= 0) {
+                this.events[existingIdx] = savedEvent;
+              } else {
+                this.events = [savedEvent, ...(this.events || [])];
+              }
+              this.eventSubTab = 'upcoming';
+              this.eventTimeScope = 'upcoming';
               this.triggerToast('Event successfully created and saved to database!', 'success');
               await this.fetchEventsFromApi(true);
             } else {
