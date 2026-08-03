@@ -380,8 +380,8 @@
         showDeleteConfirm: false,
         athleteToDelete: null,
 
-        newAthlete: { name: '', age: '', position: '', team: '', status: 'Active', email: '', phone: '' },
-        editAthleteData: { id: '', name: '', age: '', position: '', secondaryPosition: '', team: '', status: 'Active', email: '' },
+        newAthlete: { name: '', age: '', position: '', team: '', status: '', email: '', phone: '' },
+        editAthleteData: { id: '', name: '', age: '', position: '', secondaryPosition: '', team: '', status: '', email: '' },
 
         async init() {
           this.purgeLegacyDummyData();
@@ -464,7 +464,7 @@
                   team: a.team || a.schoolName || '',
                   position: a.position || '',
                   secondaryPosition: a.secondaryPosition || '',
-                  status: a.status || 'Active',
+                  status: a.status || '',
                   attendance: a.attendance || 100,
                   age: a.age || null
                 }));
@@ -1344,7 +1344,7 @@
 
         // Students CRUD
         openAddAthlete() {
-          this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: 'Active', email: '', phone: '' };
+          this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: '', email: '', phone: '' };
           this.showAddModal = true;
         },
 
@@ -1359,7 +1359,7 @@
             age: this.newAthlete.age ? parseInt(this.newAthlete.age) : null,
             position: (this.newAthlete.position || '').trim(),
             team: this.newAthlete.team || this.currentSquad || '',
-            status: 'Active',
+            status: (this.newAthlete.status || '').trim(),
             email: (this.newAthlete.email || '').toLowerCase().trim(),
             phone: (this.newAthlete.phone || '').trim()
           };
@@ -1376,7 +1376,7 @@
               this.athletes.unshift(athData);
               this.saveAthletesToStorage();
               this.showAddModal = false;
-              this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: 'Active', email: '', phone: '' };
+              this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: '', email: '', phone: '' };
               this.triggerToast(`Student Athlete ${athData.name} registered!`, 'success');
             } else {
               this.triggerToast(data.message || data.error || 'Failed to register athlete on server', 'error');
@@ -1395,7 +1395,7 @@
             position: athlete.position || '',
             secondaryPosition: athlete.secondaryPosition || '',
             team: athlete.team || '',
-            status: athlete.status || 'Active',
+            status: athlete.status || '',
             email: athlete.email || ''
           };
           this.showEditModal = true;
@@ -1419,7 +1419,7 @@
             age: this.editAthleteData.age ? parseInt(this.editAthleteData.age) : null,
             position: (this.editAthleteData.position || '').trim(),
             secondaryPosition: (this.editAthleteData.secondaryPosition || '').trim(),
-            status: this.editAthleteData.status || 'Active',
+            status: (this.editAthleteData.status || '').trim(),
             email: (this.editAthleteData.email || '').toLowerCase().trim()
           };
 
@@ -2318,7 +2318,7 @@
                         <span class="font-label-sm text-primary text-[11px] font-bold" x-text="getAthleteCompletionPercent(athlete.id) + '%'"></span>
                       </div>
                     </td>
-                    <td class="px-lg py-3 text-right font-label-md text-xs text-outline font-semibold" x-text="athlete.status || 'Active'"></td>
+                    <td class="px-lg py-3 text-right font-label-md text-xs text-outline font-semibold" x-text="athlete.status || '--'"></td>
                   </tr>
                 </template>
 
@@ -2733,7 +2733,7 @@
             <label class="block text-xs font-bold text-outline mb-1">Status</label>
             <div class="relative" x-data="{ open: false }" @click.outside="open = false">
               <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between">
-                <span x-text="editAthleteData.status || 'Active'"></span>
+                <span x-text="editAthleteData.status || 'Select Status'"></span>
                 <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
               </button>
               <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
