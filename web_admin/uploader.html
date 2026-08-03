@@ -163,6 +163,7 @@
                         const json = await res.json();
                         if (json.success) {
                             this.dbPlayers = json.data;
+                            this.players = json.data || [];
                         } else {
                             this.showToast(json.message || 'Failed to load roster', 'error');
                         }

@@ -1048,8 +1048,14 @@
             const res = await fetch(`${this.apiBaseUrl}/api/checkins?eventId=${encodeURIComponent(eventId)}`);
             if (res.ok) {
               const data = await res.json();
-              if (data.success && Array.isArray(data.data)) {
-                this.auditCheckins = data.data;
+              if (data.success) {
+                if (Array.isArray(data.data)) {
+                  this.auditCheckins = data.data;
+                } else if (data.data && Array.isArray(data.data.checkedInPlayerIds)) {
+                  this.auditCheckins = data.data.checkedInPlayerIds.map(id => ({ athleteId: id, eventId }));
+                } else if (Array.isArray(data.checkedInPlayerIds)) {
+                  this.auditCheckins = data.checkedInPlayerIds.map(id => ({ athleteId: id, eventId }));
+                }
                 return;
               }
             }
@@ -1433,7 +1439,8 @@
                 position: updatedItem.position,
                 secondaryPosition: updatedItem.secondaryPosition,
                 status: updatedItem.status,
-                email: updatedItem.email
+                email: updatedItem.email,
+                team: updatedItem.team
               })
             });
             const data = await res.json().catch(() => ({}));
