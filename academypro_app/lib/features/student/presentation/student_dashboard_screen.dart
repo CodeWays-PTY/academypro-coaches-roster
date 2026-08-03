@@ -1656,7 +1656,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 ),
                 SizedBox(height: 8.0),
                 Text(
-                  'Evaluation notes, performance guidance, and tactical advice from your coaching staff will appear here as reviews are logged in D1.',
+                  'Evaluation notes, performance guidance, and tactical advice from your coaching staff will appear here as reviews are logged.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
                 ),

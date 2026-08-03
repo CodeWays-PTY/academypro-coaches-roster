@@ -361,7 +361,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
         AppToast.showError(
           context,
           title: 'Event Save Failed',
-          message: 'Failed to save event to Cloudflare D1. Please verify all required fields and try again.',
+          message: 'Failed to save event. Please verify all required fields and try again.',
         );
       }
     }

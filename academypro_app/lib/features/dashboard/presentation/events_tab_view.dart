@@ -103,11 +103,11 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                           HapticFeedback.mediumImpact();
                           await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);
                           if (mounted) {
-                            AppToast.showSuccess(context, title: 'Refreshed', message: 'Refreshed latest events from D1 DB!');
+                            AppToast.showSuccess(context, title: 'Refreshed', message: 'Latest events updated!');
                           }
                         },
                         icon: const Icon(Icons.sync, color: Color(0xFF003EC7), size: 20.0),
-                        tooltip: 'Refresh Events from D1 Database',
+                        tooltip: 'Refresh Events',
                         style: IconButton.styleFrom(
                           backgroundColor: const Color(0xFFEFF4FF),
                           padding: const EdgeInsets.all(10.0),

@@ -1769,7 +1769,7 @@ app.post('/api/dashboard/events', async (c) => {
     }, 201);
   } catch (err: any) {
     console.error(`[Observer Error] Failed to create event '${eventId}':`, err);
-    return c.json({ success: false, message: 'Failed to create event in D1 database', error: err.message }, 500);
+    return c.json({ success: false, message: 'Failed to create event', error: err.message }, 500);
   }
 });
 
