@@ -3412,6 +3412,120 @@ app.post('/api/squads/:squadId/players/remove', async (c) => {
   }
 });
 
+// Route: Squad Members (Aliases for /api/squads/members and /api/dashboard/squads/members)
+const handleAddSquadMember = async (c: any) => {
+  const db = getDB(c);
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch (_) {}
+
+  const squadId = (body.squadId || body.squad_id || body.squadName || '').toString().trim();
+  const playerId = (body.athleteId || body.athlete_id || body.playerId || body.player_id || '').toString().trim();
+
+  if (!squadId || !playerId) {
+    return c.json({ success: false, message: 'squadId and athleteId/playerId are required' }, 400);
+  }
+
+  await ensureSquadsTables(db);
+
+  try {
+    let squad: any = null;
+    try {
+      squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
+    } catch (_) {}
+
+    const squadKey = squad ? squad.id : squadId;
+    const squadName = squad ? squad.name : (body.squadName || squadId);
+
+    await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squadKey, playerId).run();
+    if (squad && squad.code) {
+      await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(squad.code, playerId).run();
+    }
+
+    await db.prepare(`
+      UPDATE players
+      SET team = ?
+      WHERE id = ?
+    `).bind(squadName, playerId).run();
+
+    console.log(`[Observer Log] Added athlete '${playerId}' to squad '${squadName}' (${squadKey})`);
+
+    return c.json({
+      success: true,
+      message: 'Athlete added to squad successfully',
+      data: { squadId: squadKey, squadName, athleteId: playerId }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to add athlete to squad', error: err.message }, 500);
+  }
+};
+
+const handleRemoveSquadMember = async (c: any) => {
+  const db = getDB(c);
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch (_) {}
+
+  const squadId = (body.squadId || body.squad_id || body.squadName || c.req.query('squadId') || c.req.query('squad_id') || '').toString().trim();
+  const playerId = (body.athleteId || body.athlete_id || body.playerId || body.player_id || c.req.query('athleteId') || c.req.query('playerId') || '').toString().trim();
+
+  if (!playerId) {
+    return c.json({ success: false, message: 'athleteId/playerId is required' }, 400);
+  }
+
+  await ensureSquadsTables(db);
+
+  try {
+    let squad: any = null;
+    if (squadId) {
+      try {
+        squad = await db.prepare('SELECT id, code, name FROM squads WHERE id = ? OR code = ? OR name = ?').bind(squadId, squadId, squadId).first();
+      } catch (_) {}
+    }
+
+    if (squadId) {
+      const targetSquadKeys = Array.from(new Set([squadId, ...(squad ? [squad.id, squad.code, squad.name] : [])]));
+      const ph = targetSquadKeys.map(() => '?').join(',');
+      await db.prepare(`DELETE FROM squad_players WHERE player_id = ? AND squad_id IN (${ph})`).bind(playerId, ...targetSquadKeys).run();
+    } else {
+      await db.prepare('DELETE FROM squad_players WHERE player_id = ?').bind(playerId).run();
+    }
+
+    await db.prepare(`
+      UPDATE players
+      SET team = 'Unassigned'
+      WHERE id = ?
+    `).bind(playerId).run();
+
+    console.log(`[Observer Log] Removed athlete '${playerId}' from squad '${squadId || 'all'}'`);
+
+    return c.json({
+      success: true,
+      message: 'Athlete removed from squad successfully',
+      data: { squadId, athleteId: playerId }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to remove athlete from squad', error: err.message }, 500);
+  }
+};
+
+app.post('/api/squads/members', handleAddSquadMember);
+app.post('/api/dashboard/squads/members', handleAddSquadMember);
+app.delete('/api/squads/members', handleRemoveSquadMember);
+app.delete('/api/dashboard/squads/members', handleRemoveSquadMember);
+app.post('/api/squads/members/delete', handleRemoveSquadMember);
+app.post('/api/dashboard/squads/members/delete', handleRemoveSquadMember);
+
 // Route: Image Upload (R2 / Base64 Storage)
 app.post('/api/upload', async (c) => {
   try {
