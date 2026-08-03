@@ -1028,8 +1028,8 @@ app.get('/api/squads', async (c) => {
   const squads = results.map((s: any) => ({
     id: s.id,
     name: s.name,
-    ageGroup: s.code,
-    code: s.code,
+    ageGroup: s.code || s.age_group || 'U15',
+    code: s.code || s.age_group || 'U15',
     description: s.description || '',
     playerCount: s.playerCount || 0,
     createdAt: s.created_at
