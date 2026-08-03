@@ -2771,9 +2771,30 @@ app.delete('/api/test-metrics/:id', async (c) => {
   }
 });
 
+// Route Aliases for Batch Test Logs
+app.post('/api/dashboard/test-logs/batch', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/test-logs/batch';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.post('/api/dashboard/test-logs', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/test-logs/batch';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.post('/api/test-logs', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/test-logs/batch';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+
 // Route: Batch Log Test Scores
 app.post('/api/test-logs/batch', async (c) => {
   const db = getDB(c);
+  if (!db) {
+    return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  }
+
   let body: any;
   try {
     body = await c.req.json();
@@ -2786,32 +2807,71 @@ app.post('/api/test-logs/batch', async (c) => {
     return c.json({ success: false, message: 'metricId, testDate, and logs array are required' }, 400);
   }
 
-  let savedCount = 0;
-  for (const item of logs) {
-    if (!item.playerId || item.score === undefined || item.score === null) continue;
-    try {
-      await db.prepare(`
-        INSERT INTO player_test_logs (player_id, metric_id, test_date, session_name, score, notes)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(player_id, metric_id, test_date) DO UPDATE SET
-          score = excluded.score,
-          session_name = excluded.session_name,
-          notes = excluded.notes
-      `).bind(
-        item.playerId, metricId, testDate, sessionName || 'Testing Evaluation',
-        parseFloat(item.score.toString()), item.notes || null
-      ).run();
-      savedCount++;
-    } catch (e) {
-      console.warn(`Failed test log for player ${item.playerId}:`, e);
-    }
-  }
+  try {
+    // Ensure player_test_logs table schema exists
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS player_test_logs (
+        id TEXT PRIMARY KEY,
+        player_id TEXT NOT NULL,
+        metric_id TEXT NOT NULL,
+        score REAL NOT NULL,
+        test_date TEXT NOT NULL,
+        session_name TEXT DEFAULT 'Evaluation',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run().catch(() => {});
 
-  return c.json({
-    success: true,
-    message: `Saved ${savedCount} test logs successfully`,
-    data: { savedCount, metricId, testDate }
-  });
+    await db.prepare('ALTER TABLE player_test_logs ADD COLUMN notes TEXT').run().catch(() => {});
+    await db.prepare('ALTER TABLE player_test_logs ADD COLUMN session_name TEXT').run().catch(() => {});
+
+    let savedCount = 0;
+    for (const item of logs) {
+      if (!item.playerId || item.score === undefined || item.score === null) continue;
+      const scoreVal = parseFloat(item.score.toString());
+      if (isNaN(scoreVal)) continue;
+
+      const targetMetricId = item.metricId || metricId;
+      if (!targetMetricId) continue;
+
+      const fallbackId = `ptl_${item.playerId}_${targetMetricId}_${testDate}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      try {
+        // Check if log already exists for player, metric and test_date
+        const existing = await db.prepare('SELECT id FROM player_test_logs WHERE player_id = ? AND metric_id = ? AND test_date = ?').bind(item.playerId, targetMetricId, testDate).first();
+        const targetId = existing?.id || item.id || fallbackId;
+
+        await db.prepare(`
+          INSERT INTO player_test_logs (id, player_id, metric_id, score, test_date, session_name, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            score = excluded.score,
+            session_name = excluded.session_name,
+            notes = excluded.notes
+        `).bind(
+          targetId,
+          item.playerId,
+          targetMetricId,
+          scoreVal,
+          testDate,
+          sessionName || 'Evaluation',
+          item.notes || null
+        ).run();
+        savedCount++;
+      } catch (e) {
+        console.warn(`Failed test log insert for player ${item.playerId}:`, e);
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: `Saved ${savedCount} test logs successfully`,
+      data: { savedCount, metricId, testDate }
+    });
+  } catch (err: any) {
+    console.error('[Observer Error] Failed to batch log test scores:', err);
+    return c.json({ success: false, message: 'Failed to save test scores', error: err.message }, 500);
+  }
 });
 
 
