@@ -156,41 +156,13 @@
                     try {
                         this.loading = true;
                         const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
-                        let urlToken = new URLSearchParams(window.location.search).get('token') || new URLSearchParams(window.location.search).get('jwt') || new URLSearchParams(window.location.search).get('access_token') || '';
-                        if (urlToken) {
-                            localStorage.setItem('token', urlToken);
-                        }
-                        let token = urlToken || localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
-                        if (!token) {
-                            try {
-                                const loginRes = await fetch(`${apiBase}/api/auth/quick-login`, { method: 'POST' });
-                                const loginJson = await loginRes.json();
-                                if (loginJson.success && loginJson.data?.token) {
-                                    token = loginJson.data.token;
-                                    localStorage.setItem('token', token);
-                                    if (loginJson.data.user?.schoolId) {
-                                        localStorage.setItem('school_id', loginJson.data.user.schoolId);
-                                    }
-                                }
-                            } catch (_) {}
-                        }
-                        let schoolId = new URLSearchParams(window.location.search).get('school_id') || new URLSearchParams(window.location.search).get('schoolId') || localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || '';
-                        if (!schoolId && token) {
-                            try {
-                                const parts = token.split('.');
-                                if (parts.length === 3) {
-                                    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-                                    schoolId = payload.schoolId || payload.school_id || '';
-                                }
-                            } catch (e) {
-                                // Ignore JWT parse errors
-                            }
-                        }
-                        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                        const res = await fetch(`${apiBase}/api/admin/all-players?school_id=${encodeURIComponent(schoolId)}`, { headers });
+                        const schoolId = new URLSearchParams(window.location.search).get('school_id') || new URLSearchParams(window.location.search).get('schoolId') || localStorage.getItem('school_id') || '1';
+
+                        // 1. Fetch Roster Players
+                        const res = await fetch(`${apiBase}/api/admin/all-players?school_id=${encodeURIComponent(schoolId)}`);
                         const json = await res.json();
                         if (json.success) {
-                            this.players = json.data;
+                            this.dbPlayers = json.data;
                         } else {
                             this.showToast(json.message || 'Failed to load roster', 'error');
                         }
