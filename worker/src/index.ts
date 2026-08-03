@@ -454,16 +454,15 @@ app.post('/api/auth/profile', async (c) => {
   } catch (_) {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
-  const { id, email, firstName, first_name, lastName, last_name, phone, avatar_url, avatarUrl, is_first_time, isFirstTime } = body;
-
-  const userEmail = (email || '').trim().toLowerCase();
+  const jwtPayload = c.get('jwtPayload') as any;
+  let userId = id || jwtPayload?.sub || '';
+  const userEmail = (email || jwtPayload?.email || '').trim().toLowerCase();
   const fName = firstName || first_name;
   const lName = lastName || last_name;
   const avatar = avatar_url || avatarUrl;
 
-  let userId = id || '';
   const authHeader = c.req.header('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (!userId && authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const token = authHeader.substring(7);
       const payload = await verify(token, getSecret(c), 'HS256') as any;

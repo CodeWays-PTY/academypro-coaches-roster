@@ -174,6 +174,17 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
   void _nextPage() {
     if (_step1FormKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
+      final firstName = _firstNameController.text.trim();
+      final lastName = _lastNameController.text.trim();
+      if (firstName.isNotEmpty && lastName.isNotEmpty) {
+        ref.read(authProvider.notifier).updateUserProfile({
+          'first_name': firstName,
+          'last_name': lastName,
+          'firstName': firstName,
+          'lastName': lastName,
+          'name': '$firstName $lastName'.trim(),
+        });
+      }
       _pageController.animateToPage(
         1,
         duration: const Duration(milliseconds: 300),
