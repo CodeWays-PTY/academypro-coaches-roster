@@ -785,9 +785,9 @@ app.get('/api/coaches', async (c) => {
   const db = getDB(c);
   try {
     const sId = String(schoolId);
-    let { results } = await db.prepare("SELECT id, first_name, last_name, email, role FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?) AND (role IN ('Coach', 'SuperAdmin', 'SchoolAdmin', 'Head Coach', 'Assistant Coach') OR LOWER(role) LIKE '%coach%' OR LOWER(role) LIKE '%admin%') ORDER BY first_name ASC").bind(sId, sId).all();
+    let { results } = await db.prepare("SELECT id, first_name, last_name, email, role FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?) ORDER BY first_name ASC").bind(sId, sId).all();
     if (!results || results.length === 0) {
-      const allRes = await db.prepare("SELECT id, first_name, last_name, email, role FROM users WHERE (role IN ('Coach', 'SuperAdmin', 'SchoolAdmin', 'Head Coach', 'Assistant Coach') OR LOWER(role) LIKE '%coach%' OR LOWER(role) LIKE '%admin%') ORDER BY first_name ASC").all();
+      const allRes = await db.prepare("SELECT id, first_name, last_name, email, role FROM users ORDER BY first_name ASC").all();
       results = allRes.results || [];
     }
     return c.json({
