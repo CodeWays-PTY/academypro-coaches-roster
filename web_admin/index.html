@@ -1022,9 +1022,8 @@
             const team = (e.team || '').trim().toLowerCase();
             const ageGroup = (e.ageGroup || '').trim().toLowerCase();
             const type = (e.eventType || '').trim().toLowerCase();
-            const title = (e.title || '').trim().toLowerCase();
 
-            const isTestCategory = type.includes('test') || title.includes('test');
+            const isTestCategory = type === 'fitness test' || type === 'test day' || type === 'fitness' || type.includes('fitness');
             const belongsToSquad = team === sq || team.includes(sq) || sq.includes(team) || ageGroup === sq;
 
             return isTestCategory && belongsToSquad;
