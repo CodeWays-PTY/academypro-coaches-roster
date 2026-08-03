@@ -86,7 +86,7 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
         final rawEvents = (eventsRes.data['data'] as List? ?? []).map((json) {
           return CoachEvent(
             id: json['id'] ?? '',
-            schoolId: json['school_id'] ?? json['schoolId'] ?? 'OVK',
+            schoolId: json['school_id'] ?? json['schoolId'] ?? 1,
             title: json['title'] ?? 'Event',
             eventType: json['event_type'] ?? json['eventType'] ?? 'General',
             startTime: json['start_time'] ?? json['startTime'] ?? '09:00',

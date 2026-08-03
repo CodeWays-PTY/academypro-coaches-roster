@@ -636,9 +636,11 @@ app.use('/api/notifications', enforceJwtAuth);
 
 // Web Admin Endpoints & Aliases
 app.get('/api/athletes', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || 1;
   const db = getDB(c);
   try {
-    const { results } = await db.prepare('SELECT * FROM players WHERE school_id = 1 OR school_id = "OVK" ORDER BY first_name ASC').all();
+    const { results } = await db.prepare('SELECT * FROM players WHERE school_id = ? ORDER BY first_name ASC').bind(schoolId).all();
     return c.json({
       success: true,
       data: (results || []).map((p: any) => ({
@@ -657,6 +659,7 @@ app.get('/api/athletes', async (c) => {
 });
 
 app.post('/api/athletes', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
   try {
     const body = await c.req.json();
@@ -664,9 +667,9 @@ app.post('/api/athletes', async (c) => {
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || 'Student';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
-    const targetSchool = schoolId || 1;
+    const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 1;
     const assignedTeam = team || ageGroup || 'U15 Squad';
-    const playerId = body.id || `OVK-${Date.now()}`;
+    const playerId = body.id || generatePrimaryKey('plr');
 
     await db.prepare(`
       INSERT INTO players (id, school_id, first_name, last_name, email, age_group, position, team, status)
@@ -744,9 +747,11 @@ app.post('/api/test-results', async (c) => {
 });
 
 app.get('/api/coaches', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || 1;
   const db = getDB(c);
   try {
-    const { results } = await db.prepare('SELECT id, first_name, last_name, email, role FROM users WHERE (school_id = 1 OR school_id = "OVK") AND role IN ("Coach", "SuperAdmin", "SchoolAdmin")').all();
+    const { results } = await db.prepare('SELECT id, first_name, last_name, email, role FROM users WHERE school_id = ? AND role IN ("Coach", "SuperAdmin", "SchoolAdmin")').bind(schoolId).all();
     return c.json({
       success: true,
       data: (results || []).map((u: any) => ({
@@ -762,6 +767,7 @@ app.get('/api/coaches', async (c) => {
 });
 
 app.post('/api/coaches', async (c) => {
+  const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
   try {
     const body = await c.req.json();
@@ -774,7 +780,7 @@ app.post('/api/coaches', async (c) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const targetSchool = schoolId || 1;
+    const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 1;
     const userId = body.id || `cch_${Date.now()}`;
 
     await db.prepare(`
@@ -915,7 +921,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     try {
       if (ageGroupFilter && ageGroupFilter !== 'All' && ageGroupFilter !== 'None') {
         const { results: squadMatch } = await db.prepare(
-          'SELECT id FROM players WHERE (school_id = ? OR school_id = 1 OR school_id = "OVK") AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?))'
+          'SELECT id FROM players WHERE school_id = ? AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?))'
         ).bind(targetSchool, ageGroupFilter, ageGroupFilter).all();
         for (const r of (squadMatch || [])) {
           if (r.id) playerIdsSet.add(r.id);
@@ -925,7 +931,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
       // If still 0, return all active players for the school so roster is never empty
       if (playerIdsSet.size === 0) {
         const { results: allPlayers } = await db.prepare(
-          'SELECT id FROM players WHERE (school_id = ? OR school_id = 1 OR school_id = "OVK")'
+          'SELECT id FROM players WHERE school_id = ?'
         ).bind(targetSchool).all();
         for (const r of (allPlayers || [])) {
           if (r.id) playerIdsSet.add(r.id);
