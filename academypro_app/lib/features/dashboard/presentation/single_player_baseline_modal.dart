@@ -8,17 +8,20 @@ import '../controllers/dashboard_controller.dart';
 class SinglePlayerBaselineModal extends ConsumerStatefulWidget {
   final String playerId;
   final String playerName;
+  final CoachEvent? initialEvent;
 
   const SinglePlayerBaselineModal({
     Key? key,
     required this.playerId,
     required this.playerName,
+    this.initialEvent,
   }) : super(key: key);
 
   static Future<void> show(
     BuildContext context, {
     required String playerId,
     required String playerName,
+    CoachEvent? initialEvent,
   }) async {
     await showModalBottomSheet(
       context: context,
@@ -28,6 +31,7 @@ class SinglePlayerBaselineModal extends ConsumerStatefulWidget {
       builder: (context) => SinglePlayerBaselineModal(
         playerId: playerId,
         playerName: playerName,
+        initialEvent: initialEvent,
       ),
     );
   }
@@ -111,7 +115,15 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
           return b.startTime.compareTo(a.startTime);
         });
 
-        if (_testEvents.isNotEmpty) {
+        // If launched from a specific event, ensure initialEvent is present & auto-selected
+        if (widget.initialEvent != null) {
+          _selectedEventId = widget.initialEvent!.id;
+          _sessionController.text = widget.initialEvent!.title;
+          _dateController.text = widget.initialEvent!.date;
+          if (!_testEvents.any((e) => e.id == widget.initialEvent!.id)) {
+            _testEvents.insert(0, widget.initialEvent!);
+          }
+        } else if (_testEvents.isNotEmpty) {
           _selectedEventId = _testEvents.first.id;
           _sessionController.text = _testEvents.first.title;
           _dateController.text = _testEvents.first.date;
@@ -290,10 +302,10 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
               ),
             )
           else ...[
-            // 1. SELECT FITNESS TEST EVENT (Filtered to Test Day, Recent Date First)
-            const Text(
-              'SELECT FITNESS TEST EVENT',
-              style: TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+            // 1. SELECT FITNESS TEST EVENT (Locked when launched from a specific event)
+            Text(
+              widget.initialEvent != null ? 'FITNESS TEST EVENT (LOCKED)' : 'SELECT FITNESS TEST EVENT',
+              style: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
             ),
             const SizedBox(height: 6.0),
             DropdownButtonFormField<String>(
@@ -302,12 +314,17 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
               isExpanded: true,
               borderRadius: BorderRadius.circular(14.0),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.event_available, size: 18.0, color: Color(0xFFD97706)),
+                prefixIcon: Icon(
+                  widget.initialEvent != null ? Icons.lock_clock : Icons.event_available,
+                  size: 18.0,
+                  color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFFD97706),
+                ),
                 filled: true,
-                fillColor: const Color(0xFFF8FAFC),
+                fillColor: widget.initialEvent != null ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFD97706), width: 1.5)),
               ),
               hint: const Text('Select Test Event', style: TextStyle(fontSize: 13.0)),
@@ -323,12 +340,16 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
                         value: evt.id,
                         child: Text(
                           '${evt.title} (${evt.date})',
-                          style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w600,
+                            color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       );
                     }).toList(),
-              onChanged: _onEventSelected,
+              onChanged: widget.initialEvent != null ? null : _onEventSelected,
             ),
             const SizedBox(height: 14.0),
 

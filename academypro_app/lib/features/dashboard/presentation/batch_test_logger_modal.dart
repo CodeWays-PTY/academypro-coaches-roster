@@ -133,8 +133,15 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
           return b.startTime.compareTo(a.startTime);
         });
 
-        // Set selected event ID if not already selected or if invalid
-        if (_selectedEventId == null || !_testEvents.any((e) => e.id == _selectedEventId)) {
+        // If launched from a specific event, ensure initialEvent is present & auto-selected
+        if (widget.initialEvent != null) {
+          _selectedEventId = widget.initialEvent!.id;
+          _sessionController.text = widget.initialEvent!.title;
+          _dateController.text = widget.initialEvent!.date;
+          if (!_testEvents.any((e) => e.id == widget.initialEvent!.id)) {
+            _testEvents.insert(0, widget.initialEvent!);
+          }
+        } else if (_selectedEventId == null || !_testEvents.any((e) => e.id == _selectedEventId)) {
           if (_testEvents.isNotEmpty) {
             _selectedEventId = _testEvents.first.id;
             _sessionController.text = _testEvents.first.title;
@@ -357,7 +364,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
           if (_isLoading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else ...[
-            // 1. SELECT TEAM SQUAD & TEST DAY EVENT (Recent date first)
+            // 1. SELECT TEAM SQUAD & TEST DAY EVENT (Locked when launched from a specific event)
             Row(
               children: [
                 // Squad Selector
@@ -368,13 +375,18 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                     isDense: true,
                     borderRadius: BorderRadius.circular(14.0),
                     decoration: InputDecoration(
-                      labelText: 'Select Squad',
-                      prefixIcon: const Icon(Icons.shield_outlined, size: 18.0, color: Color(0xFF2563EB)),
+                      labelText: widget.initialEvent != null ? 'Squad (Locked)' : 'Select Squad',
+                      prefixIcon: Icon(
+                        widget.initialEvent != null ? Icons.lock_outline : Icons.shield_outlined,
+                        size: 18.0,
+                        color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFF2563EB),
+                      ),
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: widget.initialEvent != null ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
                     ),
                     items: activeSquads.map((sq) {
@@ -383,7 +395,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                         child: Text(sq, style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold)),
                       );
                     }).toList(),
-                    onChanged: _onSquadChanged,
+                    onChanged: widget.initialEvent != null ? null : _onSquadChanged,
                   ),
                 ),
                 const SizedBox(width: 8.0),
@@ -397,13 +409,18 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                     isExpanded: true,
                     borderRadius: BorderRadius.circular(14.0),
                     decoration: InputDecoration(
-                      labelText: 'Fitness Test Event',
-                      prefixIcon: const Icon(Icons.event_available, size: 18.0, color: Color(0xFFD97706)),
+                      labelText: widget.initialEvent != null ? 'Test Event (Locked)' : 'Fitness Test Event',
+                      prefixIcon: Icon(
+                        widget.initialEvent != null ? Icons.lock_clock : Icons.event_available,
+                        size: 18.0,
+                        color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFFD97706),
+                      ),
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: widget.initialEvent != null ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFD97706), width: 1.5)),
                     ),
                     hint: const Text('Select Test Event', style: TextStyle(fontSize: 12.0)),
@@ -419,12 +436,16 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                               value: evt.id,
                               child: Text(
                                 '${evt.title} (${evt.date})',
-                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             );
                           }).toList(),
-                    onChanged: _onEventSelected,
+                    onChanged: widget.initialEvent != null ? null : _onEventSelected,
                   ),
                 ),
               ],
