@@ -840,34 +840,43 @@ app.delete('/api/athletes/:id', async (c) => {
 });
 
 // Route: Get Coaches
-app.get('/api/coaches', async (c) => {
+const handleGetCoaches = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 'OVK';
   const db = getDB(c);
   try {
     const sId = String(schoolId);
-    let { results } = await db.prepare("SELECT id, first_name, last_name, email, role FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?) ORDER BY first_name ASC").bind(sId, sId).all();
+    let { results } = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ? OR role LIKE '%Coach%') ORDER BY first_name ASC").bind(sId, sId).all();
     if (!results || results.length === 0) {
-      const allRes = await db.prepare("SELECT id, first_name, last_name, email, role FROM users ORDER BY first_name ASC").all();
+      const allRes = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE role LIKE '%Coach%' OR role LIKE '%Head%' OR role LIKE '%Admin%' ORDER BY first_name ASC").all();
       results = allRes.results || [];
     }
     return c.json({
       success: true,
-      data: (results || []).map((u: any) => ({
-        id: u.id,
-        firstName: u.first_name,
-        lastName: u.last_name,
-        email: u.email,
-        role: u.role || 'Coach'
-      }))
+      data: (results || []).map((u: any) => {
+        const computedName = (u.name && u.name.trim()) || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Coach';
+        return {
+          id: u.id || u.email,
+          name: computedName,
+          firstName: u.first_name || computedName.split(' ')[0] || '',
+          lastName: u.last_name || computedName.split(' ').slice(1).join(' ') || '',
+          email: u.email,
+          role: u.role || 'Coach',
+          phone: u.phone_number || '',
+          schoolName: u.school_id || 'OVK Academy'
+        };
+      })
     });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }
-});
+};
 
-// Route: Create Coach
-app.post('/api/coaches', async (c) => {
+app.get('/api/coaches', handleGetCoaches);
+app.get('/api/dashboard/coaches', handleGetCoaches);
+
+// Route: Create / Update Coach
+const handlePostCoach = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
   try {
@@ -877,41 +886,57 @@ app.post('/api/coaches', async (c) => {
     if (!coachEmail) {
       return c.json({ success: false, message: 'Email is required for coach registration' }, 400);
     }
-    const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
+    const fullName = (name || `${firstName || ''} ${lastName || ''}`).trim() || 'Coach';
+    const fullParts = fullName.split(' ');
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 1;
-    const userId = body.id || `cch_${Date.now()}`;
+    const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 'OVK';
+    const userId = body.id || `cch_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     await db.prepare(`
-      INSERT INTO users (id, school_id, first_name, last_name, email, role, phone_number)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
+      INSERT INTO users (id, school_id, first_name, last_name, name, email, role, phone_number)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(email) DO UPDATE SET
         first_name = excluded.first_name,
         last_name = excluded.last_name,
-        email = excluded.email,
+        name = excluded.name,
         role = excluded.role,
-        phone_number = excluded.phone_number
-    `).bind(userId, targetSchool, fName, lName, coachEmail, coachRole, phone || '').run();
+        phone_number = excluded.phone_number,
+        school_id = excluded.school_id
+    `).bind(userId, String(targetSchool), fName, lName, fullName, coachEmail, coachRole, phone || '').run();
 
-    return c.json({ success: true, message: 'Coach saved successfully', data: { id: userId, email: coachEmail, name: `${fName} ${lName}`.trim() } });
+    return c.json({
+      success: true,
+      message: 'Coach saved successfully',
+      data: { id: userId, email: coachEmail, name: fullName, role: coachRole, phone: phone || '', schoolName: targetSchool }
+    });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }
-});
+};
+
+app.post('/api/coaches', handlePostCoach);
+app.post('/api/dashboard/coaches', handlePostCoach);
 
 // Route: Delete Coach
-app.delete('/api/coaches/:id', async (c) => {
+const handleDeleteCoach = async (c: any) => {
   const db = getDB(c);
-  const id = c.req.param('id');
+  const rawId = c.req.param('id');
+  const id = rawId ? decodeURIComponent(rawId).trim() : '';
   try {
-    await db.prepare('DELETE FROM users WHERE id = ? OR email = ?').bind(id, id).run();
+    if (!id) {
+      return c.json({ success: false, message: 'Coach ID or email is required' }, 400);
+    }
+    await db.prepare('DELETE FROM users WHERE id = ? OR LOWER(email) = LOWER(?) OR CAST(id AS TEXT) = ?').bind(id, id, id).run();
     return c.json({ success: true, message: 'Coach deleted successfully' });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }
-});
+};
+
+app.delete('/api/coaches/:id', handleDeleteCoach);
+app.delete('/api/dashboard/coaches/:id', handleDeleteCoach);
 
 // Route: Get Test Results
 app.get('/api/test-results', async (c) => {

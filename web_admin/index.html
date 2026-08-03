@@ -1296,14 +1296,19 @@
           this.coaches.push(created);
           this.saveCoachesToStorage();
           this.showAddCoachModal = false;
+          this.newCoach = { name: '', role: 'Head Rugby Coach', email: '', phone: '', schoolName: 'OVK Academy' };
           this.triggerToast(`Coach ${created.name} registered!`, 'info');
 
           try {
-            await fetch(`${this.apiBaseUrl}/api/coaches`, {
+            const res = await fetch(`${this.apiBaseUrl}/api/coaches`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(created)
             });
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              console.log('Coach API POST non-200:', errData);
+            }
           } catch (err) { console.log('Coach API note:', err); }
         },
 
