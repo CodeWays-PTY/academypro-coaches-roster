@@ -15,8 +15,9 @@ PRAGMA foreign_keys = OFF;
 -- 1. SCHOOLS (Tenants)
 -- ==========================================
 CREATE TABLE IF NOT EXISTS schools (
-    id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    code TEXT UNIQUE NOT NULL,
     logo_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -26,7 +27,7 @@ CREATE TABLE IF NOT EXISTS schools (
 -- ==========================================
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    school_id TEXT NOT NULL DEFAULT 'OVK',
+    school_id INTEGER NOT NULL DEFAULT 1,
     email TEXT UNIQUE,
     phone TEXT,
     password_hash TEXT,
