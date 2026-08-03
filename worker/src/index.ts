@@ -1679,7 +1679,6 @@ app.get('/api/dashboard/events', async (c) => {
       date: r.date,
       durationMins: r.duration_mins,
       location: r.location,
-      intensity: r.intensity,
       isImportant: r.is_important === 1,
       completionCount: r.completion_count,
       ageGroup: r.age_group || '',
@@ -1714,7 +1713,7 @@ app.post('/api/dashboard/events', async (c) => {
 
   const schoolId = (jwtPayload?.schoolId || body?.schoolId || '1').trim();
 
-  const { id, title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
+  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -1766,8 +1765,8 @@ app.post('/api/dashboard/events', async (c) => {
 
   const query = `
     INSERT INTO events (
-      id, school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count, age_group, team, workout_image_path
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, completion_count, age_group, team, workout_image_path
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
       event_type = excluded.event_type,
@@ -1775,7 +1774,6 @@ app.post('/api/dashboard/events', async (c) => {
       date = excluded.date,
       duration_mins = excluded.duration_mins,
       location = excluded.location,
-      intensity = excluded.intensity,
       is_important = excluded.is_important,
       age_group = excluded.age_group,
       team = excluded.team,
@@ -1796,7 +1794,6 @@ app.post('/api/dashboard/events', async (c) => {
       eventDt,
       durMinsVal,
       eventLoc,
-      intensity ? intensity.trim() : null,
       isImpVal,
       compCountVal,
       finalAgeGroup,
@@ -1818,7 +1815,6 @@ app.post('/api/dashboard/events', async (c) => {
         date: eventDt,
         durationMins: durMinsVal,
         location: eventLoc,
-        intensity: intensity ? intensity.trim() : null,
         isImportant: isImpVal === 1,
         completionCount: compCountVal,
         ageGroup: finalAgeGroup,
@@ -1847,7 +1843,7 @@ const handleUpdateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { title, eventType, startTime, date, durationMins, location, intensity, isImportant, ageGroup, team, workoutImagePath } = body;
+  const { title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -1898,12 +1894,12 @@ const handleUpdateEvent = async (c: any) => {
     const query = `
       UPDATE events SET 
         title = ?, event_type = ?, start_time = ?, date = ?, duration_mins = ?, 
-        location = ?, intensity = ?, is_important = ?, age_group = ?, team = ?, workout_image_path = ?
+        location = ?, is_important = ?, age_group = ?, team = ?, workout_image_path = ?
       WHERE CAST(id AS TEXT) = ? OR id = ?
     `;
     await db.prepare(query).bind(
       eventTitle, evType, eventTime, eventDt, durMinsVal,
-      eventLoc, intensity ? intensity.trim() : null, isImpVal, finalAgeGroup,
+      eventLoc, isImpVal, finalAgeGroup,
       finalTeam, workoutImagePath || null, id.toString(), id.toString()
     ).run();
 
