@@ -825,7 +825,7 @@ app.put('/api/athletes/:id', async (c) => {
       SET first_name = ?, last_name = ?, email = ?, position = ?, status = ?,
           team = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE team END
       WHERE id = ? OR (email = ? AND email != '')
-    `).bind(fName, lName, email || '', position || '', status || 'Active', teamVal, teamVal, teamVal, id, id).run();
+    `).bind(fName, lName, email || '', position || '', status || '', teamVal, teamVal, teamVal, id, id).run();
 
     return c.json({ success: true, message: 'Athlete updated successfully' });
   } catch (e: any) {
@@ -1370,7 +1370,7 @@ app.get('/api/rosters/:age_group', async (c) => {
           ageGroup: p.age_group || ageGroup,
           position: p.position || 'Athlete',
           team: p.team || 'U15 Squad',
-          status: p.status || 'Active',
+          status: p.status || '',
           age: p.age ?? null,
           assignedSquads: playerSquadMap[p.id] || []
         });
@@ -1393,7 +1393,7 @@ app.get('/api/rosters/:age_group', async (c) => {
             ageGroup: ageGroup,
             position: a.position || 'Athlete',
             team: a.school_name || 'U15 Squad',
-            status: a.status || 'Active',
+            status: a.status || '',
             age: a.age ?? null,
             assignedSquads: playerSquadMap[a.id] || []
           });
@@ -3335,7 +3335,7 @@ app.get('/api/school/players', async (c) => {
         ageGroup: p.age_group,
         team: p.team || p.age_group,
         position: p.position,
-        status: p.status || 'Active',
+        status: p.status || '',
         assignedSquads: p.assignedSquads || []
       }))
     });
@@ -4022,7 +4022,7 @@ app.get('/api/parent/children', async (c) => {
         ageGroup: p.age_group,
         team: p.team,
         position: p.position,
-        status: p.status || 'Active'
+        status: p.status || ''
       }))
     });
   } catch (err: any) {
