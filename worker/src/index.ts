@@ -1745,6 +1745,7 @@ app.get('/api/dashboard/actions', async (c) => {
         deadline TEXT NOT NULL,
         date_added TEXT,
         is_completed INTEGER DEFAULT 0,
+        completed_at TIMESTAMP,
         player_id TEXT,
         player_name TEXT,
         player_phone TEXT,
@@ -1753,10 +1754,34 @@ app.get('/api/dashboard/actions', async (c) => {
       )
     `).run();
 
+    // Ensure completed_at column exists for legacy D1 schemas
+    await db.prepare('ALTER TABLE action_plans ADD COLUMN completed_at TIMESTAMP').run().catch(() => {});
+
+    // Automatically delete action plans completed more than 24 hours (86400 seconds) ago
+    await db.prepare(`
+      DELETE FROM action_plans 
+      WHERE is_completed = 1 
+        AND completed_at IS NOT NULL 
+        AND (strftime('%s', 'now') - strftime('%s', completed_at)) >= 86400
+    `).run().catch(() => {});
+
     const { results } = await db.prepare('SELECT * FROM action_plans ORDER BY created_at DESC').all();
+    const nowMs = Date.now();
+    const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+
+    const filteredRows = (results || []).filter((row: any) => {
+      if (row.is_completed === 1 && row.completed_at) {
+        const completedMs = new Date(row.completed_at).getTime();
+        if (!isNaN(completedMs) && (nowMs - completedMs) >= twentyFourHoursMs) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     return c.json({
       success: true,
-      data: (results || []).map((row: any) => ({
+      data: filteredRows.map((row: any) => ({
         id: row.id,
         title: row.title,
         type: row.type,
@@ -1764,6 +1789,7 @@ app.get('/api/dashboard/actions', async (c) => {
         deadline: row.deadline,
         dateAdded: row.date_added || 'Today',
         isCompleted: Boolean(row.is_completed),
+        completedAt: row.completed_at || null,
         playerId: row.player_id,
         playerName: row.player_name || '',
         playerPhone: row.player_phone || '',
@@ -1803,6 +1829,7 @@ app.post('/api/dashboard/actions', async (c) => {
         deadline TEXT NOT NULL,
         date_added TEXT,
         is_completed INTEGER DEFAULT 0,
+        completed_at TIMESTAMP,
         player_id TEXT,
         player_name TEXT,
         player_phone TEXT,
@@ -1859,6 +1886,7 @@ app.post('/api/dashboard/actions/:id/toggle', async (c) => {
         deadline TEXT NOT NULL,
         date_added TEXT,
         is_completed INTEGER DEFAULT 0,
+        completed_at TIMESTAMP,
         player_id TEXT,
         player_name TEXT,
         player_phone TEXT,
@@ -1867,7 +1895,15 @@ app.post('/api/dashboard/actions/:id/toggle', async (c) => {
       )
     `).run();
 
-    await db.prepare('UPDATE action_plans SET is_completed = CASE WHEN is_completed = 1 THEN 0 ELSE 1 END WHERE id = ?').bind(id).run();
+    await db.prepare('ALTER TABLE action_plans ADD COLUMN completed_at TIMESTAMP').run().catch(() => {});
+
+    await db.prepare(`
+      UPDATE action_plans 
+      SET is_completed = CASE WHEN is_completed = 1 THEN 0 ELSE 1 END,
+          completed_at = CASE WHEN is_completed = 0 THEN CURRENT_TIMESTAMP ELSE NULL END
+      WHERE id = ?
+    `).bind(id).run();
+
     return c.json({ success: true, message: 'Action plan status updated successfully' });
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to update action plan status', error: err.message }, 500);

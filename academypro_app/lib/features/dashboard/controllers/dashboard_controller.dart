@@ -275,6 +275,7 @@ class CoachActionItem {
   final String deadline;
   final String dateAdded;
   final bool isCompleted;
+  final String? completedAt;
   final String? playerId;
   final String playerName;
   final String parentName;
@@ -290,6 +291,7 @@ class CoachActionItem {
     required this.deadline,
     String? dateAdded,
     this.isCompleted = false,
+    this.completedAt,
     this.playerId,
     this.playerName = '',
     this.parentName = '',
@@ -307,6 +309,7 @@ class CoachActionItem {
     String? deadline,
     String? dateAdded,
     bool? isCompleted,
+    String? completedAt,
     String? playerId,
     String? playerName,
     String? parentName,
@@ -322,6 +325,7 @@ class CoachActionItem {
       deadline: deadline ?? this.deadline,
       dateAdded: dateAdded ?? this.dateAdded,
       isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
       playerId: playerId ?? this.playerId,
       playerName: playerName ?? this.playerName,
       parentName: parentName ?? this.parentName,
@@ -344,21 +348,37 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
       final res = await _apiClient.getAndCache('/api/dashboard/actions');
       if (res.statusCode == 200 && res.data != null && res.data['success'] == true) {
         final List list = res.data['data'] ?? [];
-        final items = list.map((x) => CoachActionItem(
-          id: x['id'].toString(),
-          title: x['title'] ?? '',
-          type: x['type'] ?? 'General',
-          category: x['category'] ?? 'General',
-          deadline: x['deadline'] ?? 'Today',
-          dateAdded: x['dateAdded'] ?? 'Today',
-          isCompleted: x['isCompleted'] == true,
-          playerId: x['playerId'],
-          playerName: x['playerName'] ?? '',
-          parentName: x['parentName'] ?? '',
-          parentPhone: x['parentPhone'] ?? '',
-          playerPhone: x['playerPhone'] ?? '',
-          notes: x['notes'] ?? 'Follow up required with coaching staff.',
-        )).toList();
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+
+        final items = <CoachActionItem>[];
+        for (final x in list) {
+          final isDone = x['isCompleted'] == true;
+          final completedAtStr = x['completedAt']?.toString();
+          if (isDone && completedAtStr != null && completedAtStr.isNotEmpty) {
+            final completedDt = DateTime.tryParse(completedAtStr);
+            if (completedDt != null && (nowMs - completedDt.millisecondsSinceEpoch) >= twentyFourHoursMs) {
+              continue; // Skip completed actions older than 24 hours (1 day)
+            }
+          }
+
+          items.add(CoachActionItem(
+            id: x['id'].toString(),
+            title: x['title'] ?? '',
+            type: x['type'] ?? 'General',
+            category: x['category'] ?? 'General',
+            deadline: x['deadline'] ?? 'Today',
+            dateAdded: x['dateAdded'] ?? 'Today',
+            isCompleted: isDone,
+            completedAt: completedAtStr,
+            playerId: x['playerId'],
+            playerName: x['playerName'] ?? '',
+            parentName: x['parentName'] ?? '',
+            parentPhone: x['parentPhone'] ?? '',
+            playerPhone: x['playerPhone'] ?? '',
+            notes: x['notes'] ?? 'Follow up required with coaching staff.',
+          ));
+        }
         state = items;
       }
     } catch (e) {
