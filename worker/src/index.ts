@@ -712,10 +712,10 @@ app.post('/api/athletes', async (c) => {
     const body = await c.req.json();
     const { name, firstName, lastName, email, position, secondaryPosition, ageGroup, team, schoolId } = body;
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
-    const fName = firstName || fullParts[0] || 'Student';
+    const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 1;
-    const assignedTeam = team || ageGroup || 'U15 Squad';
+    const assignedTeam = team || ageGroup || '';
     const playerId = body.id || generatePrimaryKey('plr');
 
     await db.prepare(`
@@ -727,10 +727,7 @@ app.post('/api/athletes', async (c) => {
         email = excluded.email,
         position = excluded.position,
         team = excluded.team
-    `).bind(playerId, targetSchool, fName, lName, email || '', 'U15', position || 'Athlete', assignedTeam).run();
-
-    // Link to U15 Squad in squad_players
-    await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind('sq-u15-elite', playerId).run();
+    `).bind(playerId, targetSchool, fName, lName, email || '', ageGroup || team || '', position || '', assignedTeam).run();
 
     return c.json({ success: true, message: 'Athlete saved successfully', data: { id: playerId, firstName: fName, lastName: lName, email, team: assignedTeam } });
   } catch (e: any) {
@@ -745,14 +742,14 @@ app.put('/api/athletes/:id', async (c) => {
     const body = await c.req.json();
     const { name, firstName, lastName, email, position, status, team } = body;
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
-    const fName = firstName || fullParts[0] || 'Student';
+    const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
 
     await db.prepare(`
       UPDATE players
       SET first_name = ?, last_name = ?, email = ?, position = ?, status = ?, team = ?
       WHERE id = ? OR email = ?
-    `).bind(fName, lName, email || '', position || 'Athlete', status || 'Active', team || 'U15 Squad', id, id).run();
+    `).bind(fName, lName, email || '', position || '', status || 'Active', team || '', id, id).run();
 
     return c.json({ success: true, message: 'Athlete updated successfully' });
   } catch (e: any) {
