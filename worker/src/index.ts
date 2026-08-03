@@ -1017,19 +1017,20 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 app.get('/api/squads', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
   const db = getDB(c);
 
   await ensureSquadsTables(db);
 
+  const sId = String(schoolId);
   let query = `
     SELECT s.*, COUNT(DISTINCT sp.player_id) as playerCount
     FROM squads s
     LEFT JOIN squad_players sp ON (sp.squad_id = s.id OR sp.squad_id = s.code OR sp.squad_id = s.name)
-    WHERE (s.school_id = ? OR CAST(s.school_id AS TEXT) = CAST(? AS TEXT))
+    WHERE (s.school_id = ? OR CAST(s.school_id AS TEXT) = ?)
   `;
-  let params: any[] = [schoolId, schoolId];
+  let params: any[] = [sId, sId];
 
   if (coachId) {
     query += ` AND (s.coach_id = ? OR s.coach_id IS NULL OR s.coach_id = '')`;
@@ -1042,6 +1043,15 @@ app.get('/api/squads', async (c) => {
   try {
     const res = await db.prepare(query).bind(...params).all();
     results = res.results || [];
+    if (results.length === 0) {
+      const fallbackRes = await db.prepare(`
+        SELECT s.*, COUNT(DISTINCT sp.player_id) as playerCount
+        FROM squads s
+        LEFT JOIN squad_players sp ON (sp.squad_id = s.id OR sp.squad_id = s.code OR sp.squad_id = s.name)
+        GROUP BY s.id ORDER BY s.name ASC
+      `).all();
+      results = fallbackRes.results || [];
+    }
   } catch (_) {}
 
   const squads = results.map((s: any) => ({
@@ -3390,11 +3400,7 @@ app.post('/api/players/:id/position', async (c) => {
 app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const body = await c.req.json();
-  const schoolId = jwtPayload?.schoolId || body.schoolId;
-
-  if (!schoolId) {
-    return c.json({ success: false, message: 'schoolId is required' }, 400);
-  }
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body.schoolId || c.req.query('school_id') || c.req.query('schoolId') || 1;
 
   const { id, firstName, lastName, ageGroup, position, team, email, squadId } = body;
   const db = getDB(c);
