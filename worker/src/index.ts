@@ -817,7 +817,7 @@ app.put('/api/athletes/:id', async (c) => {
     await db.prepare(`
       UPDATE players
       SET first_name = ?, last_name = ?, email = ?, position = ?, status = ?, team = ?
-      WHERE id = ? OR email = ?
+      WHERE id = ? OR (email = ? AND email != '')
     `).bind(fName, lName, email || '', position || '', status || 'Active', team || '', id, id).run();
 
     return c.json({ success: true, message: 'Athlete updated successfully' });
