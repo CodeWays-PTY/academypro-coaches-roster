@@ -9,9 +9,9 @@ class AddExistingPlayerModal extends ConsumerStatefulWidget {
   final String activeAgeGroup;
 
   const AddExistingPlayerModal({
-    Key? key,
+    super.key,
     required this.activeAgeGroup,
-  }) : super(key: key);
+  });
 
   static Future<void> show(BuildContext context, {required String activeAgeGroup}) async {
     await showModalBottomSheet(
@@ -194,7 +194,7 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
                   boxShadow: _selectedTabIndex == 0
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           )
@@ -228,7 +228,7 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
                   boxShadow: _selectedTabIndex == 1
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           )
@@ -407,4 +407,229 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
     );
   }
 
+  Widget _buildSearchTab(String targetSquadId) {
+    return Column(
+      children: [
+        const SizedBox(height: 4.0),
+        TextField(
+          controller: _searchController,
+          onChanged: _onSearchChanged,
+          decoration: InputDecoration(
+            hintText: 'Search player name or age group...',
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 20.0),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 18.0, color: Color(0xFF64748B)),
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                  )
+                : null,
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Expanded(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+                )
+              : _filteredPlayers.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.person_search_outlined, size: 48.0, color: Color(0xFF94A3B8)),
+                          const SizedBox(height: 12.0),
+                          const Text(
+                            'No Players Found',
+                            style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                          ),
+                          const SizedBox(height: 4.0),
+                          Text(
+                            _searchController.text.isNotEmpty
+                                ? 'No players matching "${_searchController.text}"'
+                                : 'No unassigned players available in the school system.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 13.0, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _filteredPlayers.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      itemBuilder: (context, index) {
+                        final player = _filteredPlayers[index];
+                        final isAlreadyInSquad = player.assignedSquads.any((s) => s.id == targetSquadId);
+                        final isAdding = _addingPlayerIds.contains(player.id);
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFFEFF6FF),
+                            child: Text(
+                              player.firstName.isNotEmpty ? player.firstName[0].toUpperCase() : 'P',
+                              style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text(
+                            '${player.firstName} ${player.lastName}',
+                            style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                          ),
+                          subtitle: Text(
+                            '${player.ageGroup}${player.position.isNotEmpty ? ' • ${player.position}' : ''}',
+                            style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+                          ),
+                          trailing: isAdding
+                              ? const SizedBox(
+                                  width: 24.0,
+                                  height: 24.0,
+                                  child: CircularProgressIndicator(strokeWidth: 2.0, color: Color(0xFF2563EB)),
+                                )
+                              : isAlreadyInSquad
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(8.0),
+                                      ),
+                                      child: const Text(
+                                        'In Squad',
+                                        style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                      ),
+                                    )
+                                  : ElevatedButton.icon(
+                                      onPressed: () => _handleAddPlayer(player, targetSquadId),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF2563EB),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                      ),
+                                      icon: const Icon(Icons.add_rounded, size: 16.0),
+                                      label: const Text('Add', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                    ),
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    final squads = ref.watch(squadsProvider);
+    final activeSquad = squads.firstWhere(
+      (s) => s.ageGroup == widget.activeAgeGroup,
+      orElse: () => squads.isNotEmpty
+          ? squads.first
+          : SquadItem(
+              id: 'default',
+              name: '${widget.activeAgeGroup} Squad',
+              ageGroup: widget.activeAgeGroup,
+              description: '',
+            ),
+    );
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      padding: EdgeInsets.only(
+        left: 20.0,
+        right: 20.0,
+        top: 12.0,
+        bottom: bottomInset + (safeBottom > 0 ? safeBottom : 16.0),
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag Handle
+          Center(
+            child: Container(
+              width: 36.0,
+              height: 4.0,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2.0),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12.0),
+
+          // Header Title & Close Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Add Player to Roster',
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2.0),
+                  Text(
+                    '${activeSquad.name} (${widget.activeAgeGroup})',
+                    style: const TextStyle(
+                      fontSize: 13.0,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                onPressed: () => Navigator.of(context).pop(),
+                splashRadius: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14.0),
+
+          // Tab Bar Switcher
+          _buildTabBar(),
+          const SizedBox(height: 16.0),
+
+          // Selected Tab Body
+          Expanded(
+            child: _selectedTabIndex == 0
+                ? _buildSearchTab(activeSquad.id)
+                : _buildRegisterTab(activeSquad.id, activeSquad.name),
+          ),
+        ],
+      ),
+    );
+  }
 }
