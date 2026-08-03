@@ -647,9 +647,16 @@ app.post('/api/auth/verify-new-email', async (c) => {
 
 // JWT Authentication Guard
 async function enforceJwtAuth(c: any, next: any) {
+  let token = '';
   const authHeader = c.req.header('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
+    token = authHeader.substring(7);
+  }
+  if (!token || token === 'null' || token === 'undefined') {
+    token = c.req.query('token') || c.req.query('jwt') || c.req.query('access_token') || c.req.header('X-Access-Token') || c.req.header('X-Auth-Token') || '';
+  }
+
+  if (token && token !== 'null' && token !== 'undefined') {
     try {
       const payload = await verify(token, getSecret(c), 'HS256');
       c.set('jwtPayload', payload);

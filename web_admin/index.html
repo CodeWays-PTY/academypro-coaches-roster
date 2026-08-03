@@ -154,7 +154,11 @@
                     try {
                         this.loading = true;
                         const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
-                        const token = localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
+                        let urlToken = new URLSearchParams(window.location.search).get('token') || new URLSearchParams(window.location.search).get('jwt') || new URLSearchParams(window.location.search).get('access_token') || '';
+                        if (urlToken) {
+                            localStorage.setItem('token', urlToken);
+                        }
+                        const token = urlToken || localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
                         let schoolId = new URLSearchParams(window.location.search).get('school_id') || new URLSearchParams(window.location.search).get('schoolId') || localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || '';
                         if (!schoolId && token) {
                             try {
