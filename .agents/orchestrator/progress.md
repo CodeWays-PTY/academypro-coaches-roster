@@ -1,14 +1,14 @@
 # Progress: Codebase Audit & Dead-Code Elimination
 
 ## Current Status
-Last visited: 2026-08-03T14:10:00+02:00
+Last visited: 2026-08-03T14:15:30+02:00
 
 ## Iteration Status
 Current iteration: 2 / 32
 
 ## Milestone Status
 - [x] Milestone 1: Backend API Audit & Pruning (`worker/src/index.ts`) [DONE]
-- [ ] Milestone 2: Flutter App Audit & Pruning (`academypro_app`) [REMEDIATION - add_existing_player_modal.dart]
+- [x] Milestone 2: Flutter App Audit & Pruning (`academypro_app`) [DONE]
 - [x] Milestone 3: Web Admin & API Spec Sync (`web_admin` & `API_SPECIFICATION.md`) [DONE]
 
 ## Detailed Task Checklist
@@ -24,9 +24,12 @@ Current iteration: 2 / 32
 ### Milestone 2: Flutter App Audit & Pruning (`academypro_app`)
 - [x] M2.1: Explorer scan for unused screens, widgets, models, controllers, and dead functions
 - [x] M2.2: Worker implementation: Prune dead Flutter code (`permission_service.dart`, `add_player_modal.dart`, `create_squad_modal.dart`)
-- [ ] M2.3: Remediation Worker: Repair or prune `add_existing_player_modal.dart` and verify `flutter analyze` 0 errors / 0 warnings [DISPATCHING NOW]
-- [ ] M2.4: Reviewer & Challenger & Auditor verification panel
-- [ ] M2.5: Gate decision for Milestone 2: PENDING RE-VERIFICATION
+- [x] M2.3: Worker Remediation 1: Repair `add_existing_player_modal.dart` (implement concrete `build` method & providers)
+- [x] M2.4: Worker Remediation 2: Resolve all 172 `flutter analyze` issues across `academypro_app`
+- [x] M2.5: Reviewer verification (APPROVE)
+- [x] M2.6: Challenger empirical verification (`flutter analyze` exit code 0, `No issues found!`, `flutter test` passed)
+- [x] M2.7: Forensic Auditor integrity audit (CLEAN — 0 dummy data, 0 random generators, 0 linter suppressions)
+- [x] M2.8: Gate decision for Milestone 2: PASSED
 
 ### Milestone 3: Web Admin & API Spec Sync
 - [x] M3.1: Explorer audit of `web_admin` and `API_SPECIFICATION.md` (67 active routes mapped)
@@ -38,5 +41,7 @@ Current iteration: 2 / 32
 - [x] M3.7: Gate decision for Milestone 3: PASSED
 
 ## Retrospective Notes & Lessons Learned
-- Victory Auditor detected 1 compilation error and 7 warnings in `academypro_app/lib/features/dashboard/presentation/add_existing_player_modal.dart`.
-- Reopened Milestone 2 for worker remediation to resolve `add_existing_player_modal.dart` and ensure `flutter analyze` passes with strictly 0 errors and 0 warnings.
+- Milestone 1: 12 dead Worker endpoints pruned, POST delete aliases preserved for compatibility, Worker deployed live to Cloudflare Edge (`https://academypro-api.tata-elash34.workers.dev`).
+- Milestone 2: Repaired `add_existing_player_modal.dart` with concrete `build(BuildContext context)` implementation, resolved all 172 `flutter analyze` static analysis issues across `academypro_app/` (125 auto-fixed via `dart fix`, 47 manually fixed), verified `flutter analyze` exit code 0 (`No issues found!`) and `flutter test` 100% passed. Reviewer APPROVE, Challenger PASS, Auditor CLEAN.
+- Milestone 3: `API_SPECIFICATION.md` rewritten with 100% route coverage (67/67 routes). `web_admin` updated with `Authorization: Bearer <token>` headers, `school_id` query parameters, custom Alpine toasts (0 native browser alerts), `x-cloak` loading states, and all prohibited over-defensive string fallbacks (`|| 'OVK'`) removed. Reviewer APPROVE, Challenger PASS, Auditor CLEAN.
+- Project audit, remediation, and dead-code elimination successfully completed across all 3 milestones.

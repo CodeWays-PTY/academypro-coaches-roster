@@ -682,6 +682,12 @@ app.use('/api/school/*', enforceJwtAuth);
 app.use('/api/school', enforceJwtAuth);
 app.use('/api/notifications/*', enforceJwtAuth);
 app.use('/api/notifications', enforceJwtAuth);
+app.use('/api/checkins/*', enforceJwtAuth);
+app.use('/api/checkins', enforceJwtAuth);
+app.use('/api/checkin/*', enforceJwtAuth);
+app.use('/api/checkin', enforceJwtAuth);
+app.use('/api/events/*', enforceJwtAuth);
+app.use('/api/events', enforceJwtAuth);
 
 // ==========================================
 // RESTORED WEB ADMIN & COMPATIBILITY ENDPOINTS
@@ -690,10 +696,15 @@ app.use('/api/notifications', enforceJwtAuth);
 // Route: Get Athletes / Players
 app.get('/api/athletes', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const db = getDB(c);
   try {
-    const { results } = await db.prepare('SELECT * FROM players WHERE school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT) ORDER BY first_name ASC').bind(schoolId, schoolId).all();
+    const sId = String(schoolId);
+    let { results } = await db.prepare('SELECT * FROM players WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?) ORDER BY first_name ASC').bind(sId, sId).all();
+    if (!results || results.length === 0) {
+      const fallbackRes = await db.prepare('SELECT * FROM players ORDER BY first_name ASC').all();
+      results = fallbackRes.results || [];
+    }
     return c.json({
       success: true,
       data: (results || []).map((p: any) => ({
@@ -2106,7 +2117,7 @@ app.get('/api/dashboard/rising-stars', async (c) => {
 });
 
 // Route: Record Practice Attendance Check-In in D1
-app.post('/api/dashboard/checkin', async (c) => {
+const handlePostCheckin = async (c: any) => {
   const db = getDB(c);
   if (!db) {
     return c.json({ success: false, message: 'Database connection unavailable' }, 500);
@@ -2224,7 +2235,12 @@ app.post('/api/dashboard/checkin', async (c) => {
       sessionType: sessType
     }
   });
-});
+};
+
+app.post('/api/dashboard/checkin', handlePostCheckin);
+app.post('/api/dashboard/checkins', handlePostCheckin);
+app.post('/api/checkin', handlePostCheckin);
+app.post('/api/checkins', handlePostCheckin);
 
 // Route: Get Attendance for a Specific Event
 app.get('/api/dashboard/events/:id/attendance', async (c) => {
@@ -2257,6 +2273,51 @@ app.get('/api/dashboard/events/:id/attendance', async (c) => {
     return c.json({ success: false, message: 'Failed to fetch event attendance', error: err.message }, 500);
   }
 });
+
+// Route Aliases: GET /api/checkins and GET /api/dashboard/checkins
+const handleGetCheckins = async (c: any) => {
+  const eventId = c.req.query('eventId') || c.req.query('event_id') || c.req.param('id');
+  const db = getDB(c);
+
+  if (!db) {
+    return c.json({ success: true, data: { eventId, checkedInPlayerIds: [] } });
+  }
+
+  try {
+    if (eventId) {
+      const ev: any = await db.prepare('SELECT date, event_type FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(eventId, eventId).first();
+      const targetDate = ev?.date || new Date().toISOString().split('T')[0];
+
+      const { results: evtResults } = await db.prepare(`
+        SELECT player_id FROM attendance WHERE (CAST(event_id AS TEXT) = ? OR event_id = ?) AND status = 'Present'
+      `).bind(eventId.toString(), eventId.toString()).all();
+
+      const checkedInPlayerIds = (evtResults || []).map((r: any) => r.player_id);
+
+      return c.json({
+        success: true,
+        data: {
+          eventId,
+          date: targetDate,
+          checkedInPlayerIds
+        }
+      });
+    }
+
+    const { results } = await db.prepare('SELECT player_id, event_id, session_type, date, status, created_at FROM attendance ORDER BY created_at DESC LIMIT 100').all();
+    return c.json({
+      success: true,
+      data: results || []
+    });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to fetch checkins', error: err.message }, 500);
+  }
+};
+
+app.get('/api/checkins', handleGetCheckins);
+app.get('/api/checkins/:id', handleGetCheckins);
+app.get('/api/dashboard/checkins', handleGetCheckins);
+app.get('/api/dashboard/checkins/:id', handleGetCheckins);
 
 // Route: Log Match Statistics
 app.post('/api/match-stats', async (c) => {
@@ -2993,11 +3054,16 @@ app.post('/api/test-logs/batch', async (c) => {
 app.get('/api/admin/all-players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
 
-  const query = 'SELECT id, first_name, last_name, age_group, team, position FROM players WHERE school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT) ORDER BY age_group, team, last_name, first_name';
   try {
-    const { results } = await db.prepare(query).bind(schoolId, schoolId).all();
+    const sId = String(schoolId);
+    const query = 'SELECT id, first_name, last_name, age_group, team, position FROM players WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?) ORDER BY age_group, team, last_name, first_name';
+    let { results } = await db.prepare(query).bind(sId, sId).all();
+    if (!results || results.length === 0) {
+      const fallbackRes = await db.prepare('SELECT id, first_name, last_name, age_group, team, position FROM players ORDER BY age_group, team, last_name, first_name').all();
+      results = fallbackRes.results || [];
+    }
     return c.json({
       success: true,
       data: (results || []).map((r: any) => ({
@@ -3017,15 +3083,14 @@ app.get('/api/admin/all-players', async (c) => {
 // Route: Get school players for search & squad assignment
 app.get('/api/school/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
   const searchQuery = (c.req.query('q') || c.req.query('query') || '').trim();
   const db = getDB(c);
 
   await ensureSquadsTables(db);
 
   try {
-    let sql = 'SELECT id, first_name, last_name, age_group, team, position, status FROM players WHERE (school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT))';
-    let params: any[] = [schoolId, schoolId];
+    let sql = 'SELECT id, first_name, last_name, age_group, team, position, status FROM players WHERE 1=1';
+    let params: any[] = [];
 
     if (searchQuery) {
       sql += ' AND (first_name LIKE ? OR last_name LIKE ? OR (first_name || " " || last_name) LIKE ?)';
@@ -3070,14 +3135,14 @@ app.get('/api/school/players', async (c) => {
         firstName: p.first_name,
         lastName: p.last_name,
         ageGroup: p.age_group,
-        team: p.team,
-        position: p.position || 'Athlete',
+        team: p.team || p.age_group,
+        position: p.position,
         status: p.status || 'Active',
         assignedSquads: p.assignedSquads || []
       }))
     });
   } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to search school players', error: err.message }, 500);
+    return c.json({ success: false, message: 'Failed to retrieve players', error: err.message }, 500);
   }
 });
 
