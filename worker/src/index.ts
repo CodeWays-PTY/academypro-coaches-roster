@@ -119,15 +119,19 @@ function getKV(c: any) {
   return c.env?.KV || localKVInstance;
 }
 
-// 3. CORS Middleware
+// 3. CORS Middleware & Preflight Handling
 app.use('*', cors({
-  origin: '*',
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Internal-API-Key', 'X-Api-Key', 'If-None-Match'],
+  origin: (origin) => origin || '*',
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Internal-API-Key', 'X-Api-Key', 'If-None-Match', 'X-Requested-With'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   exposeHeaders: ['Content-Length', 'ETag'],
-  maxAge: 600,
+  maxAge: 86400,
   credentials: true,
 }));
+
+app.options('*', (c) => {
+  return c.text('', 204);
+});
 
 // 4. URL Standardization: Strip trailing slashes (excluding root)
 app.use('*', async (c, next) => {
@@ -3034,8 +3038,11 @@ app.post('/api/test-metrics', async (c) => {
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body?.schoolId || body?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
 
   const { id, name, category, unit, goalDirection, targetBenchmark } = body || {};
-  if (!name || !name.trim() || !unit || !unit.trim()) {
-    return c.json({ success: false, message: 'Name and unit are required.' }, 400);
+  const metricName = (name || body?.metricName || body?.title || '').trim();
+  const metricUnit = (unit || body?.metricUnit || body?.u || 'units').trim();
+
+  if (!metricName) {
+    return c.json({ success: false, message: 'Metric name is required.' }, 400);
   }
 
   const catName = category && category.trim() ? category.trim() : 'General';
@@ -3052,16 +3059,16 @@ app.post('/api/test-metrics', async (c) => {
         goal_direction = excluded.goal_direction,
         target_benchmark = excluded.target_benchmark
     `).bind(
-      metricId, schoolId, name.trim(), catName, unit.trim(),
+      metricId, schoolId, metricName, catName, metricUnit,
       goalDirection || 'HIGHER_IS_BETTER', targetBenchmark || 0
     ).run();
 
-    console.log(`[Observer Log] Test metric '${metricId}' (${name}) saved for school '${schoolId}'.`);
+    console.log(`[Observer Log] Test metric '${metricId}' (${metricName}) saved for school '${schoolId}'.`);
 
     return c.json({
       success: true,
       message: 'Test metric saved successfully',
-      data: { id: metricId, schoolId, name: name.trim(), category: catName, unit: unit.trim(), goalDirection: goalDirection || 'HIGHER_IS_BETTER', targetBenchmark: targetBenchmark || 0 }
+      data: { id: metricId, schoolId, name: metricName, category: catName, unit: metricUnit, goalDirection: goalDirection || 'HIGHER_IS_BETTER', targetBenchmark: targetBenchmark || 0 }
     });
   } catch (err: any) {
     console.error(`[Observer Error] Failed to save test metric: ${err.message}`);
