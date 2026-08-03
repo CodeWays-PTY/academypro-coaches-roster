@@ -1544,15 +1544,14 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
 }// Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
-  const coachId = jwtPayload?.sub;
-  const role = jwtPayload?.role || 'Coach';
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const eventTypeParam = c.req.query('event_type') || c.req.query('eventType');
   const db = getDB(c);
 
-  let query = 'SELECT * FROM events WHERE 1=1';
-  let params: any[] = [];
+  const sId = String(schoolId);
+  let query = 'SELECT * FROM events WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?)';
+  let params: any[] = [sId, sId];
 
   if (eventTypeParam) {
     const etLower = eventTypeParam.toLowerCase().trim();
@@ -1564,49 +1563,10 @@ app.get('/api/dashboard/events', async (c) => {
     }
   }
 
-  if (role !== 'SuperAdmin' && role !== 'SchoolAdmin') {
-    // Coach role: strictly filter to squads managed by this coach
-    const { squadCodes, squadIds } = await getCoachSquadPlayerIds(db, coachId, schoolId, role, ageGroup);
-    
-    let managedSquadKeys: string[] = [];
-    try {
-      const { results: sqRes } = await db.prepare('SELECT id, code, name FROM squads WHERE school_id = ? AND (coach_id = ? OR coach_id IS NULL)').bind(schoolId, coachId).all();
-      if (sqRes && sqRes.length > 0) {
-        for (const s of sqRes) {
-          if (s.id) managedSquadKeys.push(s.id);
-          if (s.code) managedSquadKeys.push(s.code);
-          if (s.name) managedSquadKeys.push(s.name);
-        }
-      }
-    } catch (_) {}
-
-    managedSquadKeys = Array.from(new Set([...managedSquadKeys, ...squadCodes, ...squadIds]));
-
-    if (managedSquadKeys.length === 0) {
-      return c.json({
-        success: true,
-        data: []
-      });
-    }
-
-    if (ageGroup && ageGroup !== 'All') {
-      const matchesManaged = managedSquadKeys.some(k => k.toLowerCase() === ageGroup.toLowerCase());
-      if (!matchesManaged) {
-        return c.json({ success: true, data: [] });
-      }
-      query += ' AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?) OR LOWER(age_group) LIKE LOWER(?) OR LOWER(team) LIKE LOWER(?) OR age_group IS NULL OR age_group = "" OR team IS NULL OR team = "")';
-      params.push(ageGroup, ageGroup, `%${ageGroup}%`, `%${ageGroup}%`);
-    } else {
-      const placeholders = managedSquadKeys.map(() => '?').join(',');
-      query += ` AND (age_group IN (${placeholders}) OR team IN (${placeholders}) OR age_group IS NULL OR age_group = "")`;
-      params.push(...managedSquadKeys, ...managedSquadKeys);
-    }
-  } else {
-    // Admin role
-    if (ageGroup && ageGroup !== 'All') {
-      query += ' AND (age_group = ? OR team = ? OR age_group IS NULL OR age_group = "")';
-      params.push(ageGroup, ageGroup);
-    }
+  if (ageGroup && ageGroup !== 'All' && ageGroup !== 'ALL') {
+    const agTrim = ageGroup.trim();
+    query += ' AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?) OR LOWER(age_group) LIKE LOWER(?) OR LOWER(team) LIKE LOWER(?) OR age_group IS NULL OR age_group = "" OR team IS NULL OR team = "")';
+    params.push(agTrim, agTrim, `%${agTrim}%`, `%${agTrim}%`);
   }
 
   query += ' ORDER BY date DESC, start_time DESC';
