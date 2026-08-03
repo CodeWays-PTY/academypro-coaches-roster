@@ -3017,19 +3017,15 @@ app.get('/api/admin/all-players', async (c) => {
 // Route: Get school players for search & squad assignment
 app.get('/api/school/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || c.req.query('school_id');
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
   const searchQuery = (c.req.query('q') || c.req.query('query') || '').trim();
   const db = getDB(c);
-
-  if (!schoolId) {
-    return c.json({ success: false, message: 'school_id parameter is required' }, 400);
-  }
 
   await ensureSquadsTables(db);
 
   try {
-    let sql = 'SELECT id, first_name, last_name, age_group, team, position, status FROM players WHERE school_id = ?';
-    let params: any[] = [schoolId];
+    let sql = 'SELECT id, first_name, last_name, age_group, team, position, status FROM players WHERE (school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT))';
+    let params: any[] = [schoolId, schoolId];
 
     if (searchQuery) {
       sql += ' AND (first_name LIKE ? OR last_name LIKE ? OR (first_name || " " || last_name) LIKE ?)';

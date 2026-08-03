@@ -116,7 +116,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF003EC7).withOpacity(0.1),
+                      color: const Color(0xFF003EC7).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.photo_library_outlined, color: Color(0xFF003EC7)),
@@ -132,7 +132,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF003EC7).withOpacity(0.1),
+                      color: const Color(0xFF003EC7).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.camera_alt_outlined, color: Color(0xFF003EC7)),
@@ -149,7 +149,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626).withOpacity(0.1),
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.delete_outline, color: Color(0xFFDC2626)),
@@ -244,7 +244,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
           final apiClient = ref.read(apiClientProvider);
           await apiClient.post('/api/coach/send-sms-otp', data: {'phone': fullPhone});
         } catch (smsError) {
-          print('[Coach Onboarding] SMS Dispatch note: $smsError');
+          debugPrint('[Coach Onboarding] SMS Dispatch note: $smsError');
         }
 
         if (mounted) {
@@ -559,7 +559,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
                               width: 72.0,
                               height: 72.0,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF003EC7).withOpacity(0.08),
+                                color: const Color(0xFF003EC7).withValues(alpha: 0.08),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(

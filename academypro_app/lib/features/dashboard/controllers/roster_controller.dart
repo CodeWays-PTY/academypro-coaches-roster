@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/app_toast.dart';
@@ -113,7 +114,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
         state = state.copyWith(playersByAge: newMap, loading: false, error: response.data?['message'] ?? 'Failed to load roster');
       }
     } catch (e) {
-      print('Error fetching roster for $ageGroup: $e');
+      debugPrint('Error fetching roster for $ageGroup: $e');
       final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
       newMap[ageGroup] = newMap[ageGroup] ?? [];
       state = state.copyWith(playersByAge: newMap, loading: false, error: e.toString());
@@ -134,7 +135,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
       AppToast.showError(null, title: 'Update Failed', message: 'Could not update squad assignments.');
       return false;
     } catch (e) {
-      print('Error in updatePlayerSquads: $e');
+      debugPrint('Error in updatePlayerSquads: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to update player squads.');
       return false;
     }
@@ -149,7 +150,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
         return list.map((x) => RosterPlayer.fromJson(x)).toList();
       }
     } catch (e) {
-      print('Error in fetchSchoolPlayers: $e');
+      debugPrint('Error in fetchSchoolPlayers: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to search school players.');
     }
     return [];
@@ -168,7 +169,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
       AppToast.showError(null, title: 'Squad Error', message: 'Could not add player to squad.');
       return false;
     } catch (e) {
-      print('Error in addPlayerToSquad: $e');
+      debugPrint('Error in addPlayerToSquad: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to add player to squad.');
       return false;
     }
@@ -187,7 +188,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
       AppToast.showError(null, title: 'Squad Error', message: 'Could not remove player from squad.');
       return false;
     } catch (e) {
-      print('Error in removePlayerFromSquad: $e');
+      debugPrint('Error in removePlayerFromSquad: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to remove player from squad.');
       return false;
     }
@@ -219,7 +220,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
       AppToast.showError(null, title: 'Registration Error', message: response.data?['message'] ?? 'Could not register new player.');
       return false;
     } catch (e) {
-      print('Error in registerAndAddPlayer: $e');
+      debugPrint('Error in registerAndAddPlayer: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to register player.');
       return false;
     }
@@ -270,7 +271,7 @@ class RosterNotifier extends StateNotifier<RosterState> {
       }
     } catch (e) {
       state = previousState;
-      print('Error updating position on server: $e');
+      debugPrint('Error updating position on server: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Server sync failed. Position change reverted.');
       return false;
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
@@ -149,7 +150,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _apiClient.post('/api/auth/profile', data: updatedFields);
     } catch (e) {
-      print('Online profile sync deferred: $e');
+      debugPrint('Online profile sync deferred: $e');
     }
   }
 
@@ -163,7 +164,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(userProfile: freshUser);
       }
     } catch (e) {
-      print('Failed to refresh fresh user profile: $e');
+      debugPrint('Failed to refresh fresh user profile: $e');
     }
   }
 

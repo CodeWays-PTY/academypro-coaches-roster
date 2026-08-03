@@ -5,7 +5,7 @@ import '../controllers/notification_controller.dart';
 import '../models/notification_item.dart';
 
 class NotificationsPanel extends ConsumerWidget {
-  const NotificationsPanel({Key? key}) : super(key: key);
+  const NotificationsPanel({super.key});
 
   static Future<void> show(BuildContext context) {
     HapticFeedback.lightImpact();
@@ -325,7 +325,7 @@ class NotificationsPanel extends ConsumerWidget {
                 ? []
                 : [
                     BoxShadow(
-                      color: const Color(0xFF2563EB).withOpacity(0.06),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.06),
                       blurRadius: 8.0,
                       offset: const Offset(0, 2),
                     )

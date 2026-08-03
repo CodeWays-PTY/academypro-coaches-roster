@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 
 class ManageMetricsModal extends ConsumerStatefulWidget {
-  const ManageMetricsModal({Key? key}) : super(key: key);
+  const ManageMetricsModal({super.key});
 
   static void show(BuildContext context) {
     showModalBottomSheet(
@@ -79,6 +79,7 @@ class _ManageMetricsModalState extends ConsumerState<ManageMetricsModal> {
         'targetBenchmark': double.tryParse(_targetController.text.trim()) ?? 0.0,
       });
 
+      if (!mounted) return;
       if (response.statusCode == 200 && response.data['success'] == true) {
         _nameController.clear();
         _targetController.clear();
@@ -92,11 +93,14 @@ class _ManageMetricsModalState extends ConsumerState<ManageMetricsModal> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving metric: $e'), backgroundColor: Colors.red),
       );
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -189,7 +193,7 @@ class _ManageMetricsModalState extends ConsumerState<ManageMetricsModal> {
                     Expanded(
                       flex: 1,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         borderRadius: BorderRadius.circular(16.0),
                         isDense: true,
                         decoration: InputDecoration(
@@ -248,7 +252,7 @@ class _ManageMetricsModalState extends ConsumerState<ManageMetricsModal> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedGoalDirection,
+                        initialValue: _selectedGoalDirection,
                         borderRadius: BorderRadius.circular(16.0),
                         isDense: true,
                         decoration: InputDecoration(
@@ -299,7 +303,7 @@ class _ManageMetricsModalState extends ConsumerState<ManageMetricsModal> {
                     ? const Center(child: Text('No custom test metrics added yet.', style: TextStyle(color: Color(0xFF94A3B8))))
                     : ListView.separated(
                         itemCount: _metrics.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8.0),
+                        separatorBuilder: (_, _) => const SizedBox(height: 8.0),
                         itemBuilder: (context, index) {
                           final item = _metrics[index];
                           return Container(

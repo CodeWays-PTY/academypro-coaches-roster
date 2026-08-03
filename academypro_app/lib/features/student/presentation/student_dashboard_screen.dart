@@ -17,7 +17,7 @@ import '../../notifications/presentation/notifications_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StudentDashboardScreen extends ConsumerStatefulWidget {
-  const StudentDashboardScreen({Key? key}) : super(key: key);
+  const StudentDashboardScreen({super.key});
 
   @override
   ConsumerState<StudentDashboardScreen> createState() => _StudentDashboardScreenState();
@@ -72,7 +72,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 height: 36.0,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
+                  border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.2), width: 1.0),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(18.0),
@@ -224,7 +224,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6.0,
             offset: const Offset(0, 2),
           ),
@@ -317,10 +317,10 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24.0),
-              border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+              border: Border.all(color: const Color(0xFFC3C5D9).withValues(alpha: 0.3), width: 1.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -334,7 +334,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF05B046).withOpacity(0.1),
+                        color: const Color(0xFF05B046).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20.0),
                       ),
                       child: const Text(
@@ -376,7 +376,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       : '$studentName is registered as a $position in the $ageGroup $team squad. Log baseline test scores to unlock performance insights.',
                   style: TextStyle(
                     fontSize: 15.0,
-                    color: const Color(0xFF434656).withOpacity(0.9),
+                    color: const Color(0xFF434656).withValues(alpha: 0.9),
                     height: 1.4,
                   ),
                 ),
@@ -412,7 +412,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                     Container(
                       width: 1.5,
                       height: 40.0,
-                      color: const Color(0xFFC3C5D9).withOpacity(0.5),
+                      color: const Color(0xFFC3C5D9).withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 32.0),
                     Column(
@@ -565,7 +565,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
             borderRadius: BorderRadius.circular(24.0),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF003EC7).withOpacity(0.2),
+                color: const Color(0xFF003EC7).withValues(alpha: 0.2),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               )
@@ -677,7 +677,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 10.0),
-                        color: const Color(0xFF003EC7).withOpacity(0.9),
+                        color: const Color(0xFF003EC7).withValues(alpha: 0.9),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -867,7 +867,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) {
@@ -892,7 +892,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   width: 40.0,
                   height: 4.0,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFC3C5D9).withOpacity(0.5),
+                    color: const Color(0xFFC3C5D9).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2.0),
                   ),
                 ),
@@ -1057,7 +1057,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.0),
-          border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.4), width: 1.0),
+          border: Border.all(color: const Color(0xFFC3C5D9).withValues(alpha: 0.4), width: 1.0),
         ),
         child: Row(
           children: [
@@ -1065,7 +1065,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: themeColor.withOpacity(0.1),
+                color: themeColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: Icon(icon, color: themeColor, size: 28.0),
@@ -1924,7 +1924,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               borderRadius: BorderRadius.circular(20.0),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF003EC7).withOpacity(0.25),
+                  color: const Color(0xFF003EC7).withValues(alpha: 0.25),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 )
@@ -1935,7 +1935,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 Container(
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16.0),
                   ),
                   child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 36.0),
@@ -2212,7 +2212,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                             const Text('YEAR', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
                             const SizedBox(height: 4.0),
                             DropdownButtonFormField<int>(
-                              value: selectedYear,
+                              initialValue: selectedYear,
                               decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
                               items: years.map((y) => DropdownMenuItem(value: y, child: Text('$y'))).toList(),
                               onChanged: (val) => setModalState(() => selectedYear = val!),
@@ -2230,7 +2230,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                             const Text('MONTH', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
                             const SizedBox(height: 4.0),
                             DropdownButtonFormField<int>(
-                              value: selectedMonth,
+                              initialValue: selectedMonth,
                               decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), border: OutlineInputBorder()),
                               items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(months[i].split(' ')[0]))).toList(),
                               onChanged: (val) => setModalState(() => selectedMonth = val!),
@@ -2248,7 +2248,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                             const Text('DAY', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
                             const SizedBox(height: 4.0),
                             DropdownButtonFormField<int>(
-                              value: selectedDay,
+                              initialValue: selectedDay,
                               decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), border: OutlineInputBorder()),
                               items: List.generate(31, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}'))).toList(),
                               onChanged: (val) => setModalState(() => selectedDay = val!),
@@ -2478,7 +2478,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       width: 200.0,
                       height: 200.0,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         width: 200,
                         height: 200,
                         color: const Color(0xFFF1F5F9),
@@ -2776,7 +2776,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                                 width: double.infinity,
                                 height: 280.0,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (_, _, _) => Container(
                                   height: 100.0,
                                   color: const Color(0xFFF1F5F9),
                                   alignment: Alignment.center,
@@ -2786,7 +2786,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 10.0),
-                                color: const Color(0xFF003EC7).withOpacity(0.9),
+                                color: const Color(0xFF003EC7).withValues(alpha: 0.9),
                                 child: const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -2989,7 +2989,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                                   Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                    color: const Color(0xFF003EC7).withOpacity(0.9),
+                                    color: const Color(0xFF003EC7).withValues(alpha: 0.9),
                                     child: const Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
@@ -3093,7 +3093,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                       if (loadingProgress == null) return child;
                       return const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)));
                     },
-                    errorBuilder: (_, __, ___) => const Center(
+                    errorBuilder: (_, _, _) => const Center(
                       child: Text('Failed to load workout plan image.', style: TextStyle(color: Colors.white70)),
                     ),
                   ),
@@ -3106,7 +3106,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.75),
+                    color: Colors.black.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(20.0),
                     border: Border.all(color: Colors.white24),
                   ),
@@ -3144,7 +3144,7 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
               borderRadius: BorderRadius.circular(32.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 20.0,
                   spreadRadius: 1.0,
                   offset: const Offset(0, 4),

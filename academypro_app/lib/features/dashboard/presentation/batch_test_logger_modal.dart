@@ -10,10 +10,10 @@ class BatchTestLoggerModal extends ConsumerStatefulWidget {
   final CoachEvent? initialEvent;
 
   const BatchTestLoggerModal({
-    Key? key,
+    super.key,
     required this.ageGroup,
     this.initialEvent,
-  }) : super(key: key);
+  });
 
   static void show(
     BuildContext context, {
@@ -202,7 +202,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
         }
       }
     } catch (e) {
-      print('Error loading batch logger data: $e');
+      debugPrint('Error loading batch logger data: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -270,6 +270,8 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
         'logs': logs,
       });
 
+      if (!mounted) return;
+
       if (response.statusCode == 200 && response.data['success'] == true) {
         Navigator.pop(context);
         AppToast.showSuccess(
@@ -285,9 +287,12 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       AppToast.showError(context, title: 'Network Error', message: 'Error submitting test scores: $e');
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -637,7 +642,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                     )
                   : ListView.separated(
                       itemCount: _players.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8.0),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8.0),
                       itemBuilder: (context, index) {
                         final player = _players[index];
                         final playerId = player['id'];
@@ -658,7 +663,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                             children: [
                               CircleAvatar(
                                 radius: 17.0,
-                                backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
+                                backgroundColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
                                 child: Text(
                                   player['firstName'] != null && player['firstName'].toString().isNotEmpty
                                       ? player['firstName'][0]
@@ -677,7 +682,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                                     ),
                                     const SizedBox(height: 2.0),
                                     Text(
-                                      '${player['position'] ?? 'Athlete'} • ${_selectedAgeGroup}',
+                                      '${player['position'] ?? 'Athlete'} • $_selectedAgeGroup',
                                       style: const TextStyle(fontSize: 11.0, color: Color(0xFF64748B)),
                                     ),
                                   ],

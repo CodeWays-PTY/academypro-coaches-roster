@@ -9,10 +9,10 @@ class CreateActionModal extends ConsumerStatefulWidget {
   final String playerName;
 
   const CreateActionModal({
-    Key? key,
+    super.key,
     required this.playerId,
     required this.playerName,
-  }) : super(key: key);
+  });
 
   static Future<void> show(BuildContext context, {required String playerId, required String playerName}) async {
     await showModalBottomSheet(

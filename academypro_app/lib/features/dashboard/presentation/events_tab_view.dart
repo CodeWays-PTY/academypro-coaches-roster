@@ -11,7 +11,7 @@ import 'create_event_modal.dart';
 import 'batch_test_logger_modal.dart';
 
 class EventsTabView extends ConsumerStatefulWidget {
-  const EventsTabView({Key? key}) : super(key: key);
+  const EventsTabView({super.key});
 
   @override
   ConsumerState<EventsTabView> createState() => _EventsTabViewState();
@@ -102,9 +102,8 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
                         onPressed: () async {
                           HapticFeedback.mediumImpact();
                           await ref.read(dashboardEventsProvider.notifier).fetchEvents(ageGroup: selectedAge);
-                          if (mounted) {
-                            AppToast.showSuccess(context, title: 'Refreshed', message: 'Latest events updated!');
-                          }
+                          if (!mounted) return;
+                          AppToast.showSuccess(this.context, title: 'Refreshed', message: 'Latest events updated!');
                         },
                         icon: const Icon(Icons.sync, color: Color(0xFF003EC7), size: 20.0),
                         tooltip: 'Refresh Events',
@@ -498,7 +497,7 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
       context: context,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
         child: Container(
@@ -686,13 +685,13 @@ class _EventsTabViewState extends ConsumerState<EventsTabView> {
       return Image.network(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildFallbackAttachmentBox(path),
+        errorBuilder: (_, _, _) => _buildFallbackAttachmentBox(path),
       );
     } else if (path.startsWith('assets/')) {
       return Image.asset(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildFallbackAttachmentBox(path),
+        errorBuilder: (_, _, _) => _buildFallbackAttachmentBox(path),
       );
     } else {
       try {

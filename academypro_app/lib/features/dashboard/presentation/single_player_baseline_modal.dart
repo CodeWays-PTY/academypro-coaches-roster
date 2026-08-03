@@ -11,11 +11,11 @@ class SinglePlayerBaselineModal extends ConsumerStatefulWidget {
   final CoachEvent? initialEvent;
 
   const SinglePlayerBaselineModal({
-    Key? key,
+    super.key,
     required this.playerId,
     required this.playerName,
     this.initialEvent,
-  }) : super(key: key);
+  });
 
   static Future<void> show(
     BuildContext context, {
@@ -158,7 +158,7 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
         _metricControllers[mId] = TextEditingController();
       }
     } catch (e) {
-      print('Error loading player baseline modal data: $e');
+      debugPrint('Error loading player baseline modal data: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -309,7 +309,7 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
             ),
             const SizedBox(height: 6.0),
             DropdownButtonFormField<String>(
-              value: (_testEvents.any((e) => e.id == _selectedEventId)) ? _selectedEventId : null,
+              initialValue: (_testEvents.any((e) => e.id == _selectedEventId)) ? _selectedEventId : null,
               isDense: true,
               isExpanded: true,
               borderRadius: BorderRadius.circular(14.0),
@@ -409,7 +409,7 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
                     )
                   : ListView.separated(
                       itemCount: _testMetrics.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10.0),
+                      separatorBuilder: (_, _) => const SizedBox(height: 10.0),
                       itemBuilder: (context, index) {
                         final metric = _testMetrics[index];
                         final metricId = metric['id'];
@@ -430,7 +430,7 @@ class _SinglePlayerBaselineModalState extends ConsumerState<SinglePlayerBaseline
                                 width: 36.0,
                                 height: 36.0,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2563EB).withOpacity(0.1),
+                                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10.0),
                                 ),
                                 child: const Icon(Icons.bolt, color: Color(0xFF2563EB), size: 20.0),

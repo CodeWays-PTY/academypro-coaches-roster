@@ -105,7 +105,7 @@ class AppToast {
                       Container(
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
-                          color: accentColor.withOpacity(0.2),
+                          color: accentColor.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(icon, color: accentColor, size: 22.0),
@@ -130,7 +130,7 @@ class AppToast {
                               Text(
                                 message,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 12.0,
                                   height: 1.3,
                                 ),
@@ -140,7 +140,7 @@ class AppToast {
                         ),
                       ),
                       const SizedBox(width: 8.0),
-                      Icon(Icons.close, color: Colors.white.withOpacity(0.6), size: 18.0),
+                      Icon(Icons.close, color: Colors.white.withValues(alpha: 0.6), size: 18.0),
                     ],
                   ),
                 ),

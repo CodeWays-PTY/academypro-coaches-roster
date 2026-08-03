@@ -9,7 +9,7 @@ import '../controllers/dashboard_controller.dart';
 import 'qr_scanner_modal.dart';
 
 class CheckInTabView extends ConsumerStatefulWidget {
-  const CheckInTabView({Key? key}) : super(key: key);
+  const CheckInTabView({super.key});
 
   @override
   ConsumerState<CheckInTabView> createState() => _CheckInTabViewState();
@@ -242,7 +242,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -300,7 +300,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                   borderRadius: BorderRadius.circular(20.0),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF003EC7).withOpacity(0.25),
+                      color: const Color(0xFF003EC7).withValues(alpha: 0.25),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -313,7 +313,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                         Container(
                           padding: const EdgeInsets.all(12.0),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14.0),
                           ),
                           child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28.0),
@@ -468,7 +468,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                             width: 230.0,
                             padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
-                              color: isSelected ? accentColor.withOpacity(0.08) : Colors.white,
+                              color: isSelected ? accentColor.withValues(alpha: 0.08) : Colors.white,
                               borderRadius: BorderRadius.circular(16.0),
                               border: Border.all(
                                 color: isSelected ? accentColor : const Color(0xFFE2E8F0),
@@ -527,7 +527,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                   height: 60.0,
                   child: Center(child: CircularProgressIndicator(strokeWidth: 2.0)),
                 ),
-                error: (_, __) => Container(
+                error: (_, _) => Container(
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -745,7 +745,7 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -862,20 +862,19 @@ class _CheckInTabViewState extends ConsumerState<CheckInTabView> {
                           }
                           HapticFeedback.mediumImpact();
                           final success = await ref.read(checkInProvider.notifier).submitAttendance();
-                          if (mounted) {
-                            if (success) {
-                              AppToast.showSuccess(
-                                context,
-                                title: 'Attendance Record Saved',
-                                message: 'Practice session check-in complete. ${checkInState.checkedInCount} athlete(s) marked Present.',
-                              );
-                            } else {
-                              AppToast.showInfo(
-                                context,
-                                title: 'Attendance Queued Offline',
-                                message: 'Check-in saved locally. Will sync automatically when connection restores.',
-                              );
-                            }
+                          if (!mounted) return;
+                          if (success) {
+                            AppToast.showSuccess(
+                              this.context,
+                              title: 'Attendance Record Saved',
+                              message: 'Practice session check-in complete. ${checkInState.checkedInCount} athlete(s) marked Present.',
+                            );
+                          } else {
+                            AppToast.showInfo(
+                              this.context,
+                              title: 'Attendance Queued Offline',
+                              message: 'Check-in saved locally. Will sync automatically when connection restores.',
+                            );
                           }
                         },
                   icon: const Icon(Icons.cloud_upload_outlined, size: 20.0),

@@ -12,14 +12,14 @@ import 'manage_player_squads_modal.dart';
 import 'add_existing_player_modal.dart';
 
 class RosterTabView extends ConsumerStatefulWidget {
-  const RosterTabView({Key? key}) : super(key: key);
+  const RosterTabView({super.key});
 
   @override
   ConsumerState<RosterTabView> createState() => _RosterTabViewState();
 }
 
 class _RosterTabViewState extends ConsumerState<RosterTabView> {
-  String _selectedAgeGroup = 'U15';
+  final String _selectedAgeGroup = 'U15';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -147,7 +147,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
+                            color: Colors.black.withValues(alpha: 0.02),
                             blurRadius: 4.0,
                             offset: const Offset(0, 2),
                           ),
@@ -325,7 +325,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
               child: ListView.separated(
                 padding: const EdgeInsets.only(bottom: 100.0),
                 itemCount: filteredPlayers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12.0),
+                separatorBuilder: (_, _) => const SizedBox(height: 12.0),
                 itemBuilder: (context, index) {
                   final player = filteredPlayers[index];
                   final initials = '${player.firstName.isNotEmpty ? player.firstName[0] : ''}${player.lastName.isNotEmpty ? player.lastName[0] : ''}';
@@ -780,7 +780,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                   border: Border.all(color: const Color(0xFFB7C8E1), width: 1.5),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
+                                      color: Colors.black.withValues(alpha: 0.04),
                                       blurRadius: 4.0,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1001,7 +1001,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
                                         const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
                                       ],
                                     );
-                                  }).toList(),
+                                  }),
                                 _buildPositionRow(context, ref, player, () => setSheetState(() {}), preferredPos),
                                 const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
                                 _buildProfileRow('Athlete System ID', player.id),
@@ -1096,7 +1096,7 @@ class _RosterTabViewState extends ConsumerState<RosterTabView> {
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
+            color: Colors.black.withValues(alpha: 0.015),
             blurRadius: 4.0,
             offset: const Offset(0, 2),
           ),

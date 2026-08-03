@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/app_toast.dart';
@@ -76,7 +77,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
         state = state.copyWith(loading: false, error: response.data?['message'] ?? 'Failed to load notifications');
       }
     } catch (e) {
-      print('Error in fetchNotifications: $e');
+      debugPrint('Error in fetchNotifications: $e');
       state = state.copyWith(loading: false, error: e.toString());
       if (isUserInitiated) {
         AppToast.showError(null, title: 'Network Failure', message: 'Could not refresh notifications.');
@@ -102,7 +103,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     try {
       await _apiClient.dio.post('/api/notifications/$id/read');
     } catch (e) {
-      print('Error in markAsRead: $e');
+      debugPrint('Error in markAsRead: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to update notification status.');
     }
   }
@@ -114,7 +115,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     try {
       await _apiClient.dio.post('/api/notifications/read-all');
     } catch (e) {
-      print('Error in markAllAsRead: $e');
+      debugPrint('Error in markAllAsRead: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to mark notifications as read.');
     }
   }
@@ -130,7 +131,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       try {
         await _apiClient.dio.delete('/api/notifications/$id');
       } catch (err) {
-        print('Error in deleteNotification: $err');
+        debugPrint('Error in deleteNotification: $err');
         AppToast.showError(null, title: 'Network Failure', message: 'Failed to delete notification.');
       }
     }

@@ -11,13 +11,13 @@ import '../controllers/dashboard_controller.dart';
 class CreateEventModal extends ConsumerStatefulWidget {
   final CoachEvent? eventToEdit;
 
-  const CreateEventModal({Key? key, this.eventToEdit}) : super(key: key);
+  const CreateEventModal({super.key, this.eventToEdit});
 
   static Future<void> show(BuildContext context, {CoachEvent? eventToEdit}) async {
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) => BackdropFilter(
@@ -883,7 +883,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                                   boxShadow: isSel
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF003EC7).withOpacity(0.2),
+                                            color: const Color(0xFF003EC7).withValues(alpha: 0.2),
                                             blurRadius: 4,
                                             offset: const Offset(0, 2),
                                           ),
@@ -1036,7 +1036,7 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
                             _isImportant = val;
                           });
                         },
-                        activeColor: const Color(0xFFD97706),
+                        activeThumbColor: const Color(0xFFD97706),
                         title: const Text(
                           'Mark as High Priority / Important',
                           style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),

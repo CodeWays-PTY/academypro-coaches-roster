@@ -402,7 +402,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: qualifiedStars.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 14.0),
+                    separatorBuilder: (_, _) => const SizedBox(width: 14.0),
                     itemBuilder: (context, index) {
                       return _buildRisingStarCard(context, qualifiedStars[index]);
                     },
@@ -413,7 +413,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 height: 100,
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (_, __) => const SizedBox(),
+              error: (_, _) => const SizedBox(),
             ),
 
             const SizedBox(height: 28.0),
@@ -458,7 +458,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     );
                   },
                   loading: () => const SizedBox(),
-                  error: (_, __) => const SizedBox(),
+                  error: (_, _) => const SizedBox(),
                 ),
               ],
             ),
@@ -494,7 +494,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 14.0),
+                    separatorBuilder: (_, _) => const SizedBox(width: 14.0),
                     itemBuilder: (context, index) {
                       return _buildFlagCarouselCard(context, filtered[index]);
                     },
@@ -573,7 +573,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: coachActions.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8.0),
+                separatorBuilder: (_, _) => const SizedBox(height: 8.0),
                 itemBuilder: (context, index) {
                   final item = coachActions[index];
                   return GestureDetector(
@@ -657,7 +657,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) {
@@ -682,7 +682,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   width: 40.0,
                   height: 4.0,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFC3C5D9).withOpacity(0.5),
+                    color: const Color(0xFFC3C5D9).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2.0),
                   ),
                 ),
@@ -1135,7 +1135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               borderRadius: BorderRadius.circular(32.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 20.0,
                   spreadRadius: 1.0,
                   offset: const Offset(0, 4),

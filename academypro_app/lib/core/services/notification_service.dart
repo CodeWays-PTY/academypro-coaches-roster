@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -33,7 +34,7 @@ class NotificationService {
       _isInitialized = true;
     } catch (e) {
       // Fallback logging
-      print('NotificationService init warning: $e');
+      debugPrint('NotificationService init warning: $e');
     }
   }
 
@@ -57,7 +58,7 @@ class NotificationService {
         return granted ?? true;
       }
     } catch (e) {
-      print('Permission request warning: $e');
+      debugPrint('Permission request warning: $e');
     }
     return true;
   }
@@ -92,7 +93,7 @@ class NotificationService {
     try {
       await _notificationsPlugin.show(id, title, body, details, payload: payload);
     } catch (e) {
-      print('Error displaying notification: $e');
+      debugPrint('Error displaying notification: $e');
     }
   }
 
@@ -100,7 +101,7 @@ class NotificationService {
     try {
       await _notificationsPlugin.cancelAll();
     } catch (e) {
-      print('Error canceling notifications: $e');
+      debugPrint('Error canceling notifications: $e');
     }
   }
 }

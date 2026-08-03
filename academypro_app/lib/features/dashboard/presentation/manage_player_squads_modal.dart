@@ -9,10 +9,10 @@ class ManagePlayerSquadsModal extends ConsumerStatefulWidget {
   final String currentAgeGroup;
 
   const ManagePlayerSquadsModal({
-    Key? key,
+    super.key,
     required this.player,
     required this.currentAgeGroup,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ManagePlayerSquadsModal> createState() => _ManagePlayerSquadsModalState();

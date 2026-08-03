@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../controllers/checkin_controller.dart';
 
 class QrScannerModal extends ConsumerStatefulWidget {
-  const QrScannerModal({Key? key}) : super(key: key);
+  const QrScannerModal({super.key});
 
   static Future<void> show(BuildContext context) async {
     await showModalBottomSheet(
@@ -161,7 +160,7 @@ class _QrScannerModalState extends ConsumerState<QrScannerModal> {
                         borderRadius: BorderRadius.circular(12.0),
                         boxShadow: [
                           BoxShadow(
-                            color: (_bannerIsSuccess ? Colors.green : Colors.amber).withOpacity(0.3),
+                            color: (_bannerIsSuccess ? Colors.green : Colors.amber).withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -201,7 +200,7 @@ class _QrScannerModalState extends ConsumerState<QrScannerModal> {
                   border: Border.all(color: const Color(0xFFE2E8F0), width: 2.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -237,7 +236,7 @@ class _QrScannerModalState extends ConsumerState<QrScannerModal> {
                           boxShadow: [
                             BoxShadow(
                               color: (_bannerIsSuccess ? const Color(0xFF22C55E) : const Color(0xFF2563EB))
-                                  .withOpacity(0.3),
+                                  .withValues(alpha: 0.3),
                               blurRadius: 16,
                               spreadRadius: 2,
                             ),
@@ -251,7 +250,7 @@ class _QrScannerModalState extends ConsumerState<QrScannerModal> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.75),
+                            color: Colors.black.withValues(alpha: 0.75),
                             borderRadius: BorderRadius.circular(999.0),
                           ),
                           child: const Row(

@@ -6,7 +6,7 @@ import '../../core/storage/local_storage.dart';
 import '../../features/auth/presentation/auth_state.dart';
 
 class NetworkErrorScreen extends ConsumerStatefulWidget {
-  const NetworkErrorScreen({Key? key}) : super(key: key);
+  const NetworkErrorScreen({super.key});
 
   @override
   ConsumerState<NetworkErrorScreen> createState() => _NetworkErrorScreenState();
@@ -127,7 +127,7 @@ class _NetworkErrorScreenState extends ConsumerState<NetworkErrorScreen> {
                       borderRadius: BorderRadius.circular(24.0),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withOpacity(0.08),
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.08),
                           blurRadius: 24.0,
                           offset: const Offset(0, 8),
                         ),

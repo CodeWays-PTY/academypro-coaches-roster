@@ -10,7 +10,7 @@ import '../../student/presentation/student_dashboard_screen.dart';
 import '../../parent/presentation/parent_dashboard_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -164,7 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Image.asset(
                       'assets/images/app_logo.png',
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      errorBuilder: (_, _, _) => const Icon(
                         Icons.sports,
                         size: 64.0,
                         color: Color(0xFF2563EB),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
@@ -98,7 +99,7 @@ class DashboardSummaryNotifier extends StateNotifier<DashboardSummaryState> {
         state = state.copyWith(loading: false, error: response.data?['message'] ?? 'Failed to load summary');
       }
     } catch (e) {
-      print('Error in fetchSummary: $e');
+      debugPrint('Error in fetchSummary: $e');
       state = state.copyWith(loading: false, error: e.toString());
       AppToast.showError(null, title: 'Network Error', message: 'Failed to load dashboard summary.');
     }
@@ -377,7 +378,7 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
         state = items;
       }
     } catch (e) {
-      print('Error in fetchActions: $e');
+      debugPrint('Error in fetchActions: $e');
       if (isUserInitiated) {
         AppToast.showError(null, title: 'Network Failure', message: 'Failed to fetch coach actions.');
       }
@@ -424,7 +425,7 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
       }
     } catch (e) {
       state = previousState;
-      print('Error in addAction: $e');
+      debugPrint('Error in addAction: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to add coach action.');
     }
   }
@@ -446,7 +447,7 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
       }
     } catch (e) {
       state = previousState;
-      print('Error in toggleAction: $e');
+      debugPrint('Error in toggleAction: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to toggle action status.');
     }
   }
@@ -517,7 +518,7 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
         return;
       }
     } catch (e) {
-      print('Error in fetchSquads: $e');
+      debugPrint('Error in fetchSquads: $e');
     }
 
     if (state.isEmpty) {
@@ -558,7 +559,7 @@ class SquadsNotifier extends StateNotifier<List<SquadItem>> {
         'description': description,
       });
     } catch (e) {
-      print('Error in createSquad: $e');
+      debugPrint('Error in createSquad: $e');
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to create squad on server.');
     }
 
@@ -794,7 +795,7 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
 
     // Strict client-side validation prior to network dispatch
     if (title.trim().isEmpty || location.trim().isEmpty || startTime.trim().isEmpty || date.trim().isEmpty) {
-      print('[Create Event Error] Missing required fields in client payload.');
+      debugPrint('[Create Event Error] Missing required fields in client payload.');
       return false;
     }
 
@@ -839,11 +840,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         await fetchEvents(ageGroup: activeAge);
         return true;
       } else {
-        print('[Create Event Error] Backend rejected creation: ${res.data?['message']} (HTTP ${res.statusCode})');
+        debugPrint('[Create Event Error] Backend rejected creation: ${res.data?['message']} (HTTP ${res.statusCode})');
         return false;
       }
     } catch (e) {
-      print('[Create Event Error] Network failure or API exception saving to D1: $e');
+      debugPrint('[Create Event Error] Network failure or API exception saving to D1: $e');
       return false;
     }
   }
@@ -872,11 +873,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         await _updateHiveCache(updatedList, event.ageGroup);
         return true;
       } else {
-        print('[Update Event Error] Backend rejected update: ${res.data?['message']} (HTTP ${res.statusCode})');
+        debugPrint('[Update Event Error] Backend rejected update: ${res.data?['message']} (HTTP ${res.statusCode})');
         return false;
       }
     } catch (e) {
-      print('[Update Event Error] Exception updating event: $e');
+      debugPrint('[Update Event Error] Exception updating event: $e');
       return false;
     }
   }
@@ -893,11 +894,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         await _updateHiveCache(updatedList, null);
         return true;
       } else {
-        print('[Delete Event Error] Backend rejected deletion: ${res.data?['message']} (HTTP ${res.statusCode})');
+        debugPrint('[Delete Event Error] Backend rejected deletion: ${res.data?['message']} (HTTP ${res.statusCode})');
         return false;
       }
     } catch (e) {
-      print('[Delete Event Error] Exception deleting event: $e');
+      debugPrint('[Delete Event Error] Exception deleting event: $e');
       return false;
     }
   }

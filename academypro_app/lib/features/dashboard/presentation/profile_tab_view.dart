@@ -14,7 +14,7 @@ import '../../../core/utils/phone_utils.dart';
 import '../../../core/utils/app_toast.dart';
 
 class ProfileTabView extends ConsumerStatefulWidget {
-  const ProfileTabView({Key? key}) : super(key: key);
+  const ProfileTabView({super.key});
 
   @override
   ConsumerState<ProfileTabView> createState() => _ProfileTabViewState();
@@ -924,7 +924,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                 border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -950,7 +950,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF003EC7).withOpacity(0.25),
+                                color: const Color(0xFF003EC7).withValues(alpha: 0.25),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
@@ -963,7 +963,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                                       ? Image.network(
                                           avatarPath,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Center(
+                                          errorBuilder: (_, _, _) => Center(
                                             child: Text(
                                               initials.isNotEmpty ? initials : 'AP',
                                               style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.white),
@@ -973,7 +973,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                                       : Image.file(
                                           File(avatarPath),
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Center(
+                                          errorBuilder: (_, _, _) => Center(
                                             child: Text(
                                               initials.isNotEmpty ? initials : 'AP',
                                               style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.white),
@@ -1208,7 +1208,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
           Container(
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10.0),
             ),
             child: Icon(icon, size: 18.0, color: iconColor),
@@ -1340,7 +1340,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
       ),
       trailing: Switch.adaptive(
         value: value,
-        activeColor: const Color(0xFF003EC7),
+        activeTrackColor: const Color(0xFF003EC7),
         onChanged: onChanged,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),

@@ -12,7 +12,7 @@ import '../../notifications/controllers/notification_controller.dart';
 import '../../notifications/presentation/notifications_panel.dart';
 
 class ParentDashboardScreen extends ConsumerStatefulWidget {
-  const ParentDashboardScreen({Key? key}) : super(key: key);
+  const ParentDashboardScreen({super.key});
 
   @override
   ConsumerState<ParentDashboardScreen> createState() => _ParentDashboardScreenState();
@@ -115,14 +115,13 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                             try {
                               final apiClient = ref.read(apiClientProvider);
                               await apiClient.post('/api/parent/link-request', data: {'childEmail': emailCtrl.text.trim()});
-                              if (mounted) {
-                                Navigator.pop(context);
-                                AppToast.showSuccess(
-                                  context,
-                                  title: 'Link Request Dispatched',
-                                  message: 'Parent link request sent to ${emailCtrl.text.trim()}. Pending athlete approval.',
-                                );
-                              }
+                              if (!mounted) return;
+                              Navigator.pop(this.context);
+                              AppToast.showSuccess(
+                                this.context,
+                                title: 'Link Request Dispatched',
+                                message: 'Parent link request sent to ${emailCtrl.text.trim()}. Pending athlete approval.',
+                              );
                             } catch (e) {
                               setModalState(() => submitting = false);
                             }
@@ -172,7 +171,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
               height: 36.0,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1.0),
+                border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.2), width: 1.0),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18.0),
@@ -354,7 +353,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF003EC7).withOpacity(0.3),
+                  color: const Color(0xFF003EC7).withValues(alpha: 0.3),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 )
@@ -368,7 +367,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                     Container(
                       width: 24.0,
                       height: 2.0,
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 8.0),
                     Text(
@@ -402,7 +401,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                   '$studentName is meeting all performance benchmarks for the $ageGroup $team squad.',
                   style: TextStyle(
                     fontSize: 15.0,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     height: 1.4,
                   ),
                 ),
@@ -453,9 +452,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.0),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.0),
       ),
       child: Row(
         children: [
@@ -476,7 +475,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                 style: TextStyle(
                   fontSize: 8.0,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -519,7 +518,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                 borderRadius: BorderRadius.circular(24.0),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0052FF).withOpacity(0.2),
+                    color: const Color(0xFF0052FF).withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -549,7 +548,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20.0),
                         ),
                         child: Text(
@@ -719,7 +718,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF2F3FF), // surface-container-low
         borderRadius: BorderRadius.circular(24.0),
-        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+        border: Border.all(color: const Color(0xFFC3C5D9).withValues(alpha: 0.3), width: 1.0),
       ),
       child: Column(
         children: [
@@ -828,7 +827,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24.0),
-          border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+          border: Border.all(color: const Color(0xFFC3C5D9).withValues(alpha: 0.3), width: 1.0),
         ),
         child: Column(
           children: [
@@ -854,7 +853,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24.0),
-        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+        border: Border.all(color: const Color(0xFFC3C5D9).withValues(alpha: 0.3), width: 1.0),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -925,7 +924,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: const Color(0xFFC3C5D9).withOpacity(0.3), width: 1.0),
+        border: Border.all(color: const Color(0xFFC3C5D9).withValues(alpha: 0.3), width: 1.0),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1008,15 +1007,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20.0),
       itemCount: data.academics.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16.0),
+      separatorBuilder: (_, _) => const SizedBox(height: 16.0),
       itemBuilder: (context, index) {
         final acad = data.academics[index];
         final grade = (acad['gradePercentage'] as num?)?.toDouble() ?? 0.0;
         final term = acad['term'] ?? 1;
 
         Color border = const Color(0xFF16A34A);
-        if (grade < AppConfig.academicWarningCutoff) border = const Color(0xFFDC2626);
-        else if (grade < AppConfig.academicPassCutoff) border = const Color(0xFFD97706);
+        if (grade < AppConfig.academicWarningCutoff) {
+          border = const Color(0xFFDC2626);
+        } else if (grade < AppConfig.academicPassCutoff) {
+          border = const Color(0xFFD97706);
+        }
 
         return Container(
           decoration: BoxDecoration(
@@ -1057,7 +1059,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20.0),
       itemCount: data.matches.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16.0),
+      separatorBuilder: (_, _) => const SizedBox(height: 16.0),
       itemBuilder: (context, index) {
         final match = data.matches[index];
         return Card(
@@ -1153,7 +1155,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
             borderRadius: BorderRadius.circular(32.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20.0,
                 spreadRadius: 1.0,
                 offset: const Offset(0, 4),

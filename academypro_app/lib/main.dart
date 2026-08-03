@@ -138,7 +138,7 @@ class SplashScreenBody extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28.0),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF003EC7).withOpacity(0.15),
+                    color: const Color(0xFF003EC7).withValues(alpha: 0.15),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   )
