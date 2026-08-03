@@ -935,27 +935,49 @@ app.get('/api/test-results', async (c) => {
   }
 });
 
-// Route: Create Test Result
-app.post('/api/test-results', async (c) => {
+// Route: Create / Update Test Result (Supports Dual Payload & Dashboard Route Alias)
+const handleSaveTestResult = async (c: any) => {
   const db = getDB(c);
   try {
     const body = await c.req.json();
-    const { id, eventId, athleteId, athleteName, testName, category, unit, scoreValue, testDate } = body;
+    const { id, eventId, athleteId, playerId, athleteName, testName, metricId, category, unit, scoreValue, score, testDate } = body;
     const resultId = id || generatePrimaryKey('tr');
+    const pid = athleteId || playerId || '';
+    const mId = metricId || testName || 'general';
+    const scoreVal = scoreValue !== undefined ? parseFloat(scoreValue) : (score !== undefined ? parseFloat(score) : 0);
+    const dateVal = testDate || new Date().toISOString().split('T')[0];
 
     await db.prepare(`
-      INSERT INTO player_test_logs (id, event_id, player_id, athlete_name, test_name, category, unit, score_value, test_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO player_test_logs (id, event_id, player_id, metric_id, athlete_name, test_name, category, unit, score, score_value, test_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        score = excluded.score,
         score_value = excluded.score_value,
-        test_date = excluded.test_date
-    `).bind(resultId, eventId || '', athleteId || '', athleteName || '', testName || '', category || '', unit || '', scoreValue || 0, testDate || new Date().toISOString().split('T')[0]).run();
+        test_date = excluded.test_date,
+        athlete_name = excluded.athlete_name,
+        test_name = excluded.test_name
+    `).bind(
+      resultId,
+      eventId || '',
+      pid,
+      mId,
+      athleteName || '',
+      testName || '',
+      category || '',
+      unit || '',
+      scoreVal,
+      scoreVal,
+      dateVal
+    ).run();
 
     return c.json({ success: true, message: 'Test result saved successfully', data: { id: resultId } });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }
-});
+};
+
+app.post('/api/test-results', handleSaveTestResult);
+app.post('/api/dashboard/test-results', handleSaveTestResult);
 
 
 // Helper to ensure squads & squad_players D1 tables exist

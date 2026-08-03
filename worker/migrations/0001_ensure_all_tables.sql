@@ -69,11 +69,18 @@ CREATE TABLE IF NOT EXISTS test_metric_definitions (
 
 CREATE TABLE IF NOT EXISTS player_test_logs (
     id TEXT PRIMARY KEY,
+    event_id TEXT,
     player_id TEXT NOT NULL,
     metric_id TEXT NOT NULL,
+    athlete_name TEXT,
+    test_name TEXT,
+    category TEXT,
+    unit TEXT,
     score REAL NOT NULL,
+    score_value REAL,
     test_date TEXT NOT NULL,
     session_name TEXT DEFAULT 'Evaluation',
+    notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
