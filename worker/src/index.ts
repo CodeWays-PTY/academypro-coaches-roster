@@ -966,11 +966,11 @@ app.get('/api/squads', async (c) => {
     SELECT s.*, COUNT(DISTINCT sp.player_id) as playerCount
     FROM squads s
     LEFT JOIN squad_players sp ON (sp.squad_id = s.id OR sp.squad_id = s.code OR sp.squad_id = s.name)
-    WHERE s.school_id = ?
+    WHERE (s.school_id = ? OR CAST(s.school_id AS TEXT) = CAST(? AS TEXT))
     GROUP BY s.id
     ORDER BY s.name ASC
   `;
-  let params: any[] = [schoolId];
+  let params: any[] = [schoolId, schoolId];
 
   let results: any[] = [];
   try {
