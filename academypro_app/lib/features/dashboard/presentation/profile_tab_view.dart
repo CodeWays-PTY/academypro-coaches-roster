@@ -526,24 +526,56 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                         : () async {
                             final entered = otpController.text.trim();
                             if (entered.length < 4) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter valid SMS code')),
+                              AppToast.showError(
+                                context,
+                                title: 'Invalid Code',
+                                message: 'Please enter the 6-digit SMS code.',
                               );
                               return;
                             }
                             setModalState(() => verifying = true);
 
-                            final finalProfile = Map<String, dynamic>.from(updatedProfile);
-                            finalProfile['phoneVerified'] = true;
-                            await ref.read(authProvider.notifier).updateUserProfile(finalProfile);
-
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              AppToast.showSuccess(
-                                context,
-                                title: 'Phone Number Verified',
-                                message: 'Phone number $phone verified and saved successfully.',
+                            try {
+                              final apiClient = ref.read(apiClientProvider);
+                              final res = await apiClient.post(
+                                '/api/coach/verify-sms-otp',
+                                data: {'phone': phone, 'code': entered},
                               );
+
+                              if (res.statusCode == 200 && res.data['success'] == true) {
+                                final finalProfile = Map<String, dynamic>.from(updatedProfile);
+                                finalProfile['phone'] = phone;
+                                finalProfile['phoneVerified'] = true;
+                                finalProfile['phone_verified'] = true;
+                                await ref.read(authProvider.notifier).updateUserProfile(finalProfile);
+
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  AppToast.showSuccess(
+                                    context,
+                                    title: 'Phone Number Verified',
+                                    message: 'Phone number $phone verified and saved successfully.',
+                                  );
+                                }
+                              } else {
+                                if (context.mounted) {
+                                  AppToast.showError(
+                                    context,
+                                    title: 'Verification Failed',
+                                    message: res.data?['message'] ?? 'Invalid code. Please try again.',
+                                  );
+                                }
+                              }
+                            } catch (err) {
+                              if (context.mounted) {
+                                AppToast.showError(
+                                  context,
+                                  title: 'Verification Failed',
+                                  message: 'Invalid or expired code. Please check your SMS and try again.',
+                                );
+                              }
+                            } finally {
+                              setModalState(() => verifying = false);
                             }
                           },
                     style: ElevatedButton.styleFrom(

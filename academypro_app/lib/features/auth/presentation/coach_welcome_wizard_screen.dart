@@ -211,6 +211,7 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
       final cleanedPhone = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
       final fullPhone = cleanedPhone.isNotEmpty ? '${_selectedCountry.dialCode}$cleanedPhone' : '';
 
+      // Save mandatory name & surname immediately so they are never asked again
       final updatedFields = <String, dynamic>{
         'first_name': firstName,
         'last_name': lastName,
@@ -220,39 +221,36 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
         'is_first_time': false,
       };
 
-      if (fullPhone.isNotEmpty) {
-        updatedFields['phone'] = fullPhone;
-        try {
-          final apiClient = ref.read(apiClientProvider);
-          await apiClient.post('/api/coach/send-sms-otp', data: {'phone': fullPhone});
-          if (mounted) {
-            AppToast.showSuccess(
-              context,
-              title: 'Verification SMS Sent',
-              message: 'Verification code sent to $fullPhone!',
-            );
-          }
-        } catch (smsError) {
-          print('[Coach Onboarding] SMS Dispatch note: $smsError');
-        }
-      }
-
       if (!isSkippingOptional && _selectedImage != null) {
         updatedFields['avatar_url'] = _selectedImage!.path;
       }
 
       await ref.read(authProvider.notifier).updateUserProfile(updatedFields);
 
-      if (mounted) {
-        AppToast.showSuccess(
-          context,
-          title: 'Welcome Coach!',
-          message: 'Your profile has been set up successfully.',
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+      // If user entered a phone number and is not skipping, prompt for SMS Verification Code
+      if (fullPhone.isNotEmpty && !isSkippingOptional) {
+        try {
+          final apiClient = ref.read(apiClientProvider);
+          await apiClient.post('/api/coach/send-sms-otp', data: {'phone': fullPhone});
+        } catch (smsError) {
+          print('[Coach Onboarding] SMS Dispatch note: $smsError');
+        }
+
+        if (mounted) {
+          _showSMSVerificationModal(context, fullPhone, updatedFields);
+        }
+      } else {
+        if (mounted) {
+          AppToast.showSuccess(
+            context,
+            title: 'Welcome Coach!',
+            message: 'Your profile has been set up successfully.',
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -269,6 +267,200 @@ class _CoachWelcomeWizardScreenState extends ConsumerState<CoachWelcomeWizardScr
         });
       }
     }
+  }
+
+  void _showSMSVerificationModal(
+    BuildContext context,
+    String phone,
+    Map<String, dynamic> baseProfile,
+  ) {
+    final otpController = TextEditingController();
+    bool verifying = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      isDismissible: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      builder: (modalContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 20.0,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24.0 + MediaQuery.of(context).padding.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40.0,
+                      height: 4.0,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2.0),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        child: const Icon(Icons.sms_outlined, color: Color(0xFF2563EB), size: 24.0),
+                      ),
+                      const SizedBox(width: 14.0),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Verify SMS Code',
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            Text(
+                              'SMS security code sent to $phone',
+                              style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20.0),
+                  TextField(
+                    controller: otpController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: false, signed: false),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    maxLength: 6,
+                    autofocus: true,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, letterSpacing: 6.0),
+                    decoration: InputDecoration(
+                      hintText: '• • • • • •',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), letterSpacing: 6.0),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  ElevatedButton(
+                    onPressed: verifying
+                        ? null
+                        : () async {
+                            final code = otpController.text.trim();
+                            if (code.length < 4) {
+                              AppToast.showError(
+                                context,
+                                title: 'Invalid Code',
+                                message: 'Please enter the 6-digit SMS code.',
+                              );
+                              return;
+                            }
+
+                            setModalState(() => verifying = true);
+
+                            try {
+                              final apiClient = ref.read(apiClientProvider);
+                              final res = await apiClient.post(
+                                '/api/coach/verify-sms-otp',
+                                data: {'phone': phone, 'code': code},
+                              );
+
+                              if (res.statusCode == 200 && res.data['success'] == true) {
+                                // Save verified phone number to user profile
+                                final finalProfile = Map<String, dynamic>.from(baseProfile);
+                                finalProfile['phone'] = phone;
+                                finalProfile['phoneVerified'] = true;
+                                finalProfile['phone_verified'] = true;
+                                await ref.read(authProvider.notifier).updateUserProfile(finalProfile);
+
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  AppToast.showSuccess(
+                                    context,
+                                    title: 'Phone Verified!',
+                                    message: 'Phone number $phone verified successfully.',
+                                  );
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                                  );
+                                }
+                              } else {
+                                if (context.mounted) {
+                                  AppToast.showError(
+                                    context,
+                                    title: 'Verification Failed',
+                                    message: res.data?['message'] ?? 'Invalid code. Please try again.',
+                                  );
+                                }
+                              }
+                            } catch (err) {
+                              if (context.mounted) {
+                                AppToast.showError(
+                                  context,
+                                  title: 'Verification Failed',
+                                  message: 'Invalid or expired code. Please check your SMS and try again.',
+                                );
+                              }
+                            } finally {
+                              setModalState(() => verifying = false);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003EC7),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                    ),
+                    child: verifying
+                        ? const SizedBox(
+                            width: 20.0,
+                            height: 20.0,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
+                          )
+                        : const Text(
+                            'Verify Code & Complete Setup',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0),
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override

@@ -339,10 +339,10 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
     fetchActions();
   }
 
-  Future<void> fetchActions() async {
+  Future<void> fetchActions({bool isUserInitiated = false}) async {
     try {
       final res = await _apiClient.getAndCache('/api/dashboard/actions');
-      if (res.statusCode == 200 && res.data['success'] == true) {
+      if (res.statusCode == 200 && res.data != null && res.data['success'] == true) {
         final List list = res.data['data'] ?? [];
         final items = list.map((x) => CoachActionItem(
           id: x['id'].toString(),
@@ -363,7 +363,9 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
       }
     } catch (e) {
       print('Error in fetchActions: $e');
-      AppToast.showError(null, title: 'Network Failure', message: 'Failed to fetch coach actions.');
+      if (isUserInitiated) {
+        AppToast.showError(null, title: 'Network Failure', message: 'Failed to fetch coach actions.');
+      }
     }
   }
 
