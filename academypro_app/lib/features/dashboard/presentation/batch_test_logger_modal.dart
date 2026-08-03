@@ -337,17 +337,8 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
 
           // Modal Header
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
-                ),
-                child: const Icon(Icons.analytics_rounded, color: Color(0xFF2563EB), size: 22.0),
-              ),
-              const SizedBox(width: 12.0),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,17 +347,19 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                       'Capture Squad Test Metrics',
                       style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.3),
                     ),
-                    const SizedBox(height: 2.0),
+                    const SizedBox(height: 3.0),
                     Text(
                       widget.initialEvent != null
                           ? 'Logging scores for ${widget.initialEvent!.title}'
                           : 'Select a squad & fitness test event to enter metrics',
                       style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 12.0),
               InkWell(
                 onTap: () => Navigator.pop(context),
                 borderRadius: BorderRadius.circular(20.0),
@@ -576,27 +569,17 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                       child: FilterChip(
                         selected: isSelected,
                         showCheckmark: false,
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isSelected ? Icons.bolt : Icons.tune,
-                              size: 14.0,
-                              color: isSelected ? Colors.white : const Color(0xFF2563EB),
-                            ),
-                            const SizedBox(width: 5.0),
-                            Text(
-                              '${m['name']} (${m['unit']})',
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                color: isSelected ? Colors.white : const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
+                        label: Text(
+                          '${m['name']} (${m['unit']})',
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                          ),
                         ),
                         selectedColor: const Color(0xFF2563EB),
                         backgroundColor: const Color(0xFFF1F5F9),
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                           side: BorderSide(
@@ -616,18 +599,28 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
               const SizedBox(height: 12.0),
             ],
 
-            // Active Metric & Athlete Count Header
+            // Active Metric & Athlete Count Header (Clean non-colliding layout)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'ATHLETE SCORES (${_players.length} ATHLETES)',
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.8),
+                Expanded(
+                  child: Text(
+                    'ATHLETE SCORES (${_players.length} ATHLETES)',
+                    style: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.6),
+                  ),
                 ),
                 if (selectedMetric != null)
-                  Text(
-                    'Active Metric: ${selectedMetric['name']} (${selectedMetric['unit']})',
-                    style: const TextStyle(fontSize: 11.0, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(6.0),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Text(
+                      '${selectedMetric['name']} (${selectedMetric['unit']})',
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
               ],
             ),
