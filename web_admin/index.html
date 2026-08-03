@@ -216,19 +216,35 @@
                             throw new Error(sportsJson.message || 'Failed to load sports config');
                         }
 
-                        // 3. Dynamically build squads list from unique ageGroup and team values in players
-                        const uniqueSquadsMap = new Map();
-                        this.players.forEach(p => {
-                            const squadName = p.team ? `${p.ageGroup} ${p.team}` : p.ageGroup;
-                            if (!uniqueSquadsMap.has(squadName)) {
-                                uniqueSquadsMap.set(squadName, p.ageGroup);
+                        // 3. Dynamically build squads list from API or unique ageGroup and team values in players
+                        try {
+                            const squadsRes = await fetch(`${apiBase}/api/squads`, { headers });
+                            const squadsJson = await squadsRes.json();
+                            if (squadsJson.success && Array.isArray(squadsJson.data) && squadsJson.data.length > 0) {
+                                this.squads = squadsJson.data.map((s, idx) => ({
+                                    id: s.id || `sq-${idx}`,
+                                    name: s.name || s.code || s.ageGroup || 'Squad',
+                                    active: true,
+                                    ageGroup: s.code || s.ageGroup || s.name
+                                }));
+                            } else {
+                                throw new Error('No API squads');
                             }
-                        });
-                        this.squads = Array.from(uniqueSquadsMap.entries()).map(([name, group]) => ({
-                            name: name,
-                            active: true,
-                            ageGroup: group
-                        }));
+                        } catch (_) {
+                            const uniqueSquadsMap = new Map();
+                            (this.players || []).forEach((p, idx) => {
+                                const squadName = p.team ? `${p.ageGroup} ${p.team}` : (p.ageGroup || `Squad ${idx + 1}`);
+                                if (!uniqueSquadsMap.has(squadName)) {
+                                    uniqueSquadsMap.set(squadName, p.ageGroup || squadName);
+                                }
+                            });
+                            this.squads = Array.from(uniqueSquadsMap.entries()).map(([name, group], idx) => ({
+                                id: `sq-${idx}`,
+                                name: name,
+                                active: true,
+                                ageGroup: group
+                            }));
+                        }
 
                     } catch (e) {
                         console.error('Failed to load dynamic config:', e);
@@ -495,9 +511,9 @@
                 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col gap-lg h-full">
                     <p class="text-on-surface-variant text-sm">Select the squads that will be included in the rows of your exported template.</p>
                     <div class="flex flex-wrap gap-sm">
-                        <template x-for="(s, index) in squads" :key="s.name">
+                        <template x-for="(s, index) in squads" :key="s.id || s.name || index">
                             <button @click="toggleSquad(index)" :class="s.active ? 'bg-secondary-container text-on-secondary-container border-primary/20' : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'" class="px-md py-xs rounded-full flex items-center gap-xs font-label-md border transition-colors">
-                                <span x-text="s.name">Squad Name</span>
+                                <span x-text="s.name || s">Squad Name</span>
                                 <span class="material-symbols-outlined text-[16px]" x-text="s.active ? 'close' : 'add'">close</span>
                             </button>
                         </template>
