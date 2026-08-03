@@ -1,0 +1,41 @@
+{
+  "name": "academypro-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-17",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "76bb100a98f64a319c81c95cdd82506f"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "academypro-db",
+      "database_id": "c1f553a7-1dcf-48fb-a678-9885ad76e0c0",
+      "migrations_dir": "../migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "academypro-r2-assets"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
+  "vars": {
+    "JWT_SECRET": "usport-secret-key-928374",
+    "INTERNAL_API_KEY": "agua_internal_secret_key_102938"
+  }
+}
