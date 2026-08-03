@@ -1542,6 +1542,10 @@ app.post('/api/dashboard/events', async (c) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDt)) {
     return c.json({ success: false, message: 'Event date must be formatted as YYYY-MM-DD.' }, 400);
   }
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (eventDt < todayStr) {
+    return c.json({ success: false, message: 'Events cannot be created in the past.' }, 400);
+  }
   if (!eventLoc) {
     return c.json({ success: false, message: 'Event location is required.' }, 400);
   }

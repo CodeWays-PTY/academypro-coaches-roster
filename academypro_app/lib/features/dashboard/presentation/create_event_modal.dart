@@ -212,11 +212,15 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initialDate = _selectedDate.isBefore(today) ? today : _selectedDate;
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -280,6 +284,14 @@ class _CreateEventModalState extends ConsumerState<CreateEventModal> {
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) return;
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final selectedStart = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    if (selectedStart.isBefore(todayStart)) {
+      AppToast.showError(context, title: 'Invalid Event Date', message: 'Events cannot be scheduled in the past.');
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
