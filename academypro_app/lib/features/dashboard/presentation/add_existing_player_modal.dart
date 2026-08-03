@@ -109,7 +109,6 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
           context,
           title: '${player.firstName} ${player.lastName} added to squad',
         );
-        // Refresh local search list
         _loadSchoolPlayers(_searchController.text);
       } else {
         AppToast.showError(
@@ -121,7 +120,8 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
   }
 
   Future<void> _handleRegisterNewPlayer(String targetSquadId) async {
-    if (!(_registerFormKey.currentState?.validate() ?? false)) return;
+    final isValid = _registerFormKey.currentState?.validate() ?? false;
+    if (!isValid) return;
 
     setState(() => _isRegistering = true);
     HapticFeedback.lightImpact();
@@ -130,23 +130,33 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
     final lastName = _lastNameController.text.trim();
     final email = _emailController.text.trim();
 
-    final success = await ref.read(rosterProvider.notifier).registerAndAddPlayer(
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          ageGroup: widget.activeAgeGroup,
-          squadId: targetSquadId,
-        );
+    try {
+      final success = await ref.read(rosterProvider.notifier).registerAndAddPlayer(
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            ageGroup: widget.activeAgeGroup,
+            squadId: targetSquadId,
+          );
 
-    if (mounted) {
-      setState(() => _isRegistering = false);
+      if (mounted) {
+        setState(() => _isRegistering = false);
 
-      if (success) {
-        AppToast.showSuccess(
+        if (success) {
+          AppToast.showSuccess(
+            context,
+            title: '$firstName $lastName registered & added to squad',
+          );
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isRegistering = false);
+        AppToast.showError(
           context,
-          title: '$firstName $lastName registered & added to squad',
+          title: 'Error registering player: $e',
         );
-        Navigator.pop(context);
       }
     }
   }
@@ -246,6 +256,7 @@ class _AddExistingPlayerModalState extends ConsumerState<AddExistingPlayerModal>
 
   Widget _buildRegisterTab(String squadId, String squadName) {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Form(
         key: _registerFormKey,
         child: Column(

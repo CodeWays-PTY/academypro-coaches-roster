@@ -51,7 +51,8 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 | | `/api/dashboard/flags` | GET | List flagged at-risk players |
 | | `/api/dashboard/events` | GET / POST | List or create training & match events |
 | | `/api/dashboard/events/:id` | POST | Update details for existing scheduled event |
-| | `/api/dashboard/events/:id/delete` | DELETE / POST | Delete scheduled event |
+| | `/api/dashboard/events/:id` | DELETE | Delete scheduled event |
+| | `/api/dashboard/events/:id/delete` | POST | Delete scheduled event (POST endpoint) |
 | | `/api/dashboard/actions` | GET / POST | List or create player action plan items |
 | | `/api/dashboard/actions/:id/toggle` | POST | Toggle action plan completion state (24h purge) |
 | | `/api/dashboard/actions/:id/delete` | POST | Delete action plan item |
@@ -60,9 +61,12 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 | | `/api/dashboard/events/:id/attendance` | GET | Retrieve attendance record for an event |
 | | `/api/match-stats` | POST | Log match stats & execute Auto-Score engine |
 | **Module 4** | `/api/player/evaluation-baseline` | POST | Record physical testing evaluation baseline |
-| | `/api/test-metrics` | GET / POST / DELETE | List, create, or delete custom test metrics |
-| | `/api/test-logs` | POST | Log single athlete test score metric (alias: `/api/dashboard/test-logs`) |
-| | `/api/test-logs/batch` | POST | Batch log athlete test score metrics (alias: `/api/dashboard/test-logs/batch`) |
+| | `/api/test-metrics` | GET / POST | List or create custom test metrics |
+| | `/api/test-metrics/:id` | DELETE | Delete custom test metric |
+| | `/api/test-logs` | POST | Log single athlete test score metric |
+| | `/api/dashboard/test-logs` | POST | Log single athlete test score metric (alias) |
+| | `/api/test-logs/batch` | POST | Batch log athlete test score metrics |
+| | `/api/dashboard/test-logs/batch` | POST | Batch log athlete test score metrics (alias) |
 | **Module 5** | `/api/student-portal` | GET | 360-degree athlete portal dataset |
 | | `/api/student-portal/profile` | POST | Update student self-managed profile info |
 | | `/api/parent/link-request` | POST | Initiate parent-child account link request |
@@ -72,12 +76,15 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 | **Module 6** | `/api/upload` | POST | Upload media / document asset to R2 storage |
 | | `/api/admin/sports-config` | GET | Retrieve school sports configuration |
 | | `/api/admin/bulk-upload` | POST | Ingest bulk stats/grades via CSV or JSON array |
-| | `/api/sms/send-verification` | POST | Dispatch SMS OTP verification code (alias: `/api/coach/send-sms-otp`) |
-| | `/api/sms/verify-code` | POST | Verify SMS OTP code (alias: `/api/coach/verify-sms-otp`) |
+| | `/api/sms/send-verification` | POST | Dispatch SMS OTP verification code |
+| | `/api/coach/send-sms-otp` | POST | Dispatch SMS OTP verification code (alias) |
+| | `/api/sms/verify-code` | POST | Verify SMS OTP code |
+| | `/api/coach/verify-sms-otp` | POST | Verify SMS OTP code (alias) |
 | **Module 7** | `/api/notifications` | GET | Retrieve user notification stream |
 | | `/api/notifications/:id/read` | POST | Mark single notification as read |
 | | `/api/notifications/read-all` | POST | Mark all notifications as read |
-| | `/api/notifications/:id/delete` | DELETE / POST | Delete notification |
+| | `/api/notifications/:id` | DELETE | Delete notification |
+| | `/api/notifications/:id/delete` | POST | Delete notification (POST endpoint) |
 | | `/api/notifications/send` | POST | Dispatch notification to target user or group |
 
 ---
@@ -414,9 +421,14 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 * **Route:** `/api/dashboard/events/:id`
 * **Headers:** `Authorization: Bearer <JWT>`
 
-#### 3.6 Delete Event
-* **Method:** `DELETE` or `POST`
-* **Route:** `/api/dashboard/events/:id` or `/api/dashboard/events/:id/delete`
+#### 3.6 Delete Event (DELETE)
+* **Method:** `DELETE`
+* **Route:** `/api/dashboard/events/:id`
+* **Headers:** `Authorization: Bearer <JWT>`
+
+#### 3.6.1 Delete Event (POST Endpoint)
+* **Method:** `POST`
+* **Route:** `/api/dashboard/events/:id/delete`
 * **Headers:** `Authorization: Bearer <JWT>`
 
 #### 3.7 Fetch Action Plans
@@ -768,9 +780,14 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
 * **Route:** `/api/notifications/read-all`
 * **Headers:** `Authorization: Bearer <JWT>`
 
-#### 7.4 Delete Notification
-* **Method:** `DELETE` or `POST`
-* **Route:** `/api/notifications/:id` or `/api/notifications/:id/delete`
+#### 7.4 Delete Notification (DELETE)
+* **Method:** `DELETE`
+* **Route:** `/api/notifications/:id`
+* **Headers:** `Authorization: Bearer <JWT>`
+
+#### 7.4.1 Delete Notification (POST Endpoint)
+* **Method:** `POST`
+* **Route:** `/api/notifications/:id/delete`
 * **Headers:** `Authorization: Bearer <JWT>`
 
 #### 7.5 Send Notification

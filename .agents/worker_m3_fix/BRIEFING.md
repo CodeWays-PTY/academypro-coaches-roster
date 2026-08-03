@@ -1,52 +1,49 @@
-# BRIEFING — 2026-08-03T12:07:22Z
+# BRIEFING — 2026-08-03T11:50:00Z
 
 ## Mission
-Remediate 2 minor feedback items for Milestone 3 (remove unused import in `api_client.dart` and fix table schema doc in `DATABASE_SCHEMA.md`), and verify static analysis zero errors/warnings.
+Execute Remediation for Milestone 3 (`web_admin` & `API_SPECIFICATION.md`).
 
 ## 🔒 My Identity
-- Archetype: implementer
+- Archetype: implementer/qa/specialist
 - Roles: implementer, qa, specialist
 - Working directory: c:\Development\academypro\.agents\worker_m3_fix
-- Original parent: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Milestone: Milestone 3 Remediation
+- Original parent: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Milestone: M3 Remediation
 
 ## 🔒 Key Constraints
-- Minimal change principle.
-- Absolute integrity: no fake outputs, no hardcoded cheating.
-- Code changes in workspace source files (`academypro_app`, `DATABASE_SCHEMA.md`), agent metadata in `.agents/worker_m3_fix`.
-- Clean static analysis: `flutter analyze` must return 0 errors and 0 warnings.
+- CODE_ONLY network mode.
+- Preserving real logic (DO NOT CHEAT).
+- WCAG compliance, zero native alert/confirm popups in web_admin.
+- Bearer token header & school_id scope on web_admin fetch calls.
+- Strict API spec route parity.
+- 0 TypeScript errors on `npx tsc --noEmit`.
 
 ## Current Parent
-- Conversation ID: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Updated: 2026-08-03T12:07:22Z
+- Conversation ID: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Updated: 2026-08-03T11:50:00Z
 
 ## Task Summary
-- **What to build/fix**:
-  1. Remove unused import `import 'package:flutter/foundation.dart';` from `academypro_app/lib/core/network/api_client.dart`.
-  2. Fix data type annotation in `DATABASE_SCHEMA.md` Section 2 summary table row 1 (`schools`) from `id (TEXT)` to `id (INTEGER)`.
-  3. Run `cmd /c flutter analyze` in `academypro_app` to verify 0 errors and 0 warnings.
-- **Success criteria**: Clean static analysis, accurate documentation matching DDL and remote D1 schema. Completed.
-
-## Change Tracker
-- **Files modified**:
-  - `academypro_app/lib/core/network/api_client.dart`: Removed line 2 unused import `import 'package:flutter/foundation.dart';`.
-  - `DATABASE_SCHEMA.md`: Updated Section 2 row 1 `schools` primary key column data type from `id (TEXT)` to `id (INTEGER)`.
-- **Build status**: PASS (`flutter analyze` passed with 0 errors and 0 warnings)
-- **Pending issues**: None
-
-## Quality Status
-- **Build/test result**: `flutter analyze` completed with 0 errors and 0 warnings.
-- **Lint status**: Clean (0 errors, 0 warnings).
-- **Tests added/modified**: N/A (Static analysis and doc fix).
-
-## Loaded Skills
-- None loaded explicitly
+- **What to build**: Remediation for web_admin frontend files (`index.html`, `uploader.html`) and `API_SPECIFICATION.md` routes.
+- **Success criteria**: All fetch calls include auth token & school_id parameter where needed; no native alert popups; Alpine loading states fixed; API spec routes matched to worker API implementation; 0 TS errors in worker.
+- **Interface contracts**: PROJECT.md / API_SPECIFICATION.md
+- **Code layout**: web_admin/, worker/, API_SPECIFICATION.md
 
 ## Key Decisions Made
-- Proceeded directly with minimal targeted changes adhering to minimal change principle.
+- Starting remediation following Reviewer 1 & Challenger 2 feedback.
+
+## Change Tracker
+- **Files modified**: None yet
+- **Build status**: Pending
+- **Pending issues**: M3 remediation tasks
+
+## Quality Status
+- **Build/test result**: Pending
+- **Lint status**: Pending
+- **Tests added/modified**: None yet
+
+## Loaded Skills
+- None
 
 ## Artifact Index
-- `c:\Development\academypro\.agents\worker_m3_fix\ORIGINAL_REQUEST.md` — Original request
-- `c:\Development\academypro\.agents\worker_m3_fix\BRIEFING.md` — Persistent briefing
-- `c:\Development\academypro\.agents\worker_m3_fix\progress.md` — Liveness progress heartbeat
-- `c:\Development\academypro\.agents\worker_m3_fix\handoff.md` — Final handoff report
+- `.agents/worker_m3_fix/ORIGINAL_REQUEST.md` — Original request log
+- `.agents/worker_m3_fix/BRIEFING.md` — Agent briefing persistent memory
