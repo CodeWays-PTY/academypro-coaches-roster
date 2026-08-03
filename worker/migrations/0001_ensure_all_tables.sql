@@ -141,11 +141,14 @@ CREATE TABLE IF NOT EXISTS events (
     date TEXT NOT NULL,
     duration_mins INTEGER DEFAULT 60,
     location TEXT DEFAULT 'Grounds',
+    intensity TEXT,
     is_important INTEGER DEFAULT 0,
     completion_count INTEGER DEFAULT 0,
     workout_image_path TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_events_school_date ON events(school_id, date DESC);
 
 CREATE TABLE IF NOT EXISTS action_plans (
     id TEXT PRIMARY KEY,
