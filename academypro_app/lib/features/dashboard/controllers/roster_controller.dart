@@ -191,6 +191,8 @@ class RosterNotifier extends StateNotifier<RosterState> {
       AppToast.showError(null, title: 'Network Failure', message: 'Failed to remove player from squad.');
       return false;
     }
+  }
+
   Future<bool> registerAndAddPlayer({
     required String firstName,
     required String lastName,
