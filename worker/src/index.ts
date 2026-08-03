@@ -908,6 +908,33 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     } catch (_) {}
   }
 
+  // Fallback: If squad_players contains no mapping for this squad/age group, query players directly
+  if (playerIdsSet.size === 0) {
+    const targetSchool = schoolId || 'OVK';
+    try {
+      if (ageGroupFilter && ageGroupFilter !== 'All' && ageGroupFilter !== 'None') {
+        const { results: squadMatch } = await db.prepare(
+          'SELECT id FROM players WHERE school_id = ? AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?))'
+        ).bind(targetSchool, ageGroupFilter, ageGroupFilter).all();
+        for (const r of (squadMatch || [])) {
+          if (r.id) playerIdsSet.add(r.id);
+        }
+      }
+
+      // If still 0, return all active players for the school so roster is never empty
+      if (playerIdsSet.size === 0) {
+        const { results: allPlayers } = await db.prepare(
+          'SELECT id FROM players WHERE school_id = ?'
+        ).bind(targetSchool).all();
+        for (const r of (allPlayers || [])) {
+          if (r.id) playerIdsSet.add(r.id);
+        }
+      }
+    } catch (err) {
+      console.warn('[Observer Warning] Fallback roster query error:', err);
+    }
+  }
+
   const playerIds = Array.from(playerIdsSet);
   return {
     squadIds,
