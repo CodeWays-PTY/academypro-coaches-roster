@@ -52,7 +52,11 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
 
-  AuthNotifier(this._apiClient) : super(AuthState.initial());
+  AuthNotifier(this._apiClient) : super(AuthState.initial()) {
+    if (state.status == AuthStatus.authenticated) {
+      refreshUserProfile();
+    }
+  }
 
   Future<bool> sendOtp(String email) async {
     state = state.copyWith(status: AuthStatus.authenticating);
@@ -146,6 +150,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _apiClient.post('/api/auth/profile', data: updatedFields);
     } catch (e) {
       print('Online profile sync deferred: $e');
+    }
+  }
+
+  Future<void> refreshUserProfile() async {
+    try {
+      final response = await _apiClient.dio.get('/api/auth/profile');
+      if (response.data['success'] == true && response.data['data'] != null) {
+        final freshUser = Map<String, dynamic>.from(response.data['data']);
+        final token = LocalStorage.getToken() ?? '';
+        await LocalStorage.saveSession(token, freshUser);
+        state = state.copyWith(userProfile: freshUser);
+      }
+    } catch (e) {
+      print('Failed to refresh fresh user profile: $e');
     }
   }
 

@@ -446,6 +446,54 @@ app.post('/api/auth/verify-otp', async (c) => {
   });
 });
 
+// Route: Get Fresh User Profile
+app.get('/api/auth/profile', async (c) => {
+  const db = getDB(c);
+  const jwtPayload = c.get('jwtPayload') as any;
+  const authHeader = c.req.header('Authorization');
+  let userId = jwtPayload?.sub || '';
+  let email = jwtPayload?.email || c.req.query('email') || '';
+
+  if (!userId && authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await verify(token, getSecret(c), 'HS256') as any;
+      if (payload && payload.sub) {
+        userId = payload.sub;
+        email = payload.email || email;
+      }
+    } catch (_) {}
+  }
+
+  if (db && (userId || email)) {
+    try {
+      const user = await db.prepare('SELECT id, email, first_name, last_name, phone, role, school_id, avatar_url FROM users WHERE id = ? OR LOWER(email) = ?')
+        .bind(userId, (email || '').trim().toLowerCase()).first();
+      if (user) {
+        return c.json({
+          success: true,
+          data: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            schoolId: user.school_id || 1,
+            school_id: user.school_id || 1,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            phone: user.phone || '',
+            avatar_url: user.avatar_url || ''
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  return c.json({ success: false, message: 'User not found' }, 404);
+});
+app.get('/api/coach/profile', async (c) => c.redirect('/api/auth/profile'));
+
 app.post('/api/auth/profile', async (c) => {
   const db = getDB(c);
   let body: any;
