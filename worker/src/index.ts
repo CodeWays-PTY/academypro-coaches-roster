@@ -2868,17 +2868,20 @@ app.post('/api/player/evaluation-baseline', async (c) => {
 // Route: Get Test Metric Definitions
 app.get('/api/test-metrics', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const db = getDB(c);
 
   try {
-    const { results } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT) ORDER BY category, name ASC').bind(schoolId, schoolId).all();
+    let { results } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT) ORDER BY category, name ASC').bind(schoolId, schoolId).all();
+    if (!results || results.length === 0) {
+      const fallback = await db.prepare('SELECT * FROM test_metric_definitions ORDER BY category, name ASC').all();
+      results = fallback.results || [];
+    }
     return c.json({
       success: true,
       data: (results || []).map((m: any) => ({
         id: m.id,
         schoolId: m.school_id,
-        sportId: m.sport_id,
         name: m.name,
         category: m.category,
         unit: m.unit,
@@ -2917,8 +2920,8 @@ app.post('/api/test-metrics', async (c) => {
 
   try {
     await db.prepare(`
-      INSERT INTO test_metric_definitions (id, school_id, sport_id, name, category, unit, goal_direction, target_benchmark)
-      VALUES (?, ?, 'rugby', ?, ?, ?, ?, ?)
+      INSERT INTO test_metric_definitions (id, school_id, name, category, unit, goal_direction, target_benchmark)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         category = excluded.category,
