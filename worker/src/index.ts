@@ -1000,11 +1000,12 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 app.get('/api/squads', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId');
+  const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
   const db = getDB(c);
 
   if (!schoolId) {
-    return c.json({ success: false, message: 'schoolId is required' }, 400);
+    return c.json({ success: false, message: 'schoolId parameter or token claim is required' }, 400);
   }
 
   await ensureSquadsTables(db);
@@ -1014,10 +1015,15 @@ app.get('/api/squads', async (c) => {
     FROM squads s
     LEFT JOIN squad_players sp ON (sp.squad_id = s.id OR sp.squad_id = s.code OR sp.squad_id = s.name)
     WHERE (s.school_id = ? OR CAST(s.school_id AS TEXT) = CAST(? AS TEXT))
-    GROUP BY s.id
-    ORDER BY s.name ASC
   `;
   let params: any[] = [schoolId, schoolId];
+
+  if (coachId) {
+    query += ` AND (s.coach_id = ? OR s.coach_id IS NULL OR s.coach_id = '')`;
+    params.push(coachId);
+  }
+
+  query += ` GROUP BY s.id ORDER BY s.name ASC`;
 
   let results: any[] = [];
   try {
@@ -1028,8 +1034,8 @@ app.get('/api/squads', async (c) => {
   const squads = results.map((s: any) => ({
     id: s.id,
     name: s.name,
-    ageGroup: s.code || s.age_group || 'U15',
-    code: s.code || s.age_group || 'U15',
+    ageGroup: s.code || s.age_group || s.name,
+    code: s.code || s.age_group || s.name,
     description: s.description || '',
     playerCount: s.playerCount || 0,
     createdAt: s.created_at
