@@ -770,7 +770,12 @@
           this.triggerToast(`Event '${this.editingEvent.title}' updated!`, 'info');
 
           try {
-            await fetch(`${this.apiBaseUrl}/api/dashboard/events`, {
+            const hasId = !!this.editingEvent.id;
+            const endpoint = hasId 
+              ? `${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(this.editingEvent.id)}`
+              : `${this.apiBaseUrl}/api/dashboard/events`;
+
+            await fetch(endpoint, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

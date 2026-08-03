@@ -1746,6 +1746,18 @@ app.post('/api/dashboard/events', async (c) => {
     INSERT INTO events (
       id, school_id, title, event_type, start_time, date, duration_mins, location, intensity, is_important, completion_count, age_group, team, workout_image_path
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      title = excluded.title,
+      event_type = excluded.event_type,
+      start_time = excluded.start_time,
+      date = excluded.date,
+      duration_mins = excluded.duration_mins,
+      location = excluded.location,
+      intensity = excluded.intensity,
+      is_important = excluded.is_important,
+      age_group = excluded.age_group,
+      team = excluded.team,
+      workout_image_path = excluded.workout_image_path
   `;
 
   try {
@@ -1798,8 +1810,8 @@ app.post('/api/dashboard/events', async (c) => {
   }
 });
 
-// Route: Update Coach Command Event
-app.post('/api/dashboard/events/:id', async (c) => {
+// Route: Update Coach Command Event (Supports POST & PUT aliases)
+const handleUpdateEvent = async (c: any) => {
   const id = c.req.param('id');
   const db = getDB(c);
   if (!db) {
@@ -1880,7 +1892,12 @@ app.post('/api/dashboard/events/:id', async (c) => {
     console.error(`[Observer Error] Failed updating event '${id}':`, err);
     return c.json({ success: false, message: 'Failed to update event', error: err.message }, 500);
   }
-});
+};
+
+app.post('/api/dashboard/events/:id', handleUpdateEvent);
+app.put('/api/dashboard/events/:id', handleUpdateEvent);
+app.post('/api/events/:id', handleUpdateEvent);
+app.put('/api/events/:id', handleUpdateEvent);
 
 // Route: Delete Coach Command Event
 app.delete('/api/dashboard/events/:id', async (c) => {
