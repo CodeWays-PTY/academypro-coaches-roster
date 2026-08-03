@@ -2176,33 +2176,36 @@ const handlePostCheckin = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { eventId, eventTitle, date, checkedInPlayerIds, sessionType } = body;
-  if (!date || !Array.isArray(checkedInPlayerIds)) {
-    return c.json({ success: false, message: 'Date and checkedInPlayerIds array are required' }, 400);
+  // Flexible payload resolution
+  const eventId = body.eventId || body.event_id || body.id || null;
+  let date = body.date || body.checkInDate || body.eventDate;
+  
+  let checkedInPlayerIds: string[] = [];
+  if (Array.isArray(body.checkedInPlayerIds)) {
+    checkedInPlayerIds = body.checkedInPlayerIds;
+  } else if (Array.isArray(body.playerIds)) {
+    checkedInPlayerIds = body.playerIds;
+  } else if (Array.isArray(body.athleteIds)) {
+    checkedInPlayerIds = body.athleteIds;
+  } else if (body.playerId || body.athleteId) {
+    const singleId = body.playerId || body.athleteId;
+    const isPresent = body.isPresent !== false && body.checkedIn !== false && body.status !== 'Absent';
+    if (singleId && isPresent) {
+      checkedInPlayerIds = [singleId];
+    }
   }
 
-  // Guard: Reject check-in for past dates
-  const todayStr = new Date().toISOString().split('T')[0];
-  let checkInDate = date;
-
-  if (eventId) {
+  if (!date && eventId) {
     try {
       const ev: any = await db.prepare('SELECT date FROM events WHERE id = ?').bind(eventId).first();
-      if (ev && ev.date) {
-        checkInDate = ev.date;
-      }
+      if (ev && ev.date) date = ev.date;
     } catch (_) {}
   }
-
-  if (checkInDate < todayStr) {
-    console.warn(`[Observer Log] Blocked check-in attempt for past date '${checkInDate}' (Today is ${todayStr})`);
-    return c.json({
-      success: false,
-      message: 'Check-in is closed for past events. You can only record attendance for today\'s scheduled sessions.'
-    }, 400);
+  if (!date) {
+    date = new Date().toISOString().split('T')[0];
   }
 
-  const sessType = sessionType || 'Field';
+  const sessType = body.sessionType || 'Field';
   const checkedInSet = new Set(checkedInPlayerIds);
   let targetPlayerIds: string[] = [];
   const ageGrp = body.ageGroup;
@@ -2269,7 +2272,7 @@ const handlePostCheckin = async (c: any) => {
     }
   }
 
-  console.log(`[API LOG] Recorded practice attendance for ${recordedCount} players on ${date} (${eventTitle || 'Session'})`);
+  console.log(`[API LOG] Recorded practice attendance for ${recordedCount} players on ${date} (${body.eventTitle || 'Session'})`);
 
   return c.json({
     success: true,
