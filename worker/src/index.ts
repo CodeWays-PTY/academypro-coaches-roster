@@ -1026,7 +1026,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 }
 
 // Route: Get Coach Squads
-app.get('/api/squads', async (c) => {
+const handleGetSquads = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
@@ -1079,10 +1079,13 @@ app.get('/api/squads', async (c) => {
     success: true,
     data: squads
   });
-});
+};
+
+app.get('/api/squads', handleGetSquads);
+app.get('/api/dashboard/squads', handleGetSquads);
 
 // Route: Create Coach Squad
-app.post('/api/squads', async (c) => {
+const handlePostSquads = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const coachId = jwtPayload?.sub;
   const db = getDB(c);
@@ -1150,7 +1153,10 @@ app.post('/api/squads', async (c) => {
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to create squad', error: err.message }, 500);
   }
-});
+};
+
+app.post('/api/squads', handlePostSquads);
+app.post('/api/dashboard/squads', handlePostSquads);
 
 // Route: Get Team Roster (Restricted to Coach's Owned Squads)
 app.get('/api/rosters/:age_group', async (c) => {
