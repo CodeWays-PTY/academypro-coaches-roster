@@ -1115,15 +1115,23 @@ const handleGetSquads = async (c: any) => {
     }
   } catch (_) {}
 
-  const squads = results.map((s: any) => ({
-    id: s.id,
-    name: s.name,
-    ageGroup: s.code || s.age_group || s.name,
-    code: s.code || s.age_group || s.name,
-    description: s.description || '',
-    playerCount: s.playerCount || 0,
-    createdAt: s.created_at
-  }));
+  const uniqueSquadsMap = new Map();
+  results.forEach((s: any) => {
+    const key = (s.name || s.code || s.id || '').trim().toLowerCase();
+    if (!uniqueSquadsMap.has(key)) {
+      uniqueSquadsMap.set(key, {
+        id: s.id,
+        name: s.name,
+        ageGroup: s.code || s.age_group || s.name,
+        code: s.code || s.age_group || s.name,
+        description: s.description || '',
+        playerCount: s.playerCount || 0,
+        createdAt: s.created_at
+      });
+    }
+  });
+
+  const squads = Array.from(uniqueSquadsMap.values());
 
   return c.json({
     success: true,
