@@ -759,39 +759,47 @@
             return;
           }
 
-          const idx = this.events.findIndex(e => e.id === this.editingEvent.id);
-          if (idx !== -1) {
-            this.events[idx] = { ...this.events[idx], ...this.editingEvent };
-          } else {
-            this.events.unshift({ ...this.editingEvent });
-          }
-          this.events = [...this.events];
-          this.saveEventsToStorage();
-          this.showEditEventModal = false;
-          this.triggerToast(`Event '${this.editingEvent.title}' updated!`, 'info');
+          const hasId = !!this.editingEvent.id;
+          const endpoint = hasId 
+            ? `${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(this.editingEvent.id)}`
+            : `${this.apiBaseUrl}/api/dashboard/events`;
+
+          const payload = {
+            id: this.editingEvent.id,
+            title: this.editingEvent.title,
+            eventType: this.editingEvent.eventType,
+            date: this.editingEvent.date,
+            startTime: this.editingEvent.startTime,
+            durationMins: parseInt(this.editingEvent.durationMins) || 90,
+            location: this.editingEvent.location,
+            team: this.editingEvent.team
+          };
 
           try {
-            const hasId = !!this.editingEvent.id;
-            const endpoint = hasId 
-              ? `${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(this.editingEvent.id)}`
-              : `${this.apiBaseUrl}/api/dashboard/events`;
-
-            await fetch(endpoint, {
+            const res = await fetch(endpoint, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: this.editingEvent.id,
-                title: this.editingEvent.title,
-                eventType: this.editingEvent.eventType,
-                date: this.editingEvent.date,
-                startTime: this.editingEvent.startTime,
-                durationMins: parseInt(this.editingEvent.durationMins) || 90,
-                location: this.editingEvent.location,
-                team: this.editingEvent.team
-              })
+              body: JSON.stringify(payload)
             });
-            await this.fetchEventsFromApi(true);
-          } catch (e) { console.log('Edit event API error:', e); }
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              const idx = this.events.findIndex(e => e.id === this.editingEvent.id);
+              if (idx !== -1) {
+                this.events[idx] = { ...this.events[idx], ...payload };
+              } else {
+                this.events.unshift({ ...payload });
+              }
+              this.events = [...this.events];
+              this.saveEventsToStorage();
+              this.showEditEventModal = false;
+              this.triggerToast(`Event '${this.editingEvent.title}' updated successfully!`, 'success');
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to update event on server', 'error');
+            }
+          } catch (e) {
+            console.log('Edit event API error:', e);
+            this.triggerToast('Network error while updating event', 'error');
+          }
         },
 
         showDeleteEventConfirm: false,
@@ -1293,11 +1301,6 @@
             phone: (this.newCoach.phone || '').trim(),
             schoolName: this.newCoach.schoolName || 'OVK Academy'
           };
-          this.coaches.push(created);
-          this.saveCoachesToStorage();
-          this.showAddCoachModal = false;
-          this.newCoach = { name: '', role: 'Head Rugby Coach', email: '', phone: '', schoolName: 'OVK Academy' };
-          this.triggerToast(`Coach ${created.name} registered!`, 'info');
 
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/coaches`, {
@@ -1305,11 +1308,21 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(created)
             });
-            if (!res.ok) {
-              const errData = await res.json().catch(() => ({}));
-              console.log('Coach API POST non-200:', errData);
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              const coachData = data.data || created;
+              this.coaches.push(coachData);
+              this.saveCoachesToStorage();
+              this.showAddCoachModal = false;
+              this.newCoach = { name: '', role: 'Head Rugby Coach', email: '', phone: '', schoolName: 'OVK Academy' };
+              this.triggerToast(`Coach ${coachData.name} registered successfully!`, 'success');
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to register coach on server', 'error');
             }
-          } catch (err) { console.log('Coach API note:', err); }
+          } catch (err) {
+            console.log('Coach API note:', err);
+            this.triggerToast('Network error while registering coach', 'error');
+          }
         },
 
         // Students CRUD
@@ -1334,18 +1347,28 @@
             phone: (this.newAthlete.phone || '').trim(),
             stats: { speed: 80, strength: 75, stamina: 85, skill: 78 }
           };
-          this.athletes.unshift(created);
-          this.saveAthletesToStorage();
-          this.showAddModal = false;
-          this.triggerToast(`Student Athlete ${created.name} registered!`, 'info');
 
           try {
-            await fetch(`${this.apiBaseUrl}/api/athletes`, {
+            const res = await fetch(`${this.apiBaseUrl}/api/athletes`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(created)
             });
-          } catch (err) { console.log('Student API note:', err); }
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              const athData = data.data || created;
+              this.athletes.unshift(athData);
+              this.saveAthletesToStorage();
+              this.showAddModal = false;
+              this.newAthlete = { name: '', age: 16, position: 'Forward / Wing', team: this.currentSquad, status: 'Active', email: '', phone: '' };
+              this.triggerToast(`Student Athlete ${athData.name} registered!`, 'success');
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to register athlete on server', 'error');
+            }
+          } catch (err) {
+            console.log('Student API note:', err);
+            this.triggerToast('Network error while registering athlete', 'error');
+          }
         },
 
         openEditAthlete(athlete) {
@@ -1375,7 +1398,7 @@
             return;
           }
 
-          this.athletes[idx] = {
+          const updatedItem = {
             ...this.athletes[idx],
             name: this.editAthleteData.name.trim(),
             age: parseInt(this.editAthleteData.age) || 16,
@@ -1385,21 +1408,11 @@
             email: (this.editAthleteData.email || '').toLowerCase().trim(),
             parent: (this.editAthleteData.parent || '').trim()
           };
-          this.athletes = [...this.athletes];
-          this.saveAthletesToStorage();
-          this.showEditModal = false;
-          this.triggerToast(`${this.editAthleteData.name} updated!`, 'info');
 
           try {
-            const res = await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(this.editAthleteData.id)}`, {
+            const res = await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(updatedItem.id)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: this.editAthleteData.name.trim(),
-                age: parseInt(this.editAthleteData.age) || 16,
-                position: this.editAthleteData.position.trim(),
-                secondaryPosition: (this.editAthleteData.secondaryPosition || '').trim(),
-                status: this.editAthleteData.status || 'Active',
                 attendance: this.athletes[idx].attendance || 100,
                 parent: (this.editAthleteData.parent || '').trim(),
                 email: (this.editAthleteData.email || '').toLowerCase().trim()
@@ -2581,9 +2594,20 @@
   </main>
 
   <!-- Global Toast Notification -->
-  <div class="fixed bottom-lg right-lg bg-inverse-surface text-inverse-on-surface px-lg py-md rounded-xl shadow-2xl flex items-center gap-md transition-transform duration-300 z-[100]"
+  <div class="fixed bottom-lg right-lg px-lg py-md rounded-xl shadow-2xl flex items-center gap-md transition-all duration-300 z-[100] border"
+       :class="{
+         'bg-error-container text-on-error-container border-error/40': toastType === 'error',
+         'bg-emerald-950 text-emerald-100 border-emerald-500/40': toastType === 'success',
+         'bg-inverse-surface text-inverse-on-surface border-outline-variant/30': toastType !== 'error' && toastType !== 'success'
+       }"
        x-show="showToast" x-cloak>
-    <span class="material-symbols-outlined text-tertiary-fixed">info</span>
+    <span class="material-symbols-outlined text-lg"
+          :class="{
+            'text-error': toastType === 'error',
+            'text-emerald-400': toastType === 'success',
+            'text-tertiary-fixed': toastType !== 'error' && toastType !== 'success'
+          }"
+          x-text="toastType === 'error' ? 'error' : (toastType === 'success' ? 'check_circle' : 'info')"></span>
     <span class="font-body-md text-xs font-semibold" x-text="toastMessage"></span>
   </div>
 
