@@ -1,29 +1,16 @@
-# Progress Log — AcademyPro Audit Remediation
+# Progress Tracking
 
 ## Current Status
-Last visited: 2026-07-28T16:20:10Z
+Last visited: 2026-08-03T11:50:10Z
 
 ## Iteration Status
 Current iteration: 1 / 32
 
-## Checklist
-- [x] Create workspace state files (`ORIGINAL_REQUEST.md`, `BRIEFING.md`, `PROJECT.md`, `plan.md`, `progress.md`)
-- [ ] Start recurring heartbeat cron via `schedule`
-- [x] Milestone 1: D1 Database & Schema Cleanup
-  - [x] Explorer investigation
-  - [x] Worker implementation
-  - [x] Reviewer & Auditor verification
-- [x] Milestone 2: Cloudflare Worker API Backend Remediation
-  - [x] Explorer investigation
-  - [x] Worker implementation
-  - [x] Reviewer & Challenger verification
-- [x] Milestone 3: Flutter Mobile App Remediation
-  - [x] Explorer investigation
-  - [x] Worker implementation
-  - [x] Reviewer verification
-- [x] Milestone 4: Deployment & Verification
-  - [x] Remote D1 SQL execution (`wrangler d1 execute academypro-db --remote`)
-  - [x] Cloudflare Worker deployment (`wrangler deploy`)
-  - [x] Flutter static analysis (`flutter analyze`)
-  - [x] Forensic integrity audit (`teamwork_preview_auditor`)
-- [x] Final Completion Handoff to Sentinel
+## Milestone Progress
+- [x] Milestone 1: D1 Database SQL Migration & Cleanup (`migrations/0020_cleanup_obsolete_schema.sql`, execute against remote D1 database) [COMPLETED]
+- [ ] Milestone 2: Backend Worker API Refactoring (`worker/src/index.ts`, redirect fitness evaluation data access to `player_test_logs`, deploy worker) [IN_PROGRESS]
+- [ ] Milestone 3: Frontend & Documentation Synchronization (`DATABASE_SCHEMA.md` and `academypro_app`, build verification) [PLANNED]
+
+## Execution Log
+- 2026-08-03T11:40:00Z: Orchestrator initialized. Heartbeat cron scheduled (task-7). Project decomposition complete.
+- 2026-08-03T11:45:15Z: Milestone 1 completed & verified. Gate PASSED (Reviewers: APPROVE, Challengers: PASS, Auditor: CLEAN).

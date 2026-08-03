@@ -1183,7 +1183,6 @@ app.get('/api/rosters/:age_group', async (c) => {
         position: p.position,
         team: p.team,
         status: p.status,
-        ugroupsActive: p.ugroups_active,
         age: p.age,
         assignedSquads: playerSquadMap[p.id] || []
       }))
@@ -2352,7 +2351,21 @@ app.get('/api/student-portal', async (c) => {
         }
       }
     } else if (!player && (roleLower === 'parent' || roleLower.includes('parent'))) {
-      player = await db.prepare('SELECT * FROM players WHERE parent_id = ?').bind(userId).first();
+      await ensureParentLinksTable(db);
+      player = await db.prepare(`
+        SELECT p.* FROM players p
+        JOIN parent_child_links pcl ON (pcl.player_id = p.id OR pcl.player_email = (SELECT email FROM users WHERE id = p.user_id))
+        WHERE pcl.parent_user_id = ? AND (pcl.status = 'accepted' OR pcl.status = 'approved' OR pcl.status IS NULL)
+        ORDER BY p.first_name ASC LIMIT 1
+      `).bind(userId).first();
+      if (!player) {
+        player = await db.prepare(`
+          SELECT p.* FROM players p
+          JOIN parent_child_links pcl ON (pcl.player_id = p.id OR pcl.player_email = (SELECT email FROM users WHERE id = p.user_id))
+          WHERE pcl.parent_user_id = ?
+          ORDER BY p.first_name ASC LIMIT 1
+        `).bind(userId).first();
+      }
     }
   } catch (_) {}
 
@@ -2467,17 +2480,17 @@ app.get('/api/student-portal', async (c) => {
 
   const athleteReadinessScore = metricsCount > 0 ? Math.round(totalReadinessScore / metricsCount) : 0;
 
-  // 2. Fetch Fitness Baseline
-  let baseline: any = null;
+  // 2. Fetch Dynamic Fitness Metric Logs from player_test_logs
+  let testLogs: any[] = [];
   try {
-    baseline = await db.prepare('SELECT * FROM fitness_baselines WHERE player_id = ?').bind(playerId).first();
-  } catch (_) {}
-
-  // 3. Fetch Fitness Progressions
-  let progressions: any[] = [];
-  try {
-    const { results } = await db.prepare('SELECT * FROM fitness_progression WHERE player_id = ? ORDER BY week ASC').bind(playerId).all();
-    progressions = results || [];
+    const { results } = await db.prepare(`
+      SELECT ptl.*, tmd.name as metric_name, tmd.category as metric_category, tmd.unit as metric_unit
+      FROM player_test_logs ptl
+      LEFT JOIN test_metric_definitions tmd ON ptl.metric_id = tmd.id
+      WHERE ptl.player_id = ?
+      ORDER BY ptl.test_date DESC
+    `).bind(playerId).all();
+    testLogs = results || [];
   } catch (_) {}
 
   // 4. Fetch Match Stats
@@ -2580,7 +2593,6 @@ app.get('/api/student-portal', async (c) => {
         team: player.team,
         grade: player.grade,
         age: player.age,
-        ugroupsActive: player.ugroups_active,
         notes: player.notes,
         assignedSquads: assignedSquads
       },
@@ -2593,23 +2605,19 @@ app.get('/api/student-portal', async (c) => {
       fitness: {
         readinessScore: athleteReadinessScore,
         dynamicMetrics: dynamicMetrics,
-        baseline: baseline ? {
-          speed40m: baseline.speed_40m,
-          speed60m: baseline.speed_60m,
-          broadJump: baseline.broad_jump,
-          pushUps: baseline.push_ups,
-          pullUps: baseline.pull_ups,
-          squats40kg: baseline.squats_40kg,
-          verticalJump: baseline.vertical_jump,
-          tTest: baseline.t_test
-        } : null,
-        progressions: progressions.map((p: any) => ({
-          week: p.week,
-          speed40m: p.speed_40m,
-          strengthReps: p.strength_reps,
-          weight: p.weight,
-          gymSessionsPerWeek: p.gym_sessions_per_week
-        }))
+        testLogs: testLogs.map((tl: any) => ({
+          id: tl.id,
+          metricId: tl.metric_id,
+          metricName: tl.metric_name || tl.test_name || tl.metric_id,
+          score: tl.score !== undefined && tl.score !== null ? tl.score : tl.score_value,
+          unit: tl.metric_unit || tl.unit || '',
+          category: tl.metric_category || tl.category || 'General',
+          testDate: tl.test_date,
+          sessionName: tl.session_name || 'Evaluation',
+          notes: tl.notes || ''
+        })),
+        baseline: null,
+        progressions: []
       },
       matches: matches.map((m: any) => ({
         id: m.id,
@@ -3226,18 +3234,36 @@ app.post('/api/admin/bulk-upload', async (c) => {
         continue;
       }
 
-      // 1. Upsert fitness_baselines
-      const sqlFitness = `
-        INSERT INTO fitness_baselines (player_id, vertical_jump, speed_40m, updated_at)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(player_id) DO UPDATE SET
-          vertical_jump = excluded.vertical_jump,
-          speed_40m = excluded.speed_40m,
-          updated_at = CURRENT_TIMESTAMP
-      `;
+      // 1. Insert/Update dynamic metric logs in player_test_logs
+      const todayStr = new Date().toISOString().split('T')[0];
       const vertValue = vertical !== undefined && vertical !== null && vertical !== '' ? parseFloat(vertical) : null;
       const dashValue = dash40yd !== undefined && dash40yd !== null && dash40yd !== '' ? parseFloat(dash40yd) : null;
-      await db.prepare(sqlFitness).bind(player_id, vertValue, dashValue).run();
+
+      if (vertValue !== null && !isNaN(vertValue)) {
+        const vertMetricId = 'metric_vertical_jump';
+        const vertLogId = `ptl_${player_id}_vert_${todayStr}`;
+        await db.prepare(`
+          INSERT INTO player_test_logs (id, player_id, metric_id, score, test_date, session_name, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            score = excluded.score,
+            session_name = excluded.session_name,
+            notes = excluded.notes
+        `).bind(vertLogId, player_id, vertMetricId, vertValue, todayStr, 'Bulk Upload Baseline', 'Vertical Jump (cm)').run();
+      }
+
+      if (dashValue !== null && !isNaN(dashValue)) {
+        const dashMetricId = 'metric_speed_40m';
+        const dashLogId = `ptl_${player_id}_dash_${todayStr}`;
+        await db.prepare(`
+          INSERT INTO player_test_logs (id, player_id, metric_id, score, test_date, session_name, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            score = excluded.score,
+            session_name = excluded.session_name,
+            notes = excluded.notes
+        `).bind(dashLogId, player_id, dashMetricId, dashValue, todayStr, 'Bulk Upload Baseline', '40m Speed Dash (s)').run();
+      }
 
       // 2. Upsert academic_logs (Term 1)
       const sqlAcademic = `

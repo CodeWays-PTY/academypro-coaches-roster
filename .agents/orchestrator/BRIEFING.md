@@ -1,73 +1,73 @@
-# BRIEFING — 2026-07-28T15:25:00Z
+# BRIEFING — 2026-08-03T11:40:00Z
 
 ## Mission
-Address and resolve all 60 cataloged audit findings across the AcademyPro platform (Flutter App, Cloudflare Worker API, Cloudflare D1 Database), remove `parent_contact` and `email` end-to-end, replace mock fallbacks with clean empty states, deploy database & worker, and verify zero errors.
+Perform a complete database schema audit and migration cleanup to remove redundant, obsolete tables and columns across Cloudflare D1 SQL database, Worker API, and Flutter frontend models.
 
 ## 🔒 My Identity
-- Archetype: teamwork_preview_orchestrator
+- Archetype: teamwork_orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
-- Working directory: C:\Development\academypro\.agents\orchestrator
-- Original parent: Sentinel / Parent Agent
-- Original parent conversation ID: 1693bb80-5775-418d-b572-8050cde14298
+- Working directory: c:\Development\academypro\.agents\orchestrator
+- Original parent: top-level
+- Original parent conversation ID: d7e7e039-d77d-4e17-8040-6e0cda5bb431
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern
-- **Scope document**: C:\Development\academypro\.agents\orchestrator\PROJECT.md
-1. **Decompose**: Decomposed work into 4 milestones (SQL/Schema, Worker Backend API, Flutter Mobile App, Deployment & Audit).
-2. **Dispatch & Execute**: Direct (iteration loop: Explorer -> Worker -> Reviewer -> Challenger -> Auditor).
-3. **On failure**: Retry -> Replace -> Skip -> Redistribute -> Redesign.
-4. **Succession**: At spawn count >= 16 and all subagents complete, write soft handoff, cancel timers, spawn successor.
+- **Scope document**: c:\Development\academypro\.agents\orchestrator\PROJECT.md
+1. **Decompose**:
+   - Milestone 1: D1 Database SQL Migration (`migrations/0020_cleanup_obsolete_schema.sql`) and remote D1 execution.
+   - Milestone 2: Backend Worker API Refactoring (`worker/src/index.ts`) & Wrangler Deployment.
+   - Milestone 3: Frontend & Documentation Synchronization (`DATABASE_SCHEMA.md` and `academypro_app`).
+2. **Dispatch & Execute**: Direct iteration loop (Explorer → Worker → Reviewers → Challengers → Auditor → Gate) for each milestone.
+3. **On failure**: Retry → Replace → Skip → Redistribute → Redesign.
+4. **Succession**: Self-succeed at 16 subagent spawns.
 - **Work items**:
-  1. Milestone 1: Cloudflare D1 Database & Schema Fixes [pending]
-  2. Milestone 2: Cloudflare Worker Backend API Fixes [pending]
-  3. Milestone 3: Flutter Mobile App UI & Controller Fixes [pending]
-  4. Milestone 4: Remote D1 Migration, Worker Deployment & Verification [pending]
-- **Current phase**: 1 (Decomposition & Setup)
-- **Current focus**: Milestone 1 investigation & execution
+  1. Milestone 1: D1 SQL Migration & Remote Sync [in-progress]
+  2. Milestone 2: Backend Worker API Refactoring [pending]
+  3. Milestone 3: Frontend & Doc Sync & Verification [pending]
+- **Current phase**: 1
+- **Current focus**: Milestone 1 (D1 SQL Migration & Remote Sync)
 
 ## 🔒 Key Constraints
-- ZERO hardcoded secrets, fallbacks, or mock defaults.
-- FAIL-FAST HTTP responses (401, 400, 500, 207) instead of fake 200 OK or mock identities.
-- End-to-end removal of `parent_contact` and `email` across SQL schema, Worker API, and Flutter app.
-- Execute D1 migration against `--remote` database and deploy Worker API using Wrangler CLI.
-- Ensure `flutter analyze` passes cleanly with zero errors.
-- Mandatory Forensic Auditor check — BINARY VETO on integrity violations.
-- Orchestrator MUST NOT write source code directly or run build/test commands — MUST dispatch workers.
+- Never write or edit source code directly (only metadata in .agents/ folder).
+- Always delegate work via invoke_subagent.
+- Require workers to run builds and test commands and report output.
+- Pass full audit reports on retries; audit failure is a binary veto.
+- Obey user global rules: D1 migration execution, Worker deployment, no fake fallback data.
 
 ## Current Parent
-- Conversation ID: 1693bb80-5775-418d-b572-8050cde14298
-- Updated: not yet
+- Conversation ID: d7e7e039-d77d-4e17-8040-6e0cda5bb431
+- Updated: 2026-08-03T11:40:00Z
 
 ## Key Decisions Made
-- Decomposed remediation into 4 distinct vertical milestones to ensure isolated testing and full end-to-end integrity.
+- Decomposed project into 3 sequential milestones.
+- Will execute Milestone 1 first (D1 Migration), then Milestone 2 (Worker), then Milestone 3 (App & Docs).
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| Explorer 1 | teamwork_preview_explorer | SQL & Database Investigation | completed | b282a19a-0c58-464c-aad1-dad514f042bb |
-| Explorer 2 | teamwork_preview_explorer | Worker API Backend Investigation | completed | b295f069-70a8-4e53-a310-730710a5eaaf |
-| Explorer 3 | teamwork_preview_explorer | Flutter Mobile App Investigation | completed | f0421bfb-1676-4196-ad69-b377f346fc05 |
-| Worker 1 | teamwork_preview_worker | Milestone 1: D1 Schema & SQL Fixes | completed | 79f29eaf-5b5e-4b21-8718-5c5340cb5784 |
-| Worker 2 | teamwork_preview_worker | Milestone 2: Worker API Backend Fixes | completed | 380b0415-b5c0-4601-979e-6ed295d9ed7c |
-| Worker 3 | teamwork_preview_worker | Milestone 3: Flutter App Fixes | completed | 0713b946-eb13-48d6-ad20-48ea1f55b4b1 |
-| Worker 4 | teamwork_preview_worker | Milestone 4: D1 Exec, Worker Deploy & Git Push | completed | de96784f-df29-49ba-8b57-4c59d7075022 |
-| Auditor 1 | teamwork_preview_auditor | Forensic Integrity Audit | completed | 4434a5de-92bb-48fd-a4e6-75e12539058f |
-|-------|------|-----------|--------|---------|
+| explorer_m1_1 | teamwork_preview_explorer | Explore M1 Database Schema & Migration | completed | fd55f674-2ad2-4cbd-8705-5925cfe520d6 |
+| worker_m1 | teamwork_preview_worker | Implement M1 D1 Migration & Remote Execution | completed | 6f903f13-c18f-452e-a1e5-7a8df3e28775 |
+| reviewer_m1_1 | teamwork_preview_reviewer | Review M1 D1 Migration | completed | bc54e359-cb0a-410a-a8fb-bbe7688cfff7 |
+| reviewer_m1_2 | teamwork_preview_reviewer | Review M1 D1 Migration | completed | f754b3ee-8c80-421c-8e04-b7f08608021e |
+| challenger_m1_1 | teamwork_preview_challenger | Empirically Verify M1 D1 Schema | completed | 51dba5e9-20e0-441f-ac54-13b6a92c2600 |
+| challenger_m1_2 | teamwork_preview_challenger | Verify FK & Integrity on Remote D1 | completed | 79673952-c025-4edf-9cd1-57157927c35d |
+| auditor_m1 | teamwork_preview_auditor | Forensic Integrity Audit M1 | completed | 02086b79-31e0-405c-8731-0c14c20c9c1c |
+| explorer_m2_1 | teamwork_preview_explorer | Explore M2 Backend Worker API Refactoring | completed | 215382eb-382d-4c54-87f7-ebe43b333edd |
+| worker_m2 | teamwork_preview_worker | Refactor Worker API & Deploy | in-progress | 453cccea-68d1-445b-ae0b-7407bf36973c |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 8 / 16
-- Pending subagents: none
+- Spawn count: 9 / 16
+- Pending subagents: 453cccea-68d1-445b-ae0b-7407bf36973c
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-19
+- Heartbeat cron: task-7 (cron: */10 * * * *)
 - Safety timer: none
 
 ## Artifact Index
-- C:\Development\academypro\.agents\orchestrator\ORIGINAL_REQUEST.md — Original User Request
-- C:\Development\academypro\.agents\orchestrator\BRIEFING.md — Briefing & Persistent Memory
-- C:\Development\academypro\.agents\orchestrator\PROJECT.md — Project Architecture & Milestone Specs
-- C:\Development\academypro\.agents\orchestrator\plan.md — Orchestrator Action Plan
-- C:\Development\academypro\.agents\orchestrator\progress.md — Progress Tracking & Heartbeat Log
+- c:\Development\academypro\.agents\ORIGINAL_REQUEST.md — Original User Request
+- c:\Development\academypro\.agents\orchestrator\PROJECT.md — Project Plan & Architecture
+- c:\Development\academypro\.agents\orchestrator\progress.md — Progress Tracking & Heartbeat
+- c:\Development\academypro\.agents\orchestrator\plan.md — Detailed Execution Plan
