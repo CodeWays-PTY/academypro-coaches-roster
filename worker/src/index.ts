@@ -27,12 +27,18 @@ app.use('*', async (c, next) => {
   // 1. If D1 is missing, load local usport.db SQLite dynamically using async import
   if (!c.env.DB && !localD1Instance) {
     try {
+      // @ts-ignore
       const { DatabaseSync } = await import('node:sqlite');
+      // @ts-ignore
       const path = await import('path');
+      // @ts-ignore
       const fs = await import('fs');
 
+      // @ts-ignore
       let dbPath = path.join(process.cwd(), 'academypro.db');
+      // @ts-ignore
       if (!fs.existsSync(dbPath)) {
+        // @ts-ignore
         dbPath = path.join(process.cwd(), 'usport.db');
       }
       if (fs.existsSync(dbPath)) {
@@ -235,6 +241,7 @@ async function sendTransactionalEmail(c: any, options: {
   // 1. Try Cloudflare Native Email binding
   if (env && env.EMAIL) {
     try {
+      // @ts-ignore
       const { EmailMessage } = await import("cloudflare:email");
       const mimeMessage = `From: ${options.fromName} <${options.fromEmail}>
 To: ${options.to}
@@ -502,6 +509,7 @@ app.post('/api/auth/profile', async (c) => {
   } catch (_) {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
+  const { id, email, firstName, first_name, lastName, last_name, avatar_url, avatarUrl, phone } = body || {};
   const jwtPayload = c.get('jwtPayload') as any;
   let userId = id || jwtPayload?.sub || '';
   const userEmail = (email || jwtPayload?.email || '').trim().toLowerCase();
@@ -650,14 +658,7 @@ async function enforceJwtAuth(c: any, next: any) {
       return;
     } catch (_) {}
   }
-  // Soft fallback for web admin requests without Auth header
-  c.set('jwtPayload', {
-    sub: 'USR-COACH-1',
-    schoolId: 1,
-    school_id: 1,
-    role: 'SuperAdmin'
-  });
-  await next();
+  return c.json({ success: false, message: 'Unauthorized session' }, 401);
 }
 
 app.use('/api/rosters/*', enforceJwtAuth);
@@ -2370,12 +2371,6 @@ app.get('/api/student-portal', async (c) => {
   } catch (_) {}
 
   if (!player) {
-    try {
-      player = await db.prepare('SELECT * FROM players ORDER BY first_name ASC LIMIT 1').first();
-    } catch (_) {}
-  }
-
-  if (!player) {
     return c.json({
       success: true,
       data: {
@@ -3569,7 +3564,7 @@ app.get('/api/player/link-requests', async (c) => {
     const userEmail = user?.email || 'player@academypro.co.za';
 
     const { results } = await db.prepare(`
-      SELECT pcl.id, pcl.status, pcl.created_at, u.first_name as parent_first_name, u.last_name as parent_last_name, u.email as parent_email
+      SELECT pcl.id, pcl.status, pcl.created_at, u.first_name as parent_first_name, u.last_name as parent_last_name, u.email as parent_user_email
       FROM parent_child_links pcl
       LEFT JOIN users u ON pcl.parent_user_id = u.id
       WHERE pcl.player_email = ? OR pcl.player_id IN (SELECT id FROM players WHERE user_id = ?)
@@ -3580,7 +3575,7 @@ app.get('/api/player/link-requests', async (c) => {
       data: (results || []).map((r: any) => ({
         id: r.id,
         parentName: `${r.parent_first_name || 'Parent'} ${r.parent_last_name || ''}`.trim(),
-        parentEmail: r.parent_email || 'parent@academypro.co.za',
+        parentEmail: r.parent_user_email || r.email || '',
         status: r.status,
         createdAt: r.created_at
       }))
@@ -3981,8 +3976,8 @@ app.post('/api/sms/verify-code', async (c) => {
     } catch (_) {}
   }
 
-  // Validate stored OTP or fallback master test code
-  if ((storedOtp && storedOtp.trim() === cleanCode) || cleanCode === '123456' || cleanCode === '888888') {
+  // Validate stored OTP
+  if (storedOtp && storedOtp.trim() === cleanCode) {
     if (kv) {
       try {
         await kv.delete(`sms_otp:${digitsOnly}`);

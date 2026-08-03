@@ -10,8 +10,8 @@
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | 1 | D1 Database SQL Migration | Create `migrations/0020_cleanup_obsolete_schema.sql`, execute against remote D1 | None | DONE |
-| 2 | Backend Worker API Refactoring | Refactor `worker/src/index.ts` to use `player_test_logs`, deploy worker | M1 | IN_PROGRESS |
-| 3 | Frontend & Documentation Sync | Update `DATABASE_SCHEMA.md` & `academypro_app` models, verify Flutter build | M1, M2 | PLANNED |
+| 2 | Backend Worker API Refactoring | Refactor `worker/src/index.ts` to use `player_test_logs`, deploy worker | M1 | DONE |
+| 3 | Frontend & Documentation Sync | Update `DATABASE_SCHEMA.md` & `academypro_app` models, verify Flutter build | M1, M2 | DONE |
 
 ## Interface Contracts
 ### Worker API ↔ D1 Database
