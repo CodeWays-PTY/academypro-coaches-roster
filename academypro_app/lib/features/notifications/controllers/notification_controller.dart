@@ -55,12 +55,12 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     fetchNotifications();
   }
 
-  Future<void> fetchNotifications() async {
+  Future<void> fetchNotifications({bool isUserInitiated = false}) async {
     state = state.copyWith(loading: true, error: null);
     try {
       final response = await _apiClient.getAndCache('/api/notifications');
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final data = response.data['data'];
+      if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
+        final data = response.data['data'] ?? {};
         final List notifList = data['notifications'] ?? [];
         final List<NotificationItem> items =
             notifList.map((n) => NotificationItem.fromJson(n)).toList();
@@ -78,7 +78,9 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     } catch (e) {
       print('Error in fetchNotifications: $e');
       state = state.copyWith(loading: false, error: e.toString());
-      AppToast.showError(null, title: 'Network Failure', message: 'Could not refresh notifications.');
+      if (isUserInitiated) {
+        AppToast.showError(null, title: 'Network Failure', message: 'Could not refresh notifications.');
+      }
     }
   }
 
