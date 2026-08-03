@@ -1,37 +1,29 @@
-## 2026-08-03T12:00:27Z
-You are Worker M3 (Frontend & Documentation Synchronization Implementer).
+## 2026-08-03T13:40:24Z
+Execute Milestone 3: Web Admin Clean & `API_SPECIFICATION.md` Alignment.
+Working directory: `c:\Development\academypro\.agents\worker_m3`.
+Read Explorer 1 handoff: `c:\Development\academypro\.agents\explorer_m3_1\handoff.md`.
+Read Explorer 2 handoff: `c:\Development\academypro\.agents\explorer_m3_2\handoff.md`.
 
-Your Working Directory: `c:\Development\academypro\.agents\worker_m3`
+Tasks:
+1. **Web Admin Pruning & Cleanup (`c:\Development\academypro\web_admin`)**:
+   - Inspect `index.html` and `uploader.html`.
+   - Remove orphaned state (`loading` property in `index.html`) or connect loading spinner UI indicator (`x-show="loading"`).
+   - Ensure all API fetch calls remain 100% operational against active Worker API routes (`/api/admin/all-players`, `/api/admin/sports-config`, `/api/admin/bulk-upload`).
 
-Task:
-Complete Milestone 3 of the database schema audit & migration cleanup project by updating documentation and Flutter frontend code to align with the active 16 production D1 tables:
+2. **`API_SPECIFICATION.md` Documentation Alignment (`c:\Development\academypro\API_SPECIFICATION.md`)**:
+   - Rewrite `API_SPECIFICATION.md` to perfectly match active Cloudflare Worker endpoints in `worker/src/index.ts`.
+   - Remove the 4 obsolete endpoints (`POST /api/auth/login`, `POST /api/attendance`, `GET /api/players/:id/dashboard`, `GET /api/players/flagged`).
+   - Align the 3 active endpoints (`GET /api/rosters/:age_group`, `POST /api/match-stats`, `POST /api/admin/bulk-upload`).
+   - Document all 51 active endpoints across 7 functional modules:
+     - Module 1: Authentication & OTP (`/api/auth/*`)
+     - Module 2: Squad & Roster Management (`/api/squads/*`, `/api/school/*`)
+     - Module 3: Coach Dashboard, Events & Action Plans (`/api/dashboard/*`)
+     - Module 4: Performance Testing & Metrics (`/api/test-metrics`, `/api/test-logs`)
+     - Module 5: Student Portal & Parent Access (`/api/student-portal/*`, `/api/parent/*`)
+     - Module 6: System Admin, Storage & SMS Services (`/api/upload`, `/api/sms/*`, `/api/admin/*`)
+     - Module 7: Notification System (`/api/notifications/*`)
 
-1. **Update `DATABASE_SCHEMA.md` (`c:\Development\academypro\DATABASE_SCHEMA.md`)**:
-   - Update Section 1 to remove dropped table definitions:
-     * `fitness_baselines`
-     * `fitness_progression`
-   - Update Section 1 to remove dropped columns from table definitions:
-     * `players`: remove `parent_id`, `parent_name`, `ugroups_active`
-     * `parent_child_links`: remove `parent_phone`, `parent_email`
-   - Update Section 2 summary table: remove rows for `fitness_baselines` and `fitness_progression`, renumber remaining rows to accurately reflect the **16 active production tables**.
+3. **MANDATORY INTEGRITY WARNING**:
+   DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A Forensic Auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
 
-2. **Update Flutter Codebase (`c:\Development\academypro\academypro_app\lib`)**:
-   - `roster_controller.dart` (`lib/features/dashboard/controllers/roster_controller.dart`):
-     * Remove `ugroupsActive` and `parentPhone` from `RosterPlayer` model, `fromJson`, `toJson`, `copyWith`, and `addPlayer` payload/parameters.
-   - `checkin_controller.dart` (`lib/features/dashboard/controllers/checkin_controller.dart`):
-     * Remove `ugroupsActive` from `RosterPlayer` instantiation or map.
-   - `add_existing_player_modal.dart` (`lib/features/dashboard/presentation/add_existing_player_modal.dart`):
-     * Remove `parentPhone` input/reference.
-   - `dashboard_screen.dart` (`lib/features/dashboard/presentation/dashboard_screen.dart`):
-     * Remove `parentPhone` display/references.
-   - `dashboard_controller.dart` (`lib/features/dashboard/controllers/dashboard_controller.dart`):
-     * Remove `parentPhone` references if obsolete in models/controllers.
-
-3. **Verify with `flutter analyze`**:
-   - Run `cmd /c flutter analyze` in `c:\Development\academypro\academypro_app`.
-   - Ensure zero compilation or static analysis errors.
-
-MANDATORY INTEGRITY WARNING:
-DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A Forensic Auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
-
-When finished, write a handoff report at `c:\Development\academypro\.agents\worker_m3\handoff.md` and report your results back via `send_message`.
+4. Write full handoff report to `c:\Development\academypro\.agents\worker_m3\handoff.md`.

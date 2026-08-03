@@ -1,104 +1,110 @@
-# Forensic Audit Report — Milestone 2: Backend Worker API Refactoring
+# Forensic Audit Handoff Report — Milestone 2 (`academypro_app`)
 
-**Work Product**: `worker/src/index.ts` refactoring & Cloudflare Worker deployment
-**Profile**: General Project / Integrity Forensics
-**Verdict**: **CLEAN**
+**Auditor Agent**: `auditor_m2`  
+**Working Directory**: `c:\Development\academypro\.agents\auditor_m2`  
+**Timestamp**: 2026-08-03T13:38:30Z  
+
+---
+
+## Forensic Audit Report
+
+**Work Product**: Milestone 2 Flutter Dead-Code Elimination & Analyzer Cleanup (`academypro_app/`)  
+**Profile**: General Project / Forensic Auditor  
+**Verdict**: **CLEAN**  
+
+### Phase Results
+- **Check 1: Integrity Violation & Facade Detection**: PASS — 0 fake-deleted lines, 0 hidden comments, 0 dummy facades, 0 hardcoded return stubs.
+- **Check 2: File Deletion Disk Verification**: PASS — 3 targeted files (`permission_service.dart`, `add_player_modal.dart`, `create_squad_modal.dart`) return `False` on `Test-Path`.
+- **Check 3: Pruned Methods & Constants Verification**: PASS — 0 remaining references or dummy stubs found across `lib/` via `grep_search`.
+- **Check 4: Static Analysis Verification (`flutter analyze`)**: PASS — Empirically verified output of 173 issues (0 errors, 0 warnings, 173 info-level lints).
 
 ---
 
 ## 1. Observation
 
-### Static Code Integrity Audit (`worker/src/index.ts`)
-1. **Dropped Schema Object References Audit**:
-   - `grep -i "fitness_baselines" worker/src/index.ts`: 0 matches found.
-   - `grep -i "fitness_progression" worker/src/index.ts`: 0 matches found.
-   - `grep -i "ugroups_active" worker/src/index.ts`: 0 matches found.
-   - `grep -i "parent_id" worker/src/index.ts`: 0 matches found.
-2. **Authenticity of Dynamic Queries**:
-   - **`GET /api/student-portal`**: Fitness section queries `player_test_logs` joined with `test_metric_definitions`:
-     ```ts
-     SELECT ptl.*, tmd.name as metric_name, tmd.category as metric_category, tmd.unit as metric_unit
-     FROM player_test_logs ptl
-     LEFT JOIN test_metric_definitions tmd ON ptl.metric_id = tmd.id
-     WHERE ptl.player_id = ?
-     ORDER BY ptl.test_date DESC
-     ```
-     All values are dynamically computed without hardcoded constant overrides.
-   - **Parent Resolution**: Parent lookup queries `parent_child_links` using parameterized query:
-     ```ts
-     SELECT p.* FROM players p
-     JOIN parent_child_links pcl ON (pcl.player_id = p.id OR pcl.player_email = (SELECT email FROM users WHERE id = p.user_id))
-     WHERE pcl.parent_user_id = ? AND (pcl.status = 'accepted' OR pcl.status = 'approved' OR pcl.status IS NULL)
-     ORDER BY p.first_name ASC LIMIT 1
-     ```
-   - **`POST /api/admin/bulk-upload`**: Dynamic baseline upsert logic executes parameterized `INSERT INTO player_test_logs` for `metric_vertical_jump` and `metric_speed_40m` with conflict resolution (`ON CONFLICT(id) DO UPDATE SET score = excluded.score...`).
-3. **Dummy Data & Facade Audit**:
-   - Zero hardcoded PASS/FAIL test strings or mock evaluation constants found.
-   - Zero random data generators (`Math.random()`, `Random()`) used.
-   - Zero fake default arrays returned when database queries yield 0 rows (returns clean `[]` or `null`).
+1. **File Deletion Verification**:
+   - Executed PowerShell `Test-Path` on target paths:
+     - `academypro_app\lib\core\services\permission_service.dart`: `False`
+     - `academypro_app\lib\features\dashboard\presentation\add_player_modal.dart`: `False`
+     - `academypro_app\lib\features\dashboard\presentation\create_squad_modal.dart`: `False`
+   - Verified via `find_by_name`: 0 matching files exist anywhere in `academypro_app/`.
 
-### Empirical Build & Deployment Audit
-1. **Wrangler TypeScript Compilation & Bundle Dry-Run**:
-   - Executed: `cmd /c npx wrangler deploy --dry-run` (Cwd: `c:\Development\academypro\worker`)
-   - Exit Code: `0`
-   - Total Upload Size: `212.26 KiB / gzip: 44.78 KiB`
-   - Bindings Verified: `env.KV`, `env.EMAIL`, `env.DB (academypro-db)`, `env.R2`, `env.JWT_SECRET`, `env.INTERNAL_API_KEY`.
-2. **Remote Worker Deployment**:
-   - Executed: `cmd /c npx wrangler deploy` (Task-45, Cwd: `c:\Development\academypro\worker`)
-   - Exit Code: `0`
-   - Deployed Worker Version ID: `b0ebf147-dde8-4da8-a560-2aae5dc7c5a4`
-   - Production Triggers: `https://academypro-api.tata-elash34.workers.dev` & `https://worker.usport.co.za`
+2. **Codebase Diff & Source Code Inspection**:
+   - Inspected git commit `1c13dc1` diff covering all 9 modified files (735 deletions, 0 insertions):
+     - `lib/core/config/app_config.dart`: Pruned `academicHonorCutoff`, `ratingHighThreshold`, `ratingMidThreshold`, `ratingLowThreshold`, `sportIdentifier`.
+     - `lib/core/storage/local_storage.dart`: Pruned `syncQueueBoxName`, Hive initialization line, `_syncBox`, `queueMatchStats`, `getSyncQueue`, `dequeueItem`.
+     - `lib/features/dashboard/controllers/checkin_controller.dart`: Pruned `changeSessionType`, `resetSession`.
+     - `lib/features/dashboard/controllers/dashboard_controller.dart`: Pruned `playerActionTasksProvider`.
+     - `lib/features/dashboard/controllers/roster_controller.dart`: Pruned `addPlayer`.
+     - `lib/features/notifications/controllers/notification_controller.dart`: Pruned `sendTestNotification`.
+   - All code removals were authentic, clean deletions without commented-out code, dummy return stubs (`return true`, `return []`), or facade abstractions.
+
+3. **Grep Cross-Verification**:
+   - `grep_search` across `academypro_app/lib` for all deleted class names, filenames, constants, and method names returned 0 external references.
+
+4. **Empirical Static Analysis (`flutter analyze`)**:
+   - Executed `flutter analyze` directly in `c:\Development\academypro\academypro_app`.
+   - Tool output: `173 issues found. (ran in 4.2s)`.
+   - Filtered output for `error -` and `warning -`: 0 matches found. All 173 reported issues are informational lints (`info - deprecated_member_use`, `use_super_parameters`, `unnecessary_underscores`).
 
 ---
 
 ## 2. Logic Chain
 
-1. **Observation**: Milestone 1 schema cleanup dropped `fitness_baselines`, `fitness_progression`, `players.ugroups_active`, and `players.parent_id` from the D1 database.
-2. **Observation**: Code inspection of `worker/src/index.ts` confirms that all references to those 4 dropped objects have been completely removed across all worker routes (`GET /api/rosters/:age_group`, `GET /api/student-portal`, `POST /api/admin/bulk-upload`).
-3. **Observation**: Static code analysis confirms that `player_test_logs` querying and `parent_child_links` joining are genuinely implemented using Cloudflare D1 parameterized SQL statements (`.prepare().bind()`). No fake data generators, facade shortcuts, or hardcoded strings are present.
-4. **Observation**: Empirical dry-run build (`npx wrangler deploy --dry-run`) compiled cleanly with exit code 0 and produced a valid bundle of 212.26 KiB.
-5. **Observation**: Live deployment (`npx wrangler deploy`) successfully published Version ID `b0ebf147-dde8-4da8-a560-2aae5dc7c5a4` to Cloudflare Workers.
-6. **Conclusion**: The Milestone 2 work product is authentic, uncheated, fully compiled, and successfully deployed.
+1. **Claim Verification (File Deletions)**:
+   - Worker 3 claimed 3 files were deleted.
+   - Tested filesystem state empirically via `Test-Path` and `find_by_name`.
+   - Result: All 3 files are non-existent on disk.
+
+2. **Claim Verification (Code Pruning)**:
+   - Worker 3 claimed specific methods and constants were pruned.
+   - Audited the exact git diff lines in commit `1c13dc1`.
+   - Checked for integrity violations (e.g., commenting out code instead of deleting, returning dummy mock values).
+   - Result: Code was completely removed. No stubs or comments remain.
+
+3. **Symbol Cleanliness**:
+   - Ran regex/string searches across `lib/` for any leftover usages or imports.
+   - Result: 0 remaining symbol references exist in the application.
+
+4. **Static Analysis Authenticity**:
+   - Worker 3 reported `flutter analyze` ran with 0 errors and 0 warnings.
+   - Ran `flutter analyze` independently in shell and parsed issues.
+   - Result: Confirmed 0 errors, 0 warnings, 173 info lints. Worker 3 report was completely genuine.
 
 ---
 
 ## 3. Caveats
 
-- Outbound HTTP requests to external domains from local test runners remain restricted under CODE_ONLY network mode. Empirical verification was conducted via authentic local Wrangler CLI build tools and remote Cloudflare Worker deployment logs.
+- Informational lints (`info - deprecation notices`, `use_super_parameters`, `unnecessary_underscores`) remain in `academypro_app` source code as pre-existing style preferences. These do not impact application execution, type safety, or build validity.
+- No caveats regarding Milestone 2 scope — dead code elimination was performed completely and accurately.
 
 ---
 
 ## 4. Conclusion
 
-**Verdict: CLEAN**
-
-The Milestone 2 work product (`worker/src/index.ts` refactoring and deployment) passes all forensic integrity checks:
-- 0 references to dropped schema tables or columns remain.
-- Dynamic querying of `player_test_logs` and `parent_child_links` is 100% genuine and parameterized.
-- 0 hardcoded test results, facade implementations, or fake dummy fallbacks exist.
-- TypeScript compilation succeeded cleanly (`212.26 KiB`).
-- Worker version `b0ebf147-dde8-4da8-a560-2aae5dc7c5a4` is actively deployed to Cloudflare production.
+Milestone 2 changes in `academypro_app/` have passed all forensic integrity checks. No integrity violations, fake deletions, or dummy stubs were detected. Binary Verdict: **CLEAN**.
 
 ---
 
 ## 5. Verification Method
 
-To independently verify this verdict, execute the following commands in `c:\Development\academypro\worker`:
-
-1. **Verify removal of dropped schema terms**:
-   ```bash
-   grep -iE "fitness_baselines|fitness_progression|ugroups_active|parent_id" worker/src/index.ts
+To independently re-verify this forensic verdict:
+1. Confirm deleted files do not exist:
+   ```powershell
+   Test-Path 'c:\Development\academypro\academypro_app\lib\core\services\permission_service.dart'
+   Test-Path 'c:\Development\academypro\academypro_app\lib\features\dashboard\presentation\add_player_modal.dart'
+   Test-Path 'c:\Development\academypro\academypro_app\lib\features\dashboard\presentation\create_squad_modal.dart'
+   # Must return False for all 3
    ```
-   *Expected output: No results found.*
-
-2. **Verify Wrangler build**:
-   ```bash
-   cmd /c npx wrangler deploy --dry-run
+2. Verify static analysis output:
+   ```powershell
+   cd c:\Development\academypro\academypro_app
+   flutter analyze | Select-String -Pattern 'error -','warning -'
+   # Must return 0 matches
    ```
-   *Expected output: Exit code 0, Total Upload ~212.26 KiB.*
-
-3. **Verify active Cloudflare Worker deployment**:
-   ```bash
-   cmd /c npx wrangler deployments list
+3. Confirm zero remaining references to pruned symbols:
+   ```powershell
+   git grep -i "PermissionService" academypro_app/lib
+   git grep -i "syncQueueBoxName" academypro_app/lib
+   # Must return 0 matches
    ```
-   *Expected output: Active deployment matches latest published version.*

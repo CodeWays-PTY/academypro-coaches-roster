@@ -9,3 +9,13 @@ Target Task:
 3. Check Flutter environment and build verification commands (`flutter analyze` or `flutter build web` or `flutter pub get`) in `academypro_app/`.
 4. Document all exact modification plans and analysis in `c:\Development\academypro\.agents\explorer_m3_1\analysis.md` and deliver a handoff report at `c:\Development\academypro\.agents\explorer_m3_1\handoff.md`.
 Update your `progress.md` with your status.
+
+## 2026-08-03T11:38:52Z
+Perform a comprehensive audit of `web_admin` (`c:\Development\academypro\web_admin`).
+Working directory: `c:\Development\academypro\.agents\explorer_m3_1`.
+
+Tasks:
+1. Scan `web_admin/index.html`, `web_admin/uploader.html`, and any JS/CSS files in `web_admin/`.
+2. Inspect all API fetch/XHR calls to check if any uncalled, dead, or obsolete API endpoints are referenced.
+3. Identify any unused JavaScript functions, orphaned event listeners, dead template sections, or obsolete script links.
+4. Produce a detailed handoff report in `c:\Development\academypro\.agents\explorer_m3_1\handoff.md` listing exact files, line ranges, and recommended dead-code pruning actions.

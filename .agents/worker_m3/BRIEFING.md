@@ -1,63 +1,48 @@
-# BRIEFING — 2026-08-03T12:04:20Z
+# BRIEFING — 2026-08-03T13:40:50Z
 
 ## Mission
-Complete Milestone 3 of database schema audit & migration cleanup project by updating documentation (DATABASE_SCHEMA.md) and Flutter frontend code to align with active 16 production D1 tables.
+Execute Milestone 3: Web Admin Clean & `API_SPECIFICATION.md` Alignment.
 
 ## 🔒 My Identity
-- Archetype: Worker M3
+- Archetype: worker_m3
 - Roles: implementer, qa, specialist
 - Working directory: c:\Development\academypro\.agents\worker_m3
-- Original parent: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Milestone: Milestone 3 - Frontend & Documentation Synchronization
+- Original parent: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Milestone: Milestone 3 - Web Admin Clean & API Spec Alignment
 
 ## 🔒 Key Constraints
-- Complete Milestone 3: update DATABASE_SCHEMA.md and Flutter code in academypro_app/lib.
-- Ensure zero compilation or static analysis errors with `flutter analyze`.
-- DO NOT CHEAT. All implementations must be genuine.
+- CODE_ONLY network mode (no external HTTP calls).
+- Minimal change principle.
+- No dummy data / fake fallbacks.
+- Push changes to git active branch upon task completion.
 
 ## Current Parent
-- Conversation ID: e6a78a8c-b89b-4545-b714-b95771b88b06
-- Updated: 2026-08-03T12:04:20Z
+- Conversation ID: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
+- Updated: 2026-08-03T13:40:50Z
 
 ## Task Summary
-- **What to build/update**:
-  1. `DATABASE_SCHEMA.md`: Updated Section 1 (removed `fitness_baselines`, `fitness_progression`, dropped columns `players`: `parent_id`, `parent_name`, `ugroups_active`, dropped columns `parent_child_links`: `parent_phone`, `parent_email`) and Section 2 (renumbered to 16 active production D1 tables).
-  2. Flutter codebase (`academypro_app/lib`):
-     - `roster_controller.dart`: removed `ugroupsActive` and `parentPhone` from model, `fromJson`, `updatePlayerPosition`, `addPlayer`.
-     - `checkin_controller.dart`: removed `ugroupsActive: 0` from fallback `RosterPlayer`.
-     - `add_existing_player_modal.dart`: removed `parentPhone` filtering.
-     - `dashboard_controller.dart`: removed `parentPhone` from `CoachActionItem` model, `copyWith`, `fetchActions`.
-     - `dashboard_screen.dart`: removed `parentPhone` UI section.
-     - `student_dashboard_screen.dart`: removed `parentPhone` UI section.
-  3. Ran `flutter analyze`: verified 0 compilation errors and 0 warnings.
-- **Success criteria**: Documentation and Flutter code 100% synchronized with 16 D1 tables.
+- **What to build**: 
+  1. Clean `web_admin` (`index.html` & `uploader.html`): connect/clean `x-show="loading"`, ensure all fetch calls match Worker routes.
+  2. Rewrite `API_SPECIFICATION.md`: document all 51 active endpoints across 7 modules, remove 4 obsolete endpoints, align 3 active ones.
+- **Success criteria**:
+  - `web_admin` has zero orphaned state and active fetch calls match Worker routes.
+  - `API_SPECIFICATION.md` accurately documents 100% of Worker API endpoints (51 active across 7 modules).
+  - Handoff report in `.agents/worker_m3/handoff.md`.
+  - Git commit & push performed.
 
 ## Key Decisions Made
-- Cleaned unused warnings in `api_client.dart` and `network_service.dart` during static analysis verification.
-- Committed changes to git repository (`b4803c7`).
-
-## Artifact Index
-- `c:\Development\academypro\.agents\worker_m3\ORIGINAL_REQUEST.md` — Log of original task request
-- `c:\Development\academypro\.agents\worker_m3\handoff.md` — Handoff report
+- Connect `loading` indicator UI in `web_admin/index.html` using `x-show="loading"`.
+- Fully structure `API_SPECIFICATION.md` into 7 functional modules matching `worker/src/index.ts`.
 
 ## Change Tracker
-- **Files modified**:
-  - `DATABASE_SCHEMA.md`
-  - `academypro_app/lib/features/dashboard/controllers/roster_controller.dart`
-  - `academypro_app/lib/features/dashboard/controllers/checkin_controller.dart`
-  - `academypro_app/lib/features/dashboard/presentation/add_existing_player_modal.dart`
-  - `academypro_app/lib/features/dashboard/controllers/dashboard_controller.dart`
-  - `academypro_app/lib/features/dashboard/presentation/dashboard_screen.dart`
-  - `academypro_app/lib/features/student/presentation/student_dashboard_screen.dart`
-  - `academypro_app/lib/core/network/api_client.dart`
-  - `academypro_app/lib/core/services/network_service.dart`
-- **Build status**: PASS (flutter analyze ran with 0 errors)
+- **Files modified**: TBD
+- **Build status**: TBD
 - **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: PASS
-- **Lint status**: 0 errors, 0 warnings
-- **Tests added/modified**: Verified via static analysis
+- **Build/test result**: TBD
+- **Lint status**: TBD
+- **Tests added/modified**: N/A
 
 ## Loaded Skills
 - None

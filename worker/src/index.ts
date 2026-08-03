@@ -752,6 +752,15 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
         if (r.player_id) playerIdsSet.add(r.player_id);
       }
     } catch (_) {}
+
+    try {
+      const { results: smResults } = await db.prepare(`
+        SELECT DISTINCT athlete_id FROM squad_members WHERE squad_id IN (${spPlaceholders})
+      `).bind(...allSquadKeys).all();
+      for (const r of (smResults || [])) {
+        if (r.athlete_id) playerIdsSet.add(r.athlete_id);
+      }
+    } catch (_) {}
   }
 
   // Fallback: If squad_players contains no mapping for this squad/age group, query players directly
@@ -1314,8 +1323,8 @@ app.get('/api/dashboard/events', async (c) => {
       if (!matchesManaged) {
         return c.json({ success: true, data: [] });
       }
-      query += ' AND (age_group = ? OR team = ? OR age_group IS NULL OR age_group = "")';
-      params.push(ageGroup, ageGroup);
+      query += ' AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?) OR LOWER(age_group) LIKE LOWER(?) OR LOWER(team) LIKE LOWER(?) OR age_group IS NULL OR age_group = "" OR team IS NULL OR team = "")';
+      params.push(ageGroup, ageGroup, `%${ageGroup}%`, `%${ageGroup}%`);
     } else {
       const placeholders = managedSquadKeys.map(() => '?').join(',');
       query += ` AND (age_group IN (${placeholders}) OR team IN (${placeholders}) OR age_group IS NULL OR age_group = "")`;

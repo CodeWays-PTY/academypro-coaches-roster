@@ -10,8 +10,8 @@
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | 1 | Backend API Audit & Pruning | Audit `worker/src/index.ts`, prune dead endpoints, compile TypeScript & deploy via `wrangler deploy` | None | DONE |
-| 2 | Flutter App Audit & Pruning | Audit `academypro_app`, prune dead screens, widgets, models, controllers & functions, pass `flutter analyze` | M1 | IN_PROGRESS |
-| 3 | Web Admin & API Spec Sync | Audit `web_admin` HTML/JS, remove obsolete code, update `API_SPECIFICATION.md` to reflect active routes | M1, M2 | PLANNED |
+| 2 | Flutter App Audit & Pruning | Audit `academypro_app`, prune dead screens, widgets, models, controllers & functions, pass `flutter analyze` | M1 | DONE |
+| 3 | Web Admin & API Spec Sync | Audit `web_admin` HTML/JS, remove obsolete code, update `API_SPECIFICATION.md` to reflect active routes | M1, M2 | IN_PROGRESS |
 
 ## Interface Contracts
 ### Client ↔ Worker API

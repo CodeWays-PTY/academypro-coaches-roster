@@ -1,15 +1,15 @@
 # Progress: Codebase Audit & Dead-Code Elimination
 
 ## Current Status
-Last visited: 2026-08-03T13:33:45+02:00
+Last visited: 2026-08-03T13:40:05+02:00
 
 ## Iteration Status
 Current iteration: 1 / 32
 
 ## Milestone Status
 - [x] Milestone 1: Backend API Audit & Pruning (`worker/src/index.ts`) [DONE]
-- [ ] Milestone 2: Flutter App Audit & Pruning (`academypro_app`) [IN_PROGRESS - Awaiting Verification]
-- [ ] Milestone 3: Web Admin & API Spec Sync (`web_admin` & `API_SPECIFICATION.md`) [PLANNED]
+- [x] Milestone 2: Flutter App Audit & Pruning (`academypro_app`) [DONE]
+- [ ] Milestone 3: Web Admin & API Spec Sync (`web_admin` & `API_SPECIFICATION.md`) [IN_PROGRESS]
 
 ## Detailed Task Checklist
 
@@ -24,13 +24,13 @@ Current iteration: 1 / 32
 ### Milestone 2: Flutter App Audit & Pruning (`academypro_app`)
 - [x] M2.1: Explorer scan for unused screens, widgets, models, controllers, and dead functions
 - [x] M2.2: Worker implementation: Prune dead Flutter code, run `flutter analyze` (Worker 3 complete: 0 errors, 0 warnings)
-- [ ] M2.3: Reviewer 1 & 2 verification [NEXT UP FOR SUCCESSOR]
-- [ ] M2.4: Challenger 1 & 2 empirical verification
-- [ ] M2.5: Forensic Auditor integrity audit
-- [ ] M2.6: Gate decision for Milestone 2
+- [x] M2.3: Reviewer 1 & 2 verification (APPROVE / APPROVE)
+- [x] M2.4: Challenger 1 & 2 empirical verification (PASS / PASS)
+- [x] M2.5: Forensic Auditor integrity audit (CLEAN)
+- [x] M2.6: Gate decision for Milestone 2: PASSED
 
 ### Milestone 3: Web Admin & API Spec Sync
-- [ ] M3.1: Explorer audit of `web_admin` and `API_SPECIFICATION.md`
+- [ ] M3.1: Explorer audit of `web_admin` and `API_SPECIFICATION.md` [DISPATCHING NOW]
 - [ ] M3.2: Worker implementation: Prune obsolete `web_admin` code and update `API_SPECIFICATION.md`
 - [ ] M3.3: Reviewer 1 & 2 verification
 - [ ] M3.4: Challenger 1 & 2 empirical verification
