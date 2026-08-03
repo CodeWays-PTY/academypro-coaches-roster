@@ -1402,11 +1402,12 @@ app.get('/api/dashboard/events', async (c) => {
   let params: any[] = [schoolId];
 
   if (eventTypeParam) {
-    if (eventTypeParam === 'Fitness Test' || eventTypeParam === 'Test Day') {
-      query += " AND (event_type = 'Fitness Test' OR event_type = 'Test Day')";
+    const etLower = eventTypeParam.toLowerCase().trim();
+    if (etLower === 'fitness test' || etLower === 'test day' || etLower === 'fitness' || etLower === 'test') {
+      query += " AND (LOWER(event_type) = 'fitness test' OR LOWER(event_type) = 'test day' OR LOWER(event_type) = 'fitness' OR LOWER(event_type) = 'test' OR LOWER(event_type) LIKE '%fitness%' OR LOWER(event_type) LIKE '%test%')";
     } else {
-      query += ' AND event_type = ?';
-      params.push(eventTypeParam);
+      query += ' AND LOWER(event_type) = ?';
+      params.push(etLower);
     }
   }
 
@@ -1455,7 +1456,7 @@ app.get('/api/dashboard/events', async (c) => {
     }
   }
 
-  query += ' ORDER BY date ASC, start_time ASC';
+  query += ' ORDER BY date DESC, start_time DESC';
 
   try {
     const { results } = await db.prepare(query).bind(...params).all();

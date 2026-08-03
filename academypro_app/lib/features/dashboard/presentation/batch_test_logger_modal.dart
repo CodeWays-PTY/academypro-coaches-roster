@@ -123,7 +123,7 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
         // Filter strictly to Fitness Test / Test Day category
         _testEvents = rawEvents.where((e) {
           final type = e.eventType.toLowerCase().trim();
-          return type == 'fitness test' || type == 'test day';
+          return type == 'fitness test' || type == 'test day' || type == 'fitness' || type == 'test' || type.contains('fitness') || type.contains('test');
         }).toList();
 
         // Sort by date DESC (most recent date first)
