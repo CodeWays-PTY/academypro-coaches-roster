@@ -275,7 +275,7 @@ PRAGMA foreign_keys = ON;
 
 | # | Table Name | Alias / Functional Category | Description | Primary Key | Key Foreign Keys |
 |---|---|---|---|---|---|
-| 1 | `schools` | Multi-Tenant Schools | School tenant registry | `id` (TEXT) | None |
+| 1 | `schools` | Multi-Tenant Schools | School tenant registry | `id` (INTEGER) | None |
 | 2 | `users` | User Accounts | Staff, coaches, admins, student accounts, parents | `id` (TEXT) | `school_id -> schools.id` |
 | 3 | `sports` | Sport Definitions | Dynamic sport metric definitions & JSON layouts | `id` (TEXT) | None |
 | 4 | `players` | Athlete Register | Player roster | `id` (TEXT) | `school_id -> schools.id`, `user_id -> users.id` |
