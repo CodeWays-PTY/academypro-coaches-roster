@@ -381,8 +381,8 @@
         showDeleteConfirm: false,
         athleteToDelete: null,
 
-        newAthlete: { name: '', age: 16, position: 'Forward / Wing', team: 'U18 Academy Elite', status: 'Active', email: '', phone: '' },
-        editAthleteData: { id: '', name: '', age: 16, position: '', team: '', status: 'Active', email: '', phone: '' },
+        newAthlete: { name: '', age: '', position: '', team: '', status: 'Active', email: '', phone: '' },
+        editAthleteData: { id: '', name: '', age: '', position: '', secondaryPosition: '', team: '', status: 'Active', email: '' },
 
         async init() {
           this.purgeLegacyDummyData();
@@ -462,13 +462,12 @@
                   id: a.id,
                   name: (a.name || `${a.firstName || ''} ${a.lastName || ''}`).trim(),
                   email: a.email || '',
-                  team: a.team || a.schoolName || 'Unassigned',
-                  position: a.position || 'Forward / Wing',
+                  team: a.team || a.schoolName || '',
+                  position: a.position || '',
                   secondaryPosition: a.secondaryPosition || '',
                   status: a.status || 'Active',
                   attendance: a.attendance || 100,
-                  parent: a.parent || '',
-                  stats: a.stats || { speed: 75, strength: 75, stamina: 75, skill: 75 }
+                  age: a.age || null
                 }));
               }
             }
@@ -1327,7 +1326,7 @@
 
         // Students CRUD
         openAddAthlete() {
-          this.newAthlete = { name: '', age: 16, position: 'Forward / Wing', team: this.currentSquad, status: 'Active', email: '', phone: '' };
+          this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: 'Active', email: '', phone: '' };
           this.showAddModal = true;
         },
 
@@ -1339,13 +1338,12 @@
           const created = {
             id: `AC-${Math.floor(1000 + Math.random() * 9000)}`,
             name: this.newAthlete.name.trim(),
-            age: parseInt(this.newAthlete.age) || 16,
-            position: this.newAthlete.position || 'Forward / Wing',
-            team: this.newAthlete.team || this.currentSquad,
+            age: this.newAthlete.age ? parseInt(this.newAthlete.age) : null,
+            position: (this.newAthlete.position || '').trim(),
+            team: this.newAthlete.team || this.currentSquad || '',
             status: 'Active',
             email: (this.newAthlete.email || '').toLowerCase().trim(),
-            phone: (this.newAthlete.phone || '').trim(),
-            stats: { speed: 80, strength: 75, stamina: 85, skill: 78 }
+            phone: (this.newAthlete.phone || '').trim()
           };
 
           try {
@@ -1360,7 +1358,7 @@
               this.athletes.unshift(athData);
               this.saveAthletesToStorage();
               this.showAddModal = false;
-              this.newAthlete = { name: '', age: 16, position: 'Forward / Wing', team: this.currentSquad, status: 'Active', email: '', phone: '' };
+              this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: 'Active', email: '', phone: '' };
               this.triggerToast(`Student Athlete ${athData.name} registered!`, 'success');
             } else {
               this.triggerToast(data.message || data.error || 'Failed to register athlete on server', 'error');
@@ -1375,13 +1373,12 @@
           this.editAthleteData = {
             id: athlete.id,
             name: athlete.name || '',
-            age: athlete.age || 16,
+            age: athlete.age || '',
             position: athlete.position || '',
             secondaryPosition: athlete.secondaryPosition || '',
-            team: athlete.team || 'Unassigned',
+            team: athlete.team || '',
             status: athlete.status || 'Active',
-            email: athlete.email || '',
-            parent: athlete.parent || ''
+            email: athlete.email || ''
           };
           this.showEditModal = true;
         },
@@ -1401,24 +1398,32 @@
           const updatedItem = {
             ...this.athletes[idx],
             name: this.editAthleteData.name.trim(),
-            age: parseInt(this.editAthleteData.age) || 16,
-            position: this.editAthleteData.position.trim(),
+            age: this.editAthleteData.age ? parseInt(this.editAthleteData.age) : null,
+            position: (this.editAthleteData.position || '').trim(),
             secondaryPosition: (this.editAthleteData.secondaryPosition || '').trim(),
             status: this.editAthleteData.status || 'Active',
-            email: (this.editAthleteData.email || '').toLowerCase().trim(),
-            parent: (this.editAthleteData.parent || '').trim()
+            email: (this.editAthleteData.email || '').toLowerCase().trim()
           };
+
+          this.athletes[idx] = updatedItem;
+          this.saveAthletesToStorage();
+          this.showEditModal = false;
+          this.triggerToast('Athlete updated successfully!', 'success');
 
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(updatedItem.id)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-                attendance: this.athletes[idx].attendance || 100,
-                parent: (this.editAthleteData.parent || '').trim(),
-                email: (this.editAthleteData.email || '').toLowerCase().trim()
+              body: JSON.stringify({
+                name: updatedItem.name,
+                age: updatedItem.age,
+                position: updatedItem.position,
+                secondaryPosition: updatedItem.secondaryPosition,
+                status: updatedItem.status,
+                email: updatedItem.email
               })
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
             if (!data.success) {
               this.triggerToast(data.error || 'Failed to update athlete on server', 'error');
             }
@@ -2285,7 +2290,7 @@
                         </div>
                       </div>
                     </td>
-                    <td class="px-lg py-3 font-body-md text-on-surface-variant text-xs" x-text="athlete.position || 'Forward / Wing'"></td>
+                    <td class="px-lg py-3 font-body-md text-on-surface-variant text-xs" x-text="athlete.position || '--'"></td>
                     <td class="px-lg py-3">
                       <div class="flex items-center gap-2">
                         <div class="flex-1 h-2 bg-surface-container rounded-full overflow-hidden">
@@ -2728,10 +2733,7 @@
               </div>
             </div>
           </div>
-          <div class="col-span-2">
-            <label class="block text-xs font-bold text-outline mb-1">Parent / Guardian</label>
-            <input x-model="editAthleteData.parent" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="Parent name"/>
-          </div>
+
         </div>
         <div class="flex justify-between items-center pt-2">
           <button type="button" @click="showEditModal = false; confirmDeleteAthlete(editAthleteData)" class="px-3 py-2 text-xs font-bold text-error hover:bg-error-container/20 rounded-lg transition-colors flex items-center gap-1">
