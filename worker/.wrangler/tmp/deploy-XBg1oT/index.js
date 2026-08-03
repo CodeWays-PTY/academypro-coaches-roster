@@ -3958,8 +3958,8 @@ app.get("/api/dashboard/events", async (c) => {
   if (!schoolId) {
     return c.json({ success: false, message: "schoolId is required" }, 400);
   }
-  let query = 'SELECT * FROM events WHERE (school_id = ? OR school_id IS NULL OR school_id = "")';
-  let params = [schoolId];
+  let query = "SELECT * FROM events WHERE 1=1";
+  let params = [];
   if (eventTypeParam) {
     const etLower = eventTypeParam.toLowerCase().trim();
     if (etLower === "fitness test" || etLower === "test day" || etLower === "fitness" || etLower === "test") {

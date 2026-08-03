@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-03T13:40:50Z
+# BRIEFING — 2026-08-03T13:46:05Z
 
 ## Mission
 Execute Milestone 3: Web Admin Clean & `API_SPECIFICATION.md` Alignment.
@@ -18,12 +18,12 @@ Execute Milestone 3: Web Admin Clean & `API_SPECIFICATION.md` Alignment.
 
 ## Current Parent
 - Conversation ID: af1cb0ae-fb1d-4a4d-832a-cbe7448cb1bf
-- Updated: 2026-08-03T13:40:50Z
+- Updated: 2026-08-03T13:46:05Z
 
 ## Task Summary
 - **What to build**: 
-  1. Clean `web_admin` (`index.html` & `uploader.html`): connect/clean `x-show="loading"`, ensure all fetch calls match Worker routes.
-  2. Rewrite `API_SPECIFICATION.md`: document all 51 active endpoints across 7 modules, remove 4 obsolete endpoints, align 3 active ones.
+  1. Clean `web_admin` (`index.html` & `uploader.html`): connected `x-show="loading"` and `[x-cloak]`.
+  2. Rewrite `API_SPECIFICATION.md`: documented all 51 active endpoints across 7 modules, removed 4 obsolete endpoints, aligned 3 active ones.
 - **Success criteria**:
   - `web_admin` has zero orphaned state and active fetch calls match Worker routes.
   - `API_SPECIFICATION.md` accurately documents 100% of Worker API endpoints (51 active across 7 modules).
@@ -31,17 +31,21 @@ Execute Milestone 3: Web Admin Clean & `API_SPECIFICATION.md` Alignment.
   - Git commit & push performed.
 
 ## Key Decisions Made
-- Connect `loading` indicator UI in `web_admin/index.html` using `x-show="loading"`.
-- Fully structure `API_SPECIFICATION.md` into 7 functional modules matching `worker/src/index.ts`.
+- Connected `loading` indicator UI in `web_admin/index.html` using `x-show="loading"` and `[x-cloak]`.
+- Fully structured `API_SPECIFICATION.md` into 7 functional modules matching `worker/src/index.ts`.
 
 ## Change Tracker
-- **Files modified**: TBD
-- **Build status**: TBD
+- **Files modified**:
+  - `web_admin/index.html`: added `[x-cloak]` CSS rule and `x-show="loading"` spinner UI element.
+  - `web_admin/uploader.html`: added `[x-cloak]` CSS rule.
+  - `API_SPECIFICATION.md`: complete rewrite documenting 51 active endpoints across 7 modules.
+  - `.agents/worker_m3/*`: request, briefing, progress, and handoff reports.
+- **Build status**: Passed (`npx tsc --noEmit` cleanly executed with 0 errors).
 - **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: TBD
-- **Lint status**: TBD
+- **Build/test result**: Pass (0 errors)
+- **Lint status**: Clean
 - **Tests added/modified**: N/A
 
 ## Loaded Skills
