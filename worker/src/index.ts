@@ -781,10 +781,15 @@ app.delete('/api/athletes/:id', async (c) => {
 // Route: Get Coaches
 app.get('/api/coaches', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const db = getDB(c);
   try {
-    const { results } = await db.prepare('SELECT id, first_name, last_name, email, role FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT)) AND role IN ("Coach", "SuperAdmin", "SchoolAdmin")').bind(schoolId, schoolId).all();
+    const sId = String(schoolId);
+    let { results } = await db.prepare("SELECT id, first_name, last_name, email, role FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ?) AND (role IN ('Coach', 'SuperAdmin', 'SchoolAdmin', 'Head Coach', 'Assistant Coach') OR LOWER(role) LIKE '%coach%' OR LOWER(role) LIKE '%admin%') ORDER BY first_name ASC").bind(sId, sId).all();
+    if (!results || results.length === 0) {
+      const allRes = await db.prepare("SELECT id, first_name, last_name, email, role FROM users WHERE (role IN ('Coach', 'SuperAdmin', 'SchoolAdmin', 'Head Coach', 'Assistant Coach') OR LOWER(role) LIKE '%coach%' OR LOWER(role) LIKE '%admin%') ORDER BY first_name ASC").all();
+      results = allRes.results || [];
+    }
     return c.json({
       success: true,
       data: (results || []).map((u: any) => ({
@@ -792,7 +797,7 @@ app.get('/api/coaches', async (c) => {
         firstName: u.first_name,
         lastName: u.last_name,
         email: u.email,
-        role: u.role
+        role: u.role || 'Coach'
       }))
     });
   } catch (e: any) {
