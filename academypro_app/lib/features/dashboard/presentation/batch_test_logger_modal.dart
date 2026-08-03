@@ -337,118 +337,230 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
 
           // Modal Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Capture Squad Test Metrics',
-                    style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  SizedBox(height: 2.0),
-                  Text(
-                    'Select a team & Fitness Test event to enter metrics',
-                    style: TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12.0),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: const Icon(Icons.analytics_rounded, color: Color(0xFF2563EB), size: 22.0),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF64748B)),
-                onPressed: () => Navigator.pop(context),
+              const SizedBox(width: 12.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Capture Squad Test Metrics',
+                      style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.3),
+                    ),
+                    const SizedBox(height: 2.0),
+                    Text(
+                      widget.initialEvent != null
+                          ? 'Logging scores for ${widget.initialEvent!.title}'
+                          : 'Select a squad & fitness test event to enter metrics',
+                      style: const TextStyle(fontSize: 12.0, color: Color(0xFF64748B)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                borderRadius: BorderRadius.circular(20.0),
+                child: Container(
+                  padding: const EdgeInsets.all(6.0),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close_rounded, size: 18.0, color: Color(0xFF64748B)),
+                ),
               ),
             ],
           ),
-          const Divider(height: 18.0),
+          const SizedBox(height: 14.0),
 
           if (_isLoading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else ...[
-            // 1. SELECT TEAM SQUAD & TEST DAY EVENT (Locked when launched from a specific event)
-            Row(
-              children: [
-                // Squad Selector
-                Expanded(
-                  flex: 2,
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedAgeGroup,
-                    isDense: true,
-                    borderRadius: BorderRadius.circular(14.0),
-                    decoration: InputDecoration(
-                      labelText: widget.initialEvent != null ? 'Squad (Locked)' : 'Select Squad',
-                      prefixIcon: Icon(
-                        widget.initialEvent != null ? Icons.lock_outline : Icons.shield_outlined,
-                        size: 18.0,
-                        color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFF2563EB),
-                      ),
-                      filled: true,
-                      fillColor: widget.initialEvent != null ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
-                    ),
-                    items: activeSquads.map((sq) {
-                      return DropdownMenuItem<String>(
-                        value: sq,
-                        child: Text(sq, style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold)),
-                      );
-                    }).toList(),
-                    onChanged: widget.initialEvent != null ? null : _onSquadChanged,
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-
-                // Event Selector (Strictly Test Day Events, Recent First)
-                Expanded(
-                  flex: 3,
-                  child: DropdownButtonFormField<String>(
-                    value: (_testEvents.any((e) => e.id == _selectedEventId)) ? _selectedEventId : null,
-                    isDense: true,
-                    isExpanded: true,
-                    borderRadius: BorderRadius.circular(14.0),
-                    decoration: InputDecoration(
-                      labelText: widget.initialEvent != null ? 'Test Event (Locked)' : 'Fitness Test Event',
-                      prefixIcon: Icon(
-                        widget.initialEvent != null ? Icons.lock_clock : Icons.event_available,
-                        size: 18.0,
-                        color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFFD97706),
-                      ),
-                      filled: true,
-                      fillColor: widget.initialEvent != null ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                      disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Color(0xFFD97706), width: 1.5)),
-                    ),
-                    hint: const Text('Select Test Event', style: TextStyle(fontSize: 12.0)),
-                    items: _testEvents.isEmpty
-                        ? [
-                            const DropdownMenuItem<String>(
-                              value: null,
-                              child: Text('No Fitness Test events found', style: TextStyle(fontSize: 12.0, color: Colors.grey)),
-                            )
-                          ]
-                        : _testEvents.map((evt) {
-                            return DropdownMenuItem<String>(
-                              value: evt.id,
+            // 1. SQUAD & TEST EVENT SELECTOR CARD
+            Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16.0),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: widget.initialEvent != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF3C7),
+                                borderRadius: BorderRadius.circular(6.0),
+                                border: Border.all(color: const Color(0xFFFDE68A)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.lock_rounded, size: 12.0, color: Color(0xFFD97706)),
+                                  SizedBox(width: 4.0),
+                                  Text('LOCKED TO EVENT', style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFFD97706), letterSpacing: 0.5)),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDBEAFE),
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: const Color(0xFF93C5FD)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.shield_rounded, size: 13.0, color: Color(0xFF1E40AF)),
+                                  const SizedBox(width: 4.0),
+                                  Text(
+                                    _selectedAgeGroup,
+                                    style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.event_note_rounded, size: 18.0, color: Color(0xFF2563EB)),
+                            const SizedBox(width: 8.0),
+                            Expanded(
                               child: Text(
-                                '${evt.title} (${evt.date})',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: widget.initialEvent != null ? const Color(0xFF64748B) : const Color(0xFF0F172A),
-                                ),
+                                '${widget.initialEvent!.title} (${widget.initialEvent!.date})',
+                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            );
-                          }).toList(),
-                    onChanged: widget.initialEvent != null ? null : _onEventSelected,
-                  ),
-                ),
-              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Squad Selector Field
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'SQUAD',
+                                style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.6),
+                              ),
+                              const SizedBox(height: 4.0),
+                              Container(
+                                height: 42.0,
+                                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedAgeGroup,
+                                    isExpanded: true,
+                                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 20.0),
+                                    items: activeSquads.map((sq) {
+                                      return DropdownMenuItem<String>(
+                                        value: sq,
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.shield_outlined, size: 14.0, color: Color(0xFF2563EB)),
+                                            const SizedBox(width: 6.0),
+                                            Text(sq, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: _onSquadChanged,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10.0),
+
+                        // Event Selector Field
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'TEST EVENT',
+                                style: TextStyle(fontSize: 10.0, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.6),
+                              ),
+                              const SizedBox(height: 4.0),
+                              Container(
+                                height: 42.0,
+                                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: (_testEvents.any((e) => e.id == _selectedEventId)) ? _selectedEventId : null,
+                                    isExpanded: true,
+                                    hint: const Text('Select Event', style: TextStyle(fontSize: 12.0, color: Color(0xFF94A3B8))),
+                                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 20.0),
+                                    items: _testEvents.isEmpty
+                                        ? [
+                                            const DropdownMenuItem<String>(
+                                              value: null,
+                                              child: Text('No events found', style: TextStyle(fontSize: 12.0, color: Colors.grey)),
+                                            )
+                                          ]
+                                        : _testEvents.map((evt) {
+                                            return DropdownMenuItem<String>(
+                                              value: evt.id,
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.event_available, size: 14.0, color: Color(0xFFD97706)),
+                                                  const SizedBox(width: 6.0),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${evt.title} (${evt.date})',
+                                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                    onChanged: _onEventSelected,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
             ),
             const SizedBox(height: 12.0),
 
