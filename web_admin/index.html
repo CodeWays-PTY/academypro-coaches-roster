@@ -402,7 +402,8 @@
 
         purgeLegacyDummyData() {
           try {
-            ['academypro_squads', 'academypro_squad_details', 'academypro_athletes', 'academypro_coaches', 'academypro_events', 'academypro_test_metrics', 'academypro_test_results'].forEach(k => {
+            ['academypro_squads', 'academypro_squad_details', 'academypro_athletes', 'academypro_coaches', 'academypro_events', 'academypro_test_metrics', 'academypro_test_results',
+             'academypro_cache_athletes', 'academypro_cache_events', 'academypro_cache_coaches', 'academypro_cache_test_results', 'academypro_cache_test_metrics'].forEach(k => {
               localStorage.removeItem(k);
             });
           } catch (e) {}
