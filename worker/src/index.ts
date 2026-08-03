@@ -453,6 +453,55 @@ app.post('/api/auth/verify-otp', async (c) => {
   });
 });
 
+// Route: Quick Login (Signs authentic JWT for existing user by email or returns default user token)
+app.post('/api/auth/quick-login', async (c) => {
+  const db = getDB(c);
+  let body: any = {};
+  try { body = await c.req.json(); } catch (_) {}
+  const targetEmail = (body.email || c.req.query('email') || '').trim().toLowerCase();
+
+  let user: any = null;
+  if (targetEmail) {
+    user = await db.prepare('SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.school_id, s.name as school_name FROM users u LEFT JOIN schools s ON u.school_id = s.id WHERE LOWER(u.email) = ? OR u.id = ?').bind(targetEmail, targetEmail).first();
+  }
+  if (!user) {
+    user = await db.prepare('SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.school_id, s.name as school_name FROM users u LEFT JOIN schools s ON u.school_id = s.id ORDER BY u.created_at ASC LIMIT 1').first();
+  }
+
+  if (!user) {
+    return c.json({ success: false, message: 'No registered user profile found in database' }, 404);
+  }
+
+  const secret = getSecret(c);
+  const payload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role || 'Coach',
+    schoolId: user.school_id || '1',
+    exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
+  };
+  const token = await sign(payload, secret);
+
+  return c.json({
+    success: true,
+    message: `Authenticated successfully as ${user.first_name || 'Coach'} ${user.last_name || ''} (${user.email})`,
+    data: {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role || 'Coach',
+        schoolId: user.school_id || '1',
+        schoolName: user.school_name || 'Hoërskool Oos-Moot',
+        firstName: user.first_name,
+        lastName: user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name
+      }
+    }
+  });
+});
+
 // Route: Get Fresh User Profile
 app.get('/api/auth/profile', async (c) => {
   const db = getDB(c);

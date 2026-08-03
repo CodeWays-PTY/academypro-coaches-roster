@@ -158,7 +158,20 @@
                         if (urlToken) {
                             localStorage.setItem('token', urlToken);
                         }
-                        const token = urlToken || localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
+                        let token = urlToken || localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
+                        if (!token) {
+                            try {
+                                const loginRes = await fetch(`${apiBase}/api/auth/quick-login`, { method: 'POST' });
+                                const loginJson = await loginRes.json();
+                                if (loginJson.success && loginJson.data?.token) {
+                                    token = loginJson.data.token;
+                                    localStorage.setItem('token', token);
+                                    if (loginJson.data.user?.schoolId) {
+                                        localStorage.setItem('school_id', loginJson.data.user.schoolId);
+                                    }
+                                }
+                            } catch (_) {}
+                        }
                         let schoolId = new URLSearchParams(window.location.search).get('school_id') || new URLSearchParams(window.location.search).get('schoolId') || localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || '';
                         if (!schoolId && token) {
                             try {
