@@ -243,7 +243,6 @@ class CheckInNotifier extends StateNotifier<CheckInState> {
             position: '',
             team: '',
             status: 'Active',
-            ugroupsActive: 0,
           ),
           isCheckedIn: false,
         ),

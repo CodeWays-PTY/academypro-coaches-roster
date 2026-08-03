@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/app_toast.dart';
-import '../../../core/utils/phone_utils.dart';
 
 class SquadInfo {
   final String id;
@@ -27,9 +26,7 @@ class RosterPlayer {
   String position;
   final String team;
   final String status;
-  final int ugroupsActive;
   final int? age;
-  final String parentPhone;
   final List<SquadInfo> assignedSquads;
 
   RosterPlayer({
@@ -40,15 +37,11 @@ class RosterPlayer {
     required this.position,
     required this.team,
     required this.status,
-    required this.ugroupsActive,
     this.age,
-    String? parentPhone,
     List<SquadInfo>? assignedSquads,
-  })  : parentPhone = (parentPhone != null && parentPhone.trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(parentPhone) : '',
-        assignedSquads = assignedSquads ?? [];
+  })  : assignedSquads = assignedSquads ?? [];
 
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
-    final rawPhone = json['parentPhone'];
     final rawSquads = json['assignedSquads'] as List<dynamic>? ?? [];
     return RosterPlayer(
       id: json['id'] ?? '',
@@ -58,9 +51,7 @@ class RosterPlayer {
       position: json['position'] ?? '',
       team: json['team'] ?? '',
       status: json['status'] ?? 'Active',
-      ugroupsActive: json['ugroupsActive'] ?? 0,
       age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
-      parentPhone: (rawPhone != null && rawPhone.toString().trim().isNotEmpty) ? PhoneUtils.formatRSAPhone(rawPhone.toString()) : '',
       assignedSquads: rawSquads.map((s) => SquadInfo.fromJson(s as Map<String, dynamic>)).toList(),
     );
   }
@@ -222,7 +213,6 @@ class RosterNotifier extends StateNotifier<RosterState> {
           position: cleanPosition,
           team: p.team,
           status: p.status,
-          ugroupsActive: p.ugroupsActive,
           age: p.age,
           assignedSquads: p.assignedSquads,
         );
@@ -260,7 +250,6 @@ class RosterNotifier extends StateNotifier<RosterState> {
     required String ageGroup,
     required String position,
     required String team,
-    String? parentPhone,
   }) async {
     final newId = '$ageGroup-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     final newPlayer = RosterPlayer(
@@ -271,8 +260,6 @@ class RosterNotifier extends StateNotifier<RosterState> {
       position: position,
       team: team,
       status: 'Active',
-      ugroupsActive: 1,
-      parentPhone: parentPhone,
     );
 
     final newMap = Map<String, List<RosterPlayer>>.from(state.playersByAge);
@@ -289,7 +276,6 @@ class RosterNotifier extends StateNotifier<RosterState> {
         'ageGroup': ageGroup,
         'position': position,
         'team': team,
-        'parentPhone': parentPhone,
       });
       if (res.statusCode == 200 || res.statusCode == 201) {
         return true;

@@ -947,40 +947,14 @@ class _StudentDashboardScreenState extends ConsumerState<StudentDashboardScreen>
                   borderRadius: BorderRadius.circular(14.0),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.person, color: Color(0xFF2563EB), size: 18.0),
-                        const SizedBox(width: 10.0),
-                        Expanded(
-                          child: Text(
-                            item.parentName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    InkWell(
-                      onTap: () {
-                        final cleanPhone = item.parentPhone.replaceAll(RegExp(r'[^\d+]'), '');
-                        launchUrl(Uri.parse('tel:$cleanPhone'));
-                      },
-                      child: Row(
-                        children: [
-                          const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
-                          const SizedBox(width: 10.0),
-                          Text(
-                            item.parentPhone,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2563EB),
-                              fontSize: 13.0,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ],
+                    const Icon(Icons.person, color: Color(0xFF2563EB), size: 18.0),
+                    const SizedBox(width: 10.0),
+                    Expanded(
+                      child: Text(
+                        item.parentName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
                       ),
                     ),
                   ],

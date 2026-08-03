@@ -279,7 +279,6 @@ class CoachActionItem {
   final String? playerId;
   final String playerName;
   final String parentName;
-  final String parentPhone;
   final String playerPhone;
   final String notes;
 
@@ -295,7 +294,6 @@ class CoachActionItem {
     this.playerId,
     this.playerName = '',
     this.parentName = '',
-    this.parentPhone = '',
     this.playerPhone = '',
     this.notes = 'Follow up required with coaching staff.',
   })  : category = category ?? type,
@@ -313,7 +311,6 @@ class CoachActionItem {
     String? playerId,
     String? playerName,
     String? parentName,
-    String? parentPhone,
     String? playerPhone,
     String? notes,
   }) {
@@ -329,7 +326,6 @@ class CoachActionItem {
       playerId: playerId ?? this.playerId,
       playerName: playerName ?? this.playerName,
       parentName: parentName ?? this.parentName,
-      parentPhone: parentPhone ?? this.parentPhone,
       playerPhone: playerPhone ?? this.playerPhone,
       notes: notes ?? this.notes,
     );
@@ -374,7 +370,6 @@ class CoachActionNotifier extends StateNotifier<List<CoachActionItem>> {
             playerId: x['playerId'],
             playerName: x['playerName'] ?? '',
             parentName: x['parentName'] ?? '',
-            parentPhone: x['parentPhone'] ?? '',
             playerPhone: x['playerPhone'] ?? '',
             notes: x['notes'] ?? 'Follow up required with coaching staff.',
           ));

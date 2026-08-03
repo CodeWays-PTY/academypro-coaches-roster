@@ -737,53 +737,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   borderRadius: BorderRadius.circular(14.0),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.person, color: Color(0xFF2563EB), size: 18.0),
-                        const SizedBox(width: 10.0),
-                        Expanded(
-                          child: Text(
-                            item.parentName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone, color: Color(0xFF10B981), size: 18.0),
-                        const SizedBox(width: 10.0),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              final clean = item.parentPhone.replaceAll(RegExp(r'[^\d+]'), '');
-                              launchUrl(Uri.parse('tel:$clean'));
-                            },
-                            child: Text(
-                              PhoneUtils.formatRSAPhone(item.parentPhone),
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A), fontSize: 13.0),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy, size: 16.0, color: Color(0xFF003EC7)),
-                          tooltip: 'Copy Phone Number',
-                          padding: const EdgeInsets.all(4.0),
-                          constraints: const BoxConstraints(),
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: item.parentPhone));
-                            HapticFeedback.lightImpact();
-                            AppToast.showInfo(
-                              context,
-                              title: 'Phone Number Copied',
-                              message: 'Parent contact phone (${item.parentPhone}) copied to clipboard.',
-                            );
-                          },
-                        ),
-                      ],
+                    const Icon(Icons.person, color: Color(0xFF2563EB), size: 18.0),
+                    const SizedBox(width: 10.0),
+                    Expanded(
+                      child: Text(
+                        item.parentName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14.0),
+                      ),
                     ),
                   ],
                 ),

@@ -7,17 +7,7 @@ import '../storage/local_storage.dart';
 class ApiClient {
   static const String _productionUrl = 'https://academypro-api.tata-elash34.workers.dev';
   
-  static List<String> get _candidateLocalBaseUrls {
-    final host = (!kIsWeb && Platform.isAndroid) ? '10.0.2.2' : 'localhost';
-    return [
-      'http://$host:8787',
-      'http://$host:3000',
-      'http://$host:8080',
-      'http://$host:80',
-    ];
-  }
-
-  static String _activeBaseUrl = _productionUrl;
+  static const String _activeBaseUrl = _productionUrl;
   static String get baseUrl => _activeBaseUrl;
 
   late final Dio dio;

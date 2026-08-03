@@ -54,11 +54,9 @@ CREATE TABLE IF NOT EXISTS players (
     id TEXT PRIMARY KEY,
     school_id TEXT DEFAULT 'OVK',
     user_id TEXT,
-    parent_id TEXT,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone TEXT,
-    parent_name TEXT,
     dob TEXT,
     preferred_position TEXT,
     age_group TEXT DEFAULT 'U15',
@@ -66,7 +64,6 @@ CREATE TABLE IF NOT EXISTS players (
     team TEXT,
     grade INTEGER,
     age INTEGER,
-    ugroups_active INTEGER DEFAULT 1,
     notes TEXT,
     status TEXT DEFAULT 'Active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -146,41 +143,7 @@ CREATE TABLE IF NOT EXISTS academic_logs (
 );
 
 -- ==========================================
--- 10. FITNESS RECORDS & BASELINES
--- ==========================================
-CREATE TABLE IF NOT EXISTS fitness_baselines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id TEXT UNIQUE NOT NULL,
-    speed_40m REAL,
-    speed_60m REAL,
-    broad_jump REAL,
-    push_ups INTEGER,
-    pull_ups INTEGER,
-    squats_40kg INTEGER,
-    vertical_jump REAL,
-    t_test REAL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
-);
-
--- ==========================================
--- 11. FITNESS PROGRESSION (Milestone Weeks)
--- ==========================================
-CREATE TABLE IF NOT EXISTS fitness_progression (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id TEXT NOT NULL,
-    week INTEGER NOT NULL,
-    speed_40m REAL,
-    strength_reps INTEGER,
-    weight REAL,
-    gym_sessions_per_week INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-    UNIQUE(player_id, week)
-);
-
--- ==========================================
--- 12. MATCH DAY STATISTICS
+-- 10. MATCH DAY STATISTICS
 -- ==========================================
 CREATE TABLE IF NOT EXISTS match_stats (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,7 +166,7 @@ CREATE TABLE IF NOT EXISTS match_stats (
 );
 
 -- ==========================================
--- 13. ATTENDANCE LOGS
+-- 11. ATTENDANCE LOGS
 -- ==========================================
 CREATE TABLE IF NOT EXISTS attendance (
     player_id TEXT NOT NULL,
@@ -217,7 +180,7 @@ CREATE TABLE IF NOT EXISTS attendance (
 );
 
 -- ==========================================
--- 14. EVENTS (Schedule / Calendar)
+-- 12. EVENTS (Schedule / Calendar)
 -- ==========================================
 CREATE TABLE IF NOT EXISTS events (
     id TEXT PRIMARY KEY,
@@ -238,7 +201,7 @@ CREATE TABLE IF NOT EXISTS events (
 );
 
 -- ==========================================
--- 15. ACTION PLANS (Interventions)
+-- 13. ACTION PLANS (Interventions)
 -- ==========================================
 CREATE TABLE IF NOT EXISTS action_plans (
     id TEXT PRIMARY KEY,
@@ -254,7 +217,7 @@ CREATE TABLE IF NOT EXISTS action_plans (
 );
 
 -- ==========================================
--- 16. NOTIFICATIONS
+-- 14. NOTIFICATIONS
 -- ==========================================
 CREATE TABLE IF NOT EXISTS notifications (
     id TEXT PRIMARY KEY,
@@ -268,12 +231,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 -- ==========================================
--- 17. PARENT CHILD LINKS (Link Requests)
+-- 15. PARENT CHILD LINKS (Link Requests)
 -- ==========================================
 CREATE TABLE IF NOT EXISTS parent_child_links (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_phone TEXT,
-    parent_email TEXT,
     player_id TEXT,
     player_email TEXT,
     status TEXT DEFAULT 'Pending',
@@ -281,7 +242,7 @@ CREATE TABLE IF NOT EXISTS parent_child_links (
 );
 
 -- ==========================================
--- 18. MEDICAL RECORDS
+-- 16. MEDICAL RECORDS
 -- ==========================================
 CREATE TABLE IF NOT EXISTS medical_records (
     id TEXT PRIMARY KEY,
@@ -317,21 +278,19 @@ PRAGMA foreign_keys = ON;
 | 1 | `schools` | Multi-Tenant Schools | School tenant registry | `id` (TEXT) | None |
 | 2 | `users` | User Accounts | Staff, coaches, admins, student accounts, parents | `id` (TEXT) | `school_id -> schools.id` |
 | 3 | `sports` | Sport Definitions | Dynamic sport metric definitions & JSON layouts | `id` (TEXT) | None |
-| 4 | `players` | Athlete Register | Player roster (`parent_contact` dropped) | `id` (TEXT) | `school_id -> schools.id`, `user_id -> users.id` |
+| 4 | `players` | Athlete Register | Player roster | `id` (TEXT) | `school_id -> schools.id`, `user_id -> users.id` |
 | 5 | `squads` | Squad Management | Team squads assigned to coaches | `id` (TEXT) | `school_id -> schools.id`, `coach_id -> users.id` |
 | 6 | `squad_players` | Squad Roster Mapping | Junction mapping players to squads | `(squad_id, player_id)` | `squad_id -> squads.id`, `player_id -> players.id` |
 | 7 | `test_metric_definitions` | Dynamic Metrics | Configurable test metric definitions | `id` (TEXT) | `school_id -> schools.id` |
 | 8 | `player_test_logs` | Fitness Evaluations | Log entries for dynamic fitness metrics | `id` (TEXT) | `player_id -> players.id`, `metric_id -> test_metric_definitions.id` |
 | 9 | `academic_logs` | Academic Records | Academic term grades & discipline scores | `id` (INTEGER) | `player_id -> players.id` |
-| 10 | `fitness_baselines` | Fitness Records | Initial physical baseline test metrics | `id` (INTEGER) | `player_id -> players.id` |
-| 11 | `fitness_progression` | Fitness Progression | Milestone week progression metrics | `id` (INTEGER) | `player_id -> players.id` |
-| 12 | `match_stats` | Match Performance | Rugby & sport match statistics | `id` (INTEGER) | `player_id -> players.id` |
-| 13 | `attendance` | Attendance Tracking | Session attendance (Gym/Field/uGroup) | `(player_id, session_type, date)` | `player_id -> players.id` |
-| 14 | `events` | Calendar / Schedule | Training sessions, field sessions & fixtures | `id` (TEXT) | `school_id -> schools.id` |
-| 15 | `action_plans` | Action Plans | Player academic and development goals | `id` (TEXT) | None |
-| 16 | `notifications` | Push Notifications | System and push notification items | `id` (TEXT) | None |
-| 17 | `parent_child_links` | Link Requests | Parent-athlete linking requests | `id` (INTEGER) | None |
-| 18 | `medical_records` | Medical Records | Player medical records & clearance logs | `id` (TEXT) | `player_id -> players.id` |
+| 10 | `match_stats` | Match Performance | Rugby & sport match statistics | `id` (INTEGER) | `player_id -> players.id` |
+| 11 | `attendance` | Attendance Tracking | Session attendance (Gym/Field/uGroup) | `(player_id, session_type, date)` | `player_id -> players.id` |
+| 12 | `events` | Calendar / Schedule | Training sessions, field sessions & fixtures | `id` (TEXT) | `school_id -> schools.id` |
+| 13 | `action_plans` | Action Plans | Player academic and development goals | `id` (TEXT) | None |
+| 14 | `notifications` | Push Notifications | System and push notification items | `id` (TEXT) | None |
+| 15 | `parent_child_links` | Link Requests | Parent-athlete linking requests | `id` (INTEGER) | None |
+| 16 | `medical_records` | Medical Records | Player medical records & clearance logs | `id` (TEXT) | `player_id -> players.id` |
 
 ---
 
