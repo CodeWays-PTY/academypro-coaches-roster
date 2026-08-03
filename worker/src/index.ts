@@ -1377,6 +1377,13 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
   }
 }
 
+// Route Alias for /api/events
+app.get('/api/events', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/dashboard/events';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+
 // Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/events', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
@@ -1396,7 +1403,7 @@ app.get('/api/dashboard/events', async (c) => {
 
   if (eventTypeParam) {
     if (eventTypeParam === 'Fitness Test' || eventTypeParam === 'Test Day') {
-      query += " AND (event_type = 'Fitness Test' OR event_type = 'Test Day' OR LOWER(event_type) LIKE '%test%')";
+      query += " AND (event_type = 'Fitness Test' OR event_type = 'Test Day')";
     } else {
       query += ' AND event_type = ?';
       params.push(eventTypeParam);

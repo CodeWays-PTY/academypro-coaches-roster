@@ -98,8 +98,8 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
     try {
       final apiClient = ref.read(apiClientProvider);
 
-      // 1. Fetch Events & filter strictly for 'Test Day' (fitness test) events, sorted by date DESC (most recent first)
-      final eventsRes = await apiClient.getAndCache('/api/events');
+      // 1. Fetch Events & filter strictly for Fitness Test / Test Day events, sorted by date DESC (most recent first)
+      final eventsRes = await apiClient.getAndCache('/api/dashboard/events?event_type=Fitness Test');
       if (eventsRes.statusCode == 200 && eventsRes.data['success'] == true) {
         final rawEvents = (eventsRes.data['data'] as List? ?? []).map((json) {
           return CoachEvent(
@@ -120,10 +120,10 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
           );
         }).toList();
 
-        // Filter strictly to Test Day category
+        // Filter strictly to Fitness Test / Test Day category
         _testEvents = rawEvents.where((e) {
           final type = e.eventType.toLowerCase().trim();
-          return type == 'test day' || type == 'fitness test' || type == 'test';
+          return type == 'fitness test' || type == 'test day';
         }).toList();
 
         // Sort by date DESC (most recent date first)
