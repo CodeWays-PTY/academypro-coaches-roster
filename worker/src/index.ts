@@ -951,9 +951,6 @@ app.get('/api/rosters/:age_group', async (c) => {
   }
 
   const placeholders = playerIds.map(() => '?').join(',');
-  const query = `SELECT * FROM players WHERE id IN (${placeholders}) ORDER BY first_name ASC`;
-  const { results } = await db.prepare(query).bind(...playerIds).all();
-
   const playerSquadMap: Record<string, any[]> = {};
   try {
     const { results: spResults } = await db.prepare(`
@@ -975,21 +972,77 @@ app.get('/api/rosters/:age_group', async (c) => {
     }
   } catch (_) {}
 
+  try {
+    const { results: smResults } = await db.prepare(`
+      SELECT sm.athlete_id as player_id, s.id as squad_id, s.name as squad_name, s.code as squad_code
+      FROM squad_members sm
+      JOIN squads s ON s.id = sm.squad_id
+      WHERE sm.athlete_id IN (${placeholders})
+    `).bind(...playerIds).all();
+
+    for (const row of (smResults || [])) {
+      if (!playerSquadMap[row.player_id]) {
+        playerSquadMap[row.player_id] = [];
+      }
+      if (!playerSquadMap[row.player_id].some(sq => sq.id === row.squad_id)) {
+        playerSquadMap[row.player_id].push({
+          id: row.squad_id,
+          name: row.squad_name,
+          code: row.squad_code
+        });
+      }
+    }
+  } catch (_) {}
+
+  const finalPlayers: any[] = [];
+  try {
+    const { results: pRes } = await db.prepare(`SELECT * FROM players WHERE id IN (${placeholders}) ORDER BY first_name ASC`).bind(...playerIds).all();
+    if (pRes && pRes.length > 0) {
+      for (const p of pRes) {
+        finalPlayers.push({
+          id: p.id,
+          firstName: p.first_name || '',
+          lastName: p.last_name || '',
+          ageGroup: p.age_group || ageGroup,
+          position: p.position || 'Athlete',
+          team: p.team || 'U15 Squad',
+          status: p.status || 'Active',
+          age: p.age ?? null,
+          assignedSquads: playerSquadMap[p.id] || []
+        });
+      }
+    }
+  } catch (_) {}
+
+  try {
+    const { results: aRes } = await db.prepare(`SELECT * FROM athletes WHERE id IN (${placeholders})`).bind(...playerIds).all();
+    if (aRes && aRes.length > 0) {
+      for (const a of aRes) {
+        if (!finalPlayers.some(p => p.id === a.id)) {
+          const parts = (a.name || '').trim().split(' ');
+          const firstName = parts[0] || 'Athlete';
+          const lastName = parts.slice(1).join(' ') || '';
+          finalPlayers.push({
+            id: a.id,
+            firstName,
+            lastName,
+            ageGroup: ageGroup,
+            position: a.position || 'Athlete',
+            team: a.school_name || 'U15 Squad',
+            status: a.status || 'Active',
+            age: a.age ?? null,
+            assignedSquads: playerSquadMap[a.id] || []
+          });
+        }
+      }
+    }
+  } catch (_) {}
+
   return c.json({
     success: true,
     data: {
       ageGroup,
-      players: (results || []).map((p: any) => ({
-        id: p.id,
-        firstName: p.first_name,
-        lastName: p.last_name,
-        ageGroup: p.age_group,
-        position: p.position,
-        team: p.team,
-        status: p.status,
-        age: p.age,
-        assignedSquads: playerSquadMap[p.id] || []
-      }))
+      players: finalPlayers
     }
   });
 });
