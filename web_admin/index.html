@@ -794,20 +794,39 @@
           } catch (e) { console.log('Edit event API error:', e); }
         },
 
-        async deleteEvent(evtId) {
-          if (!evtId) return;
-          const target = this.events.find(e => e.id === evtId);
-          const title = target ? target.title : 'Event';
+        showDeleteEventConfirm: false,
+        eventToDelete: null,
+        showDeleteAthleteConfirm: false,
+        athleteToDelete: null,
+
+        confirmDeleteEvent(evt) {
+          if (!evt) return;
+          this.eventToDelete = evt;
+          this.showDeleteEventConfirm = true;
+        },
+
+        async executeDeleteEvent() {
+          if (!this.eventToDelete) return;
+          const evtId = this.eventToDelete.id;
+          const title = this.eventToDelete.title || 'Event';
+
           this.events = this.events.filter(e => e.id !== evtId);
           this.saveEventsToStorage();
+          this.showDeleteEventConfirm = false;
           this.triggerToast(`Event '${title}' deleted`, 'info');
 
           try {
             await fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(evtId)}`, {
               method: 'DELETE'
             });
-            await this.fetchEventsFromApi(true);
-          } catch (e) { console.log('Delete event API error:', e); }
+            await fetch(`${this.apiBaseUrl}/api/events/${encodeURIComponent(evtId)}`, {
+              method: 'DELETE'
+            });
+          } catch (e) {
+            console.log('Delete event API error:', e);
+          } finally {
+            this.eventToDelete = null;
+          }
         },
 
         async createSquad() {
@@ -1388,32 +1407,53 @@
           } catch (err) { console.log('Athlete PUT error:', err); }
         },
 
-        async deleteAthlete(athleteId) {
-          if (!athleteId) return;
-          const target = (this.athletes || []).find(a => a.id === athleteId);
-          const name = target ? target.name : 'Athlete';
+        confirmDeleteAthlete(athlete) {
+          if (!athlete) return;
+          this.athleteToDelete = athlete;
+          this.showDeleteAthleteConfirm = true;
+        },
+
+        async executeDeleteAthlete() {
+          if (!this.athleteToDelete) return;
+          const athleteId = this.athleteToDelete.id;
+          const name = this.athleteToDelete.name || 'Athlete';
+
           this.athletes = (this.athletes || []).filter(a => a.id !== athleteId);
           this.saveAthletesToStorage();
+          this.showDeleteAthleteConfirm = false;
+          this.showEditModal = false;
           this.triggerToast(`Athlete '${name}' removed`, 'info');
 
           try {
             await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(athleteId)}`, { method: 'DELETE' });
-            await this.fetchAthletesFromApi();
           } catch (e) { console.log('Delete athlete error:', e); }
+          finally {
+            this.athleteToDelete = null;
+          }
         },
 
-        async deleteCoach(coachId) {
-          if (!coachId) return;
-          const target = (this.coaches || []).find(c => c.id === coachId);
-          const name = target ? target.name : 'Coach';
+        confirmDeleteCoach(coach) {
+          if (!coach) return;
+          this.coachToDelete = coach;
+          this.showDeleteCoachConfirm = true;
+        },
+
+        async executeDeleteCoach() {
+          if (!this.coachToDelete) return;
+          const coachId = this.coachToDelete.id;
+          const name = this.coachToDelete.name || 'Coach';
+
           this.coaches = (this.coaches || []).filter(c => c.id !== coachId);
           this.saveCoachesToStorage();
+          this.showDeleteCoachConfirm = false;
           this.triggerToast(`Coach '${name}' removed`, 'info');
 
           try {
             await fetch(`${this.apiBaseUrl}/api/coaches/${encodeURIComponent(coachId)}`, { method: 'DELETE' });
-            await this.fetchCoachesFromApi();
           } catch (e) { console.log('Delete coach error:', e); }
+          finally {
+            this.coachToDelete = null;
+          }
         },
 
         async loginAsCoach(email) {
@@ -1684,7 +1724,7 @@
                 <button type="button" @click="openEditEvent(evt)" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
                   <span class="material-symbols-outlined text-[16px]">edit</span> Edit Event
                 </button>
-                <button type="button" @click="deleteEvent(evt.id)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
+                <button type="button" @click="confirmDeleteEvent(evt)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
                   <span class="material-symbols-outlined text-[18px]">delete</span>
                 </button>
               </div>
@@ -2502,7 +2542,7 @@
                 <span class="material-symbols-outlined text-[16px]">switch_account</span>
                 <span x-text="loggedInCoach && loggedInCoach.email === coach.email ? 'Current Profile' : 'Switch Profile'"></span>
               </button>
-              <button type="button" @click="deleteCoach(coach.id)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Coach">
+              <button type="button" @click="confirmDeleteCoach(coach)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Coach">
                 <span class="material-symbols-outlined text-[18px]">delete</span>
               </button>
             </div>
@@ -2665,7 +2705,7 @@
           </div>
         </div>
         <div class="flex justify-between items-center pt-2">
-          <button type="button" @click="showEditModal = false; deleteAthlete(editAthleteData.id)" class="px-3 py-2 text-xs font-bold text-error hover:bg-error-container/20 rounded-lg transition-colors flex items-center gap-1">
+          <button type="button" @click="showEditModal = false; confirmDeleteAthlete(editAthleteData)" class="px-3 py-2 text-xs font-bold text-error hover:bg-error-container/20 rounded-lg transition-colors flex items-center gap-1">
             <span class="material-symbols-outlined text-[16px]">delete</span> Delete
           </button>
           <div class="flex gap-2">
@@ -2919,6 +2959,72 @@
           </button>
           <button type="button" @click="showAddSquadPlayerModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Done</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE EVENT -->
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteEventConfirm" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center gap-3 text-error">
+        <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <div>
+          <h3 class="font-headline-md font-bold text-base text-on-surface">Delete Event?</h3>
+          <p class="text-xs text-outline">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant font-medium">
+        Are you sure you want to delete <strong class="text-on-surface" x-text="eventToDelete?.title || 'this event'"></strong>?
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/60">
+        <button type="button" @click="showDeleteEventConfirm = false; eventToDelete = null;" class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-xs font-bold rounded-xl transition-colors">Cancel</button>
+        <button type="button" @click="executeDeleteEvent()" class="px-4 py-2 bg-error text-on-error text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity">Delete Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE ATHLETE -->
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteAthleteConfirm" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center gap-3 text-error">
+        <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <div>
+          <h3 class="font-headline-md font-bold text-base text-on-surface">Delete Athlete Profile?</h3>
+          <p class="text-xs text-outline">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant font-medium">
+        Are you sure you want to delete <strong class="text-on-surface" x-text="athleteToDelete?.name || 'this athlete'"></strong>?
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/60">
+        <button type="button" @click="showDeleteAthleteConfirm = false; athleteToDelete = null;" class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-xs font-bold rounded-xl transition-colors">Cancel</button>
+        <button type="button" @click="executeDeleteAthlete()" class="px-4 py-2 bg-error text-on-error text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity">Delete Athlete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE COACH -->
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteCoachConfirm" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center gap-3 text-error">
+        <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <div>
+          <h3 class="font-headline-md font-bold text-base text-on-surface">Delete Coach Profile?</h3>
+          <p class="text-xs text-outline">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant font-medium">
+        Are you sure you want to delete <strong class="text-on-surface" x-text="coachToDelete?.name || 'this coach'"></strong>?
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/60">
+        <button type="button" @click="showDeleteCoachConfirm = false; coachToDelete = null;" class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-xs font-bold rounded-xl transition-colors">Cancel</button>
+        <button type="button" @click="executeDeleteCoach()" class="px-4 py-2 bg-error text-on-error text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity">Delete Coach</button>
       </div>
     </div>
   </div>
