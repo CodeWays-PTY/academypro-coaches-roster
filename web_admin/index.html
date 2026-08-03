@@ -155,7 +155,18 @@
                         this.loading = true;
                         const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
                         const token = localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
-                        const schoolId = localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || 'OVK';
+                        let schoolId = new URLSearchParams(window.location.search).get('school_id') || new URLSearchParams(window.location.search).get('schoolId') || localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || '';
+                        if (!schoolId && token) {
+                            try {
+                                const parts = token.split('.');
+                                if (parts.length === 3) {
+                                    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                                    schoolId = payload.schoolId || payload.school_id || '';
+                                }
+                            } catch (e) {
+                                // Ignore JWT parse errors
+                            }
+                        }
                         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
                         // 1. Fetch Roster Players
@@ -191,7 +202,7 @@
                         // 3. Dynamically build squads list from unique ageGroup and team values in players
                         const uniqueSquadsMap = new Map();
                         this.players.forEach(p => {
-                            const squadName = `${p.ageGroup} ${p.team || 'Squad'}`;
+                            const squadName = p.team ? `${p.ageGroup} ${p.team}` : p.ageGroup;
                             if (!uniqueSquadsMap.has(squadName)) {
                                 uniqueSquadsMap.set(squadName, p.ageGroup);
                             }
@@ -204,6 +215,7 @@
 
                     } catch (e) {
                         console.error('Failed to load dynamic config:', e);
+                        this.showToast(e.message || 'Failed to load dynamic config', 'error');
                         this.players = [];
                         this.squads = [];
                         this.metrics = [];
@@ -468,7 +480,7 @@
                     <div class="flex flex-wrap gap-sm">
                         <template x-for="(s, index) in squads" :key="s.name">
                             <button @click="toggleSquad(index)" :class="s.active ? 'bg-secondary-container text-on-secondary-container border-primary/20' : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'" class="px-md py-xs rounded-full flex items-center gap-xs font-label-md border transition-colors">
-                                <span x-text="s.name">U16 Academy Elite</span>
+                                <span x-text="s.name">Squad Name</span>
                                 <span class="material-symbols-outlined text-[16px]" x-text="s.active ? 'close' : 'add'">close</span>
                             </button>
                         </template>

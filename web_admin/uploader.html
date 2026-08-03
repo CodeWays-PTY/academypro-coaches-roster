@@ -157,15 +157,29 @@
                         this.loading = true;
                         const apiBase = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? '' : 'https://academypro-api.tata-elash34.workers.dev';
                         const token = localStorage.getItem('token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('token') || sessionStorage.getItem('jwt_token') || '';
-                        const schoolId = localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || 'OVK';
+                        let schoolId = new URLSearchParams(window.location.search).get('school_id') || new URLSearchParams(window.location.search).get('schoolId') || localStorage.getItem('school_id') || localStorage.getItem('schoolId') || sessionStorage.getItem('school_id') || sessionStorage.getItem('schoolId') || '';
+                        if (!schoolId && token) {
+                            try {
+                                const parts = token.split('.');
+                                if (parts.length === 3) {
+                                    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                                    schoolId = payload.schoolId || payload.school_id || '';
+                                }
+                            } catch (e) {
+                                // Ignore JWT parse errors
+                            }
+                        }
                         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
                         const res = await fetch(`${apiBase}/api/admin/all-players?school_id=${encodeURIComponent(schoolId)}`, { headers });
                         const json = await res.json();
                         if (json.success) {
                             this.players = json.data;
+                        } else {
+                            this.showToast(json.message || 'Failed to load roster', 'error');
                         }
                     } catch (e) {
                         console.error('Failed to load roster:', e);
+                        this.showToast(e.message || 'Failed to load roster', 'error');
                         this.players = [];
                     } finally {
                         this.loading = false;
