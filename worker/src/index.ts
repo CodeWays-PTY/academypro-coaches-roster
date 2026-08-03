@@ -122,9 +122,9 @@ function getKV(c: any) {
 // 3. CORS Middleware
 app.use('*', cors({
   origin: '*',
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Internal-API-Key'],
-  allowMethods: ['POST', 'GET', 'OPTIONS'],
-  exposeHeaders: ['Content-Length'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Internal-API-Key', 'X-Api-Key', 'If-None-Match'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  exposeHeaders: ['Content-Length', 'ETag'],
   maxAge: 600,
   credentials: true,
 }));
@@ -3017,17 +3017,15 @@ app.post('/api/test-metrics', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = jwtPayload?.schoolId || body.schoolId;
-  if (!schoolId) {
-    return c.json({ success: false, message: 'schoolId is required' }, 400);
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body?.schoolId || body?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+
+  const { id, name, category, unit, goalDirection, targetBenchmark } = body || {};
+  if (!name || !name.trim() || !unit || !unit.trim()) {
+    return c.json({ success: false, message: 'Name and unit are required.' }, 400);
   }
 
-  const { id, name, category, unit, goalDirection, targetBenchmark } = body;
-  if (!name || !category || !unit) {
-    return c.json({ success: false, message: 'Name, category, and unit are required.' }, 400);
-  }
-
-  const metricId = id || `m_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`;
+  const catName = category && category.trim() ? category.trim() : 'General';
+  const metricId = id || generatePrimaryKey('tm');
 
   try {
     await db.prepare(`
@@ -3040,16 +3038,19 @@ app.post('/api/test-metrics', async (c) => {
         goal_direction = excluded.goal_direction,
         target_benchmark = excluded.target_benchmark
     `).bind(
-      metricId, schoolId, name.trim(), category.trim(), unit.trim(),
-      goalDirection || 'HIGHER_IS_BETTER', targetBenchmark || null
+      metricId, schoolId, name.trim(), catName, unit.trim(),
+      goalDirection || 'HIGHER_IS_BETTER', targetBenchmark || 0
     ).run();
+
+    console.log(`[Observer Log] Test metric '${metricId}' (${name}) saved for school '${schoolId}'.`);
 
     return c.json({
       success: true,
       message: 'Test metric saved successfully',
-      data: { id: metricId, schoolId, name, category, unit, goalDirection, targetBenchmark }
+      data: { id: metricId, schoolId, name: name.trim(), category: catName, unit: unit.trim(), goalDirection: goalDirection || 'HIGHER_IS_BETTER', targetBenchmark: targetBenchmark || 0 }
     });
   } catch (err: any) {
+    console.error(`[Observer Error] Failed to save test metric: ${err.message}`);
     return c.json({ success: false, message: 'Failed to save test metric', error: err.message }, 500);
   }
 });
@@ -3060,10 +3061,30 @@ app.delete('/api/test-metrics/:id', async (c) => {
   const db = getDB(c);
   try {
     await db.prepare('DELETE FROM test_metric_definitions WHERE id = ?').bind(metricId).run();
+    console.log(`[Observer Log] Test metric '${metricId}' deleted.`);
     return c.json({ success: true, message: 'Test metric deleted successfully' });
   } catch (err: any) {
+    console.error(`[Observer Error] Failed to delete test metric: ${err.message}`);
     return c.json({ success: false, message: 'Failed to delete test metric', error: err.message }, 500);
   }
+});
+
+// Route Aliases for Test Metrics
+app.get('/api/dashboard/test-metrics', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/test-metrics';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.post('/api/dashboard/test-metrics', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/test-metrics';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.delete('/api/dashboard/test-metrics/:id', async (c) => {
+  const metricId = c.req.param('id');
+  const url = new URL(c.req.url);
+  url.pathname = `/api/test-metrics/${metricId}`;
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
 });
 
 // Route Aliases for Batch Test Logs
