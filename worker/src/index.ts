@@ -955,10 +955,11 @@ app.get('/api/test-results', async (c) => {
       eventId: r.event_id || '',
       athleteId: r.player_id || '',
       athleteName: r.athlete_name || '',
-      testName: r.test_name || r.session_name || '',
+      testName: r.test_name || r.metric_id || r.session_name || '',
+      metricId: r.metric_id || '',
       category: r.category || '',
       unit: r.unit || '',
-      scoreValue: r.score_value || 0,
+      scoreValue: r.score ?? r.score_value ?? 0,
       testDate: r.test_date || r.created_at
     }));
     return c.json({ success: true, data: formatted });
@@ -1408,11 +1409,11 @@ app.get('/api/rosters/:age_group', async (c) => {
     const pHolders = stringPlayerIds.map(() => '?').join(',');
 
     const { results: logResults } = await db.prepare(`
-      SELECT ptl.player_id, ptl.metric_id, ptl.score, ptl.test_date, ptl.session_name, tm.name as metric_name, tm.unit
+      SELECT ptl.player_id, ptl.metric_id, ptl.score, ptl.test_date, ptl.session_name, tmd.name as metric_name, tmd.unit
       FROM player_test_logs ptl
-      LEFT JOIN test_metrics tm ON CAST(tm.id AS TEXT) = CAST(ptl.metric_id AS TEXT) OR tm.name = ptl.metric_id
+      LEFT JOIN test_metric_definitions tmd ON CAST(tmd.id AS TEXT) = CAST(ptl.metric_id AS TEXT) OR tmd.name = ptl.metric_id
       WHERE CAST(ptl.player_id AS TEXT) IN (${pHolders})
-      ORDER BY ptl.test_date DESC, ptl.created_at DESC
+      ORDER BY ptl.created_at DESC, ptl.test_date DESC
     `).bind(...stringPlayerIds).all();
 
     const playerLogsMap: Record<string, any[]> = {};
@@ -1438,7 +1439,7 @@ app.get('/api/rosters/:age_group', async (c) => {
       p.testLogs = playerLogsMap[pIdStr] || [];
       p.fitnessBaselines = playerLogsMap[pIdStr] || [];
     }
-  } catch (_) {}
+  } catch (e) { console.error('[Roster] Failed to attach test logs:', e); }
 
   return c.json({
     success: true,
@@ -2488,8 +2489,8 @@ const handleGetCheckins = async (c: any) => {
       const targetDate = ev?.date || new Date().toISOString().split('T')[0];
 
       const { results: evtResults } = await db.prepare(`
-        SELECT player_id FROM attendance WHERE (CAST(event_id AS TEXT) = ? OR event_id = ?) AND status = 'Present'
-      `).bind(eventId.toString(), eventId.toString()).all();
+        SELECT player_id FROM attendance WHERE (CAST(event_id AS TEXT) = ? OR event_id = ?) AND date = ? AND status = 'Present'
+      `).bind(eventId.toString(), eventId.toString(), targetDate).all();
 
       const checkedInPlayerIds = (evtResults || []).map((r: any) => r.player_id);
       const checkinArray = (evtResults || []).map((r: any) => ({
@@ -3187,6 +3188,42 @@ app.post('/api/dashboard/test-logs', async (c) => {
   url.pathname = '/api/test-logs/batch';
   return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
 });
+// Route: Get saved test scores scoped to a specific event + date
+app.get('/api/test-logs/by-event', async (c) => {
+  const db = getDB(c);
+  if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+
+  const eventId = c.req.query('eventId') || c.req.query('event_id');
+  const testDate = c.req.query('testDate') || c.req.query('test_date');
+
+  if (!eventId) return c.json({ success: false, message: 'eventId query parameter is required' }, 400);
+
+  try {
+    let query = 'SELECT player_id, metric_id, score FROM player_test_logs WHERE event_id = ?';
+    const bindings: any[] = [eventId];
+    if (testDate) {
+      query += ' AND test_date = ?';
+      bindings.push(testDate);
+    }
+
+    const { results } = await db.prepare(query).bind(...bindings).all();
+
+    // Build nested map: { playerId: { metricId: score } }
+    const scoreMap: Record<string, Record<string, number>> = {};
+    for (const row of (results || [])) {
+      const pId = String(row.player_id);
+      const mId = String(row.metric_id);
+      if (!scoreMap[pId]) scoreMap[pId] = {};
+      scoreMap[pId][mId] = row.score as number;
+    }
+
+    return c.json({ success: true, data: scoreMap });
+  } catch (err: any) {
+    console.error('[Observer Error] Failed to fetch event test logs:', err);
+    return c.json({ success: false, message: 'Failed to fetch event scores', error: err.message }, 500);
+  }
+});
+
 app.post('/api/test-logs', async (c) => {
   const url = new URL(c.req.url);
   url.pathname = '/api/test-logs/batch';
@@ -3251,7 +3288,7 @@ app.post('/api/test-logs/batch', async (c) => {
 
       try {
         // Check if log already exists for player, metric and test_date
-        const existing = await db.prepare('SELECT id FROM player_test_logs WHERE player_id = ? AND metric_id = ? AND test_date = ?').bind(pId, targetMetricId, testDate).first();
+        const existing = await db.prepare('SELECT id FROM player_test_logs WHERE player_id = ? AND metric_id = ? AND event_id = ? AND test_date = ?').bind(pId, targetMetricId, eventId || '', testDate).first();
         const targetId = existing?.id || item.id || fallbackId;
 
         await db.prepare(`
@@ -3276,27 +3313,13 @@ app.post('/api/test-logs/batch', async (c) => {
 
         // Auto check-in athlete as 'Present' for this test event / session
         try {
-          await db.prepare(`
-            CREATE TABLE IF NOT EXISTS attendance (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              player_id TEXT NOT NULL,
-              session_type TEXT NOT NULL,
-              date TEXT NOT NULL,
-              status TEXT NOT NULL,
-              event_id TEXT,
-              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-          `).run().catch(() => {});
-
           const attEvtId = eventId ? String(eventId) : null;
           const sessType = sessionName || 'Fitness Test';
 
-          const existingAtt = await db.prepare('SELECT id FROM attendance WHERE player_id = ? AND (event_id = ? OR (session_type = ? AND date = ?))').bind(pId, attEvtId || '', sessType, testDate).first();
-          if (existingAtt) {
-            await db.prepare("UPDATE attendance SET status = 'Present', event_id = ? WHERE id = ?").bind(attEvtId, existingAtt.id).run();
-          } else {
-            await db.prepare("INSERT INTO attendance (player_id, session_type, date, status, event_id) VALUES (?, ?, ?, 'Present', ?)").bind(pId, sessType, testDate, attEvtId).run();
-          }
+          // Use INSERT OR REPLACE with the composite PK (player_id, session_type, date)
+          await db.prepare(
+            "INSERT OR REPLACE INTO attendance (player_id, session_type, date, status, event_id) VALUES (?, ?, ?, 'Present', ?)"
+          ).bind(pId, sessType, testDate, attEvtId).run();
         } catch (attErr) {
           console.warn(`Failed auto check-in attendance for player ${pId}:`, attErr);
         }

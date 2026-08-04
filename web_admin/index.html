@@ -1063,6 +1063,7 @@
         },
 
         async loadCheckInsAndRefresh() {
+          await this.fetchTestResultsFromApi();
           await this.fetchCheckinsForEvent(this.selectedAuditTestEventId);
           const list = this.getAuditCheckedInAthletes();
           if (list.length > 0) {
@@ -1229,10 +1230,12 @@
           // Get sorted test events for this squad to find the previous event
           const testEvents = this.getTestEventsForSquad();
           const currentIdx = testEvents.findIndex(e => e.id === currentEventId);
+          const currentEvent = currentIdx >= 0 ? testEvents[currentIdx] : null;
+          const currentEventDate = currentEvent ? currentEvent.date : '';
           const previousEvent = currentIdx >= 0 && currentIdx < testEvents.length - 1 ? testEvents[currentIdx + 1] : null;
 
-          // Current event scores → editable inputs
-          const currentResults = allResults.filter(r => r.eventId === currentEventId);
+          // Current event scores → editable inputs (filter by both eventId AND date)
+          const currentResults = allResults.filter(r => r.eventId === currentEventId && (!currentEventDate || r.testDate === currentEventDate));
           // Previous event scores → read-only benchmarks
           const prevResults = previousEvent
             ? allResults.filter(r => r.eventId === previousEvent.id)
@@ -1242,8 +1245,9 @@
           this.auditBenchmarks = {};
           (this.testMetrics || []).forEach(m => {
             const mName = m.name.toLowerCase();
-            const currentResult = currentResults.find(r => r.testName.toLowerCase() === mName);
-            const prevResult = prevResults.find(r => r.testName.toLowerCase() === mName);
+            const mId = m.id;
+            const currentResult = currentResults.find(r => r.metricId === mId || r.testName === mId || r.testName.toLowerCase() === mName);
+            const prevResult = prevResults.find(r => r.metricId === mId || r.testName === mId || r.testName.toLowerCase() === mName);
             this.auditInputs[m.id] = currentResult ? String(currentResult.scoreValue) : '';
             this.auditBenchmarks[m.id] = prevResult ? { value: prevResult.scoreValue, date: prevResult.testDate || (previousEvent ? previousEvent.date : '') } : null;
           });
