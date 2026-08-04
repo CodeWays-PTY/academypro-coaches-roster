@@ -345,12 +345,12 @@ app.post('/api/auth/send-otp', async (c) => {
 <html>
 <head>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background-color: #FAF8FF; color: #131B2E; margin: 0; padding: 20px; }
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: #F0F4FA; color: #131B2E; margin: 0; padding: 20px; }
     .container { max-width: 500px; background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 32px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); }
     .header { text-align: center; margin-bottom: 24px; }
-    .title { font-size: 26px; font-weight: 900; color: #003EC7; margin: 0; letter-spacing: -1.0px; }
+    .title { font-size: 26px; font-weight: 900; color: #2563EB; margin: 0; letter-spacing: -1.0px; }
     .content { font-size: 15px; line-height: 1.5; color: #434656; margin-bottom: 24px; }
-    .code-box { background-color: #F2F3FF; border-radius: 12px; padding: 20px; text-align: center; font-size: 32px; font-weight: 900; color: #003EC7; letter-spacing: 4px; margin: 24px 0; }
+    .code-box { background-color: #EFF6FF; border: 2px solid #BFDBFE; border-radius: 12px; padding: 20px; text-align: center; font-size: 32px; font-weight: 900; color: #1D4ED8; letter-spacing: 4px; margin: 24px 0; }
     .footer { text-align: center; font-size: 12px; color: #737688; margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 16px; }
   </style>
 </head>
