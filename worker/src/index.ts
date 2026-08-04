@@ -759,6 +759,18 @@ app.get('/api/athletes', async (c) => {
       const fallbackRes = await db.prepare('SELECT * FROM players ORDER BY first_name ASC').all();
       results = fallbackRes.results || [];
     }
+    // Query squad_players mapping for PK squad resolution
+    const squadPlayerMap: Record<string, string[]> = {};
+    const squadIdMap: Record<string, string> = {};
+    try {
+      const { results: spMap } = await db.prepare('SELECT player_id, squad_id FROM squad_players').all();
+      for (const row of (spMap || [])) {
+        if (!squadPlayerMap[row.player_id]) squadPlayerMap[row.player_id] = [];
+        squadPlayerMap[row.player_id].push(row.squad_id);
+        if (!squadIdMap[row.player_id]) squadIdMap[row.player_id] = row.squad_id;
+      }
+    } catch (_) {}
+
     return c.json({
       success: true,
       data: (results || []).map((p: any) => ({
@@ -770,7 +782,9 @@ app.get('/api/athletes', async (c) => {
         ageGroup: p.age_group,
         position: p.position || 'Athlete',
         team: p.team || p.age_group,
-        schoolId: p.school_id
+        schoolId: p.school_id,
+        squadId: squadIdMap[p.id] || null,
+        squadIds: squadPlayerMap[p.id] || []
       }))
     });
   } catch (e: any) {
@@ -3898,12 +3912,22 @@ app.post('/api/players', async (c) => {
       await db.prepare('UPDATE players SET user_id = ? WHERE id = ?').bind(userId, playerId).run();
     } catch (_) {}
 
-    // Directly link player to explicit squadId if provided
-    if (squadId) {
+    // 2. Resolve Squad PK and link in squad_players table
+    let targetSquadId = squadId;
+    if (!targetSquadId) {
       try {
-        await db.prepare(
-          'INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)'
-        ).bind(squadId, playerId).run();
+        const matchedSquad = await db.prepare(`
+          SELECT id FROM squads WHERE (code = ? OR name = ? OR code = ? OR name = ?) ORDER BY created_at DESC LIMIT 1
+        `).bind(ageGroup, ageGroup, team || ageGroup, team || ageGroup).first();
+        if (matchedSquad && matchedSquad.id) {
+          targetSquadId = matchedSquad.id;
+        }
+      } catch (_) {}
+    }
+
+    if (targetSquadId) {
+      try {
+        await db.prepare('INSERT OR IGNORE INTO squad_players (squad_id, player_id) VALUES (?, ?)').bind(targetSquadId, playerId).run();
       } catch (_) {}
     }
 
