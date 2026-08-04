@@ -281,9 +281,9 @@
       Alpine.data('rosterApp', () => ({
         _validViews: ['events', 'audit', 'squads', 'roster', 'coaches', 'dashboard'],
         currentView: (() => {
-          const hash = window.location.hash.replace('#', '');
+          const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
           const valid = ['events', 'audit', 'squads', 'roster', 'coaches', 'dashboard'];
-          return valid.includes(hash) ? hash : 'events';
+          return valid.includes(path) ? path : 'events';
         })(),
         occurrenceType: 'oneoff', // 'oneoff' vs 'recurring'
 
@@ -402,21 +402,26 @@
           if (this.athletes.length > 0 && !this.auditSelectedStudent) {
             this.selectAthleteForAudit(this.athletes[0]);
           }
-          // Sync hash to URL on init
-          if (!window.location.hash || !this._validViews.includes(window.location.hash.replace('#', ''))) {
-            window.location.hash = this.currentView;
+          // Sync path to URL on init
+          const initPath = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+          if (!this._validViews.includes(initPath)) {
+            window.history.replaceState({view: this.currentView}, '', '/' + this.currentView);
           }
           // Listen for browser back/forward
-          window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.replace('#', '');
-            if (this._validViews.includes(hash) && this.currentView !== hash) {
-              this.currentView = hash;
+          window.addEventListener('popstate', (e) => {
+            const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+            if (this._validViews.includes(path) && this.currentView !== path) {
+              this.currentView = path;
             }
           });
-          // Watch currentView changes and sync to hash
+          // Watch currentView changes and push to URL
+          const viewTitles = { events: 'Events & Schedule', audit: 'Performance Audit', squads: 'Squad Management', roster: 'Player Directory', coaches: 'Coaches', dashboard: 'Dashboard' };
+          document.title = 'AcademyPro | ' + (viewTitles[this.currentView] || 'Admin');
           this.$watch('currentView', (val) => {
-            if (window.location.hash !== '#' + val) {
-              window.location.hash = val;
+            document.title = 'AcademyPro | ' + (viewTitles[val] || 'Admin');
+            const currentPath = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+            if (currentPath !== val) {
+              window.history.pushState({view: val}, '', '/' + val);
             }
           });
         },
@@ -2550,16 +2555,15 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
           <template x-for="athlete in getDirectoryAthletesForSquad(selectedSquadManagement)" :key="athlete.id">
-            <div class="flex justify-between items-center p-md bg-surface border border-outline-variant rounded-xl shadow-xs hover:border-primary hover:shadow-md transition-all group">
-              <div @click="openEditAthlete(athlete)" class="flex items-center gap-md flex-1 cursor-pointer">
-                <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
-                <div class="flex-1">
-                  <h4 class="font-bold text-xs text-on-surface" x-text="athlete.name"></h4>
-                  <p class="text-[11px] text-outline" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
+            <div class="flex items-center p-md bg-surface border border-outline-variant rounded-xl shadow-xs hover:border-primary hover:shadow-md transition-all group">
+              <div @click="openEditAthlete(athlete)" class="flex items-center gap-md min-w-0 flex-1 cursor-pointer">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="font-bold text-xs text-on-surface truncate" x-text="athlete.name"></h4>
+                  <p class="text-[11px] text-outline truncate" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
                 </div>
-                <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
               </div>
-              <button type="button" @click.stop="removeAthleteFromSquad(athlete)" class="text-outline hover:text-error p-1 rounded-lg hover:bg-error-container/20 transition-all ml-1 opacity-0 group-hover:opacity-100" title="Remove from Squad">
+              <button type="button" @click.stop="removeAthleteFromSquad(athlete)" class="shrink-0 text-outline hover:text-error p-1.5 rounded-lg hover:bg-error-container/20 transition-all ml-2 opacity-0 group-hover:opacity-100" title="Remove from Squad">
                 <span class="material-symbols-outlined text-[16px]">close</span>
               </button>
             </div>
