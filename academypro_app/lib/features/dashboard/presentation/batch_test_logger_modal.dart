@@ -298,8 +298,9 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
       if (!mounted) return;
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        // Invalidate API cache so fresh scores load across dashboard
-        apiClient.clearCache();
+        // Invalidate dashboard summary and events providers so fresh test data refreshes across the app
+        ref.invalidate(dashboardSummaryProvider);
+        ref.invalidate(dashboardEventsProvider);
 
         // Update local baselines reference map in-place so UI immediately updates Prev scores
         setState(() {
