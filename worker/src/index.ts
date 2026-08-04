@@ -378,7 +378,7 @@ app.post('/api/auth/send-otp', async (c) => {
   await sendTransactionalEmail(c, {
     to: email.trim().toLowerCase(),
     fromName: 'AcademyPro App',
-    fromEmail: 'noreply@web.codeways.co', // Default fallback sender domain
+    fromEmail: 'noreply@academypro.co.za', // Custom domain sender address
     subject: 'AcademyPro Login OTP',
     htmlContent: emailHtml,
     textContent: emailText,
@@ -637,7 +637,7 @@ app.post('/api/auth/send-email-change-otp', async (c) => {
   await sendTransactionalEmail(c, {
     to: cleanNewEmail,
     fromName: 'AcademyPro Support',
-    fromEmail: 'noreply@web.codeways.co',
+    fromEmail: 'noreply@academypro.co.za',
     subject: 'Verify Your New AcademyPro Email Address',
     htmlContent: `<div style="font-family: Arial, sans-serif; padding: 20px; color: #1E293B;">
       <h2 style="color: #003EC7;">Email Change Verification</h2>
@@ -3954,7 +3954,7 @@ app.post('/api/players', async (c) => {
     await sendTransactionalEmail(c, {
       to: playerEmail,
       fromName: 'AcademyPro Sports',
-      fromEmail: 'noreply@web.codeways.co',
+      fromEmail: 'noreply@academypro.co.za',
       subject: `Welcome to AcademyPro — ${team} Squad Invitation`,
       htmlContent: inviteHtml,
       textContent: `Hi ${firstName},\n\nYou have been added to the ${team} squad on AcademyPro. Log in with ${playerEmail} to view your training schedule and stats.`
