@@ -849,11 +849,11 @@ app.delete('/api/athletes/:id', async (c) => {
 // Route: Get Coaches
 const handleGetCoaches = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 'OVK';
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const db = getDB(c);
   try {
     const sId = String(schoolId);
-    let { results } = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ? OR school_id = 'OVK') AND role NOT IN ('Student', 'Parent') AND (role LIKE '%Coach%' OR role LIKE '%Admin%' OR role LIKE '%Head%' OR role = 'Coach') ORDER BY first_name ASC").bind(sId, sId).all();
+    let { results } = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ? OR school_id = '1' OR school_id = 'OVK') AND role NOT IN ('Student', 'Parent') AND (role LIKE '%Coach%' OR role LIKE '%Admin%' OR role LIKE '%Head%' OR role = 'Coach') ORDER BY first_name ASC").bind(sId, sId).all();
     if (!results || results.length === 0) {
       const allRes = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE role NOT IN ('Student', 'Parent') AND (role LIKE '%Coach%' OR role LIKE '%Head%' OR role LIKE '%Admin%' OR role = 'Coach') ORDER BY first_name ASC").all();
       results = allRes.results || [];
@@ -870,7 +870,7 @@ const handleGetCoaches = async (c: any) => {
           email: u.email,
           role: u.role || 'Coach',
           phone: u.phone_number || '',
-          schoolName: u.school_id || 'OVK Academy'
+          schoolName: u.school_id === '1' || u.school_id === 1 ? 'Hoërskool Oos-Moot' : (u.school_id || 'Hoërskool Oos-Moot')
         };
       })
     });
@@ -898,7 +898,7 @@ const handlePostCoach = async (c: any) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const targetSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id || 'OVK';
+    const targetSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id || '1';
     const userId = body.id || `cch_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     await db.prepare(`

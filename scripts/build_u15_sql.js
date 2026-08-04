@@ -24,7 +24,7 @@ Siphosihle Masemola	Siphosihlemasemola69@gmail.com	704029838`;
 const squadId = 'sq-1785841532380';
 const squadName = 'U15';
 const ageGroup = 'U15';
-const schoolId = 'OVK';
+const schoolId = '1';
 
 const lines = rawData.trim().split('\n');
 const sqlStatements = [];
