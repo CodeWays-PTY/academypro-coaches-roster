@@ -279,7 +279,12 @@
       }));
 
       Alpine.data('rosterApp', () => ({
-        currentView: 'events', // 'events' (creator), 'audit' (single-player evaluation), 'roster', 'coaches', 'dashboard'
+        _validViews: ['events', 'audit', 'squads', 'roster', 'coaches', 'dashboard'],
+        currentView: (() => {
+          const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+          const valid = ['events', 'audit', 'squads', 'roster', 'coaches', 'dashboard'];
+          return valid.includes(path) ? path : 'events';
+        })(),
         occurrenceType: 'oneoff', // 'oneoff' vs 'recurring'
 
         apiBaseUrl: 'https://academypro-api.tata-elash34.workers.dev',
@@ -397,6 +402,28 @@
           if (this.athletes.length > 0 && !this.auditSelectedStudent) {
             this.selectAthleteForAudit(this.athletes[0]);
           }
+          // Sync path to URL on init
+          const initPath = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+          if (!this._validViews.includes(initPath)) {
+            window.history.replaceState({view: this.currentView}, '', '/' + this.currentView);
+          }
+          // Listen for browser back/forward
+          window.addEventListener('popstate', (e) => {
+            const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+            if (this._validViews.includes(path) && this.currentView !== path) {
+              this.currentView = path;
+            }
+          });
+          // Watch currentView changes and push to URL
+          const viewTitles = { events: 'Events & Schedule', audit: 'Performance Audit', squads: 'Squad Management', roster: 'Player Directory', coaches: 'Coaches', dashboard: 'Dashboard' };
+          document.title = 'AcademyPro | ' + (viewTitles[this.currentView] || 'Admin');
+          this.$watch('currentView', (val) => {
+            document.title = 'AcademyPro | ' + (viewTitles[val] || 'Admin');
+            const currentPath = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+            if (currentPath !== val) {
+              window.history.pushState({view: val}, '', '/' + val);
+            }
+          });
         },
 
         purgeLegacyDummyData() {
@@ -2135,7 +2162,7 @@
               <template x-for="sq in squads" :key="sq">
                 <div @click="toggleSquadSelection(sq)" class="flex items-center justify-between p-md bg-surface-container-lowest border border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-all group">
                   <div class="flex items-center gap-md">
-                    <div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container text-xs" x-text="sq.substring(0, 3)"></div>
+                    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center font-bold text-on-primary-container text-xs" x-text="sq.substring(0, 3)"></div>
                     <div>
                       <p class="font-label-md font-bold text-on-surface text-xs" x-text="sq"></p>
                       <p class="font-label-sm text-outline text-[11px]" x-text="getSquadAthleteCount(sq) + ' Enrolled Athletes'"></p>
@@ -2453,7 +2480,7 @@
                 <h3 class="font-bold text-on-surface text-sm" x-text="athlete.name"></h3>
                 <p class="text-xs text-outline font-semibold" x-text="athlete.position || 'Player'"></p>
               </div>
-              <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+              <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
             </div>
             <div class="text-xs text-on-surface-variant space-y-1 pt-1 border-t border-outline-variant">
               <div>Squad: <span class="font-bold text-on-surface" x-text="athlete.team || 'Unassigned'"></span></div>
@@ -2528,16 +2555,15 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
           <template x-for="athlete in getDirectoryAthletesForSquad(selectedSquadManagement)" :key="athlete.id">
-            <div class="flex justify-between items-center p-md bg-surface border border-outline-variant rounded-xl shadow-xs hover:border-primary hover:shadow-md transition-all group">
-              <div @click="openEditAthlete(athlete)" class="flex items-center gap-md flex-1 cursor-pointer">
-                <div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
-                <div class="flex-1">
-                  <h4 class="font-bold text-xs text-on-surface" x-text="athlete.name"></h4>
-                  <p class="text-[11px] text-outline" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
+            <div class="flex items-center justify-between p-md bg-surface border border-outline-variant rounded-xl shadow-xs hover:border-primary hover:shadow-md transition-all group">
+              <div @click="openEditAthlete(athlete)" class="flex items-center gap-md min-w-0 flex-1 cursor-pointer">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="font-bold text-xs text-on-surface truncate" x-text="athlete.name"></h4>
+                  <p class="text-[11px] text-outline truncate" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
                 </div>
-                <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
               </div>
-              <button type="button" @click="removeAthleteFromSquad(athlete)" class="text-outline hover:text-error p-1.5 rounded-lg hover:bg-error-container/20 transition-colors ml-2" title="Remove from Squad">
+              <button type="button" @click.stop="removeAthleteFromSquad(athlete)" class="shrink-0 text-outline/60 hover:text-error hover:bg-error-container/20 p-1.5 rounded-lg transition-all ml-2 flex items-center justify-center" title="Remove from Squad">
                 <span class="material-symbols-outlined text-[18px]">person_remove</span>
               </button>
             </div>
