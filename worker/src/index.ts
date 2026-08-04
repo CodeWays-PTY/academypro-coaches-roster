@@ -3175,9 +3175,14 @@ app.post('/api/test-logs/batch', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { metricId, testDate, sessionName, logs } = body;
-  if (!metricId || !testDate || !Array.isArray(logs)) {
-    return c.json({ success: false, message: 'metricId, testDate, and logs array are required' }, 400);
+  const logs = body.logs || body.scores || body.data;
+  const metricId = body.metricId || body.metric_id || (Array.isArray(logs) && logs.length > 0 ? logs[0].metricId || logs[0].metric_id : null);
+  const testDate = body.testDate || body.test_date || body.date || new Date().toISOString().split('T')[0];
+  const sessionName = body.sessionName || body.session_name || body.eventTitle || 'Evaluation';
+  const eventId = body.eventId || body.event_id || (Array.isArray(logs) && logs.length > 0 ? logs[0].eventId : null);
+
+  if (!Array.isArray(logs) || logs.length === 0) {
+    return c.json({ success: false, message: 'A non-empty logs array is required' }, 400);
   }
 
   try {
@@ -3190,6 +3195,7 @@ app.post('/api/test-logs/batch', async (c) => {
         score REAL NOT NULL,
         test_date TEXT NOT NULL,
         session_name TEXT DEFAULT 'Evaluation',
+        event_id TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -3197,48 +3203,52 @@ app.post('/api/test-logs/batch', async (c) => {
 
     await db.prepare('ALTER TABLE player_test_logs ADD COLUMN notes TEXT').run().catch(() => {});
     await db.prepare('ALTER TABLE player_test_logs ADD COLUMN session_name TEXT').run().catch(() => {});
+    await db.prepare('ALTER TABLE player_test_logs ADD COLUMN event_id TEXT').run().catch(() => {});
 
     let savedCount = 0;
     for (const item of logs) {
-      if (!item.playerId || item.score === undefined || item.score === null) continue;
+      const pId = item.playerId || item.player_id || item.id;
+      if (!pId || item.score === undefined || item.score === null || item.score === '') continue;
       const scoreVal = parseFloat(item.score.toString());
       if (isNaN(scoreVal)) continue;
 
-      const targetMetricId = item.metricId || metricId;
+      const targetMetricId = item.metricId || item.metric_id || metricId;
       if (!targetMetricId) continue;
 
-      const fallbackId = `ptl_${item.playerId}_${targetMetricId}_${testDate}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fallbackId = `ptl_${Date.now()}_${pId}_${targetMetricId}_${testDate}`.replace(/[^a-zA-Z0-9_-]/g, '_');
 
       try {
         // Check if log already exists for player, metric and test_date
-        const existing = await db.prepare('SELECT id FROM player_test_logs WHERE player_id = ? AND metric_id = ? AND test_date = ?').bind(item.playerId, targetMetricId, testDate).first();
+        const existing = await db.prepare('SELECT id FROM player_test_logs WHERE player_id = ? AND metric_id = ? AND test_date = ?').bind(pId, targetMetricId, testDate).first();
         const targetId = existing?.id || item.id || fallbackId;
 
         await db.prepare(`
-          INSERT INTO player_test_logs (id, player_id, metric_id, score, test_date, session_name, notes)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO player_test_logs (id, player_id, metric_id, score, test_date, session_name, event_id, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             score = excluded.score,
             session_name = excluded.session_name,
+            event_id = excluded.event_id,
             notes = excluded.notes
         `).bind(
           targetId,
-          item.playerId,
+          pId,
           targetMetricId,
           scoreVal,
           testDate,
-          sessionName || 'Evaluation',
+          sessionName,
+          eventId || null,
           item.notes || null
         ).run();
         savedCount++;
       } catch (e) {
-        console.warn(`Failed test log insert for player ${item.playerId}:`, e);
+        console.warn(`Failed test log insert for player ${pId}:`, e);
       }
     }
 
     return c.json({
       success: true,
-      message: `Saved ${savedCount} test logs successfully`,
+      message: `Saved ${savedCount} test log(s) successfully`,
       data: { savedCount, metricId, testDate }
     });
   } catch (err: any) {

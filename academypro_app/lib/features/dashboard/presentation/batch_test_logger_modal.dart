@@ -273,11 +273,28 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
       if (!mounted) return;
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        Navigator.pop(context);
+        // Invalidate API cache so fresh scores load across dashboard
+        apiClient.clearCache();
+
+        // Update local baselines reference map in-place so UI immediately updates Prev scores
+        setState(() {
+          for (var entry in logs) {
+            final pId = entry['playerId']?.toString();
+            final mId = entry['metricId']?.toString();
+            final scoreVal = entry['score']?.toString();
+            if (pId != null && mId != null && scoreVal != null) {
+              if (!_playerBaselines.containsKey(pId)) {
+                _playerBaselines[pId] = {};
+              }
+              _playerBaselines[pId]![mId] = scoreVal;
+            }
+          }
+        });
+
         AppToast.showSuccess(
           context,
           title: 'Scores Recorded',
-          message: 'Successfully logged ${logs.length} metric score(s)!',
+          message: 'Successfully logged ${logs.length} metric score(s)! Modal remains open for further logging.',
         );
       } else {
         AppToast.showError(
