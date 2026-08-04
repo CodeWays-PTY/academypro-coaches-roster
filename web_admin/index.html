@@ -647,26 +647,29 @@
           if (!this.athletes || this.athletes.length === 0) return [];
           
           if (this.directorySquadFilter && this.directorySquadFilter !== 'ALL') {
-            const target = this.directorySquadFilter.trim().toLowerCase();
+            const target = this.directorySquadFilter.trim().toLowerCase().replace(/\s+squad$/i, '');
             return this.athletes.filter(a => {
               if (!a.team) return false;
-              return a.team.trim().toLowerCase() === target;
+              const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
+              return t === target;
             });
           }
 
-          const managedSquadNames = (this.squads || []).map(s => s.trim().toLowerCase());
+          const managedSquadNames = (this.squads || []).map(s => s.trim().toLowerCase().replace(/\s+squad$/i, ''));
           return this.athletes.filter(a => {
             if (!a.team || a.team === 'Unassigned') return true;
-            return managedSquadNames.includes(a.team.trim().toLowerCase());
+            const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
+            return managedSquadNames.includes(t);
           });
         },
 
         getDirectoryAthletesForSquad(sq) {
           if (!sq || !this.athletes || this.athletes.length === 0) return [];
-          const target = sq.trim().toLowerCase();
+          const target = sq.trim().toLowerCase().replace(/\s+squad$/i, '');
           return this.athletes.filter(a => {
             if (!a.team) return false;
-            return a.team.trim().toLowerCase() === target;
+            const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
+            return t === target;
           });
         },
 

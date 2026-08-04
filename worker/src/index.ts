@@ -1332,7 +1332,7 @@ app.delete('/api/squads/:id', handleDeleteSquad);
 app.delete('/api/dashboard/squads/:id', handleDeleteSquad);
 
 // Route: Get Team Roster (Restricted to Coach's Owned Squads)
-app.get('/api/rosters/:age_group', async (c) => {
+const handleGetRoster = async (c: any) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
@@ -1495,7 +1495,12 @@ app.get('/api/rosters/:age_group', async (c) => {
       players: finalPlayers
     }
   });
-});
+};
+
+app.get('/api/rosters/:age_group', handleGetRoster);
+app.get('/api/roster/:age_group', handleGetRoster);
+app.get('/api/dashboard/rosters/:age_group', handleGetRoster);
+app.get('/api/dashboard/roster/:age_group', handleGetRoster);
 
 // Route: Update Player Squad Assignments
 app.post('/api/players/:id/squads', async (c) => {
@@ -3874,7 +3879,7 @@ app.post('/api/players', async (c) => {
     await db.prepare(`
       INSERT OR REPLACE INTO players (id, school_id, first_name, last_name, email, age_group, position, team, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active')
-    `).bind(playerId, String(schoolId), firstName, lastName, playerEmail, ageGroup, position || 'Athlete', team || `${ageGroup} Squad`).run();
+    `).bind(playerId, String(schoolId), firstName, lastName, playerEmail, ageGroup, position || 'Athlete', team || ageGroup).run();
 
     // 2. Pre-create Player user account in users table if not exists
     const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(playerEmail).first();
