@@ -1515,7 +1515,7 @@ app.post('/api/players/:id/squads', async (c) => {
 // Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || '1';
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1605,7 +1605,7 @@ app.get('/api/dashboard/summary', async (c) => {
 // Route: Get Flagged Players (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || '1';
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -2246,7 +2246,7 @@ app.post('/api/dashboard/actions/:id/delete', async (c) => {
 // Route: Get Rising Stars (Top performers by age group)
 app.get('/api/dashboard/rising-stars', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || '1';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
