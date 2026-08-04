@@ -786,9 +786,18 @@ app.post('/api/athletes', async (c) => {
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
-    const targetSchool = schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || 1;
-    const assignedTeam = team || ageGroup || '';
-    const playerId = body.id || generatePrimaryKey('plr');
+    const targetSchool = String(schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || '1');
+    const assignedTeam = team || ageGroup || 'U15';
+
+    let existingPlayer: any = null;
+    if (email && email.trim()) {
+      existingPlayer = await db.prepare('SELECT id FROM players WHERE LOWER(email) = LOWER(?)').bind(email.trim()).first();
+    }
+    if (!existingPlayer && fName && lName) {
+      existingPlayer = await db.prepare('SELECT id FROM players WHERE LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) AND (school_id = ? OR CAST(school_id AS TEXT) = ?)').bind(fName, lName, targetSchool, targetSchool).first();
+    }
+
+    const playerId = body.id || (existingPlayer ? existingPlayer.id : generatePrimaryKey('plr'));
 
     await db.prepare(`
       INSERT INTO players (id, school_id, first_name, last_name, email, age_group, position, team, status)
@@ -798,8 +807,9 @@ app.post('/api/athletes', async (c) => {
         last_name = excluded.last_name,
         email = excluded.email,
         position = excluded.position,
-        team = excluded.team
-    `).bind(playerId, targetSchool, fName, lName, email || '', ageGroup || team || '', position || '', assignedTeam).run();
+        team = excluded.team,
+        school_id = excluded.school_id
+    `).bind(playerId, targetSchool, fName, lName, email || '', ageGroup || team || 'U15', position || 'Athlete', assignedTeam).run();
 
     return c.json({ success: true, message: 'Athlete saved successfully', data: { id: playerId, firstName: fName, lastName: lName, email, team: assignedTeam } });
   } catch (e: any) {

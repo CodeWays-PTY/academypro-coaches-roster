@@ -43,9 +43,7 @@ function start() {
   sqlStatements.push('PRAGMA foreign_keys = OFF;');
   sqlStatements.push('');
 
-  // 1. Seed School
-  sqlStatements.push('-- Seed Schools');
-  sqlStatements.push("INSERT INTO schools (id, name, logo_url) VALUES ('OVK', 'Hoërskool Overkruin', 'https://images.example.com/ovk-logo.png') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO schools (id, name, code, logo_url) VALUES ('1', 'Hoërskool Overkruin', 'OVK', 'https://images.example.com/ovk-logo.png') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   // 2. Seed Sports
@@ -68,15 +66,15 @@ function start() {
 
   // 3. Seed Users (Coach)
   sqlStatements.push('-- Seed Coach User');
-  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-COACH-1', 'OVK', 'coach.ross@overkruin.co.za', NULL, 'Coach', 'Ross', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-COACH-1', '1', 'coach.ross@overkruin.co.za', NULL, 'Coach', 'Ross', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   sqlStatements.push('-- Seed Student User');
-  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-STUDENT-1', 'OVK', 'student@overkruin.co.za', NULL, 'Student', 'Liam', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('USR-STUDENT-1', '1', 'student@overkruin.co.za', NULL, 'Student', 'Liam', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   sqlStatements.push('-- Seed Parent User');
-  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('PAR-OVK-001', 'OVK', 'parent@overkruin.co.za', NULL, 'Parent', 'Gerrit', 'Venter') ON CONFLICT DO NOTHING;");
+  sqlStatements.push("INSERT INTO users (id, school_id, email, password_hash, role, first_name, last_name) VALUES ('PAR-OVK-001', '1', 'parent@overkruin.co.za', NULL, 'Parent', 'Gerrit', 'Venter') ON CONFLICT DO NOTHING;");
   sqlStatements.push('');
 
   // 4. Parse Player Register Sheet
@@ -142,7 +140,7 @@ function start() {
 
     playerInserts.push(
       `INSERT INTO players (id, school_id, age_group, first_name, last_name, grade, age, position, team, status, parent_name, parent_id, ugroups_active, notes) ` +
-      `VALUES ('${normalizedId}', 'OVK', '${ageGroup}', '${firstName.replace(/'/g, "''")}', '${lastName.replace(/'/g, "''")}', ${grade}, ${age}, ${position}, ${team}, '${status}', ${parentName}, ${parentId}, ${uGroupsActive}, ${notes});`
+      `VALUES ('${normalizedId}', '1', '${ageGroup}', '${firstName.replace(/'/g, "''")}', '${lastName.replace(/'/g, "''")}', ${grade}, ${age}, ${position}, ${team}, '${status}', ${parentName}, ${parentId}, ${uGroupsActive}, ${notes});`
     );
   }
 

@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS sports (
 -- ==========================================
 CREATE TABLE IF NOT EXISTS players (
     id TEXT PRIMARY KEY,
-    school_id TEXT DEFAULT 'OVK',
+    school_id TEXT DEFAULT '1',
     user_id TEXT,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS players (
 -- ==========================================
 CREATE TABLE IF NOT EXISTS squads (
     id TEXT PRIMARY KEY,
-    school_id TEXT DEFAULT 'OVK',
+    school_id TEXT DEFAULT '1',
     coach_id TEXT,
     name TEXT NOT NULL,
     code TEXT NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS squad_players (
 -- ==========================================
 CREATE TABLE IF NOT EXISTS test_metric_definitions (
     id TEXT PRIMARY KEY,
-    school_id TEXT DEFAULT 'OVK',
+    school_id TEXT DEFAULT '1',
     name TEXT NOT NULL,
     category TEXT DEFAULT 'Speed',
     unit TEXT DEFAULT 's',

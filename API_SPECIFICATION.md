@@ -137,7 +137,7 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
       "id": "USR-10928",
       "email": "coach.ross@overkruin.co.za",
       "role": "Coach",
-      "schoolId": "OVK",
+      "schoolId": "1",
       "firstName": "Ross",
       "lastName": "Venter"
     }
@@ -317,7 +317,7 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
       "ageGroup": "U15",
       "team": "A Team",
       "position": "Flanker",
-      "schoolId": "OVK"
+      "schoolId": "1"
     }
   ]
 }
@@ -341,7 +341,7 @@ Endpoints returning list datasets generate deterministic `ETag` headers (e.g. `W
   "ageGroup": "U15",
   "position": "Flanker",
   "team": "A Team",
-  "schoolId": "OVK"
+  "schoolId": "1"
 }
 ```
 
