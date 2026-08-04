@@ -1242,8 +1242,9 @@
           this.auditBenchmarks = {};
           (this.testMetrics || []).forEach(m => {
             const mName = m.name.toLowerCase();
-            const currentResult = currentResults.find(r => r.testName.toLowerCase() === mName);
-            const prevResult = prevResults.find(r => r.testName.toLowerCase() === mName);
+            const mId = m.id;
+            const currentResult = currentResults.find(r => r.metricId === mId || r.testName === mId || r.testName.toLowerCase() === mName);
+            const prevResult = prevResults.find(r => r.metricId === mId || r.testName === mId || r.testName.toLowerCase() === mName);
             this.auditInputs[m.id] = currentResult ? String(currentResult.scoreValue) : '';
             this.auditBenchmarks[m.id] = prevResult ? { value: prevResult.scoreValue, date: prevResult.testDate || (previousEvent ? previousEvent.date : '') } : null;
           });
