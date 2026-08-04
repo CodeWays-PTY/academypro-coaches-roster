@@ -496,7 +496,7 @@ app.post('/api/auth/quick-login', async (c) => {
         email: user.email,
         role: user.role || 'Coach',
         schoolId: user.school_id || '1',
-        schoolName: user.school_name || 'Hoërskool Oos-Moot',
+        schoolName: user.school_name || 'Hoërskool Overkruin',
         firstName: user.first_name,
         lastName: user.last_name,
         first_name: user.first_name,
@@ -880,7 +880,7 @@ const handleGetCoaches = async (c: any) => {
           email: u.email,
           role: u.role || 'Coach',
           phone: u.phone_number || '',
-          schoolName: u.school_id === '1' || u.school_id === 1 ? 'Hoërskool Oos-Moot' : (u.school_id || 'Hoërskool Oos-Moot')
+          schoolName: u.school_id === '1' || u.school_id === 1 ? 'Hoërskool Overkruin' : (u.school_id || 'Hoërskool Overkruin')
         };
       })
     });
