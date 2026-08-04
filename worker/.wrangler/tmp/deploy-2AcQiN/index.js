@@ -5699,6 +5699,30 @@ app.post("/api/test-logs/batch", async (c) => {
           item.notes || null
         ).run();
         savedCount++;
+        try {
+          await db.prepare(`
+            CREATE TABLE IF NOT EXISTS attendance (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              player_id TEXT NOT NULL,
+              session_type TEXT NOT NULL,
+              date TEXT NOT NULL,
+              status TEXT NOT NULL,
+              event_id TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `).run().catch(() => {
+          });
+          const attEvtId = eventId ? String(eventId) : null;
+          const sessType = sessionName || "Fitness Test";
+          const existingAtt = await db.prepare("SELECT id FROM attendance WHERE player_id = ? AND (event_id = ? OR (session_type = ? AND date = ?))").bind(pId, attEvtId || "", sessType, testDate).first();
+          if (existingAtt) {
+            await db.prepare("UPDATE attendance SET status = 'Present', event_id = ? WHERE id = ?").bind(attEvtId, existingAtt.id).run();
+          } else {
+            await db.prepare("INSERT INTO attendance (player_id, session_type, date, status, event_id) VALUES (?, ?, ?, 'Present', ?)").bind(pId, sessType, testDate, attEvtId).run();
+          }
+        } catch (attErr) {
+          console.warn(`Failed auto check-in attendance for player ${pId}:`, attErr);
+        }
       } catch (e) {
         console.warn(`Failed test log insert for player ${pId}:`, e);
       }
