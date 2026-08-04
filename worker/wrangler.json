@@ -6,6 +6,12 @@
     "nodejs_compat"
   ],
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "api.academypro.co.za",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   },
