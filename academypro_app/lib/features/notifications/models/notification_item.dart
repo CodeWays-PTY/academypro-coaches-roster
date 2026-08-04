@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/type_parsers.dart';
 
 class NotificationItem {
   final int id;
@@ -23,14 +24,14 @@ class NotificationItem {
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      userId: json['userId'] ?? json['user_id'] ?? '',
-      title: json['title'] ?? '',
-      body: json['body'] ?? '',
-      type: json['type'] ?? 'general',
-      isRead: json['isRead'] == true || json['is_read'] == 1,
-      actionRoute: json['actionRoute'] ?? json['action_route'],
-      createdAt: json['createdAt'] ?? json['created_at'] ?? '',
+      id: TypeParsers.parseInt(json['id']),
+      userId: TypeParsers.parseString(json['userId'] ?? json['user_id']),
+      title: TypeParsers.parseString(json['title']),
+      body: TypeParsers.parseString(json['body']),
+      type: TypeParsers.parseString(json['type'], 'general'),
+      isRead: TypeParsers.parseBool(json['isRead'] ?? json['is_read']),
+      actionRoute: json['actionRoute'] != null ? TypeParsers.parseString(json['actionRoute']) : (json['action_route'] != null ? TypeParsers.parseString(json['action_route']) : null),
+      createdAt: TypeParsers.parseString(json['createdAt'] ?? json['created_at']),
     );
   }
 

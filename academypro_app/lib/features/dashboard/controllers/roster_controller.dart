@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/app_toast.dart';
+import '../../../core/utils/type_parsers.dart';
 
 class SquadInfo {
   final String id;
@@ -12,9 +13,9 @@ class SquadInfo {
 
   factory SquadInfo.fromJson(Map<String, dynamic> json) {
     return SquadInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      code: json['code'] ?? '',
+      id: TypeParsers.parseString(json['id']),
+      name: TypeParsers.parseString(json['name']),
+      code: TypeParsers.parseString(json['code']),
     );
   }
 }
@@ -45,14 +46,14 @@ class RosterPlayer {
   factory RosterPlayer.fromJson(Map<String, dynamic> json) {
     final rawSquads = json['assignedSquads'] as List<dynamic>? ?? [];
     return RosterPlayer(
-      id: json['id'] ?? '',
-      firstName: json['firstName'] ?? '',
-      lastName: json['lastName'] ?? '',
-      ageGroup: json['ageGroup'] ?? '',
-      position: json['position'] ?? '',
-      team: json['team'] ?? '',
-      status: json['status'] ?? 'Active',
-      age: json['age'] is int ? json['age'] : (json['age'] != null ? int.tryParse(json['age'].toString()) : null),
+      id: TypeParsers.parseString(json['id']),
+      firstName: TypeParsers.parseString(json['firstName']),
+      lastName: TypeParsers.parseString(json['lastName']),
+      ageGroup: TypeParsers.parseString(json['ageGroup']),
+      position: TypeParsers.parseString(json['position']),
+      team: TypeParsers.parseString(json['team']),
+      status: TypeParsers.parseString(json['status']),
+      age: TypeParsers.parseNullableInt(json['age']),
       assignedSquads: rawSquads.map((s) => SquadInfo.fromJson(s as Map<String, dynamic>)).toList(),
     );
   }

@@ -5,6 +5,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../core/utils/app_toast.dart';
+import '../../../core/utils/type_parsers.dart';
 
 class DashboardSummaryState {
   final int attendancePercent;
@@ -139,19 +140,19 @@ class FlaggedPlayer {
         severity = severity ?? flagType;
 
   factory FlaggedPlayer.fromJson(Map<String, dynamic> json) {
-    final fullName = json['name'] ?? json['playerName'] ?? '';
+    final fullName = TypeParsers.parseString(json['name'] ?? json['playerName']);
     return FlaggedPlayer(
-      id: json['id'] ?? '',
+      id: TypeParsers.parseString(json['id']),
       name: fullName,
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      team: json['team'] ?? '',
-      position: json['position'] ?? 'Forward',
-      ageGroup: json['ageGroup'] ?? 'U15',
-      reason: json['reason'] ?? json['flagReason'] ?? '',
-      flagReason: json['flagReason'] ?? json['reason'],
-      flagType: json['flagType'] ?? 'atRisk',
-      severity: json['severity'] ?? json['flagType'] ?? 'atRisk',
+      firstName: json['firstName'] != null ? TypeParsers.parseString(json['firstName']) : null,
+      lastName: json['lastName'] != null ? TypeParsers.parseString(json['lastName']) : null,
+      team: TypeParsers.parseString(json['team']),
+      position: TypeParsers.parseString(json['position'], 'Forward'),
+      ageGroup: TypeParsers.parseString(json['ageGroup'], 'U15'),
+      reason: TypeParsers.parseString(json['reason'] ?? json['flagReason']),
+      flagReason: json['flagReason'] != null ? TypeParsers.parseString(json['flagReason']) : null,
+      flagType: TypeParsers.parseString(json['flagType'], 'atRisk'),
+      severity: TypeParsers.parseString(json['severity'] ?? json['flagType'], 'atRisk'),
     );
   }
 }
@@ -221,21 +222,21 @@ class RisingStarPlayer {
   bool get isQualifiedForRisingStar => streakWeeks >= 5 || gymConsistencyWeeks >= 5;
 
   factory RisingStarPlayer.fromJson(Map<String, dynamic> json) {
-    final fullName = json['name'] ?? json['playerName'] ?? '';
+    final fullName = TypeParsers.parseString(json['name'] ?? json['playerName']);
     return RisingStarPlayer(
-      id: json['id'] ?? '',
+      id: TypeParsers.parseString(json['id']),
       name: fullName,
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      team: json['team'] ?? '',
-      position: json['position'] ?? 'Athlete',
-      ageGroup: json['ageGroup'] ?? 'U15',
-      streakWeeks: json['streakWeeks'] ?? 0,
-      gymConsistencyWeeks: json['gymConsistencyWeeks'] ?? json['streakWeeks'] ?? 0,
-      gradeImprovement: json['gradeImprovement'] ?? 0,
-      attendancePercent: json['attendancePercent'] ?? 0,
-      gymProgressPercent: json['gymProgressPercent'] ?? 0,
-      highlights: json['highlights'] ?? '',
+      firstName: json['firstName'] != null ? TypeParsers.parseString(json['firstName']) : null,
+      lastName: json['lastName'] != null ? TypeParsers.parseString(json['lastName']) : null,
+      team: TypeParsers.parseString(json['team']),
+      position: TypeParsers.parseString(json['position'], 'Athlete'),
+      ageGroup: TypeParsers.parseString(json['ageGroup'], 'U15'),
+      streakWeeks: TypeParsers.parseInt(json['streakWeeks']),
+      gymConsistencyWeeks: TypeParsers.parseInt(json['gymConsistencyWeeks'] ?? json['streakWeeks']),
+      gradeImprovement: TypeParsers.parseInt(json['gradeImprovement']),
+      attendancePercent: TypeParsers.parseInt(json['attendancePercent']),
+      gymProgressPercent: TypeParsers.parseInt(json['gymProgressPercent']),
+      highlights: TypeParsers.parseString(json['highlights']),
     );
   }
 }
@@ -674,19 +675,19 @@ class CoachEvent {
   factory CoachEvent.fromJson(Map<String, dynamic> json) {
     return CoachEvent(
       id: json['id'] != null ? json['id'].toString() : 'EVT-${DateTime.now().millisecondsSinceEpoch}',
-      schoolId: json['schoolId'] ?? '',
-      title: json['title'] ?? '',
-      eventType: json['eventType'] ?? 'Field',
-      startTime: json['startTime'] ?? '',
-      date: json['date'] ?? '',
-      durationMins: json['durationMins'] != null ? (json['durationMins'] as num).toInt() : null,
-      location: json['location'] ?? '',
-      isImportant: json['isImportant'] == true,
-      completionCount: json['completionCount'] != null ? (json['completionCount'] as num).toInt() : null,
-      recurrenceRule: json['recurrenceRule'] ?? 'Does Not Repeat',
-      workoutImagePath: json['workoutImagePath'] ?? json['workoutAttachmentName'],
-      team: json['team'] ?? json['ageGroup'] ?? json['age_group'] ?? '',
-      ageGroup: json['ageGroup'] ?? json['age_group'] ?? 'U15',
+      schoolId: TypeParsers.parseString(json['schoolId']),
+      title: TypeParsers.parseString(json['title']),
+      eventType: TypeParsers.parseString(json['eventType'], 'Field'),
+      startTime: TypeParsers.parseString(json['startTime']),
+      date: TypeParsers.parseString(json['date']),
+      durationMins: TypeParsers.parseNullableInt(json['durationMins']),
+      location: TypeParsers.parseString(json['location']),
+      isImportant: TypeParsers.parseBool(json['isImportant']),
+      completionCount: TypeParsers.parseNullableInt(json['completionCount']),
+      recurrenceRule: TypeParsers.parseString(json['recurrenceRule'], 'Does Not Repeat'),
+      workoutImagePath: json['workoutImagePath'] != null ? TypeParsers.parseString(json['workoutImagePath']) : (json['workoutAttachmentName'] != null ? TypeParsers.parseString(json['workoutAttachmentName']) : null),
+      team: TypeParsers.parseString(json['team'] ?? json['ageGroup'] ?? json['age_group']),
+      ageGroup: TypeParsers.parseString(json['ageGroup'] ?? json['age_group'], 'U15'),
     );
   }
 }

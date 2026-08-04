@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/utils/type_parsers.dart';
 
 class DynamicTestMetric {
   final String id;
@@ -34,18 +35,18 @@ class DynamicTestMetric {
 
   factory DynamicTestMetric.fromJson(Map<String, dynamic> json) {
     return DynamicTestMetric(
-      id: json['id'] ?? '',
-      name: json['name'] ?? 'Test Metric',
-      category: json['category'] ?? 'General',
-      unit: json['unit'] ?? '',
-      goalDirection: json['goalDirection'] ?? 'HIGHER_IS_BETTER',
-      targetBenchmark: (json['targetBenchmark'] as num?)?.toDouble() ?? 0.0,
-      initialBaseline: (json['initialBaseline'] as num?)?.toDouble() ?? 0.0,
-      latestScore: (json['latestScore'] as num?)?.toDouble() ?? 0.0,
-      targetPercent: (json['targetPercent'] as num?)?.toInt() ?? 100,
-      trendText: json['trendText'] ?? 'Initial',
-      latestTestDate: json['latestTestDate'] ?? '',
-      sessionName: json['sessionName'] ?? 'Evaluation',
+      id: TypeParsers.parseString(json['id']),
+      name: TypeParsers.parseString(json['name'], 'Test Metric'),
+      category: TypeParsers.parseString(json['category'], 'General'),
+      unit: TypeParsers.parseString(json['unit']),
+      goalDirection: TypeParsers.parseString(json['goalDirection'], 'HIGHER_IS_BETTER'),
+      targetBenchmark: TypeParsers.parseDouble(json['targetBenchmark']),
+      initialBaseline: TypeParsers.parseDouble(json['initialBaseline']),
+      latestScore: TypeParsers.parseDouble(json['latestScore']),
+      targetPercent: TypeParsers.parseInt(json['targetPercent'], 100),
+      trendText: TypeParsers.parseString(json['trendText'], 'Initial'),
+      latestTestDate: TypeParsers.parseString(json['latestTestDate']),
+      sessionName: TypeParsers.parseString(json['sessionName'], 'Evaluation'),
     );
   }
 }
@@ -83,19 +84,19 @@ class StudentEvent {
 
   factory StudentEvent.fromJson(Map<String, dynamic> json) {
     return StudentEvent(
-      id: json['id']?.toString() ?? '',
-      schoolId: json['schoolId'] ?? '',
-      title: json['title'] ?? 'Training Session',
-      eventType: json['eventType'] ?? 'Field Session',
-      startTime: json['startTime'] ?? '00:00',
-      date: json['date'] ?? '',
-      durationMins: (json['durationMins'] as num?)?.toInt(),
-      location: json['location'] ?? 'Grounds',
-      isImportant: json['isImportant'] == true,
-      completionCount: (json['completionCount'] as num?)?.toInt(),
-      ageGroup: json['ageGroup'] ?? 'U15',
-      team: json['team'] ?? '',
-      workoutImagePath: json['workoutImagePath'],
+      id: TypeParsers.parseString(json['id']),
+      schoolId: TypeParsers.parseString(json['schoolId']),
+      title: TypeParsers.parseString(json['title'], 'Training Session'),
+      eventType: TypeParsers.parseString(json['eventType'], 'Field Session'),
+      startTime: TypeParsers.parseString(json['startTime'], '00:00'),
+      date: TypeParsers.parseString(json['date']),
+      durationMins: TypeParsers.parseNullableInt(json['durationMins']),
+      location: TypeParsers.parseString(json['location'], 'Grounds'),
+      isImportant: TypeParsers.parseBool(json['isImportant']),
+      completionCount: TypeParsers.parseNullableInt(json['completionCount']),
+      ageGroup: TypeParsers.parseString(json['ageGroup'], 'U15'),
+      team: TypeParsers.parseString(json['team']),
+      workoutImagePath: json['workoutImagePath'] != null ? TypeParsers.parseString(json['workoutImagePath']) : null,
     );
   }
 }
@@ -109,9 +110,9 @@ class StudentSquad {
 
   factory StudentSquad.fromJson(Map<String, dynamic> json) {
     return StudentSquad(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      code: json['code'] ?? '',
+      id: TypeParsers.parseString(json['id']),
+      name: TypeParsers.parseString(json['name']),
+      code: TypeParsers.parseString(json['code']),
     );
   }
 }
