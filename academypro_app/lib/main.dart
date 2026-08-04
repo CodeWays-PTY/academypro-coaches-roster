@@ -92,27 +92,51 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     Widget homeScreen = const LoginScreen();
     if (isAuthenticated && profile != null) {
-      final rawRole = (profile['role'] ?? '').toString().toLowerCase();
+      final role = (profile['role'] ?? '').toString().trim();
       final firstName = (profile['first_name'] ?? '').toString().trim();
       final lastName = (profile['last_name'] ?? profile['surname'] ?? '').toString().trim();
       final isFirstTime = profile['is_first_time'] == true || profile['is_first_time'] == 1 || (firstName.isEmpty && lastName.isEmpty);
 
-      final isCoachOrAdmin = rawRole.contains('coach') || 
-                             rawRole.contains('admin') || 
-                             rawRole.contains('superadmin') || 
-                             rawRole.contains('staff') || 
-                             rawRole.contains('director');
-
-      if (isCoachOrAdmin) {
+      if (role == 'Headmaster' || role == 'Coach') {
         if (isFirstTime) {
           homeScreen = const CoachWelcomeWizardScreen();
         } else {
           homeScreen = const DashboardScreen();
         }
-      } else if (rawRole.contains('parent')) {
+      } else if (role == 'Parent') {
         homeScreen = const ParentDashboardScreen();
-      } else {
+      } else if (role == 'Student') {
         homeScreen = const StudentDashboardScreen();
+      } else {
+        homeScreen = Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Invalid Role: "$role"',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your account role is not recognized. Valid roles are Headmaster, Coach, Student, or Parent.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => ref.read(authProvider.notifier).logout(),
+                    child: const Text('Log Out'),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
       }
     }
 

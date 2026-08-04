@@ -88,28 +88,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final success = await ref.read(authProvider.notifier).verifyOtp(otp);
     if (success) {
       final profile = ref.read(authProvider).userProfile;
-      final rawRole = (profile?['role'] ?? 'student').toString().toLowerCase();
+      final role = (profile?['role'] ?? '').toString().trim();
       final firstName = (profile?['first_name'] ?? '').toString().trim();
       final lastName = (profile?['last_name'] ?? profile?['surname'] ?? '').toString().trim();
       final isFirstTime = profile?['is_first_time'] == true || profile?['is_first_time'] == 1 || (firstName.isEmpty && lastName.isEmpty);
       
-      final isCoachOrAdmin = rawRole.contains('coach') || 
-                             rawRole.contains('admin') || 
-                             rawRole.contains('superadmin') || 
-                             rawRole.contains('staff') || 
-                             rawRole.contains('director');
-
-      Widget targetScreen = const StudentDashboardScreen();
-      if (isCoachOrAdmin) {
+      Widget targetScreen;
+      if (role == 'Headmaster' || role == 'Coach') {
         if (isFirstTime) {
           targetScreen = const CoachWelcomeWizardScreen();
         } else {
           targetScreen = const DashboardScreen();
         }
-      } else if (rawRole.contains('parent')) {
+      } else if (role == 'Parent') {
         targetScreen = const ParentDashboardScreen();
-      } else {
+      } else if (role == 'Student') {
         targetScreen = const StudentDashboardScreen();
+      } else {
+        if (mounted) {
+          AppToast.showError(
+            context,
+            title: 'Unauthorized Role',
+            message: 'Your account role ("$role") is invalid. Valid roles are Headmaster, Coach, Student, Parent.',
+          );
+        }
+        return;
       }
 
       if (mounted) {
