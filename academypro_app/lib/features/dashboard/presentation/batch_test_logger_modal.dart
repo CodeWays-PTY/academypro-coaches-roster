@@ -173,31 +173,48 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
           _scoreControllers[metricId] = {};
 
           for (var p in _players) {
-            final playerId = p['id'];
+            final pIdStr = p['id']?.toString() ?? '';
+            final mIdStr = metricId?.toString() ?? '';
             // Inputs start empty by default as requested
-            _scoreControllers[metricId]![playerId] = TextEditingController();
+            _scoreControllers[mIdStr] ??= {};
+            _scoreControllers[mIdStr]![pIdStr] = TextEditingController();
 
             // Extract previous baseline if present in player data
-            if (!_playerBaselines.containsKey(playerId)) {
-              _playerBaselines[playerId] = {};
+            if (!_playerBaselines.containsKey(pIdStr)) {
+              _playerBaselines[pIdStr] = {};
             }
 
             // Extract baseline from player baselines array/object if available
             String? prevVal;
             final baselines = p['fitnessBaselines'] ?? p['testLogs'] ?? p['baselines'];
             if (baselines is List) {
+              final targetMetricIdStr = metricId?.toString();
+              final targetMetricNameStr = (m['name'] ?? '').toString().toLowerCase();
+
               final match = baselines.firstWhere(
-                (b) => b['metric_id'] == metricId || b['metricId'] == metricId || b['metricName'] == m['name'],
+                (b) {
+                  final bMetricId = (b['metric_id'] ?? b['metricId'])?.toString();
+                  final bMetricName = (b['metricName'] ?? b['metric_name'] ?? '').toString().toLowerCase();
+
+                  return (bMetricId != null && targetMetricIdStr != null && bMetricId == targetMetricIdStr) ||
+                         (bMetricName.isNotEmpty && targetMetricNameStr.isNotEmpty && bMetricName == targetMetricNameStr);
+                },
                 orElse: () => null,
               );
               if (match != null && match['score'] != null) {
                 prevVal = match['score'].toString();
               }
-            } else if (baselines is Map && baselines[metricId] != null) {
-              prevVal = baselines[metricId].toString();
+            } else if (baselines is Map) {
+              final targetMetricIdStr = metricId?.toString();
+              for (var entry in baselines.entries) {
+                if (entry.key.toString() == targetMetricIdStr) {
+                  prevVal = entry.value?.toString();
+                  break;
+                }
+              }
             }
 
-            _playerBaselines[playerId]![metricId] = prevVal ?? '--';
+            _playerBaselines[pIdStr]![mIdStr] = prevVal ?? '--';
           }
         }
       }
