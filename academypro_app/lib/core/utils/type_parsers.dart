@@ -1,6 +1,7 @@
+library;
+
 /// Type parsing utilities ensuring safe runtime conversion between ints, doubles, strings, and booleans.
 /// Prevents Dart TypeError exceptions when JSON payloads contain numbers vs strings for IDs, metrics, or counts.
-
 class TypeParsers {
   /// Safely converts any dynamic value to a String
   static String parseString(dynamic value, [String fallback = '']) {
