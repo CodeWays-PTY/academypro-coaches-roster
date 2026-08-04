@@ -227,6 +227,31 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
     });
   }
 
+  int _getTotalFilledCount() {
+    int count = 0;
+    _scoreControllers.forEach((metricId, playerMap) {
+      playerMap.forEach((playerId, controller) {
+        if (controller.text.trim().isNotEmpty) {
+          count++;
+        }
+      });
+    });
+    return count;
+  }
+
+  int _getMetricFilledCount(String metricId) {
+    int count = 0;
+    final playerMap = _scoreControllers[metricId];
+    if (playerMap != null) {
+      playerMap.forEach((playerId, controller) {
+        if (controller.text.trim().isNotEmpty) {
+          count++;
+        }
+      });
+    }
+    return count;
+  }
+
   Future<void> _submitBatchLogs() async {
     if (_selectedMetricId == null) {
       AppToast.showError(context, title: 'Missing Metric', message: 'Please select a test metric.');
@@ -586,13 +611,17 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                 child: Row(
                   children: _testMetrics.map((m) {
                     final isSelected = m['id'] == _selectedMetricId;
+                    final filledCount = _getMetricFilledCount(m['id']);
+                    final labelText = filledCount > 0
+                        ? '${m['name']} (${m['unit']}) • $filledCount'
+                        : '${m['name']} (${m['unit']})';
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: FilterChip(
                         selected: isSelected,
                         showCheckmark: false,
                         label: Text(
-                          '${m['name']} (${m['unit']})',
+                          labelText,
                           style: TextStyle(
                             fontSize: 12.0,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
@@ -753,7 +782,12 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                 icon: _isSaving
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.check_circle_outline, size: 18.0),
-                label: const Text('Save Batch Test Scores', style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
+                label: Text(
+                  _getTotalFilledCount() > 0
+                      ? 'Save Batch Test Scores (${_getTotalFilledCount()} Scores Across Metrics)'
+                      : 'Save Batch Test Scores',
+                  style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
