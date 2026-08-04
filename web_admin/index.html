@@ -2135,7 +2135,7 @@
               <template x-for="sq in squads" :key="sq">
                 <div @click="toggleSquadSelection(sq)" class="flex items-center justify-between p-md bg-surface-container-lowest border border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-all group">
                   <div class="flex items-center gap-md">
-                    <div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container text-xs" x-text="sq.substring(0, 3)"></div>
+                    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center font-bold text-on-primary-container text-xs" x-text="sq.substring(0, 3)"></div>
                     <div>
                       <p class="font-label-md font-bold text-on-surface text-xs" x-text="sq"></p>
                       <p class="font-label-sm text-outline text-[11px]" x-text="getSquadAthleteCount(sq) + ' Enrolled Athletes'"></p>
@@ -2530,7 +2530,7 @@
           <template x-for="athlete in getDirectoryAthletesForSquad(selectedSquadManagement)" :key="athlete.id">
             <div class="flex justify-between items-center p-md bg-surface border border-outline-variant rounded-xl shadow-xs hover:border-primary hover:shadow-md transition-all group">
               <div @click="openEditAthlete(athlete)" class="flex items-center gap-md flex-1 cursor-pointer">
-                <div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
                 <div class="flex-1">
                   <h4 class="font-bold text-xs text-on-surface" x-text="athlete.name"></h4>
                   <p class="text-[11px] text-outline" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
