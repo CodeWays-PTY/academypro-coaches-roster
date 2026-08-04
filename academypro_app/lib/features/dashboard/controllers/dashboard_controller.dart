@@ -867,10 +867,11 @@ class DashboardEventsNotifier extends StateNotifier<AsyncValue<List<CoachEvent>>
         'team': event.team,
       });
 
-      if (res.statusCode == 200 || res.statusCode == 201) {
+      if ((res.statusCode == 200 || res.statusCode == 201) && res.data?['success'] != false) {
         final updatedList = currentList.map((e) => e.id.toString() == event.id.toString() ? event : e).toList();
         state = AsyncValue.data(updatedList);
         await _updateHiveCache(updatedList, event.ageGroup);
+        await fetchEvents(ageGroup: event.ageGroup);
         return true;
       } else {
         debugPrint('[Update Event Error] Backend rejected update: ${res.data?['message']} (HTTP ${res.statusCode})');
