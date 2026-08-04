@@ -955,6 +955,41 @@ const handleDeleteCoach = async (c: any) => {
 app.delete('/api/coaches/:id', handleDeleteCoach);
 app.delete('/api/dashboard/coaches/:id', handleDeleteCoach);
 
+// Route: Self-Service Account Deletion (Apple App Store Guideline 5.1.1(v))
+const handleDeleteAccount = async (c: any) => {
+  const db = getDB(c);
+  try {
+    let body: any = {};
+    try {
+      body = await c.req.json();
+    } catch (_) {}
+    const email = (body.email || c.req.query('email') || '').trim().toLowerCase();
+    const userId = (body.userId || body.id || c.req.query('userId') || '').trim();
+
+    if (!email && !userId) {
+      return c.json({ success: false, message: 'Email or User ID is required to request account deletion' }, 400);
+    }
+
+    if (email) {
+      await db.prepare('DELETE FROM users WHERE LOWER(email) = LOWER(?)').bind(email).run();
+      await db.prepare('DELETE FROM players WHERE LOWER(email) = LOWER(?)').bind(email).run();
+      await db.prepare('DELETE FROM user_otps WHERE LOWER(email) = LOWER(?)').bind(email).run();
+    }
+    if (userId) {
+      await db.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+      await db.prepare('DELETE FROM players WHERE id = ?').bind(userId).run();
+      await db.prepare('DELETE FROM squad_players WHERE player_id = ?').bind(userId).run();
+    }
+
+    return c.json({ success: true, message: 'Account and associated personal data successfully deleted' });
+  } catch (e: any) {
+    return c.json({ success: false, message: e.message || 'Failed to delete account' }, 500);
+  }
+};
+
+app.post('/api/user/delete-account', handleDeleteAccount);
+app.delete('/api/user/delete-account', handleDeleteAccount);
+
 // Route: Get Test Results
 app.get('/api/test-results', async (c) => {
   const db = getDB(c);
