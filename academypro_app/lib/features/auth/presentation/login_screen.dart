@@ -93,8 +93,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final lastName = (profile?['last_name'] ?? profile?['surname'] ?? '').toString().trim();
       final isFirstTime = profile?['is_first_time'] == true || profile?['is_first_time'] == 1 || (firstName.isEmpty && lastName.isEmpty);
       
+      final isCoachOrAdmin = rawRole.contains('coach') || 
+                             rawRole.contains('admin') || 
+                             rawRole.contains('superadmin') || 
+                             rawRole.contains('staff') || 
+                             rawRole.contains('director');
+
       Widget targetScreen = const StudentDashboardScreen();
-      if (rawRole.contains('coach')) {
+      if (isCoachOrAdmin) {
         if (isFirstTime) {
           targetScreen = const CoachWelcomeWizardScreen();
         } else {

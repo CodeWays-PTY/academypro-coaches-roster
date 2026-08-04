@@ -97,7 +97,13 @@ class _MyAppState extends ConsumerState<MyApp> {
       final lastName = (profile['last_name'] ?? profile['surname'] ?? '').toString().trim();
       final isFirstTime = profile['is_first_time'] == true || profile['is_first_time'] == 1 || (firstName.isEmpty && lastName.isEmpty);
 
-      if (rawRole.contains('coach')) {
+      final isCoachOrAdmin = rawRole.contains('coach') || 
+                             rawRole.contains('admin') || 
+                             rawRole.contains('superadmin') || 
+                             rawRole.contains('staff') || 
+                             rawRole.contains('director');
+
+      if (isCoachOrAdmin) {
         if (isFirstTime) {
           homeScreen = const CoachWelcomeWizardScreen();
         } else {
