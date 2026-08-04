@@ -58,9 +58,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final user = ref.read(authProvider).user;
-              final email = user?.email ?? '';
-              final userId = user?.id ?? '';
+              final authState = ref.read(authProvider);
+              final email = authState.email ?? authState.userProfile?['email'] ?? '';
+              final userId = authState.userProfile?['id']?.toString() ?? '';
               try {
                 final apiClient = ref.read(apiClientProvider);
                 await apiClient.post('/api/user/delete-account', data: {

@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = OFF;
+
 -- Assign Neels Venter and Tiaan Vorster as coaches for U15 squad
 UPDATE squads 
 SET coach_id = 'cch_1785841411823,cch_1785841426303', 
