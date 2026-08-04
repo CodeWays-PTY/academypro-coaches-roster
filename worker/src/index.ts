@@ -853,9 +853,9 @@ const handleGetCoaches = async (c: any) => {
   const db = getDB(c);
   try {
     const sId = String(schoolId);
-    let { results } = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ? OR role LIKE '%Coach%') ORDER BY first_name ASC").bind(sId, sId).all();
+    let { results } = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE (school_id = ? OR CAST(school_id AS TEXT) = ? OR school_id = 'OVK') AND role NOT IN ('Student', 'Parent') AND (role LIKE '%Coach%' OR role LIKE '%Admin%' OR role LIKE '%Head%' OR role = 'Coach') ORDER BY first_name ASC").bind(sId, sId).all();
     if (!results || results.length === 0) {
-      const allRes = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE role LIKE '%Coach%' OR role LIKE '%Head%' OR role LIKE '%Admin%' ORDER BY first_name ASC").all();
+      const allRes = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE role NOT IN ('Student', 'Parent') AND (role LIKE '%Coach%' OR role LIKE '%Head%' OR role LIKE '%Admin%' OR role = 'Coach') ORDER BY first_name ASC").all();
       results = allRes.results || [];
     }
     return c.json({
