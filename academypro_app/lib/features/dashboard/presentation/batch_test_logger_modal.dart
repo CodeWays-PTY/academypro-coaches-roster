@@ -313,6 +313,11 @@ class _BatchTestLoggerModalState extends ConsumerState<BatchTestLoggerModal> {
                 _playerBaselines[pId] = {};
               }
               _playerBaselines[pId]![mId] = scoreVal;
+
+              // Clear input field so score moves to 'Prev:' indicator
+              if (_scoreControllers.containsKey(mId) && _scoreControllers[mId]!.containsKey(pId)) {
+                _scoreControllers[mId]![pId]!.clear();
+              }
             }
           }
         });

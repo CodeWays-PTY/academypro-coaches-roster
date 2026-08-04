@@ -1402,6 +1402,39 @@ app.get('/api/rosters/:age_group', async (c) => {
     }
   } catch (_) {}
 
+  // Attach test logs to finalPlayers for real-time score display and baseline references
+  try {
+    const { results: logResults } = await db.prepare(`
+      SELECT ptl.player_id, ptl.metric_id, ptl.score, ptl.test_date, ptl.session_name, tm.name as metric_name, tm.unit
+      FROM player_test_logs ptl
+      LEFT JOIN test_metrics tm ON tm.id = ptl.metric_id
+      WHERE ptl.player_id IN (${placeholders})
+      ORDER BY ptl.test_date DESC, ptl.created_at DESC
+    `).bind(...playerIds).all();
+
+    const playerLogsMap: Record<string, any[]> = {};
+    for (const row of (logResults || [])) {
+      if (!playerLogsMap[row.player_id]) {
+        playerLogsMap[row.player_id] = [];
+      }
+      playerLogsMap[row.player_id].push({
+        metricId: row.metric_id,
+        metric_id: row.metric_id,
+        metricName: row.metric_name || row.metric_id,
+        metric_name: row.metric_name || row.metric_id,
+        score: row.score,
+        testDate: row.test_date,
+        sessionName: row.session_name,
+        unit: row.unit || ''
+      });
+    }
+
+    for (const p of finalPlayers) {
+      p.testLogs = playerLogsMap[p.id] || [];
+      p.fitnessBaselines = playerLogsMap[p.id] || [];
+    }
+  } catch (_) {}
+
   return c.json({
     success: true,
     data: {
