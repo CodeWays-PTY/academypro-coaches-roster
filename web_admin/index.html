@@ -2453,7 +2453,7 @@
                 <h3 class="font-bold text-on-surface text-sm" x-text="athlete.name"></h3>
                 <p class="text-xs text-outline font-semibold" x-text="athlete.position || 'Player'"></p>
               </div>
-              <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+              <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
             </div>
             <div class="text-xs text-on-surface-variant space-y-1 pt-1 border-t border-outline-variant">
               <div>Squad: <span class="font-bold text-on-surface" x-text="athlete.team || 'Unassigned'"></span></div>
@@ -2535,10 +2535,10 @@
                   <h4 class="font-bold text-xs text-on-surface" x-text="athlete.name"></h4>
                   <p class="text-[11px] text-outline" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
                 </div>
-                <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
               </div>
-              <button type="button" @click="removeAthleteFromSquad(athlete)" class="text-outline hover:text-error p-1.5 rounded-lg hover:bg-error-container/20 transition-colors ml-2" title="Remove from Squad">
-                <span class="material-symbols-outlined text-[18px]">person_remove</span>
+              <button type="button" @click.stop="removeAthleteFromSquad(athlete)" class="text-outline hover:text-error p-1 rounded-lg hover:bg-error-container/20 transition-all ml-1 opacity-0 group-hover:opacity-100" title="Remove from Squad">
+                <span class="material-symbols-outlined text-[16px]">close</span>
               </button>
             </div>
           </template>

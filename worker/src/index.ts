@@ -763,12 +763,14 @@ app.get('/api/athletes', async (c) => {
       success: true,
       data: (results || []).map((p: any) => ({
         id: p.id,
+        name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
         firstName: p.first_name,
         lastName: p.last_name,
         email: p.email || '',
         ageGroup: p.age_group,
-        position: p.position,
-        team: p.team || p.age_group
+        position: p.position || 'Athlete',
+        team: p.team || p.age_group,
+        schoolId: p.school_id
       }))
     });
   } catch (e: any) {
@@ -3870,9 +3872,9 @@ app.post('/api/players', async (c) => {
   try {
     // 1. Insert into D1 players table
     await db.prepare(`
-      INSERT OR REPLACE INTO players (id, school_id, first_name, last_name, age_group, position, team, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')
-    `).bind(playerId, schoolId, firstName, lastName, ageGroup, position || 'Athlete', team || `${ageGroup} Squad`).run();
+      INSERT OR REPLACE INTO players (id, school_id, first_name, last_name, email, age_group, position, team, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+    `).bind(playerId, String(schoolId), firstName, lastName, playerEmail, ageGroup, position || 'Athlete', team || `${ageGroup} Squad`).run();
 
     // 2. Pre-create Player user account in users table if not exists
     const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(playerEmail).first();
