@@ -1229,10 +1229,12 @@
           // Get sorted test events for this squad to find the previous event
           const testEvents = this.getTestEventsForSquad();
           const currentIdx = testEvents.findIndex(e => e.id === currentEventId);
+          const currentEvent = currentIdx >= 0 ? testEvents[currentIdx] : null;
+          const currentEventDate = currentEvent ? currentEvent.date : '';
           const previousEvent = currentIdx >= 0 && currentIdx < testEvents.length - 1 ? testEvents[currentIdx + 1] : null;
 
-          // Current event scores → editable inputs
-          const currentResults = allResults.filter(r => r.eventId === currentEventId);
+          // Current event scores → editable inputs (filter by both eventId AND date)
+          const currentResults = allResults.filter(r => r.eventId === currentEventId && (!currentEventDate || r.testDate === currentEventDate));
           // Previous event scores → read-only benchmarks
           const prevResults = previousEvent
             ? allResults.filter(r => r.eventId === previousEvent.id)
