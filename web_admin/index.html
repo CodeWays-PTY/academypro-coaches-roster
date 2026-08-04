@@ -463,11 +463,27 @@
           } catch (e) { }
         },
 
+        async safeFetch(endpoint, options = {}) {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}${endpoint}`, options);
+            if (res.ok) return res;
+          } catch (e) {
+            if (this.apiBaseUrl !== 'https://academypro-api.tata-elash34.workers.dev') {
+              console.log('Custom API domain pending DNS propagation, falling back to workers.dev');
+              this.apiBaseUrl = 'https://academypro-api.tata-elash34.workers.dev';
+              try {
+                return await fetch(`${this.apiBaseUrl}${endpoint}`, options);
+              } catch (err) { }
+            }
+          }
+          return null;
+        },
+
         async fetchTestMetricsFromApi() {
           try {
             const sqParam = this.currentSquad ? `?squadId=${encodeURIComponent(this.currentSquad)}` : '';
-            const res = await fetch(`${this.apiBaseUrl}/api/test-metrics${sqParam}`);
-            if (res.ok) {
+            const res = await this.safeFetch(`/api/test-metrics${sqParam}`);
+            if (res && res.ok) {
               const data = await res.json();
               if (data.success && Array.isArray(data.data)) {
                 this.testMetrics = data.data;
@@ -480,8 +496,8 @@
 
         async fetchAthletesFromApi() {
           try {
-            const res = await fetch(`${this.apiBaseUrl}/api/athletes`);
-            if (res.ok) {
+            const res = await this.safeFetch('/api/athletes');
+            if (res && res.ok) {
               const data = await res.json();
               if (data.success && Array.isArray(data.data)) {
                 this.athletes = data.data.map(a => ({
@@ -503,8 +519,8 @@
 
         async fetchCoachesFromApi() {
           try {
-            const res = await fetch(`${this.apiBaseUrl}/api/coaches`);
-            if (res.ok) {
+            const res = await this.safeFetch('/api/coaches');
+            if (res && res.ok) {
               const data = await res.json();
               if (data.success && Array.isArray(data.data)) {
                 this.coaches = data.data;
@@ -516,8 +532,8 @@
 
         async fetchEventsFromApi(forceRefresh = false) {
           try {
-            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`);
-            if (res.ok) {
+            const res = await this.safeFetch('/api/dashboard/events');
+            if (res && res.ok) {
               const data = await res.json();
               if (data.success && Array.isArray(data.data)) {
                 this.events = data.data;
@@ -529,8 +545,8 @@
 
         async fetchTestResultsFromApi() {
           try {
-            const res = await fetch(`${this.apiBaseUrl}/api/test-results`);
-            if (res.ok) {
+            const res = await this.safeFetch('/api/test-results');
+            if (res && res.ok) {
               const data = await res.json();
               if (data.success && Array.isArray(data.data)) {
                 this.testResults = data.data;
@@ -542,8 +558,8 @@
 
         async fetchSquadsFromApi() {
           try {
-            const res = await fetch(`${this.apiBaseUrl}/api/squads`);
-            if (res.ok) {
+            const res = await this.safeFetch('/api/squads');
+            if (res && res.ok) {
               const data = await res.json();
               if (data.success && Array.isArray(data.data)) {
                 this.squadDetails = data.data;
