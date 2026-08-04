@@ -1,0 +1,3232 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <!-- LCP Preconnect Hints -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  <meta name="description" content="Manage squad performance, track training improvements, schedule matches, recurring events, and audit historical performance test stats with AcademyPro Command.">
+  <title>AcademyPro | Event Creator & Performance Audit Command</title>
+
+  <!-- Custom AcademyPro Shield Favicon (Data URI SVG) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23003ec7'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4zm-1 16l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z'/%3E%3C/svg%3E">
+
+  <!-- Pinned Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS v3 CDN with Forms plugin -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind Configuration matching design specification -->
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "tertiary-container": "#bf3003",
+            "on-secondary-fixed-variant": "#38485d",
+            "tertiary-fixed": "#ffdbd2",
+            "primary-fixed-dim": "#b7c4ff",
+            "on-surface": "#131b2e",
+            "on-primary-fixed-variant": "#0038b6",
+            "on-secondary-fixed": "#0b1c30",
+            "on-secondary": "#ffffff",
+            "on-primary-container": "#dfe3ff",
+            "primary-fixed": "#dde1ff",
+            "primary": "#003ec7",
+            "secondary": "#505f76",
+            "surface-container-low": "#f2f3ff",
+            "inverse-surface": "#283044",
+            "background": "#faf8ff",
+            "on-tertiary-fixed-variant": "#891e00",
+            "error-container": "#ffdad6",
+            "surface-container-high": "#e2e7ff",
+            "secondary-container": "#d0e1fb",
+            "surface-container-lowest": "#ffffff",
+            "on-error": "#ffffff",
+            "on-background": "#131b2e",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#ffb4a1",
+            "inverse-on-surface": "#eef0ff",
+            "secondary-fixed-dim": "#b7c8e1",
+            "inverse-primary": "#b7c4ff",
+            "surface-variant": "#dae2fd",
+            "on-tertiary-fixed": "#3c0800",
+            "surface-bright": "#faf8ff",
+            "outline-variant": "#c3c5d9",
+            "surface-tint": "#004ced",
+            "on-primary": "#ffffff",
+            "surface-container": "#eaedff",
+            "surface": "#faf8ff",
+            "on-secondary-container": "#54647a",
+            "primary-container": "#0052ff",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#ffddd5",
+            "surface-dim": "#d2d9f4",
+            "surface-container-highest": "#dae2fd",
+            "outline": "#737688",
+            "on-tertiary": "#ffffff",
+            "tertiary": "#952200",
+            "secondary-fixed": "#d3e4fe",
+            "on-surface-variant": "#434656",
+            "on-primary-fixed": "#001452"
+          },
+          spacing: {
+            "xl": "32px",
+            "sm": "8px",
+            "md": "16px",
+            "base": "4px",
+            "xs": "4px",
+            "lg": "24px",
+            "gutter": "16px",
+            "container-margin": "24px",
+            "sidebar-width": "280px"
+          },
+          fontFamily: {
+            "headline-lg": ["Inter", "sans-serif"],
+            "headline-md": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "display": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    body { font-family: 'Inter', sans-serif; background-color: #faf8ff; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .sidebar-active { background-color: #dae2fd; border-left: 4px solid #003ec7; font-weight: 700; color: #131b2e; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #c3c5d9; border-radius: 10px; }
+  </style>
+
+  <!-- Alpine.js Protocol (Define Logic First in head) -->
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('customDatePicker', (initialValue = '', onSelectCallback = null) => ({
+        open: false,
+        selectedDateStr: initialValue || new Date().toISOString().split('T')[0],
+        viewYear: new Date().getFullYear(),
+        viewMonth: new Date().getMonth(),
+
+        init() {
+          if (this.selectedDateStr) {
+            const parts = this.selectedDateStr.split('-');
+            if (parts.length === 3) {
+              this.viewYear = parseInt(parts[0], 10);
+              this.viewMonth = parseInt(parts[1], 10) - 1;
+            }
+          }
+          this.$watch('selectedDateStr', (val) => {
+            if (val) {
+              const parts = val.split('-');
+              if (parts.length === 3) {
+                this.viewYear = parseInt(parts[0], 10);
+                this.viewMonth = parseInt(parts[1], 10) - 1;
+              }
+            }
+          });
+        },
+
+        get formattedDate() {
+          if (!this.selectedDateStr) return 'Select Date';
+          const d = new Date(this.selectedDateStr + 'T00:00:00');
+          return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        },
+
+        get monthYearTitle() {
+          const d = new Date(this.viewYear, this.viewMonth, 1);
+          return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        },
+
+        get calendarGrid() {
+          const firstDay = new Date(this.viewYear, this.viewMonth, 1).getDay();
+          const daysInMonth = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+          const prevDaysInMonth = new Date(this.viewYear, this.viewMonth, 0).getDate();
+          const todayStr = new Date().toISOString().split('T')[0];
+
+          const grid = [];
+          for (let i = firstDay - 1; i >= 0; i--) {
+            grid.push({ dayNum: prevDaysInMonth - i, inMonth: false, key: `prev_${i}` });
+          }
+
+          for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+            const mStr = String(this.viewMonth + 1).padStart(2, '0');
+            const dStr = String(dayNum).padStart(2, '0');
+            const fullStr = `${this.viewYear}-${mStr}-${dStr}`;
+
+            grid.push({
+              dayNum,
+              inMonth: true,
+              dateStr: fullStr,
+              isSelected: fullStr === this.selectedDateStr,
+              isToday: fullStr === todayStr,
+              key: `curr_${dayNum}`
+            });
+          }
+
+          const remaining = 42 - grid.length;
+          for (let dayNum = 1; dayNum <= remaining; dayNum++) {
+            grid.push({ dayNum, inMonth: false, key: `next_${dayNum}` });
+          }
+
+          return grid;
+        },
+
+        prevMonth() {
+          if (this.viewMonth === 0) {
+            this.viewMonth = 11;
+            this.viewYear--;
+          } else {
+            this.viewMonth--;
+          }
+        },
+
+        nextMonth() {
+          if (this.viewMonth === 11) {
+            this.viewMonth = 0;
+            this.viewYear++;
+          } else {
+            this.viewMonth++;
+          }
+        },
+
+        selectDate(dateStr) {
+          this.selectedDateStr = dateStr;
+          this.open = false;
+          if (typeof onSelectCallback === 'function') {
+            onSelectCallback(dateStr);
+          }
+        }
+      }));
+
+      Alpine.data('customTimePicker', (initialValue = '14:00', onChangeCallback = null) => ({
+        open: false,
+        pickerMode: 'hour', // 'hour' vs 'minute'
+        isKeyboardInput: false,
+        selectedHour: (initialValue || '14:00').split(':')[0] || '14',
+        selectedMinute: (initialValue || '14:00').split(':')[1] || '00',
+
+        init() {},
+
+        get timeStr() {
+          return `${String(this.selectedHour).padStart(2, '0')}:${String(this.selectedMinute).padStart(2, '0')}`;
+        },
+
+        outerHours: ['00', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'],
+        innerHours: ['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'],
+        minutes: ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
+
+        getPos(index, radius, total = 12) {
+          const angle = ((index - 3) * (360 / total)) * (Math.PI / 180);
+          const cx = 115;
+          const cy = 115;
+          const x = Math.round(cx + radius * Math.cos(angle));
+          const y = Math.round(cy + radius * Math.sin(angle));
+          return { x, y };
+        },
+
+        get handTarget() {
+          if (this.pickerMode === 'hour') {
+            const hNum = parseInt(this.selectedHour, 10);
+            const isOuter = hNum === 0 || (hNum >= 13 && hNum <= 23);
+            const list = isOuter ? this.outerHours : this.innerHours;
+            let idx = list.indexOf(String(hNum).padStart(2, '0'));
+            if (idx === -1) idx = 0;
+            const r = isOuter ? 84 : 54;
+            return this.getPos(idx, r);
+          } else {
+            const mNum = parseInt(this.selectedMinute, 10);
+            let idx = this.minutes.indexOf(String(mNum).padStart(2, '0'));
+            if (idx === -1) {
+              const approx = Math.round(mNum / 5) * 5;
+              idx = this.minutes.indexOf(String(approx === 60 ? 0 : approx).padStart(2, '0'));
+            }
+            if (idx === -1) idx = 0;
+            return this.getPos(idx, 84);
+          }
+        },
+
+        selectHour(h) {
+          this.selectedHour = String(h).padStart(2, '0');
+          setTimeout(() => {
+            this.pickerMode = 'minute';
+          }, 220);
+        },
+
+        selectMinute(m) {
+          this.selectedMinute = String(m).padStart(2, '0');
+        },
+
+        confirmTime() {
+          this.open = false;
+          const formatted = this.timeStr;
+          if (typeof onChangeCallback === 'function') {
+            onChangeCallback(formatted);
+          }
+        }
+      }));
+
+      Alpine.data('rosterApp', () => ({
+        currentView: 'events', // 'events' (creator), 'audit' (single-player evaluation), 'roster', 'coaches', 'dashboard'
+        occurrenceType: 'oneoff', // 'oneoff' vs 'recurring'
+
+        apiBaseUrl: 'https://academypro-api.tata-elash34.workers.dev',
+
+        loggedInCoach: JSON.parse(localStorage.getItem('academypro_logged_in_coach') || JSON.stringify({
+          id: 'USR-COACH-JAN777',
+          name: 'Jan-Albert Mentz',
+          role: 'Coach',
+          email: 'janmen777@gmail.com',
+          schoolName: 'OVK Rugby Academy'
+        })),
+
+        athletes: [],
+        coaches: [],
+        events: [],
+        testResults: [],
+        testMetrics: [],
+        squadDetails: [],
+
+        squads: [],
+        currentSquad: localStorage.getItem('academypro_current_squad') || '',
+        directorySquadFilter: 'ALL',
+        selectedSquadManagement: '',
+        showAddSquadModal: false,
+        newSquadName: '',
+        showAddSquadPlayerModal: false,
+        selectedPlayerToAssignId: '',
+        auditSessionDate: new Date().toISOString().split('T')[0],
+        eventSubTab: 'upcoming', // 'upcoming' vs 'create'
+        eventTimeScope: 'upcoming', // 'upcoming' vs 'past'
+        eventSquadFilter: 'ALL',
+        eventTypeFilter: 'ALL',
+        showBatchActionModal: false,
+        batchActionType: '', // 'edit' or 'delete'
+        targetBatchEvent: null,
+        showEditEventModal: false,
+        editingEvent: {
+          id: '',
+          title: '',
+          eventType: 'Match',
+          date: '',
+          startTime: '14:00',
+          durationMins: 90,
+          location: 'Main Pitch A',
+          team: ''
+        },
+
+        // Event Creation Form State (Aligned with Flutter app: Field, Match, Test Day, Gym)
+        selectedEventCategory: 'Match',
+        newEvent: {
+          title: '',
+          location: 'Main Pitch A',
+          date: new Date().toISOString().split('T')[0],
+          startTime: '14:00',
+          durationMins: 90,
+          recurrenceRule: 'Does Not Repeat',
+          notes: '',
+          selectedSquads: [],
+          repeatDays: ['Wed'],
+          untilDate: ''
+        },
+
+        durationOptions: [30, 45, 60, 90, 120],
+        locationHistory: ['Main Pitch A', 'Gym Complex', 'High Performance Field B', 'Stellenbosch Grounds'],
+
+        // Dynamic Single-Player Performance Audit Panel State
+        auditSelectedStudent: null,
+        auditInputs: {},
+        auditBenchmarks: {},
+        selectedAuditTestEventId: 'EVT-TEST-DEFAULT',
+        auditCheckins: [],
+
+        // Toast & Modals
+        toastMessage: '',
+        toastType: 'info',
+        showToast: false,
+
+        showManageMetricsModal: false,
+        newMetricForm: { name: '', category: 'Speed', unit: 'sec', goalDirection: 'HIGHER_IS_BETTER', targetBenchmark: '', squadId: '' },
+
+        showManualCheckInModal: false,
+        manualCheckInAthleteId: '',
+
+        showSwitchCoachModal: false,
+        switchCoachEmail: 'janmen777@gmail.com',
+
+        showAddCoachModal: false,
+        showEditCoachModal: false,
+        showDeleteCoachConfirm: false,
+        coachToDelete: null,
+        coachSearchQuery: '',
+
+        newCoach: { name: '', email: '', phone: '', schoolName: 'OVK Academy' },
+        editCoachItem: { id: '', name: '', email: '', phone: '', schoolName: 'OVK Academy' },
+
+        showAddModal: false,
+        showEditModal: false,
+        showDeleteConfirm: false,
+        athleteToDelete: null,
+
+        newAthlete: { name: '', age: '', position: '', team: '', status: '', email: '', phone: '' },
+        editAthleteData: { id: '', name: '', age: '', position: '', secondaryPosition: '', team: '', status: '', email: '' },
+
+        async init() {
+          this.purgeLegacyDummyData();
+          await Promise.all([
+            this.fetchAthletesFromApi(),
+            this.fetchCoachesFromApi(),
+            this.fetchEventsFromApi(),
+            this.fetchTestMetricsFromApi(),
+            this.fetchTestResultsFromApi(),
+            this.fetchSquadsFromApi()
+          ]);
+
+          if (this.athletes.length > 0 && !this.auditSelectedStudent) {
+            this.selectAthleteForAudit(this.athletes[0]);
+          }
+        },
+
+        purgeLegacyDummyData() {
+          try {
+            ['academypro_squads', 'academypro_squad_details', 'academypro_athletes', 'academypro_coaches', 'academypro_events', 'academypro_test_metrics', 'academypro_test_results',
+             'academypro_cache_athletes', 'academypro_cache_events', 'academypro_cache_coaches', 'academypro_cache_test_results', 'academypro_cache_test_metrics'].forEach(k => {
+              localStorage.removeItem(k);
+            });
+          } catch (e) {}
+        },
+
+        triggerToast(msg, type = 'info') {
+          this.toastMessage = msg;
+          this.toastType = type;
+          this.showToast = true;
+          setTimeout(() => { this.showToast = false; }, 4000);
+        },
+
+        getCachedData(key, maxAgeMs = 300000) {
+          try {
+            const raw = localStorage.getItem(`academypro_cache_${key}`);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (Date.now() - (parsed.timestamp || 0) < maxAgeMs) {
+              return parsed.data;
+            }
+          } catch (e) { }
+          return null;
+        },
+
+        setCachedData(key, data) {
+          try {
+            localStorage.setItem(`academypro_cache_${key}`, JSON.stringify({
+              timestamp: Date.now(),
+              data
+            }));
+          } catch (e) { }
+        },
+
+        async fetchTestMetricsFromApi() {
+          try {
+            const sqParam = this.currentSquad ? `?squadId=${encodeURIComponent(this.currentSquad)}` : '';
+            const res = await fetch(`${this.apiBaseUrl}/api/test-metrics${sqParam}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data)) {
+                this.testMetrics = data.data;
+              }
+            }
+          } catch (e) { console.log('API test metrics note:', e); }
+        },
+
+        saveTestMetricsToStorage() {},
+
+        async fetchAthletesFromApi() {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/athletes`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data)) {
+                this.athletes = data.data.map(a => ({
+                  id: a.id,
+                  name: (a.name || `${a.firstName || ''} ${a.lastName || ''}`).trim(),
+                  email: a.email || '',
+                  team: a.team || a.schoolName || '',
+                  position: a.position || '',
+                  secondaryPosition: a.secondaryPosition || '',
+                  status: a.status || '',
+                  attendance: a.attendance || 100,
+                  age: a.age || null
+                }));
+              }
+            }
+          } catch (e) { console.log('API athletes note:', e); }
+        },
+        saveAthletesToStorage() {},
+
+        async fetchCoachesFromApi() {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/coaches`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data)) {
+                this.coaches = data.data;
+              }
+            }
+          } catch (e) { console.log('API coaches note:', e); }
+        },
+        saveCoachesToStorage() {},
+
+        async fetchEventsFromApi(forceRefresh = false) {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data)) {
+                this.events = data.data;
+              }
+            }
+          } catch (e) { console.log('API events note:', e); }
+        },
+        saveEventsToStorage() {},
+
+        async fetchTestResultsFromApi() {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/test-results`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data)) {
+                this.testResults = data.data;
+              }
+            }
+          } catch (e) { console.log('API test results note:', e); }
+        },
+        saveTestResultsToStorage() {},
+
+        async fetchSquadsFromApi() {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/squads`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data)) {
+                this.squadDetails = data.data;
+
+                const fetchedNames = data.data.map(s => s.name);
+                this.squads = fetchedNames;
+                if (this.squads.length > 0) {
+                  if (!this.currentSquad || !this.squads.includes(this.currentSquad)) {
+                    this.currentSquad = this.squads[0];
+                  }
+                  if (!this.selectedSquadManagement || !this.squads.includes(this.selectedSquadManagement)) {
+                    this.selectedSquadManagement = this.squads[0];
+                  }
+                } else {
+                  this.currentSquad = '';
+                  this.selectedSquadManagement = '';
+                }
+              }
+            }
+          } catch (e) { console.log('API squads note:', e); }
+        },
+        saveSquadDetailsToStorage() {},
+        saveSquadsToStorage() {},
+        getSquadCoachName(sqName) {
+          const detail = (this.squadDetails || []).find(s => s.name === sqName || s.id === sqName);
+          if (detail) {
+            if (detail.coachName) return detail.coachName;
+            if (detail.coachId) {
+              const coach = (this.coaches || []).find(c => c.id === detail.coachId);
+              if (coach) return coach.name;
+            }
+          }
+          return (this.coaches && this.coaches.length > 0) ? this.coaches[0].name : 'Jan-Albert Mentz';
+        },
+
+        // Event Creator Methods
+        setOccurrence(type) {
+          this.occurrenceType = type;
+          if (type === 'recurring') {
+            this.newEvent.recurrenceRule = 'Weekly';
+          } else {
+            this.newEvent.recurrenceRule = 'Does Not Repeat';
+          }
+        },
+
+        toggleSquadSelection(sq) {
+          const idx = this.newEvent.selectedSquads.indexOf(sq);
+          if (idx !== -1) {
+            this.newEvent.selectedSquads.splice(idx, 1);
+          } else {
+            this.newEvent.selectedSquads.push(sq);
+          }
+        },
+
+        toggleRepeatDay(day) {
+          if (!this.newEvent.repeatDays) this.newEvent.repeatDays = [];
+          const idx = this.newEvent.repeatDays.indexOf(day);
+          if (idx !== -1) {
+            this.newEvent.repeatDays.splice(idx, 1);
+          } else {
+            this.newEvent.repeatDays.push(day);
+          }
+        },
+
+        getTotalImpactedAthletes() {
+          if (!this.newEvent.selectedSquads || this.newEvent.selectedSquads.length === 0) return 0;
+          const selectedTargets = this.newEvent.selectedSquads.map(sq => sq.trim().toLowerCase());
+          return (this.athletes || []).filter(a => {
+            if (!a.team) return false;
+            return selectedTargets.includes(a.team.trim().toLowerCase());
+          }).length;
+        },
+
+        getSquadAthleteCount(sq) {
+          if (!sq) return 0;
+          const target = sq.trim().toLowerCase();
+          return (this.athletes || []).filter(a => {
+            if (!a.team) return false;
+            return a.team.trim().toLowerCase() === target;
+          }).length;
+        },
+
+        getDirectoryAthletesForLoggedInCoach() {
+          if (!this.athletes || this.athletes.length === 0) return [];
+          
+          if (this.directorySquadFilter && this.directorySquadFilter !== 'ALL') {
+            const target = this.directorySquadFilter.trim().toLowerCase();
+            return this.athletes.filter(a => {
+              if (!a.team) return false;
+              return a.team.trim().toLowerCase() === target;
+            });
+          }
+
+          const managedSquadNames = (this.squads || []).map(s => s.trim().toLowerCase());
+          return this.athletes.filter(a => {
+            if (!a.team || a.team === 'Unassigned') return true;
+            return managedSquadNames.includes(a.team.trim().toLowerCase());
+          });
+        },
+
+        getDirectoryAthletesForSquad(sq) {
+          if (!sq || !this.athletes || this.athletes.length === 0) return [];
+          const target = sq.trim().toLowerCase();
+          return this.athletes.filter(a => {
+            if (!a.team) return false;
+            return a.team.trim().toLowerCase() === target;
+          });
+        },
+
+        getUnassignedAthletes() {
+          return (this.athletes || []).filter(a => !a.team || a.team === 'Unassigned');
+        },
+
+        getAvailableAthletesForSquad(sq) {
+          if (!sq || !this.athletes || this.athletes.length === 0) return [];
+          const target = sq.trim().toLowerCase();
+          return this.athletes.filter(a => {
+            const team = (a.team || '').trim().toLowerCase();
+            return team !== target;
+          });
+        },
+
+        getAthleteCompletionPercent(athleteId) {
+          if (!athleteId || !this.testMetrics || this.testMetrics.length === 0) return 0;
+          
+          const athleteResults = (this.testResults || []).filter(r => r.athleteId === athleteId || r.athlete_id === athleteId);
+          const loggedMetricIds = new Set(athleteResults.map(r => r.metricId || r.metric_id));
+          
+          if (this.auditSelectedStudent && this.auditSelectedStudent.id === athleteId) {
+            Object.keys(this.auditInputs).forEach(key => {
+              if (key !== 'notes' && this.auditInputs[key]) {
+                loggedMetricIds.add(key);
+              }
+            });
+          }
+
+          const totalMetrics = this.testMetrics.length;
+          const completedCount = loggedMetricIds.size;
+          return Math.min(100, Math.round((completedCount / totalMetrics) * 100));
+        },
+
+        getCalculatedNextOccurrenceDate(evt) {
+          if (!evt || !evt.date) return '';
+          const todayStr = new Date().toISOString().split('T')[0];
+          
+          if (!evt.recurrenceRule || evt.recurrenceRule === 'Does Not Repeat') {
+            return evt.date;
+          }
+
+          if (evt.date >= todayStr) {
+            return evt.date;
+          }
+
+          const evtDate = new Date(evt.date + 'T00:00:00');
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          let diffDays = Math.ceil((today - evtDate) / (1000 * 60 * 60 * 24));
+          let weeks = Math.ceil(diffDays / 7);
+          if (weeks <= 0) weeks = 1;
+
+          const nextDate = new Date(evtDate);
+          nextDate.setDate(nextDate.getDate() + (weeks * 7));
+
+          if (nextDate < today) {
+            nextDate.setDate(nextDate.getDate() + 7);
+          }
+
+          return nextDate.toISOString().split('T')[0];
+        },
+
+        getFilteredUpcomingEvents() {
+          if (!this.events || this.events.length === 0) return [];
+          const todayStr = new Date().toISOString().split('T')[0];
+          let list = this.events.map(e => ({
+            ...e,
+            displayDate: this.getCalculatedNextOccurrenceDate(e)
+          }));
+
+          if (this.eventSquadFilter && this.eventSquadFilter !== 'ALL') {
+            const sqTarget = this.eventSquadFilter.trim().toLowerCase();
+            list = list.filter(e => {
+              const team = (e.team || e.ageGroup || '').trim().toLowerCase();
+              return team === sqTarget || team.includes(sqTarget) || sqTarget.includes(team);
+            });
+          }
+
+          if (this.eventTypeFilter && this.eventTypeFilter !== 'ALL') {
+            const typeTarget = this.eventTypeFilter.trim().toLowerCase();
+            list = list.filter(e => (e.eventType || '').trim().toLowerCase() === typeTarget);
+          }
+
+          if (this.eventTimeScope === 'upcoming') {
+            list = list.filter(e => e.displayDate >= todayStr);
+            return list.sort((a, b) => (a.displayDate || '').localeCompare(b.displayDate || ''));
+          } else {
+            list = list.filter(e => e.displayDate < todayStr);
+            return list.sort((a, b) => (b.displayDate || '').localeCompare(a.displayDate || ''));
+          }
+        },
+
+        openEditEvent(evt) {
+          if (!evt) return;
+          const targetTeam = evt.team || evt.ageGroup || (this.squads[0] || 'U18 Academy Elite');
+          this.editingEvent = {
+            id: evt.id,
+            title: evt.title || '',
+            eventType: evt.eventType || 'Match',
+            date: evt.date || new Date().toISOString().split('T')[0],
+            startTime: evt.startTime || '14:00',
+            durationMins: evt.durationMins || 90,
+            location: evt.location || 'Main Pitch A',
+            team: targetTeam
+          };
+
+          this.selectedEventCategory = evt.eventType || 'Match';
+          this.occurrenceType = (evt.recurrenceRule && evt.recurrenceRule !== 'Does Not Repeat') ? 'recurring' : 'oneoff';
+          this.newEvent = {
+            id: evt.id,
+            title: evt.title || '',
+            location: evt.location || 'Main Pitch A',
+            date: evt.date || new Date().toISOString().split('T')[0],
+            startTime: evt.startTime || '14:00',
+            durationMins: evt.durationMins || 90,
+            recurrenceRule: evt.recurrenceRule || 'Does Not Repeat',
+            notes: evt.notes || '',
+            selectedSquads: [targetTeam],
+            repeatDays: ['Wed'],
+            untilDate: ''
+          };
+
+          this.showEditEventModal = true;
+        },
+
+        async saveEditedEvent() {
+          if (!this.editingEvent.title || !this.editingEvent.date) {
+            this.triggerToast('Please provide an Event Title and Date', 'error');
+            return;
+          }
+
+          const hasId = !!this.editingEvent.id;
+          const endpoint = hasId 
+            ? `${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(this.editingEvent.id)}`
+            : `${this.apiBaseUrl}/api/dashboard/events`;
+
+          const payload = {
+            id: this.editingEvent.id,
+            title: this.editingEvent.title,
+            eventType: this.editingEvent.eventType,
+            date: this.editingEvent.date,
+            startTime: this.editingEvent.startTime,
+            durationMins: parseInt(this.editingEvent.durationMins) || 90,
+            location: this.editingEvent.location,
+            team: this.editingEvent.team
+          };
+
+          try {
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              const idx = this.events.findIndex(e => e.id === this.editingEvent.id);
+              if (idx !== -1) {
+                this.events[idx] = { ...this.events[idx], ...payload };
+              } else {
+                this.events.unshift({ ...payload });
+              }
+              this.events = [...this.events];
+              this.saveEventsToStorage();
+              this.showEditEventModal = false;
+              this.triggerToast(`Event '${this.editingEvent.title}' updated successfully!`, 'success');
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to update event on server', 'error');
+            }
+          } catch (e) {
+            console.log('Edit event API error:', e);
+            this.triggerToast('Network error while updating event', 'error');
+          }
+        },
+
+        showDeleteEventConfirm: false,
+        eventToDelete: null,
+        showDeleteAthleteConfirm: false,
+        athleteToDelete: null,
+
+        confirmDeleteEvent(evt) {
+          if (!evt) return;
+          this.eventToDelete = evt;
+          this.showDeleteEventConfirm = true;
+        },
+
+        async executeDeleteEvent() {
+          if (!this.eventToDelete) return;
+          const evtId = this.eventToDelete.id;
+          const title = this.eventToDelete.title || 'Event';
+
+          this.events = this.events.filter(e => e.id !== evtId);
+          this.saveEventsToStorage();
+          this.showDeleteEventConfirm = false;
+          this.triggerToast(`Event '${title}' deleted`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(evtId)}`, {
+              method: 'DELETE'
+            });
+            await fetch(`${this.apiBaseUrl}/api/events/${encodeURIComponent(evtId)}`, {
+              method: 'DELETE'
+            });
+          } catch (e) {
+            console.log('Delete event API error:', e);
+          } finally {
+            this.eventToDelete = null;
+          }
+        },
+
+        async createSquad() {
+          if (!this.newSquadName || !this.newSquadName.trim()) {
+            this.triggerToast('Please enter a Squad Name', 'error');
+            return;
+          }
+          const sq = this.newSquadName.trim();
+          if (!this.squads.includes(sq)) {
+            this.squads.push(sq);
+          }
+          this.squads = [...this.squads];
+          this.selectedSquadManagement = sq;
+          this.currentSquad = sq;
+          this.saveSquadsToStorage();
+          this.showAddSquadModal = false;
+          this.newSquadName = '';
+          this.triggerToast(`Squad '${sq}' created successfully!`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/squads`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: `sq-${Date.now()}`,
+                name: sq,
+                ageGroup: sq.substring(0, 3) || 'U16',
+                coachId: this.loggedInCoach.id,
+                coachName: this.loggedInCoach.name
+              })
+            });
+            await this.fetchSquadsFromApi();
+          } catch (e) { console.log('Create squad error:', e); }
+        },
+
+        async deleteSquadByName(sq) {
+          const targetSquad = (this.squadDetails || []).find(s => s.name === sq || s.id === sq);
+          const sqId = targetSquad ? targetSquad.id : sq;
+          const sqName = targetSquad ? targetSquad.name : sq;
+
+          this.squads = this.squads.filter(s => s !== sqName && s !== sqId);
+          this.squadDetails = (this.squadDetails || []).filter(s => s.id !== sqId && s.name !== sqName);
+          if (this.currentSquad === sqName && this.squads.length > 0) this.currentSquad = this.squads[0];
+          if (this.selectedSquadManagement === sqName && this.squads.length > 0) this.selectedSquadManagement = this.squads[0];
+          this.saveSquadsToStorage();
+          this.saveSquadDetailsToStorage();
+          this.triggerToast(`Squad '${sqName}' deleted`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/squads/${encodeURIComponent(sqId)}`, { method: 'DELETE' });
+            if (sqName !== sqId) {
+              await fetch(`${this.apiBaseUrl}/api/squads/${encodeURIComponent(sqName)}`, { method: 'DELETE' });
+            }
+            await this.fetchSquadsFromApi();
+          } catch (e) { console.log('Delete squad error:', e); }
+        },
+
+        async assignAthleteToSquad(athlete, sq) {
+          athlete.team = sq;
+          this.athletes = [...this.athletes];
+          this.saveAthletesToStorage();
+          this.showAddSquadPlayerModal = false;
+          this.triggerToast(`Added ${athlete.name} to ${sq}!`, 'info');
+
+          try {
+            const squadDetail = (this.squadDetails || []).find(s => s.name === sq);
+            const squadId = squadDetail ? squadDetail.id : sq;
+            await fetch(`${this.apiBaseUrl}/api/squads/members`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                squadId: squadId,
+                squadName: sq,
+                athleteId: athlete.id
+              })
+            });
+          } catch (e) { console.log('Assign member error:', e); }
+        },
+
+        async removeAthleteFromSquad(athlete) {
+          const sq = athlete.team;
+          const squadDetail = (this.squadDetails || []).find(s => s.name === sq);
+          const squadId = squadDetail ? squadDetail.id : sq;
+          athlete.team = 'Unassigned';
+          this.athletes = [...this.athletes];
+          this.saveAthletesToStorage();
+          this.triggerToast(`Removed ${athlete.name} from ${sq}`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/squads/members`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                squadId: squadId,
+                athleteId: athlete.id
+              })
+            });
+          } catch (e) { console.log('Remove member error:', e); }
+        },
+
+        async saveEventFromCreator() {
+          if (!this.newEvent.title || !this.newEvent.date) {
+            this.triggerToast('Please provide an Event Title and Date', 'error');
+            return;
+          }
+
+          const created = {
+            id: `EVT-${Date.now()}`,
+            title: this.newEvent.title.trim(),
+            eventType: this.selectedEventCategory || 'Match Session',
+            date: this.newEvent.date,
+            startTime: this.newEvent.startTime || '14:00',
+            durationMins: parseInt(this.newEvent.durationMins) || 90,
+            location: (this.newEvent.location || 'Main Pitch A').trim(),
+            team: this.newEvent.selectedSquads.join(', ') || 'U15 Squad',
+            ageGroup: this.newEvent.selectedSquads[0] || 'U15 Squad',
+            schoolId: 'OVK',
+            recurrenceRule: this.occurrenceType === 'recurring' ? (this.newEvent.repeatDays.length > 0 ? `Weekly on ${this.newEvent.repeatDays.join(', ')}` : 'Weekly') : 'Does Not Repeat',
+            recurrenceEndDate: this.newEvent.untilDate || null,
+            isImportant: this.selectedEventCategory === 'Match Session' || this.selectedEventCategory === 'Fitness Test' || this.selectedEventCategory === 'Test Day' ? 1 : 0
+          };
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(created)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              const savedEvent = data.data || created;
+              const existingIdx = (this.events || []).findIndex(e => e.id === savedEvent.id);
+              if (existingIdx >= 0) {
+                this.events[existingIdx] = savedEvent;
+              } else {
+                this.events = [savedEvent, ...(this.events || [])];
+              }
+              this.eventSubTab = 'upcoming';
+              this.eventTimeScope = 'upcoming';
+              this.triggerToast('Event successfully created and saved to database!', 'success');
+              await this.fetchEventsFromApi(true);
+            } else {
+              this.triggerToast(data.error || 'Failed to sync event to database', 'error');
+            }
+          } catch (e) {
+            console.log('Error persisting event to API:', e);
+            this.triggerToast('Network error while saving event', 'error');
+          }
+
+          // Reset Event Creator Form
+          this.newEvent = {
+            title: '',
+            location: 'Main Pitch A',
+            date: new Date().toISOString().split('T')[0],
+            startTime: '14:00',
+            durationMins: 90,
+            recurrenceRule: 'Does Not Repeat',
+            repeatDays: ['Wed', 'Fri'],
+            untilDate: '',
+            notes: '',
+            selectedSquads: this.currentSquad ? [this.currentSquad] : (this.squads[0] ? [this.squads[0]] : [])
+          };
+          this.selectedEventCategory = 'Match';
+          this.occurrenceType = 'oneoff';
+
+          // Switch automatically to Upcoming & Schedule view
+          this.eventSubTab = 'upcoming';
+        },
+
+        getFilteredAthletes() {
+          if (!this.currentSquad) return this.athletes;
+          const targetSquad = this.currentSquad.toLowerCase();
+          const filtered = this.athletes.filter(a => {
+            const team = (a.team || '').toLowerCase();
+            return team.includes(targetSquad) || targetSquad.includes(team);
+          });
+          return filtered.length > 0 ? filtered : this.athletes;
+        },
+
+        getTestEventsForSquad() {
+          if (!this.currentSquad || !this.currentSquad.trim()) {
+            return [];
+          }
+          const sq = this.currentSquad.trim().toLowerCase();
+          
+          const squadEvents = (this.events || []).filter(e => {
+            const team = (e.team || '').trim().toLowerCase();
+            const ageGroup = (e.ageGroup || '').trim().toLowerCase();
+            const type = (e.eventType || '').trim().toLowerCase();
+
+            const isTestCategory = type === 'fitness test' || type === 'test day' || type === 'fitness' || type.includes('fitness');
+            const belongsToSquad = team === sq || team.includes(sq) || sq.includes(team) || ageGroup === sq;
+
+            return isTestCategory && belongsToSquad;
+          });
+
+          return squadEvents.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        },
+
+        getUncheckedAthletesForEvent() {
+          const checkedInIds = (this.auditCheckins || []).map(c => c.athleteId);
+          const squadAthletes = this.getFilteredAthletes();
+          return squadAthletes.filter(a => !checkedInIds.includes(a.id));
+        },
+
+        async fetchCheckinsForEvent(eventId) {
+          if (!eventId) {
+            this.auditCheckins = [];
+            return;
+          }
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/checkins?eventId=${encodeURIComponent(eventId)}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success) {
+                if (Array.isArray(data.data)) {
+                  this.auditCheckins = data.data;
+                } else if (data.data && Array.isArray(data.data.checkedInPlayerIds)) {
+                  this.auditCheckins = data.data.checkedInPlayerIds.map(id => ({ athleteId: id, eventId }));
+                } else if (Array.isArray(data.checkedInPlayerIds)) {
+                  this.auditCheckins = data.checkedInPlayerIds.map(id => ({ athleteId: id, eventId }));
+                }
+                return;
+              }
+            }
+          } catch (e) { console.log('Fetch checkins error:', e); }
+          this.auditCheckins = [];
+        },
+
+        async loadCheckInsAndRefresh() {
+          await this.fetchCheckinsForEvent(this.selectedAuditTestEventId);
+          const list = this.getAuditCheckedInAthletes();
+          if (list.length > 0) {
+            this.selectAthleteForAudit(list[0]);
+            this.triggerToast(`${list.length} check-in(s) loaded for this event`, 'info');
+          } else {
+            this.auditSelectedStudent = null;
+            this.triggerToast('No check-ins found for this event. Use \"+ Check-In Player\" to add athletes.', 'info');
+          }
+        },
+
+        async onSquadChange() {
+          await this.fetchTestMetricsFromApi();
+          
+          // Dynamically fetch events for the selected squad
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events?ageGroup=${encodeURIComponent(this.currentSquad)}&eventType=Fitness Test`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                data.data.forEach(e => {
+                  if (!this.events.find(evt => evt.id === e.id)) {
+                    this.events.push(e);
+                  }
+                });
+              }
+            }
+          } catch (e) { console.log('Squad event fetch note:', e); }
+
+          const events = this.getTestEventsForSquad();
+          if (events.length > 0) {
+            this.selectedAuditTestEventId = events[0].id;
+            await this.fetchCheckinsForEvent(events[0].id);
+          } else {
+            this.selectedAuditTestEventId = `EVT-TEST-${this.currentSquad.replace(/\s+/g, '-')}-2026-07-29`;
+            await this.fetchCheckinsForEvent(this.selectedAuditTestEventId);
+          }
+          
+          const list = this.getAuditCheckedInAthletes();
+          if (list.length > 0) {
+            this.selectAthleteForAudit(list[0]);
+          } else {
+            this.auditSelectedStudent = null;
+          }
+        },
+
+        async onAuditTestEventChange() {
+          await this.fetchCheckinsForEvent(this.selectedAuditTestEventId);
+          const list = this.getAuditCheckedInAthletes();
+          if (list.length > 0) {
+            this.selectAthleteForAudit(list[0]);
+          } else {
+            this.auditSelectedStudent = null;
+          }
+        },
+
+        getAuditCheckedInAthletes() {
+          if (!this.auditCheckins || this.auditCheckins.length === 0) {
+            return [];
+          }
+          const checkedInIds = this.auditCheckins.map(c => c.athleteId);
+          const squadAthletes = this.getFilteredAthletes();
+          return squadAthletes.filter(a => checkedInIds.includes(a.id));
+        },
+
+        async checkInAthleteForEvent(athlete) {
+          if (!this.selectedAuditTestEventId) {
+            this.triggerToast('Please select a Test Event first before checking in athletes', 'error');
+            return;
+          }
+          const checkin = {
+            eventId: this.selectedAuditTestEventId,
+            athleteId: athlete.id,
+            athleteName: athlete.name,
+            position: athlete.position || 'Player',
+            status: 'Checked In'
+          };
+          this.auditCheckins.unshift(checkin);
+          this.auditCheckins = [...this.auditCheckins];
+          this.selectAthleteForAudit(athlete);
+          this.showManualCheckInModal = false;
+          this.triggerToast(`${athlete.name} checked in for this event!`, 'info');
+          try {
+            await fetch(`${this.apiBaseUrl}/api/checkins`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(checkin)
+            });
+          } catch (e) { console.log('Checkin POST error:', e); }
+        },
+
+        async createCustomMetric() {
+          if (!this.newMetricForm.name || !this.newMetricForm.name.trim() || !this.newMetricForm.unit || !this.newMetricForm.unit.trim()) {
+            this.triggerToast('Please provide Metric Name and Unit', 'error');
+            return;
+          }
+          const created = {
+            id: `tm_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            name: this.newMetricForm.name.trim(),
+            category: this.newMetricForm.category || 'General',
+            unit: this.newMetricForm.unit.trim(),
+            goalDirection: this.newMetricForm.goalDirection || 'HIGHER_IS_BETTER',
+            targetBenchmark: parseFloat(this.newMetricForm.targetBenchmark) || 0,
+            schoolId: '1',
+            squadId: this.currentSquad
+          };
+
+          if (!this.testMetrics) this.testMetrics = [];
+          
+          const existingIdx = this.testMetrics.findIndex(m => m.name.toLowerCase() === created.name.toLowerCase());
+          if (existingIdx !== -1) {
+            this.testMetrics[existingIdx] = created;
+          } else {
+            this.testMetrics.push(created);
+          }
+          this.saveTestMetricsToStorage();
+
+          const metricName = created.name;
+          this.newMetricForm = { name: '', category: 'Speed', unit: 'sec', goalDirection: 'HIGHER_IS_BETTER', targetBenchmark: '', squadId: '' };
+          this.triggerToast(`Test metric '${metricName}' added for ${this.currentSquad || 'squad'}!`, 'success');
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/test-metrics`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(created)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              await this.fetchTestMetricsFromApi();
+            } else {
+              this.triggerToast(data.message || 'Failed to save test metric to server', 'error');
+            }
+          } catch (e) { console.log('Metric POST error:', e); }
+        },
+
+        async deleteMetricFromApi(metricId) {
+          if (!metricId) return;
+          const target = (this.testMetrics || []).find(m => m.id === metricId || m.name === metricId);
+          const name = target ? target.name : metricId;
+
+          this.testMetrics = (this.testMetrics || []).filter(m => m.id !== metricId && m.name !== name);
+          this.saveTestMetricsToStorage();
+
+          const cacheKey = `test_metrics_${this.currentSquad || 'all'}`;
+          localStorage.removeItem(`academypro_cache_${cacheKey}`);
+
+          this.triggerToast(`Test metric '${name}' deleted`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/test-metrics/${encodeURIComponent(metricId)}`, { method: 'DELETE' });
+            if (name !== metricId) {
+              await fetch(`${this.apiBaseUrl}/api/test-metrics/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            }
+          } catch (e) { console.log('Metric DELETE error:', e); }
+        },
+
+        // Single-Player Performance Audit Methods
+        selectAthleteForAudit(athlete) {
+          this.auditSelectedStudent = athlete;
+          const allResults = this.testResults.filter(r => r.athleteId === athlete.id);
+          const currentEventId = this.selectedAuditTestEventId;
+
+          // Get sorted test events for this squad to find the previous event
+          const testEvents = this.getTestEventsForSquad();
+          const currentIdx = testEvents.findIndex(e => e.id === currentEventId);
+          const previousEvent = currentIdx >= 0 && currentIdx < testEvents.length - 1 ? testEvents[currentIdx + 1] : null;
+
+          // Current event scores → editable inputs
+          const currentResults = allResults.filter(r => r.eventId === currentEventId);
+          // Previous event scores → read-only benchmarks
+          const prevResults = previousEvent
+            ? allResults.filter(r => r.eventId === previousEvent.id)
+            : allResults.filter(r => r.eventId !== currentEventId);
+
+          this.auditInputs = { notes: '' };
+          this.auditBenchmarks = {};
+          (this.testMetrics || []).forEach(m => {
+            const mName = m.name.toLowerCase();
+            const currentResult = currentResults.find(r => r.testName.toLowerCase() === mName);
+            const prevResult = prevResults.find(r => r.testName.toLowerCase() === mName);
+            this.auditInputs[m.id] = currentResult ? String(currentResult.scoreValue) : '';
+            this.auditBenchmarks[m.id] = prevResult ? { value: prevResult.scoreValue, date: prevResult.testDate || (previousEvent ? previousEvent.date : '') } : null;
+          });
+        },
+
+        async saveAuditReconciliation() {
+          if (!this.auditSelectedStudent) {
+            this.triggerToast('Please select a student athlete from the roster', 'error');
+            return;
+          }
+
+          const athlete = this.auditSelectedStudent;
+          let savedCount = 0;
+
+          for (const metric of this.testMetrics) {
+            const rawVal = this.auditInputs[metric.id];
+            if (rawVal !== undefined && rawVal !== null && rawVal !== '') {
+              const val = parseFloat(rawVal);
+              if (!isNaN(val)) {
+                const selectedEvent = this.getTestEventsForSquad().find(e => e.id === this.selectedAuditTestEventId);
+                const eventDate = selectedEvent ? selectedEvent.date : new Date().toISOString().split('T')[0];
+                const record = {
+                  id: `tr_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                  eventId: this.selectedAuditTestEventId || `EVT-TEST-${eventDate}`,
+                  athleteId: athlete.id,
+                  athleteName: athlete.name,
+                  testName: metric.name,
+                  category: metric.category,
+                  unit: metric.unit,
+                  scoreValue: val,
+                  testDate: eventDate
+                };
+
+                const idx = this.testResults.findIndex(r => r.athleteId === record.athleteId && r.testName === record.testName && r.testDate === record.testDate);
+                if (idx !== -1) this.testResults[idx] = record;
+                else this.testResults.unshift(record);
+
+                savedCount++;
+
+                try {
+                  await fetch(`${this.apiBaseUrl}/api/test-results`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(record)
+                  });
+                } catch (err) {
+                  console.log('Worker test sync note:', err);
+                }
+              }
+            }
+          }
+
+          this.saveTestResultsToStorage();
+          this.triggerToast(`${savedCount} test metrics saved for ${athlete.name}!`, 'info');
+        },
+
+        // Coaches CRUD
+        openAddCoach() {
+          this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
+          this.showAddCoachModal = true;
+        },
+
+        async saveNewCoach() {
+          if (!this.newCoach.name || !this.newCoach.email) {
+            this.triggerToast('Please fill in Name and Email Address', 'error');
+            return;
+          }
+          const created = {
+            id: `cch_${Date.now()}`,
+            name: this.newCoach.name.trim(),
+            email: this.newCoach.email.toLowerCase().trim(),
+            phone: (this.newCoach.phone || '').trim(),
+            schoolName: this.newCoach.schoolName || 'OVK Academy'
+          };
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/coaches`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(created)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              const coachData = data.data || created;
+              this.coaches.push(coachData);
+              this.saveCoachesToStorage();
+              this.showAddCoachModal = false;
+              this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
+              this.triggerToast(`Coach ${coachData.name} registered successfully!`, 'success');
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to register coach on server', 'error');
+            }
+          } catch (err) {
+            console.log('Coach API note:', err);
+            this.triggerToast('Network error while registering coach', 'error');
+          }
+        },
+
+        // Students CRUD
+        openAddAthlete() {
+          this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: '', email: '', phone: '' };
+          this.showAddModal = true;
+        },
+
+        async saveNewAthlete() {
+          if (!this.newAthlete.name) {
+            this.triggerToast('Please fill in Student Name', 'error');
+            return;
+          }
+          const created = {
+            id: `AC-${Math.floor(1000 + Math.random() * 9000)}`,
+            name: this.newAthlete.name.trim(),
+            age: this.newAthlete.age ? parseInt(this.newAthlete.age) : null,
+            position: (this.newAthlete.position || '').trim(),
+            team: this.newAthlete.team || this.currentSquad || '',
+            status: (this.newAthlete.status || '').trim(),
+            email: (this.newAthlete.email || '').toLowerCase().trim(),
+            phone: (this.newAthlete.phone || '').trim()
+          };
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/athletes`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(created)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              const athData = data.data || created;
+              this.athletes.unshift(athData);
+              this.saveAthletesToStorage();
+              this.showAddModal = false;
+              this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: '', email: '', phone: '' };
+              this.triggerToast(`Student Athlete ${athData.name} registered!`, 'success');
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to register athlete on server', 'error');
+            }
+          } catch (err) {
+            console.log('Student API note:', err);
+            this.triggerToast('Network error while registering athlete', 'error');
+          }
+        },
+
+        openEditAthlete(athlete) {
+          this.editAthleteData = {
+            id: athlete.id,
+            name: athlete.name || '',
+            age: athlete.age || '',
+            position: athlete.position || '',
+            secondaryPosition: athlete.secondaryPosition || '',
+            team: athlete.team || '',
+            status: athlete.status || '',
+            email: athlete.email || ''
+          };
+          this.showEditModal = true;
+        },
+
+        async saveEditAthlete() {
+          if (!this.editAthleteData.name) {
+            this.triggerToast('Athlete Name is required', 'error');
+            return;
+          }
+
+          const idx = this.athletes.findIndex(a => a.id === this.editAthleteData.id);
+          if (idx === -1) {
+            this.triggerToast('Athlete not found', 'error');
+            return;
+          }
+
+          const updatedItem = {
+            ...this.athletes[idx],
+            name: this.editAthleteData.name.trim(),
+            age: this.editAthleteData.age ? parseInt(this.editAthleteData.age) : null,
+            position: (this.editAthleteData.position || '').trim(),
+            secondaryPosition: (this.editAthleteData.secondaryPosition || '').trim(),
+            status: (this.editAthleteData.status || '').trim(),
+            email: (this.editAthleteData.email || '').toLowerCase().trim()
+          };
+
+          this.athletes[idx] = updatedItem;
+          this.saveAthletesToStorage();
+          this.showEditModal = false;
+          this.triggerToast('Athlete updated successfully!', 'success');
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(updatedItem.id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: updatedItem.name,
+                age: updatedItem.age,
+                position: updatedItem.position,
+                secondaryPosition: updatedItem.secondaryPosition,
+                status: updatedItem.status,
+                email: updatedItem.email,
+                team: updatedItem.team
+              })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!data.success) {
+              this.triggerToast(data.error || 'Failed to update athlete on server', 'error');
+            }
+          } catch (err) { console.log('Athlete PUT error:', err); }
+        },
+
+        confirmDeleteAthlete(athlete) {
+          if (!athlete) return;
+          this.athleteToDelete = athlete;
+          this.showDeleteAthleteConfirm = true;
+        },
+
+        async executeDeleteAthlete() {
+          if (!this.athleteToDelete) return;
+          const athleteId = this.athleteToDelete.id;
+          const name = this.athleteToDelete.name || 'Athlete';
+
+          this.athletes = (this.athletes || []).filter(a => a.id !== athleteId);
+          this.saveAthletesToStorage();
+          this.showDeleteAthleteConfirm = false;
+          this.showEditModal = false;
+          this.triggerToast(`Athlete '${name}' removed`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(athleteId)}`, { method: 'DELETE' });
+          } catch (e) { console.log('Delete athlete error:', e); }
+          finally {
+            this.athleteToDelete = null;
+          }
+        },
+
+        confirmDeleteCoach(coach) {
+          if (!coach) return;
+          this.coachToDelete = coach;
+          this.showDeleteCoachConfirm = true;
+        },
+
+        async executeDeleteCoach() {
+          if (!this.coachToDelete) return;
+          const coachId = this.coachToDelete.id;
+          const name = this.coachToDelete.name || 'Coach';
+
+          this.coaches = (this.coaches || []).filter(c => c.id !== coachId);
+          this.saveCoachesToStorage();
+          this.showDeleteCoachConfirm = false;
+          this.triggerToast(`Coach '${name}' removed`, 'info');
+
+          try {
+            await fetch(`${this.apiBaseUrl}/api/coaches/${encodeURIComponent(coachId)}`, { method: 'DELETE' });
+          } catch (e) { console.log('Delete coach error:', e); }
+          finally {
+            this.coachToDelete = null;
+          }
+        },
+
+        async loginAsCoach(email) {
+          const target = (email || this.switchCoachEmail).toLowerCase().trim();
+          if (!target) return;
+          
+          let coach = this.coaches.find(c => c.email.toLowerCase() === target);
+          if (!coach) {
+            coach = {
+              id: `cch_${Date.now()}`,
+              name: target === 'janmen777@gmail.com' ? 'Jan-Albert Mentz' : target.split('@')[0],
+              role: 'Coach',
+              email: target,
+              schoolName: 'OVK Rugby Academy'
+            };
+          }
+          this.loggedInCoach = coach;
+          localStorage.setItem('academypro_logged_in_coach', JSON.stringify(coach));
+          this.showSwitchCoachModal = false;
+          this.triggerToast(`Logged in as Coach ${coach.name} (${coach.email})`, 'info');
+          await this.fetchSquadsFromApi();
+        },
+
+        getInitials(name) {
+          if (!name) return 'AP';
+          const parts = name.trim().split(' ');
+          if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+          return name.substring(0, 2).toUpperCase();
+        }
+      }));
+    });
+  </script>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.0/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
+</head>
+
+<body class="text-on-background bg-background overflow-hidden h-screen flex flex-col" x-data="rosterApp">
+
+  <!-- ========================================================================= -->
+  <!-- SIDEBAR NAVIGATION (Super Admin Anchor) -->
+  <!-- ========================================================================= -->
+  <aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-surface-container border-r border-outline-variant flex flex-col z-50 shadow-sm">
+    <div class="p-lg flex items-center gap-md">
+      <div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-white shadow-md">
+        <span class="material-symbols-outlined text-on-primary-container">school</span>
+      </div>
+      <div>
+        <h1 class="font-display text-headline-md font-extrabold text-primary">AcademyPro</h1>
+        <p class="font-label-sm text-outline uppercase tracking-wider">Super Admin</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-md overflow-y-auto custom-scrollbar space-y-1 py-md">
+      <!-- Events & Schedule Workspace -->
+      <div @click="currentView = 'events'" 
+           class="flex items-center px-md py-sm gap-md cursor-pointer active:scale-95 transition-all rounded-lg"
+           :class="currentView === 'events' ? 'sidebar-active rounded-r-lg shadow-sm' : 'hover:bg-surface-container-highest text-outline'">
+        <span class="material-symbols-outlined">event_note</span>
+        <span class="font-label-md">Events & Schedule</span>
+      </div>
+
+      <!-- Single-Player Performance Audit (Active MVP View 2) -->
+      <div @click="currentView = 'audit'" 
+           class="flex items-center px-md py-sm gap-md cursor-pointer active:scale-95 transition-all rounded-lg"
+           :class="currentView === 'audit' ? 'sidebar-active rounded-r-lg shadow-sm' : 'hover:bg-surface-container-highest text-outline'">
+        <span class="material-symbols-outlined">fact_check</span>
+        <span class="font-label-md">Performance Audit</span>
+      </div>
+
+      <!-- Squad / Team Management -->
+      <div @click="currentView = 'squads'" 
+           class="flex items-center px-md py-sm gap-md cursor-pointer active:scale-95 transition-all rounded-lg"
+           :class="currentView === 'squads' ? 'sidebar-active rounded-r-lg shadow-sm' : 'hover:bg-surface-container-highest text-outline'">
+        <span class="material-symbols-outlined">groups</span>
+        <span class="font-label-md">Squad Management</span>
+      </div>
+
+      <!-- Student Roster Directory -->
+      <div @click="currentView = 'roster'" 
+           class="flex items-center px-md py-sm gap-md cursor-pointer active:scale-95 transition-all rounded-lg"
+           :class="currentView === 'roster' ? 'sidebar-active rounded-r-lg shadow-sm' : 'hover:bg-surface-container-highest text-outline'">
+        <span class="material-symbols-outlined">person_search</span>
+        <span class="font-label-md">Player Directory</span>
+      </div>
+
+      <!-- Coaches Directory -->
+      <div @click="currentView = 'coaches'" 
+           class="flex items-center px-md py-sm gap-md cursor-pointer active:scale-95 transition-all rounded-lg"
+           :class="currentView === 'coaches' ? 'sidebar-active rounded-r-lg shadow-sm' : 'hover:bg-surface-container-highest text-outline'">
+        <span class="material-symbols-outlined">badge</span>
+        <span class="font-label-md">Coaches Directory</span>
+      </div>
+    </nav>
+
+    <div class="p-md border-t border-outline-variant">
+      <button @click="currentView = 'events'" class="w-full bg-primary text-on-primary py-md rounded-xl font-label-md flex items-center justify-center gap-sm active:scale-95 transition-transform shadow-lg">
+        <span class="material-symbols-outlined">add</span> Quick Action
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION HEADER Anchor -->
+  <!-- ========================================================================= -->
+  <header class="fixed top-0 right-0 left-0 h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-gutter ml-sidebar-width z-40">
+    <div class="flex items-center gap-xl flex-1"></div>
+
+    <div class="flex items-center gap-md">
+      <div class="flex items-center gap-sm cursor-pointer group" @click="showSwitchCoachModal = true">
+        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs border border-outline-variant group-hover:ring-2 ring-primary transition-all"
+             x-text="getInitials(loggedInCoach ? loggedInCoach.name : 'Jan-Albert Mentz')">
+        </div>
+        <div class="hidden sm:flex flex-col text-left">
+          <span class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : 'Jan-Albert Mentz'"></span>
+          <span class="text-[10px] text-outline" x-text="loggedInCoach ? loggedInCoach.email : 'janmen777@gmail.com'"></span>
+        </div>
+        <span class="material-symbols-outlined text-outline">expand_more</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN CONTENT AREA -->
+  <!-- ========================================================================= -->
+  <main class="ml-sidebar-width pt-16 h-screen overflow-y-auto bg-background custom-scrollbar">
+
+    <!-- VIEW 1: ADMIN EVENTS & SCHEDULE MANAGEMENT WORKSPACE -->
+    <div x-show="currentView === 'events'" class="max-w-6xl mx-auto p-xl space-y-lg">
+      
+      <!-- Workspace Sub-Tab Navigation Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md border-b border-outline-variant pb-md">
+        <div class="flex items-center gap-2 bg-surface-container p-1 rounded-xl border border-outline-variant">
+          <button @click="eventSubTab = 'upcoming'" 
+                  class="px-md py-2 rounded-lg font-label-md text-xs font-bold transition-all flex items-center gap-1.5"
+                  :class="eventSubTab === 'upcoming' ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-outline hover:text-on-surface'">
+            <span class="material-symbols-outlined text-[18px]">calendar_month</span> Upcoming & Schedule
+          </button>
+          <button @click="eventSubTab = 'create'" 
+                  class="px-md py-2 rounded-lg font-label-md text-xs font-bold transition-all flex items-center gap-1.5"
+                  :class="eventSubTab === 'create' ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-outline hover:text-on-surface'">
+            <span class="material-symbols-outlined text-[18px]">add_circle</span> + Create New Event
+          </button>
+        </div>
+
+        <div x-show="eventSubTab === 'upcoming'" class="flex items-center gap-md">
+          <button @click="fetchEventsFromApi(true); triggerToast('Events refreshed live!', 'success')" class="bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface px-3.5 py-2.5 rounded-xl font-label-md text-xs font-bold shadow-sm transition-all flex items-center gap-1.5" title="Refresh Events">
+            <span class="material-symbols-outlined text-[18px]">sync</span>
+            <span>Refresh</span>
+          </button>
+          <button @click="eventSubTab = 'create'" class="bg-primary text-on-primary px-lg py-2.5 rounded-xl font-label-md text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">add</span> + Create Event
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: UPCOMING EVENTS & SCHEDULE LIST -->
+      <div x-show="eventSubTab === 'upcoming'" class="space-y-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+          <div>
+            <h2 class="font-headline-lg text-on-surface font-extrabold text-2xl">Scheduled Academy Events</h2>
+            <p class="font-body-md text-on-surface-variant text-xs mt-0.5">Manage upcoming matches, field sessions, test days, and edit event parameters.</p>
+          </div>
+
+          <!-- Filters Row: Upcoming/Past Toggle + Squad Filter + Event Type Filter -->
+          <div class="flex flex-wrap items-center gap-md">
+            <!-- Upcoming vs Past Toggle -->
+            <div class="flex bg-surface-container border border-outline-variant p-1 rounded-xl">
+              <button type="button" @click="eventTimeScope = 'upcoming'"
+                      class="px-3 py-1.5 rounded-lg font-label-md text-xs font-bold transition-all flex items-center gap-1"
+                      :class="eventTimeScope === 'upcoming' ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-outline hover:text-on-surface'">
+                <span class="material-symbols-outlined text-[15px]">event_upcoming</span> Upcoming
+              </button>
+              <button type="button" @click="eventTimeScope = 'past'"
+                      class="px-3 py-1.5 rounded-lg font-label-md text-xs font-bold transition-all flex items-center gap-1"
+                      :class="eventTimeScope === 'past' ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-outline hover:text-on-surface'">
+                <span class="material-symbols-outlined text-[15px]">history</span> Past
+              </button>
+            </div>
+            <!-- Custom Squad Filter Dropdown -->
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all min-w-[170px]">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
+                  <span class="truncate font-bold" x-text="eventSquadFilter === 'ALL' ? 'All Squads' : eventSquadFilter"></span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                   x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                   class="absolute right-0 top-full mt-1.5 w-full min-w-[190px] bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto custom-scrollbar">
+                <div @click="eventSquadFilter = 'ALL'; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="eventSquadFilter === 'ALL' ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span>All Squads</span>
+                  <span x-show="eventSquadFilter === 'ALL'" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+                <template x-for="sq in squads" :key="sq">
+                  <div @click="eventSquadFilter = sq; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="eventSquadFilter === sq ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="sq"></span>
+                    <span x-show="eventSquadFilter === sq" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Custom Category Type Filter Dropdown -->
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all min-w-[140px]">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="material-symbols-outlined text-primary text-[18px]">category</span>
+                  <span class="truncate font-bold" x-text="eventTypeFilter === 'ALL' ? 'All Types' : eventTypeFilter"></span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                   x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                   class="absolute right-0 top-full mt-1.5 w-full min-w-[160px] bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
+                <template x-for="type in ['ALL', 'Match', 'Field', 'Fitness Test', 'Gym']" :key="type">
+                  <div @click="eventTypeFilter = type; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="eventTypeFilter === type ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="type === 'ALL' ? 'All Types' : type"></span>
+                    <span x-show="eventTypeFilter === type" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scheduled Events Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+          <template x-for="evt in getFilteredUpcomingEvents()" :key="evt.id">
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-start mb-sm">
+                  <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1"
+                        :class="{
+                          'bg-red-500/10 text-red-600': evt.eventType === 'Match',
+                          'bg-blue-500/10 text-blue-600': evt.eventType === 'Field',
+                          'bg-amber-500/10 text-amber-600': evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day',
+                          'bg-purple-500/10 text-purple-600': evt.eventType === 'Gym'
+                        }">
+                    <span class="material-symbols-outlined text-[14px]"
+                          x-text="evt.eventType === 'Match' ? 'sports_rugby' : (evt.eventType === 'Field' ? 'fitness_center' : ((evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day') ? 'speed' : 'directions_run'))"></span>
+                    <span x-text="evt.eventType || 'Match'"></span>
+                  </span>
+                  <span class="text-[11px] font-bold text-outline" x-text="evt.date"></span>
+                </div>
+
+                <h3 class="font-bold text-on-surface text-base" x-text="evt.title"></h3>
+                <p class="text-xs text-outline mt-1 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[15px]">location_on</span>
+                  <span x-text="evt.location || 'Main Pitch A'"></span>
+                </p>
+
+                <div class="flex items-center gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
+                  <span class="flex items-center gap-1 font-semibold">
+                    <span class="material-symbols-outlined text-[15px]">schedule</span>
+                    <span x-text="(evt.startTime || '14:00') + ' (' + (evt.durationMins || 90) + 'm)'"></span>
+                  </span>
+                  <span class="font-bold text-primary" x-text="evt.team || evt.ageGroup || 'U18 Squad'"></span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
+                <button type="button" @click="openEditEvent(evt)" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
+                  <span class="material-symbols-outlined text-[16px]">edit</span> Edit Event
+                </button>
+                <button type="button" @click="confirmDeleteEvent(evt)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <div x-show="getFilteredUpcomingEvents().length === 0" class="col-span-full text-center py-12 bg-surface-container-lowest border border-outline-variant rounded-2xl space-y-2">
+            <span class="material-symbols-outlined text-outline text-3xl">event_busy</span>
+            <p class="text-xs font-bold text-on-surface">No events found for this filter</p>
+            <p class="text-[11px] text-outline">Click '+ Create New Event' above to schedule an event for your squad.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: CREATE EVENT BUILDER -->
+      <div x-show="eventSubTab === 'create'" class="space-y-lg">
+      <!-- Page Header -->
+      <div class="flex justify-between items-end">
+        <div>
+          <h2 class="font-headline-lg text-on-surface font-extrabold text-2xl">Create New Event</h2>
+          <p class="font-body-md text-on-surface-variant text-sm mt-1">Schedule academy matches, training sessions, and test days.</p>
+        </div>
+        <div class="flex bg-surface-container border border-outline-variant p-1 rounded-xl">
+          <button class="px-lg py-2 rounded-lg font-label-md transition-all text-xs font-bold"
+                  :class="occurrenceType === 'oneoff' ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-outline hover:text-on-surface'"
+                  @click="setOccurrence('oneoff')">
+            One-off
+          </button>
+          <button class="px-lg py-2 rounded-lg font-label-md transition-all text-xs font-bold"
+                  :class="occurrenceType === 'recurring' ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-outline hover:text-on-surface'"
+                  @click="setOccurrence('recurring')">
+            Recurring
+          </button>
+        </div>
+      </div>
+
+      <!-- Bento Layout Content -->
+      <div class="grid grid-cols-12 gap-lg items-start">
+        <!-- Main Form Section (Left Column) -->
+        <div class="col-span-12 lg:col-span-8 space-y-lg">
+          
+          <!-- Basic Information Card -->
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm">
+            <div class="flex items-center gap-sm mb-md text-primary">
+              <span class="material-symbols-outlined">event_note</span>
+              <h3 class="font-headline-md font-bold text-lg">Event Details</h3>
+            </div>
+            <div class="grid grid-cols-2 gap-lg">
+              <div class="col-span-2 md:col-span-1">
+                <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Event Type (Flutter Standard)</label>
+                <div class="grid grid-cols-2 gap-sm">
+                  <button type="button" @click="selectedEventCategory = 'Match'"
+                          class="flex items-center justify-center gap-xs p-md border rounded-xl font-label-md text-xs font-bold transition-all"
+                          :class="selectedEventCategory === 'Match' ? 'border-2 border-primary bg-primary-fixed-dim text-primary ring-2 ring-primary ring-opacity-20' : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-sm">sports_rugby</span> Match
+                  </button>
+                  <button type="button" @click="selectedEventCategory = 'Field'"
+                          class="flex items-center justify-center gap-xs p-md border rounded-xl font-label-md text-xs font-bold transition-all"
+                          :class="selectedEventCategory === 'Field' ? 'border-2 border-primary bg-primary-fixed-dim text-primary ring-2 ring-primary ring-opacity-20' : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-sm">fitness_center</span> Field
+                  </button>
+                  <button type="button" @click="selectedEventCategory = 'Fitness Test'"
+                          class="flex items-center justify-center gap-xs p-md border rounded-xl font-label-md text-xs font-bold transition-all"
+                          :class="selectedEventCategory === 'Fitness Test' ? 'border-2 border-primary bg-primary-fixed-dim text-primary ring-2 ring-primary ring-opacity-20' : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-sm">speed</span> Fitness Test
+                  </button>
+                  <button type="button" @click="selectedEventCategory = 'Gym'"
+                          class="flex items-center justify-center gap-xs p-md border rounded-xl font-label-md text-xs font-bold transition-all"
+                          :class="selectedEventCategory === 'Gym' ? 'border-2 border-primary bg-primary-fixed-dim text-primary ring-2 ring-primary ring-opacity-20' : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-sm">directions_run</span> Gym
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-span-2 md:col-span-1 space-y-md">
+                <div>
+                  <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Event Name *</label>
+                  <input x-model="newEvent.title" required class="w-full bg-background border border-outline-variant rounded-xl px-md py-md text-sm focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. U19 Regional Qualifiers" type="text"/>
+                </div>
+                <div>
+                  <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Location / Venue</label>
+                  <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">location_on</span>
+                    <input x-model="newEvent.location" class="w-full bg-background border border-outline-variant rounded-xl pl-10 pr-md py-md text-sm focus:ring-2 focus:ring-primary outline-none" placeholder="Search facility or enter address" type="text"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduling Card -->
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm">
+            <div class="flex items-center gap-sm mb-md text-primary">
+              <span class="material-symbols-outlined">schedule</span>
+              <h3 class="font-headline-md font-bold text-lg">Scheduling</h3>
+            </div>
+            <div class="grid grid-cols-3 gap-lg">
+              <!-- Custom Event Datepicker Component -->
+              <div class="col-span-3 md:col-span-1">
+                <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold" x-text="occurrenceType === 'recurring' ? 'Start Date (First Session) *' : 'Event Date (Past / Present) *'"></label>
+                <div class="relative" x-data="customDatePicker(newEvent.date, (d) => { newEvent.date = d; })" @click.outside="open = false">
+                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+                      <span class="font-bold" x-text="formattedDate"></span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                  </button>
+
+                  <div x-show="open" 
+                       x-transition:enter="transition ease-out duration-150"
+                       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                       x-transition:leave="transition ease-in duration-100"
+                       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                       x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                       class="absolute left-0 top-full mt-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <button type="button" @click="prevMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
+                        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                      </button>
+                      <span class="font-bold text-xs text-on-surface" x-text="monthYearTitle"></span>
+                      <button type="button" @click="nextMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
+                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                      </button>
+                    </div>
+                    <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase tracking-wider">
+                      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center">
+                      <template x-for="cell in calendarGrid" :key="cell.key">
+                        <button type="button" 
+                                @click="cell.inMonth && selectDate(cell.dateStr)" 
+                                :disabled="!cell.inMonth"
+                                class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs transition-all"
+                                :class="{
+                                  'text-outline/30 cursor-default': !cell.inMonth,
+                                  'bg-primary text-on-primary font-bold shadow-sm': cell.isSelected,
+                                  'border border-primary text-primary font-bold': cell.isToday && !cell.isSelected,
+                                  'hover:bg-primary-container/20 text-on-surface': cell.inMonth && !cell.isSelected
+                                }">
+                          <span x-text="cell.dayNum"></span>
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+                <p class="mt-xs text-outline font-label-sm flex items-center gap-xs text-[11px] text-emerald-600 font-semibold mt-1">
+                  <span class="material-symbols-outlined text-[14px]">info</span> Past-dating enabled
+                </p>
+              </div>
+
+              <!-- Custom Start Time Picker Component -->
+              <div class="col-span-3 md:col-span-1">
+                <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Start Time</label>
+                <div class="relative" x-data="customTimePicker(newEvent.startTime, (t) => { newEvent.startTime = t; })" @click.outside="open = false">
+                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
+                      <span class="font-bold" x-text="timeStr"></span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                  </button>
+
+                  <div x-show="open" 
+                       x-transition:enter="transition ease-out duration-150"
+                       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                       x-transition:leave="transition ease-in duration-100"
+                       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                       x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                       class="absolute left-0 top-full mt-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[280px] space-y-3">
+                    
+                    <!-- Header Section: Label & Digital HH : MM Selector -->
+                    <div>
+                      <span class="text-[11px] font-semibold text-outline block mb-1">Select time</span>
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" @click="pickerMode = 'hour'"
+                                class="px-4 py-2 rounded-2xl font-display font-extrabold text-3xl transition-all shadow-xs"
+                                :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface hover:bg-surface-container-highest'">
+                          <span x-text="String(selectedHour).padStart(2, '0')"></span>
+                        </button>
+                        <span class="font-display font-bold text-2xl text-on-surface">:</span>
+                        <button type="button" @click="pickerMode = 'minute'"
+                                class="px-4 py-2 rounded-2xl font-display font-extrabold text-3xl transition-all shadow-xs"
+                                :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface hover:bg-surface-container-highest'">
+                          <span x-text="String(selectedMinute).padStart(2, '0')"></span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Clock Dial Face (230px x 230px) -->
+                    <div class="relative w-[230px] h-[230px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                      <!-- Center Pivot & SVG Hand -->
+                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
+                        <circle cx="115" cy="115" r="4" fill="#003EC7" />
+                        <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                      </svg>
+
+                      <!-- HOUR DIAL (24-Hour Dual Ring Layout matching Flutter) -->
+                      <template x-if="pickerMode === 'hour'">
+                        <div class="absolute inset-0">
+                          <!-- Outer Ring (00, 13-23) -->
+                          <template x-for="(h, idx) in outerHours" :key="'out_'+h">
+                            <button type="button" @click="selectHour(h)"
+                                    class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-extrabold text-xs transition-all z-20 cursor-pointer"
+                                    :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`"
+                                    :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary font-black' : 'text-on-surface hover:bg-primary-container/20'">
+                              <span x-text="h"></span>
+                            </button>
+                          </template>
+                          <!-- Inner Ring (12, 01-11) -->
+                          <template x-for="(h, idx) in innerHours" :key="'in_'+h">
+                            <button type="button" @click="selectHour(h)"
+                                    class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer"
+                                    :style="`left: ${getPos(idx, 54).x}px; top: ${getPos(idx, 54).y}px;`"
+                                    :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary font-black' : 'text-outline hover:bg-primary-container/20'">
+                              <span x-text="h"></span>
+                            </button>
+                          </template>
+                        </div>
+                      </template>
+
+                      <!-- MINUTE DIAL (00, 05, 10, ... 55) -->
+                      <template x-if="pickerMode === 'minute'">
+                        <div class="absolute inset-0">
+                          <template x-for="(m, idx) in minutes" :key="'min_'+m">
+                            <button type="button" @click="selectMinute(m)"
+                                    class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-extrabold text-xs transition-all z-20 cursor-pointer"
+                                    :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`"
+                                    :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary font-black' : 'text-on-surface hover:bg-primary-container/20'">
+                              <span x-text="m"></span>
+                            </button>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+
+                    <!-- Footer Actions: Cancel & OK -->
+                    <div class="flex items-center justify-between pt-2 border-t border-outline-variant">
+                      <button type="button" @click="isKeyboardInput = !isKeyboardInput" class="p-1.5 text-outline hover:text-primary rounded-lg transition-colors" title="Toggle Input Format">
+                        <span class="material-symbols-outlined text-[18px]">keyboard</span>
+                      </button>
+                      <div class="flex items-center gap-2">
+                        <button type="button" @click="open = false" class="px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary-container/20 rounded-lg transition-colors">
+                          Cancel
+                        </button>
+                        <button type="button" @click="confirmTime()" class="px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary-container/20 rounded-lg transition-colors">
+                          OK
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- Custom Duration Dropdown Component -->
+              <div class="col-span-3 md:col-span-1">
+                <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Duration (Mins)</label>
+                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                    <span class="font-bold" x-text="newEvent.durationMins + ' Minutes'"></span>
+                    <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                  </button>
+                  <div x-show="open" 
+                       x-transition:enter="transition ease-out duration-150"
+                       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                       class="absolute left-0 top-full mt-1.5 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-56 overflow-y-auto custom-scrollbar">
+                    <template x-for="dur in durationOptions" :key="dur">
+                      <div @click="newEvent.durationMins = dur; open = false" 
+                           class="px-3 py-2 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                           :class="newEvent.durationMins === dur ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
+                        <span x-text="dur + ' Minutes'"></span>
+                        <span x-show="newEvent.durationMins === dur" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recurring Rule Section -->
+            <div x-show="occurrenceType === 'recurring'" class="mt-lg pt-lg border-t border-outline-variant space-y-2">
+              <label class="block font-label-md text-on-surface-variant text-xs font-bold">Repeat Every</label>
+              <div class="flex flex-wrap gap-xs items-center">
+                <template x-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day">
+                  <button type="button" @click="toggleRepeatDay(day)"
+                          class="px-md py-sm rounded-lg font-label-md text-xs font-bold transition-colors"
+                          :class="(newEvent.repeatDays && newEvent.repeatDays.includes(day)) ? 'bg-primary-container text-on-primary shadow-sm' : 'bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-container-highest'"
+                          x-text="day"></button>
+                </template>
+                <div class="flex-1"></div>
+                <div class="flex items-center gap-sm">
+                  <span class="font-label-md text-outline text-xs font-bold">Until <span class="font-normal text-[11px] text-outline/80">(Optional)</span></span>
+                  <!-- Custom Until Datepicker Component -->
+                  <div class="relative" x-data="customDatePicker(newEvent.untilDate, (d) => { newEvent.untilDate = d; })" @click.outside="open = false">
+                    <button type="button" @click="open = !open" class="bg-background border border-outline-variant rounded-lg px-sm py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:border-primary transition-all">
+                      <span class="material-symbols-outlined text-primary text-[16px]">calendar_today</span>
+                      <span x-text="formattedDate"></span>
+                      <span x-show="selectedDateStr" @click.stop="selectedDateStr = ''; newEvent.untilDate = '';" class="ml-1 text-outline hover:text-error text-xs font-bold" title="Clear end date">✕</span>
+                    </button>
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         class="absolute right-0 top-full mt-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                      <div class="flex items-center justify-between">
+                        <button type="button" @click="prevMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
+                          <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                        </button>
+                        <span class="font-bold text-xs text-on-surface" x-text="monthYearTitle"></span>
+                        <button type="button" @click="nextMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
+                          <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                        </button>
+                      </div>
+                      <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase tracking-wider">
+                        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                      </div>
+                      <div class="grid grid-cols-7 gap-1 text-center">
+                        <template x-for="cell in calendarGrid" :key="cell.key">
+                          <button type="button" 
+                                  @click="cell.inMonth && selectDate(cell.dateStr)" 
+                                  :disabled="!cell.inMonth"
+                                  class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs transition-all"
+                                  :class="{
+                                    'text-outline/30 cursor-default': !cell.inMonth,
+                                    'bg-primary text-on-primary font-bold shadow-sm': cell.isSelected,
+                                    'border border-primary text-primary font-bold': cell.isToday && !cell.isSelected,
+                                    'hover:bg-primary-container/20 text-on-surface': cell.inMonth && !cell.isSelected
+                                  }">
+                            <span x-text="cell.dayNum"></span>
+                          </button>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Notes Card -->
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm">
+            <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Notes & Instructions</label>
+            <textarea x-model="newEvent.notes" class="w-full bg-background border border-outline-variant rounded-xl p-md text-sm focus:ring-2 focus:ring-primary outline-none resize-none" placeholder="Mention equipment needed, specific drills, or travel logistics..." rows="4"></textarea>
+          </div>
+        </div>
+
+        <!-- Sidebar Content (Right Column) -->
+        <div class="col-span-12 lg:col-span-4 space-y-lg">
+          <!-- Squad Selection Card -->
+          <div class="bg-surface-container border border-outline-variant rounded-xl p-lg shadow-sm">
+            <div class="flex items-center justify-between mb-md">
+              <h3 class="font-headline-md font-bold text-on-surface text-base">Squad Selection</h3>
+              <button type="button" @click="newEvent.selectedSquads = [...squads]" class="text-primary font-label-sm text-xs font-bold hover:underline">Select All</button>
+            </div>
+            <div class="space-y-sm max-h-[360px] overflow-y-auto custom-scrollbar pr-sm">
+              <template x-for="sq in squads" :key="sq">
+                <div @click="toggleSquadSelection(sq)" class="flex items-center justify-between p-md bg-surface-container-lowest border border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-all group">
+                  <div class="flex items-center gap-md">
+                    <div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container text-xs" x-text="sq.substring(0, 3)"></div>
+                    <div>
+                      <p class="font-label-md font-bold text-on-surface text-xs" x-text="sq"></p>
+                      <p class="font-label-sm text-outline text-[11px]" x-text="getSquadAthleteCount(sq) + ' Enrolled Athletes'"></p>
+                    </div>
+                  </div>
+                  <input type="checkbox" :checked="newEvent.selectedSquads.includes(sq)" class="w-5 h-5 rounded border-outline text-primary focus:ring-primary"/>
+                </div>
+              </template>
+            </div>
+            <div class="mt-md p-md bg-on-surface/5 rounded-lg">
+              <div class="flex justify-between items-center text-on-surface">
+                <span class="font-label-md text-xs font-bold">Total Athletes Impacted</span>
+                <span class="font-headline-sm font-extrabold text-base text-primary" x-text="getTotalImpactedAthletes()"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Final Review Card -->
+          <div class="bg-primary-container text-on-primary-container rounded-xl p-lg shadow-xl relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+            <h3 class="font-label-sm uppercase tracking-widest mb-md opacity-80 text-xs font-bold">Final Review</h3>
+            <div class="space-y-md">
+              <div class="flex gap-md items-start">
+                <span class="material-symbols-outlined mt-1">check_circle</span>
+                <div>
+                  <p class="font-headline-md leading-tight font-extrabold text-base" x-text="newEvent.title || 'U19 Regional Match'"></p>
+                  <p class="font-body-md opacity-90 text-xs mt-0.5" x-text="newEvent.location || 'Training Grounds, Main Pitch'"></p>
+                </div>
+              </div>
+              <div class="flex gap-md items-center text-xs">
+                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                <p class="font-label-md" x-text="(newEvent.date || '2023-10-24') + ' • ' + (newEvent.startTime || '14:00') + ' (' + (newEvent.durationMins || 90) + 'm)'"></p>
+              </div>
+            </div>
+            <button @click="saveEventFromCreator()" class="w-full mt-xl bg-surface-container-lowest text-primary py-lg rounded-xl font-label-md font-bold hover:bg-white transition-all active:scale-95 text-sm shadow-md">
+              Publish Event
+            </button>
+            <p class="text-center font-label-sm mt-md opacity-70 text-[11px]">Saves to schedule</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- VIEW 2: HISTORICAL STATS EDITOR & PERFORMANCE AUDIT WORKSPACE -->
+    <div x-show="currentView === 'audit'" class="h-[calc(100vh-64px)] p-lg flex flex-col gap-lg overflow-hidden">
+      <!-- Header & Picker Section -->
+      <section class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-md">
+        <div>
+          <nav class="flex gap-2 text-outline font-label-md text-xs mb-1">
+            <span>Performance</span>
+            <span>/</span>
+            <span class="text-on-surface font-semibold">Historical Data Audit</span>
+          </nav>
+          <h2 class="font-headline-lg text-on-surface font-extrabold text-2xl">Data Entry & Reconciliation</h2>
+        </div>
+        <div class="flex flex-wrap gap-md bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm items-end">
+          <!-- Custom Team Dropdown Component -->
+          <div class="flex flex-col gap-1">
+            <label class="font-label-sm text-outline text-[11px] font-bold">1. Select Team / Squad</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-xl font-body-md h-[40px] px-3 focus:ring-2 focus:ring-primary text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all min-w-[170px]">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
+                  <span class="truncate font-bold" x-text="currentSquad"></span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                   x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                   x-transition:leave="transition ease-in duration-100"
+                   x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                   x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                   class="absolute left-0 top-full mt-1.5 w-full min-w-[210px] bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto custom-scrollbar">
+                <template x-for="sq in squads" :key="sq">
+                  <div @click="currentSquad = sq; onSquadChange(); open = false" 
+                       class="px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                       :class="currentSquad === sq ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
+                    <span x-text="sq"></span>
+                    <span x-show="currentSquad === sq" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Test Event Dropdown Component -->
+          <div class="flex flex-col gap-1">
+            <label class="font-label-sm text-outline text-[11px] font-bold">2. Select Test Event</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-xl font-body-md h-[40px] px-3 focus:ring-2 focus:ring-primary text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all max-w-[280px] min-w-[210px]">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="material-symbols-outlined text-primary text-[18px]">event</span>
+                  <span class="truncate font-bold" x-text="!currentSquad ? 'Select Team First' : (getTestEventsForSquad().find(e => e.id === selectedAuditTestEventId) ? ((getTestEventsForSquad().find(e => e.id === selectedAuditTestEventId).date || '') + ' — ' + getTestEventsForSquad().find(e => e.id === selectedAuditTestEventId).title) : (getTestEventsForSquad().length === 0 ? 'No Test Events Found' : 'Select Test Event'))"></span>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                   x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                   x-transition:leave="transition ease-in duration-100"
+                   x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                   x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                   class="absolute left-0 top-full mt-1.5 w-full min-w-[280px] bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto custom-scrollbar">
+                <div x-show="getTestEventsForSquad().length === 0" class="px-3 py-3 text-xs text-outline font-semibold italic text-center">
+                  <span x-text="!currentSquad ? 'Please select a team/squad first' : 'No test events found for this squad'"></span>
+                </div>
+                <template x-for="evt in getTestEventsForSquad()" :key="evt.id">
+                  <div @click="selectedAuditTestEventId = evt.id; onAuditTestEventChange(); open = false" 
+                       class="px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                       :class="selectedAuditTestEventId === evt.id ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
+                    <span class="truncate" x-text="(evt.date || '2026-07-29') + ' — ' + evt.title"></span>
+                    <span x-show="selectedAuditTestEventId === evt.id" class="material-symbols-outlined text-[16px] text-primary ml-1 shrink-0">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons Column -->
+          <div class="flex flex-col gap-1">
+            <label class="font-label-sm text-transparent text-[11px] font-bold select-none">&nbsp;</label>
+            <div class="flex items-center gap-2">
+              <button @click="loadCheckInsAndRefresh()" class="bg-primary text-on-primary h-[40px] px-md rounded-xl font-label-md hover:opacity-90 transition-opacity flex items-center gap-1.5 text-xs font-bold shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+                Load Check-Ins
+              </button>
+              <button @click="showManageMetricsModal = true" class="bg-surface border border-outline-variant text-primary h-[40px] px-md rounded-xl font-label-md hover:bg-surface-container transition-colors flex items-center gap-1.5 text-xs font-bold shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">tune</span>
+                + Manage Metrics
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Workspace: List + Side Panel -->
+      <div class="flex-1 flex gap-lg min-h-0">
+        <!-- Student List Card -->
+        <div class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col">
+          <div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+            <div class="flex items-center gap-md">
+              <span class="font-headline-md text-on-surface font-bold text-base" x-text="currentSquad + ' — Checked-In Athletes'"></span>
+              <span class="bg-primary-container text-on-primary-container px-2.5 py-0.5 rounded-full text-[11px] font-extrabold" x-text="getAuditCheckedInAthletes().length + ' CHECKED IN'"></span>
+            </div>
+            <button @click="showManualCheckInModal = true" class="bg-primary text-on-primary hover:opacity-90 px-md py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-sm">
+              <span class="material-symbols-outlined text-[16px]">person_add</span>
+              + Check-In Player
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead class="sticky top-0 bg-surface-container-low z-10">
+                <tr class="text-outline font-label-sm text-xs border-b border-outline-variant uppercase">
+                  <th class="px-lg py-3">Name & ID</th>
+                  <th class="px-lg py-3">Position</th>
+                  <th class="px-lg py-3 text-center">Completion</th>
+                  <th class="px-lg py-3 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant">
+                <template x-for="athlete in getAuditCheckedInAthletes()" :key="athlete.id">
+                  <tr @click="selectAthleteForAudit(athlete)" 
+                      class="hover:bg-surface-container-high cursor-pointer transition-colors"
+                      :class="auditSelectedStudent && auditSelectedStudent.id === athlete.id ? 'bg-primary-fixed-dim/20 border-l-4 border-primary' : ''">
+                    <td class="px-lg py-3">
+                      <div class="flex items-center gap-md">
+                        <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                        <div>
+                          <div class="font-body-md font-bold text-on-surface text-xs" x-text="athlete.name"></div>
+                          <div class="text-[11px] text-outline" x-text="'ID: #' + athlete.id"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-lg py-3 font-body-md text-on-surface-variant text-xs" x-text="athlete.position || '--'"></td>
+                    <td class="px-lg py-3">
+                      <div class="flex items-center gap-2">
+                        <div class="flex-1 h-2 bg-surface-container rounded-full overflow-hidden">
+                          <div class="h-full bg-primary transition-all duration-300" :style="`width: ${getAthleteCompletionPercent(athlete.id)}%`"></div>
+                        </div>
+                        <span class="font-label-sm text-primary text-[11px] font-bold" x-text="getAthleteCompletionPercent(athlete.id) + '%'"></span>
+                      </div>
+                    </td>
+                    <td class="px-lg py-3 text-right font-label-md text-xs text-outline font-semibold" x-text="athlete.status || '--'"></td>
+                  </tr>
+                </template>
+
+                <tr x-show="getAuditCheckedInAthletes().length === 0">
+                  <td colspan="4" class="text-center py-12 text-outline text-xs">
+                    <span class="material-symbols-outlined text-2xl text-outline mb-2 block">how_to_reg</span>
+                    No athletes checked in for this event yet.<br>Click <strong>"+ Check-In Player"</strong> above or <strong>"Load Check-Ins"</strong> to fetch from the server.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Audit Side Panel -->
+        <aside class="w-[440px] bg-surface border border-outline-variant rounded-xl flex flex-col shadow-lg overflow-hidden" x-show="auditSelectedStudent">
+          <!-- Panel Header -->
+          <div class="p-lg border-b border-outline-variant bg-surface-container-lowest">
+            <div class="flex justify-between items-start mb-sm">
+              <div class="flex items-center gap-md">
+                <div class="w-11 h-11 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-extrabold text-base" x-text="getInitials(auditSelectedStudent ? auditSelectedStudent.name : '')"></div>
+                <div>
+                  <h3 class="font-headline-md text-on-surface font-extrabold text-base" x-text="auditSelectedStudent ? auditSelectedStudent.name : ''"></h3>
+                  <p class="font-label-md text-outline text-xs" x-text="'Session: ' + auditSessionDate + ' Performance Test'"></p>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-sm mt-2">
+              <span class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider">High Variability Detected</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Panel Content loaded from test_metrics -->
+          <div class="flex-1 overflow-y-auto p-lg custom-scrollbar space-y-md">
+            <template x-for="metric in testMetrics" :key="metric.id">
+              <div class="bg-surface-container-low p-md rounded-xl border border-outline-variant">
+                <div class="flex justify-between items-center mb-sm">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-sm">speed</span>
+                    <span class="font-label-md text-on-surface-variant uppercase font-bold text-xs" x-text="metric.name + ' (' + metric.unit + ')'"></span>
+                  </div>
+                  <span class="text-[11px] font-bold text-primary" x-text="metric.category"></span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10px] font-bold text-primary uppercase">Score</label>
+                  <input x-model="auditInputs[metric.id]" class="bg-surface border-2 border-primary rounded-lg font-headline-md py-2 px-md text-sm font-bold text-on-surface focus:ring-0" step="any" type="number" :placeholder="'Enter score in ' + metric.unit"/>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="testMetrics.length === 0" class="text-center py-6 text-xs text-outline">
+              Loading test evaluation metrics...
+            </div>
+
+            <!-- Audit Observation Notes -->
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-outline text-xs font-bold">Audit Observation / Notes</label>
+              <textarea x-model="auditInputs.notes" class="w-full bg-surface-container-low border-outline-variant rounded-xl p-md text-xs font-body-md focus:ring-primary h-20" placeholder="Mention any injury or environmental factors for data deviation..."></textarea>
+            </div>
+          </div>
+
+          <!-- Panel Footer Actions -->
+          <div class="p-lg border-t border-outline-variant bg-surface-container flex gap-md">
+            <button @click="selectAthleteForAudit(auditSelectedStudent)" class="flex-1 bg-surface border border-outline-variant text-on-surface-variant font-label-md text-xs font-bold py-2.5 rounded-lg hover:bg-surface-container-highest transition-colors">
+              Discard Changes
+            </button>
+            <button @click="saveAuditReconciliation()" class="flex-1 bg-primary text-on-primary font-label-md text-xs font-bold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-[18px]">verified</span>
+              Save & Audit
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- VIEW 3: STUDENT ATHLETES ROSTER DIRECTORY -->
+    <div x-show="currentView === 'roster'" class="max-w-6xl mx-auto p-xl space-y-lg">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+        <div>
+          <h2 class="font-headline-lg font-extrabold text-2xl text-on-surface">Student Athletes Directory</h2>
+          <p class="font-body-md text-xs text-on-surface-variant mt-0.5" x-text="'Showing registered players for ' + (directorySquadFilter === 'ALL' ? 'All Managed Squads' : directorySquadFilter)"></p>
+        </div>
+
+        <div class="flex items-center gap-md">
+          <!-- Custom Squad Filter Dropdown Component -->
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-xl font-body-md py-2 px-3 focus:ring-2 focus:ring-primary text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all min-w-[180px]">
+              <div class="flex items-center gap-1.5 truncate">
+                <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
+                <span class="truncate font-bold" x-text="directorySquadFilter === 'ALL' ? 'All Managed Squads' : directorySquadFilter"></span>
+              </div>
+              <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" 
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 class="absolute right-0 top-full mt-1.5 w-full min-w-[200px] bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto custom-scrollbar">
+              <div @click="directorySquadFilter = 'ALL'; open = false" 
+                   class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center transition-colors"
+                   :class="directorySquadFilter === 'ALL' ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                <span>All Managed Squads</span>
+                <span x-show="directorySquadFilter === 'ALL'" class="material-symbols-outlined text-[16px] text-primary">check</span>
+              </div>
+              <template x-for="sq in squads" :key="sq">
+                <div @click="directorySquadFilter = sq; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center transition-colors"
+                     :class="directorySquadFilter === sq ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="sq"></span>
+                  <span x-show="directorySquadFilter === sq" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <button type="button" @click="openAddAthlete()" class="bg-primary text-on-primary px-lg py-2.5 rounded-xl font-label-md text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">group_add</span> + Register Student
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+        <template x-for="athlete in getDirectoryAthletesForLoggedInCoach()" :key="athlete.id">
+          <div @click="openEditAthlete(athlete)" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm space-y-md hover:border-primary hover:shadow-md transition-all cursor-pointer group">
+            <div class="flex items-center gap-md">
+              <div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-extrabold text-base" x-text="getInitials(athlete.name)"></div>
+              <div class="flex-1">
+                <h3 class="font-bold text-on-surface text-sm" x-text="athlete.name"></h3>
+                <p class="text-xs text-outline font-semibold" x-text="athlete.position || 'Player'"></p>
+              </div>
+              <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+            </div>
+            <div class="text-xs text-on-surface-variant space-y-1 pt-1 border-t border-outline-variant">
+              <div>Squad: <span class="font-bold text-on-surface" x-text="athlete.team || 'Unassigned'"></span></div>
+              <div>Email: <span class="font-bold text-on-surface" x-text="athlete.email"></span></div>
+            </div>
+          </div>
+        </template>
+
+        <div x-show="getDirectoryAthletesForLoggedInCoach().length === 0" class="col-span-full text-center py-12 bg-surface-container-lowest border border-outline-variant rounded-xl space-y-2">
+          <span class="material-symbols-outlined text-outline text-3xl">person_off</span>
+          <p class="text-xs font-bold text-on-surface">No players registered for this squad</p>
+          <p class="text-[11px] text-outline">Click '+ Register Student' above to add a player to this team.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 5: SQUAD & TEAM MANAGEMENT WORKSPACE -->
+    <div x-show="currentView === 'squads'" class="max-w-6xl mx-auto p-xl space-y-lg">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+        <div>
+          <h2 class="font-headline-lg font-extrabold text-2xl text-on-surface">Squad & Team Management</h2>
+          <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Create squads, assign coaches, and manage player roster memberships.</p>
+        </div>
+        <button type="button" @click="showAddSquadModal = true" class="bg-primary text-on-primary px-lg py-2.5 rounded-xl font-label-md text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">group_add</span> + Create Squad
+        </button>
+      </div>
+
+      <!-- Squad Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+        <template x-for="sq in squads" :key="sq">
+          <div class="bg-surface-container-lowest border rounded-xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between"
+               :class="selectedSquadManagement === sq ? 'ring-2 ring-primary border-primary bg-primary-container/5' : 'border-outline-variant'">
+            <div>
+              <div class="flex justify-between items-start mb-sm">
+                <div class="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm" x-text="sq.substring(0, 3)"></div>
+                <span class="bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-full text-[11px] font-bold" x-text="getSquadAthleteCount(sq) + ' Players'"></span>
+              </div>
+              <h3 class="font-bold text-on-surface text-base" x-text="sq"></h3>
+              <p class="text-xs text-outline mt-0.5" x-text="'Head Coach: ' + getSquadCoachName(sq)"></p>
+            </div>
+
+            <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
+              <button type="button" @click="selectedSquadManagement = sq" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">groups</span> Manage Roster
+              </button>
+              <button type="button" @click="deleteSquadByName(sq)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Squad">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <div x-show="!squads || squads.length === 0" class="col-span-full text-center py-12 bg-surface-container-lowest border border-outline-variant rounded-2xl space-y-2">
+          <span class="material-symbols-outlined text-outline text-3xl">groups</span>
+          <p class="text-xs font-bold text-on-surface">No squads created yet</p>
+          <p class="text-[11px] text-outline">Click '+ Create Squad' above to set up your academy squads.</p>
+        </div>
+      </div>
+
+      <!-- Selected Squad Roster Panel -->
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-lg shadow-sm space-y-md">
+        <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+          <div>
+            <h3 class="font-headline-md font-bold text-lg text-on-surface" x-text="selectedSquadManagement + ' Active Roster'"></h3>
+            <p class="text-xs text-outline" x-text="getSquadAthleteCount(selectedSquadManagement) + ' players assigned to this squad'"></p>
+          </div>
+          <button type="button" @click="showAddSquadPlayerModal = true" class="bg-primary text-on-primary px-md py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:shadow transition-all">
+            <span class="material-symbols-outlined text-[16px]">person_add</span> + Add Player to Squad
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+          <template x-for="athlete in getDirectoryAthletesForSquad(selectedSquadManagement)" :key="athlete.id">
+            <div class="flex justify-between items-center p-md bg-surface border border-outline-variant rounded-xl shadow-xs hover:border-primary hover:shadow-md transition-all group">
+              <div @click="openEditAthlete(athlete)" class="flex items-center gap-md flex-1 cursor-pointer">
+                <div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                <div class="flex-1">
+                  <h4 class="font-bold text-xs text-on-surface" x-text="athlete.name"></h4>
+                  <p class="text-[11px] text-outline" x-text="(athlete.position || 'Player') + ' • ' + (athlete.email || '')"></p>
+                </div>
+                <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+              </div>
+              <button type="button" @click="removeAthleteFromSquad(athlete)" class="text-outline hover:text-error p-1.5 rounded-lg hover:bg-error-container/20 transition-colors ml-2" title="Remove from Squad">
+                <span class="material-symbols-outlined text-[18px]">person_remove</span>
+              </button>
+            </div>
+          </template>
+
+          <div x-show="getDirectoryAthletesForSquad(selectedSquadManagement).length === 0" class="col-span-full text-center py-8 text-xs text-outline">
+            No players assigned to <span class="font-bold text-on-surface" x-text="selectedSquadManagement"></span> yet. Click '+ Add Player to Squad' above to assign players.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: COACHES DIRECTORY -->
+    <div x-show="currentView === 'coaches'" class="max-w-6xl mx-auto p-xl space-y-lg">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="font-headline-lg font-extrabold text-2xl text-on-surface">Coaches Directory</h2>
+          <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Manage academy coaches and assignments.</p>
+        </div>
+        <button @click="openAddCoach()" class="bg-primary text-on-primary px-lg py-2.5 rounded-xl font-label-md text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">person_add</span> + Register Coach
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+        <template x-for="coach in coaches" :key="coach.id">
+          <div class="bg-surface-container-lowest border rounded-2xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between"
+               :class="loggedInCoach && loggedInCoach.email === coach.email ? 'ring-2 ring-primary border-primary bg-primary-container/5' : 'border-outline-variant'">
+            <div>
+              <div class="flex justify-between items-start mb-sm">
+                <div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-extrabold text-base" x-text="getInitials(coach.name)"></div>
+                <span x-show="loggedInCoach && loggedInCoach.email === coach.email" class="bg-primary text-on-primary px-2.5 py-0.5 rounded-full text-[10px] font-bold">Active Profile</span>
+              </div>
+              <h3 class="font-bold text-on-surface text-base" x-text="coach.name"></h3>
+
+              <div class="text-xs text-on-surface-variant space-y-1 pt-2 mt-2 border-t border-outline-variant/60">
+                <div>Academy: <span class="font-bold text-on-surface" x-text="coach.schoolName || 'OVK Academy'"></span></div>
+                <div>Email: <span class="font-bold text-on-surface" x-text="coach.email"></span></div>
+                <div x-show="coach.phone">Phone: <span class="font-bold text-on-surface" x-text="coach.phone"></span></div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
+              <button type="button" @click="loginAsCoach(coach.email)" 
+                      class="flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1"
+                      :class="loggedInCoach && loggedInCoach.email === coach.email ? 'bg-surface-container text-outline cursor-default' : 'bg-primary-container text-on-primary-container hover:opacity-90'">
+                <span class="material-symbols-outlined text-[16px]">switch_account</span>
+                <span x-text="loggedInCoach && loggedInCoach.email === coach.email ? 'Current Profile' : 'Switch Profile'"></span>
+              </button>
+              <button type="button" @click="confirmDeleteCoach(coach)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Coach">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- VIEW 5: DASHBOARD SPOTLIGHT -->
+    <div x-show="currentView === 'dashboard'" class="max-w-6xl mx-auto p-xl space-y-lg">
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm">
+        <h2 class="font-headline-md font-bold text-xl text-on-surface">Academy Spotlight & Command Center</h2>
+        <p class="text-xs text-outline mt-1">Live metrics across event schedules, coaching staff, and student benchmarks.</p>
+        <div class="grid grid-cols-3 gap-md mt-md">
+          <div class="p-md bg-surface-container rounded-xl text-center">
+            <div class="text-2xl font-extrabold text-primary" x-text="events.length"></div>
+            <div class="text-xs text-outline">Total Events Scheduled</div>
+          </div>
+          <div class="p-md bg-surface-container rounded-xl text-center">
+            <div class="text-2xl font-extrabold text-primary" x-text="coaches.length"></div>
+            <div class="text-xs text-outline">Coaches Onboarded</div>
+          </div>
+          <div class="p-md bg-surface-container rounded-xl text-center">
+            <div class="text-2xl font-extrabold text-primary" x-text="athletes.length"></div>
+            <div class="text-xs text-outline">Active Students</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Global Toast Notification -->
+  <div class="fixed bottom-lg right-lg px-lg py-md rounded-xl shadow-2xl flex items-center gap-md transition-all duration-300 z-[100] border"
+       :class="{
+         'bg-error-container text-on-error-container border-error/40': toastType === 'error',
+         'bg-emerald-950 text-emerald-100 border-emerald-500/40': toastType === 'success',
+         'bg-inverse-surface text-inverse-on-surface border-outline-variant/30': toastType !== 'error' && toastType !== 'success'
+       }"
+       x-show="showToast" x-cloak>
+    <span class="material-symbols-outlined text-lg"
+          :class="{
+            'text-error': toastType === 'error',
+            'text-emerald-400': toastType === 'success',
+            'text-tertiary-fixed': toastType !== 'error' && toastType !== 'success'
+          }"
+          x-text="toastType === 'error' ? 'error' : (toastType === 'success' ? 'check_circle' : 'info')"></span>
+    <span class="font-body-md text-xs font-semibold" x-text="toastMessage"></span>
+  </div>
+
+  <!-- MODAL: ADD COACH -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddCoachModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <h3 class="font-headline-md font-bold text-lg text-on-surface">Register New Coach</h3>
+      <form @submit.prevent="saveNewCoach()" class="space-y-md">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Coach Name *</label>
+          <input x-model="newCoach.name" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="text"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Email Address *</label>
+          <input x-model="newCoach.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="email"/>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showAddCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Save Coach</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD STUDENT ATHLETE -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <h3 class="font-headline-md font-bold text-lg text-on-surface">Register Student Athlete</h3>
+      <form @submit.prevent="saveNewAthlete()" class="space-y-md">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Student Name *</label>
+          <input x-model="newAthlete.name" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="text"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Email Address</label>
+          <input x-model="newAthlete.email" class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="email"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Squad / Team</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="newAthlete.team || squads[0]"></span>
+              <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+              <template x-for="sq in squads" :key="sq">
+                <div @click="newAthlete.team = sq; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="newAthlete.team === sq ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="sq"></span>
+                  <span x-show="newAthlete.team === sq" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showAddModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT STUDENT ATHLETE -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+        <div>
+          <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Athlete Profile</h3>
+          <p class="text-[11px] text-outline" x-text="'ID: ' + editAthleteData.id"></p>
+        </div>
+        <button type="button" @click="showEditModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form @submit.prevent="saveEditAthlete()" class="space-y-md">
+        <div class="grid grid-cols-2 gap-md">
+          <div class="col-span-2">
+            <label class="block text-xs font-bold text-outline mb-1">Full Name *</label>
+            <input x-model="editAthleteData.name" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text"/>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-bold text-outline mb-1">Email Address</label>
+            <input x-model="editAthleteData.email" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="email"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-outline mb-1">Primary Position</label>
+            <input x-model="editAthleteData.position" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Fly-half"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-outline mb-1">Secondary Position</label>
+            <input x-model="editAthleteData.secondaryPosition" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Fullback"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-outline mb-1">Age</label>
+            <input x-model="editAthleteData.age" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="number" min="5" max="30"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-outline mb-1">Status</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between">
+                <span x-text="editAthleteData.status || 'Select Status'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+                <template x-for="st in ['Active', 'Injured', 'Suspended', 'Inactive']" :key="st">
+                  <div @click="editAthleteData.status = st; open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10"
+                       :class="editAthleteData.status === st ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="st"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="flex justify-between items-center pt-2">
+          <button type="button" @click="showEditModal = false; confirmDeleteAthlete(editAthleteData)" class="px-3 py-2 text-xs font-bold text-error hover:bg-error-container/20 rounded-lg transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">delete</span> Delete
+          </button>
+          <div class="flex gap-2">
+            <button type="button" @click="showEditModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg hover:bg-surface-container-highest transition-colors">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-md hover:shadow-lg transition-all">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- MODAL: SWITCH ACTIVE COACH ACCOUNT -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showSwitchCoachModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <div class="flex justify-between items-center">
+        <h3 class="font-headline-md font-bold text-lg text-on-surface">Active Coach Identity</h3>
+        <button type="button" @click="showSwitchCoachModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <div class="p-md bg-primary-container/10 border border-primary/20 rounded-xl flex items-center gap-md">
+        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm" x-text="getInitials(loggedInCoach ? loggedInCoach.name : '')"></div>
+        <div>
+          <p class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : ''"></p>
+          <p class="text-[11px] text-primary font-semibold" x-text="loggedInCoach ? loggedInCoach.email : ''"></p>
+        </div>
+      </div>
+
+      <form @submit.prevent="loginAsCoach()" class="space-y-md pt-2">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Switch Coach Account by Email</label>
+          <input x-model="switchCoachEmail" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-primary" placeholder="e.g. janmen777@gmail.com" type="email"/>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="loginAsCoach('janmen777@gmail.com')" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg text-primary">Login as janmen777@gmail.com</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Switch Identity</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- MODAL: MANAGE TEAM TEST METRICS -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+        <div>
+          <h3 class="font-headline-md font-bold text-lg text-on-surface">Manage Squad Test Metrics</h3>
+          <p class="text-xs text-outline" x-text="'Configured evaluation metrics for ' + currentSquad"></p>
+        </div>
+        <button type="button" @click="showManageMetricsModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Add New Custom Test Metric Form -->
+      <form @submit.prevent="createCustomMetric()" class="bg-surface-container-low p-md rounded-xl border border-outline-variant space-y-md">
+        <h4 class="font-bold text-xs text-primary uppercase">Add Custom Test Metric for <span x-text="currentSquad"></span></h4>
+        <div class="grid grid-cols-2 gap-md">
+          <div>
+            <label class="block text-[11px] font-bold text-outline mb-1">Metric Name *</label>
+            <input x-model="newMetricForm.name" required class="w-full bg-surface border border-outline-variant rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. 10m Fly, YOYO Test, Squat 1RM" type="text"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-outline mb-1">Unit of Measurement *</label>
+            <input x-model="newMetricForm.unit" required class="w-full bg-surface border border-outline-variant rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" placeholder="sec, kg, cm, inches, pts" type="text"/>
+          </div>
+        </div>
+        <!-- Goal Direction Preference -->
+        <div class="space-y-1">
+          <label class="block text-[11px] font-bold text-outline">Goal Direction</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" 
+                    @click="newMetricForm.goalDirection = 'HIGHER_IS_BETTER'"
+                    class="p-2 border rounded-xl font-label-md text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                    :class="newMetricForm.goalDirection === 'HIGHER_IS_BETTER' ? 'border-2 border-primary bg-primary-fixed-dim text-primary ring-2 ring-primary ring-opacity-20 font-extrabold' : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant'">
+              <span class="material-symbols-outlined text-[16px]">arrow_upward</span> Higher is Better
+            </button>
+            <button type="button" 
+                    @click="newMetricForm.goalDirection = 'LOWER_IS_BETTER'"
+                    class="p-2 border rounded-xl font-label-md text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                    :class="newMetricForm.goalDirection === 'LOWER_IS_BETTER' ? 'border-2 border-primary bg-primary-fixed-dim text-primary ring-2 ring-primary ring-opacity-20 font-extrabold' : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant'">
+              <span class="material-symbols-outlined text-[16px]">arrow_downward</span> Lower is Better
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-1">
+          <div class="flex items-center gap-md">
+            <label class="text-[11px] font-bold text-outline">Category:</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-lg text-xs py-1.5 px-3 font-semibold flex items-center gap-1 shadow-sm hover:border-primary transition-all">
+                <span class="font-bold" x-text="newMetricForm.category"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                   x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                   class="absolute left-0 top-full mt-1 bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 min-w-[130px]">
+                <template x-for="cat in ['Speed', 'Strength', 'Stamina', 'Agility', 'Power']" :key="cat">
+                  <div @click="newMetricForm.category = cat; open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center transition-colors"
+                       :class="newMetricForm.category === cat ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="cat"></span>
+                    <span x-show="newMetricForm.category === cat" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-sm hover:opacity-90 transition-all flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">add</span> Save Metric
+          </button>
+        </div>
+      </form>
+
+      <!-- Active Metrics List -->
+      <div class="space-y-sm max-h-[260px] overflow-y-auto custom-scrollbar">
+        <h4 class="font-bold text-xs text-on-surface uppercase">Active Evaluation Metrics</h4>
+        <template x-for="metric in testMetrics" :key="metric.id">
+          <div class="flex justify-between items-center p-md bg-surface border border-outline-variant rounded-xl">
+            <div>
+              <div class="flex items-center gap-2">
+                <p class="font-bold text-xs text-on-surface" x-text="metric.name"></p>
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold flex items-center gap-0.5"
+                      :class="metric.goalDirection === 'LOWER_IS_BETTER' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
+                  <span class="material-symbols-outlined text-[12px]" x-text="metric.goalDirection === 'LOWER_IS_BETTER' ? 'arrow_downward' : 'arrow_upward'"></span>
+                  <span x-text="metric.goalDirection === 'LOWER_IS_BETTER' ? 'Lower is Better' : 'Higher is Better'"></span>
+                </span>
+              </div>
+              <p class="text-[11px] text-outline mt-0.5" x-text="metric.category + ' • Unit: ' + metric.unit"></p>
+            </div>
+            <button type="button" @click="deleteMetricFromApi(metric.id)" class="text-error hover:bg-error-container p-1.5 rounded-lg transition-colors" title="Delete Metric">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </div>
+        </template>
+        <div x-show="testMetrics.length === 0" class="text-center py-4 text-xs text-outline">
+          No metrics configured yet for this squad. Add one above!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MANUALLY CHECK IN PLAYER FOR TEST EVENT -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManualCheckInModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+        <div>
+          <h3 class="font-headline-md font-bold text-lg text-on-surface">Manually Check-In Player</h3>
+          <p class="text-xs text-outline" x-text="'Add student athlete to ' + currentSquad + ' test session'"></p>
+        </div>
+        <button type="button" @click="showManualCheckInModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-md">
+        <label class="block text-xs font-bold text-outline">Select Unchecked Player from <span x-text="currentSquad"></span></label>
+        <div class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+          <template x-for="athlete in getUncheckedAthletesForEvent()" :key="athlete.id">
+            <div @click="checkInAthleteForEvent(athlete)" class="p-md border border-outline-variant rounded-xl hover:bg-primary-container/10 hover:border-primary cursor-pointer transition-all flex justify-between items-center">
+              <div class="flex items-center gap-md">
+                <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                <div>
+                  <p class="font-bold text-xs text-on-surface" x-text="athlete.name"></p>
+                  <p class="text-[11px] text-outline" x-text="athlete.position || 'Player'"></p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-primary flex items-center gap-1">
+                Check In <span class="material-symbols-outlined text-[16px]">add_circle</span>
+              </span>
+            </div>
+          </template>
+          <div x-show="getUncheckedAthletesForEvent().length === 0" class="text-center py-6 text-xs text-outline font-semibold">
+            All players in <span x-text="currentSquad"></span> are already checked in for this event!
+          </div>
+        </div>
+        <div class="flex justify-end pt-2">
+          <button type="button" @click="showManualCheckInModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE SQUAD -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+        <div>
+          <h3 class="font-headline-md font-bold text-lg text-on-surface">Create New Squad</h3>
+          <p class="text-xs text-outline">Establish a new team/squad roster for your academy</p>
+        </div>
+        <button type="button" @click="showAddSquadModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form @submit.prevent="createSquad()" class="space-y-md">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Squad Name *</label>
+          <input x-model="newSquadName" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. U16 Academy Elite, U15 Sevens, U18 First XV" type="text"/>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showAddSquadModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-sm hover:opacity-90 transition-all flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">add</span> Save Squad
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD PLAYER TO SQUAD -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadPlayerModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+        <div>
+          <h3 class="font-headline-md font-bold text-lg text-on-surface">Add Player to Squad</h3>
+          <p class="text-xs text-outline" x-text="'Assign player to ' + selectedSquadManagement"></p>
+        </div>
+        <button type="button" @click="showAddSquadPlayerModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-md">
+        <label class="block text-xs font-bold text-outline">Select Academy Athlete to Assign</label>
+        <div class="space-y-2 max-h-[280px] overflow-y-auto custom-scrollbar">
+          <template x-for="athlete in getAvailableAthletesForSquad(selectedSquadManagement)" :key="athlete.id">
+            <div @click="assignAthleteToSquad(athlete, selectedSquadManagement)" class="p-md border border-outline-variant rounded-xl hover:bg-primary-container/10 hover:border-primary cursor-pointer transition-all flex justify-between items-center">
+              <div class="flex items-center gap-md">
+                <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs" x-text="getInitials(athlete.name)"></div>
+                <div>
+                  <p class="font-bold text-xs text-on-surface" x-text="athlete.name"></p>
+                  <p class="text-[11px] text-outline" x-text="(athlete.position || 'Player') + (athlete.team && athlete.team !== 'Unassigned' ? ' • Currently in ' + athlete.team : ' • Unassigned')"></p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-primary flex items-center gap-1">
+                Assign <span class="material-symbols-outlined text-[16px]">add_circle</span>
+              </span>
+            </div>
+          </template>
+          <div x-show="getAvailableAthletesForSquad(selectedSquadManagement).length === 0" class="text-center py-6 text-xs text-outline font-semibold">
+            No other athletes registered in the academy yet. Click '+ Register Brand New Player' below!
+          </div>
+        </div>
+        <div class="border-t border-outline-variant pt-3 flex justify-between items-center">
+          <button type="button" @click="showAddSquadPlayerModal = false; openAddAthlete();" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">person_add</span> + Register Brand New Player
+          </button>
+          <button type="button" @click="showAddSquadPlayerModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE EVENT -->
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteEventConfirm" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center gap-3 text-error">
+        <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <div>
+          <h3 class="font-headline-md font-bold text-base text-on-surface">Delete Event?</h3>
+          <p class="text-xs text-outline">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant font-medium">
+        Are you sure you want to delete <strong class="text-on-surface" x-text="eventToDelete?.title || 'this event'"></strong>?
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/60">
+        <button type="button" @click="showDeleteEventConfirm = false; eventToDelete = null;" class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-xs font-bold rounded-xl transition-colors">Cancel</button>
+        <button type="button" @click="executeDeleteEvent()" class="px-4 py-2 bg-error text-on-error text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity">Delete Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE ATHLETE -->
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteAthleteConfirm" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center gap-3 text-error">
+        <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <div>
+          <h3 class="font-headline-md font-bold text-base text-on-surface">Delete Athlete Profile?</h3>
+          <p class="text-xs text-outline">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant font-medium">
+        Are you sure you want to delete <strong class="text-on-surface" x-text="athleteToDelete?.name || 'this athlete'"></strong>?
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/60">
+        <button type="button" @click="showDeleteAthleteConfirm = false; athleteToDelete = null;" class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-xs font-bold rounded-xl transition-colors">Cancel</button>
+        <button type="button" @click="executeDeleteAthlete()" class="px-4 py-2 bg-error text-on-error text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity">Delete Athlete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE COACH -->
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteCoachConfirm" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center gap-3 text-error">
+        <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <div>
+          <h3 class="font-headline-md font-bold text-base text-on-surface">Delete Coach Profile?</h3>
+          <p class="text-xs text-outline">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant font-medium">
+        Are you sure you want to delete <strong class="text-on-surface" x-text="coachToDelete?.name || 'this coach'"></strong>?
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/60">
+        <button type="button" @click="showDeleteCoachConfirm = false; coachToDelete = null;" class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-xs font-bold rounded-xl transition-colors">Cancel</button>
+        <button type="button" @click="executeDeleteCoach()" class="px-4 py-2 bg-error text-on-error text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity">Delete Coach</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT EVENT -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditEventModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-lg p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-md">
+        <div>
+          <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Event Parameters</h3>
+          <p class="text-xs text-outline">Update session details, date, time, or venue</p>
+        </div>
+        <button type="button" @click="showEditEventModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form @submit.prevent="saveEditedEvent()" class="space-y-md">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Event Title *</label>
+          <input x-model="editingEvent.title" required class="w-full bg-background border border-outline-variant rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" type="text"/>
+        </div>
+
+        <div class="grid grid-cols-2 gap-md">
+          <div>
+            <label class="block text-xs font-bold text-outline mb-1">Event Type</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-surface border border-outline-variant rounded-xl text-xs py-2 px-3 font-semibold flex items-center justify-between shadow-sm">
+                <span class="font-bold" x-text="editingEvent.eventType"></span>
+                <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
+                <template x-for="cat in ['Match', 'Field', 'Fitness Test', 'Gym']" :key="cat">
+                  <div @click="editingEvent.eventType = cat; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="editingEvent.eventType === cat ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="cat"></span>
+                    <span x-show="editingEvent.eventType === cat" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-outline mb-1">Assigned Squad</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-surface border border-outline-variant rounded-xl text-xs py-2 px-3 font-semibold flex items-center justify-between shadow-sm">
+                <span class="font-bold truncate" x-text="editingEvent.team || 'U18 Academy Elite'"></span>
+                <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                <template x-for="sq in squads" :key="sq">
+                  <div @click="editingEvent.team = sq; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="editingEvent.team === sq ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="sq"></span>
+                    <span x-show="editingEvent.team === sq" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-md">
+          <div class="col-span-1">
+            <label class="block text-xs font-bold text-outline mb-1">Date *</label>
+            <div class="relative" x-data="customDatePicker(editingEvent.date, (d) => { editingEvent.date = d; })" x-effect="if (editingEvent.date) { selectedDateStr = editingEvent.date; }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span class="font-bold truncate" x-text="formattedDate"></span>
+                <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+              </button>
+              <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                <div class="flex items-center justify-between">
+                  <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                  <span class="font-bold text-xs" x-text="monthYearTitle"></span>
+                  <button type="button" @click="nextMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                </div>
+                <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                <div class="grid grid-cols-7 gap-1 text-center">
+                  <template x-for="cell in calendarGrid" :key="cell.key">
+                    <button type="button" @click="cell.inMonth && selectDate(cell.dateStr)" :disabled="!cell.inMonth" class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs" :class="cell.isSelected ? 'bg-primary text-on-primary font-bold' : 'text-on-surface'"><span x-text="cell.dayNum"></span></button>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-1">
+            <label class="block text-xs font-bold text-outline mb-1">Start Time</label>
+            <div class="relative" x-data="customTimePicker(editingEvent.startTime, (t) => { editingEvent.startTime = t; })" x-effect="if (editingEvent.startTime && editingEvent.startTime.includes(':')) { selectedHour = String(editingEvent.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(editingEvent.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span class="font-bold" x-text="timeStr"></span>
+                <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
+              </button>
+              <div x-show="open" class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[280px] space-y-3">
+                <div class="flex items-center justify-center gap-2">
+                  <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                  <span class="font-bold text-xl">:</span>
+                  <button type="button" @click="pickerMode = 'minute'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                </div>
+                <div class="relative w-[210px] h-[210px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center border border-outline-variant/50">
+                  <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
+                    <circle cx="115" cy="115" r="4" fill="#003EC7" />
+                    <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" />
+                    <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+                  </svg>
+                  <template x-if="pickerMode === 'hour'">
+                    <div class="absolute inset-0">
+                      <template x-for="(h, idx) in outerHours" :key="'eout_'+h">
+                        <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface'"><span x-text="h"></span></button>
+                      </template>
+                    </div>
+                  </template>
+                  <template x-if="pickerMode === 'minute'">
+                    <div class="absolute inset-0">
+                      <template x-for="(m, idx) in minutes" :key="'emin_'+m">
+                        <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface'"><span x-text="m"></span></button>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant">
+                  <button type="button" @click="confirmTime()" class="px-3 py-1 text-xs font-bold text-primary">OK</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-1">
+            <label class="block text-xs font-bold text-outline mb-1">Duration (Mins)</label>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span class="font-bold" x-text="editingEvent.durationMins + 'm'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
+                <template x-for="dur in [30, 45, 60, 90, 120]" :key="dur">
+                  <div @click="editingEvent.durationMins = dur; open = false" class="px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="editingEvent.durationMins === dur ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="dur + ' Minutes'"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Venue / Location</label>
+          <input x-model="editingEvent.location" class="w-full bg-background border border-outline-variant rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" type="text"/>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant">
+          <button type="button" @click="showEditEventModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">save</span> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
