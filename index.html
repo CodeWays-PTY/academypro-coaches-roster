@@ -1063,6 +1063,7 @@
         },
 
         async loadCheckInsAndRefresh() {
+          await this.fetchTestResultsFromApi();
           await this.fetchCheckinsForEvent(this.selectedAuditTestEventId);
           const list = this.getAuditCheckedInAthletes();
           if (list.length > 0) {
