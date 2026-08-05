@@ -143,7 +143,10 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// 4.5 Global Error Handler
+// 4.5 Favicon & Static Fallbacks
+app.get('/favicon.ico', (c) => c.text('', 204));
+
+// 4.6 Global Error Handler
 app.onError((err, c) => {
   console.error('[Global Error Handler] Error:', err);
   const status = err instanceof SyntaxError ? 400 : 500;
@@ -895,6 +898,30 @@ app.delete('/api/athletes/:id', async (c) => {
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }
+});
+
+// Route Aliases: /api/dashboard/athletes
+app.get('/api/dashboard/athletes', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/athletes';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.post('/api/dashboard/athletes', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/athletes';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.put('/api/dashboard/athletes/:id', async (c) => {
+  const id = c.req.param('id');
+  const url = new URL(c.req.url);
+  url.pathname = `/api/athletes/${id}`;
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+app.delete('/api/dashboard/athletes/:id', async (c) => {
+  const id = c.req.param('id');
+  const url = new URL(c.req.url);
+  url.pathname = `/api/athletes/${id}`;
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
 });
 
 // Route: Get Coaches
@@ -4616,6 +4643,17 @@ app.post('/api/sms/verify-code', async (c) => {
     success: false,
     message: 'Invalid or expired verification code. Please check your SMS and try again.'
   }, 400);
+});
+
+// Global 404 Route Handler & Observer Logging
+app.notFound((c) => {
+  console.warn(`[Observer Warning] 404 Route Not Found: ${c.req.method} ${c.req.url}`);
+  return c.json({
+    success: false,
+    message: `API Route Not Found: ${c.req.method} ${new URL(c.req.url).pathname}`,
+    path: new URL(c.req.url).pathname,
+    method: c.req.method
+  }, 404);
 });
 
 export default app;
