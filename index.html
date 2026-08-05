@@ -1469,18 +1469,6 @@
             role: this.editCoachItem.role || 'Coach'
           };
 
-          if (idx !== -1) {
-            this.coaches[idx] = { ...this.coaches[idx], ...updatedItem };
-          }
-          this.saveCoachesToStorage();
-          this.showEditCoachModal = false;
-          this.triggerToast(`Coach '${updatedItem.name}' updated successfully!`, 'success');
-
-          if (this.loggedInCoach && (this.loggedInCoach.id === updatedItem.id || (this.loggedInCoach.email && this.loggedInCoach.email.toLowerCase() === targetEmail))) {
-            this.loggedInCoach = { ...this.loggedInCoach, ...updatedItem };
-            localStorage.setItem('academypro_logged_in_coach', JSON.stringify(this.loggedInCoach));
-          }
-
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/coaches/${encodeURIComponent(updatedItem.id)}`, {
               method: 'PUT',
@@ -1488,11 +1476,24 @@
               body: JSON.stringify(updatedItem)
             });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok || data.success === false) {
-              this.triggerToast(data.message || 'Server sync warning: could not save to cloud database', 'warning');
+            if (res.ok && data.success !== false) {
+              if (idx !== -1) {
+                this.coaches[idx] = { ...this.coaches[idx], ...updatedItem };
+              }
+              this.saveCoachesToStorage();
+              this.showEditCoachModal = false;
+              this.triggerToast(`Coach '${updatedItem.name}' updated successfully!`, 'success');
+
+              if (this.loggedInCoach && (this.loggedInCoach.id === updatedItem.id || (this.loggedInCoach.email && this.loggedInCoach.email.toLowerCase() === targetEmail))) {
+                this.loggedInCoach = { ...this.loggedInCoach, ...updatedItem };
+                localStorage.setItem('academypro_logged_in_coach', JSON.stringify(this.loggedInCoach));
+              }
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to update coach on server', 'error');
             }
           } catch (err) {
             console.log('Coach PUT error:', err);
+            this.triggerToast('Network error: could not save coach changes', 'error');
           }
         },
 
@@ -1577,11 +1578,6 @@
             email: (this.editAthleteData.email || '').toLowerCase().trim()
           };
 
-          this.athletes[idx] = updatedItem;
-          this.saveAthletesToStorage();
-          this.showEditModal = false;
-          this.triggerToast('Athlete updated successfully!', 'success');
-
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(updatedItem.id)}`, {
               method: 'PUT',
@@ -1597,10 +1593,18 @@
               })
             });
             const data = await res.json().catch(() => ({}));
-            if (!data.success) {
-              this.triggerToast(data.error || 'Failed to update athlete on server', 'error');
+            if (res.ok && data.success !== false) {
+              this.athletes[idx] = updatedItem;
+              this.saveAthletesToStorage();
+              this.showEditModal = false;
+              this.triggerToast('Athlete updated successfully!', 'success');
+            } else {
+              this.triggerToast(data.error || data.message || 'Failed to update athlete on server', 'error');
             }
-          } catch (err) { console.log('Athlete PUT error:', err); }
+          } catch (err) {
+            console.log('Athlete PUT error:', err);
+            this.triggerToast('Network error: could not save athlete changes', 'error');
+          }
         },
 
         confirmDeleteAthlete(athlete) {
