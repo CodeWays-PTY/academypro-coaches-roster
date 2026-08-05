@@ -758,42 +758,12 @@
           return Math.min(100, Math.round((completedCount / totalMetrics) * 100));
         },
 
-        getCalculatedNextOccurrenceDate(evt) {
-          if (!evt || !evt.date) return '';
-          const todayStr = new Date().toISOString().split('T')[0];
-          
-          if (!evt.recurrenceRule || evt.recurrenceRule === 'Does Not Repeat') {
-            return evt.date;
-          }
-
-          if (evt.date >= todayStr) {
-            return evt.date;
-          }
-
-          const evtDate = new Date(evt.date + 'T00:00:00');
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-
-          let diffDays = Math.ceil((today - evtDate) / (1000 * 60 * 60 * 24));
-          let weeks = Math.ceil(diffDays / 7);
-          if (weeks <= 0) weeks = 1;
-
-          const nextDate = new Date(evtDate);
-          nextDate.setDate(nextDate.getDate() + (weeks * 7));
-
-          if (nextDate < today) {
-            nextDate.setDate(nextDate.getDate() + 7);
-          }
-
-          return nextDate.toISOString().split('T')[0];
-        },
-
         getFilteredUpcomingEvents() {
           if (!this.events || this.events.length === 0) return [];
           const todayStr = new Date().toISOString().split('T')[0];
           let list = this.events.map(e => ({
             ...e,
-            displayDate: this.getCalculatedNextOccurrenceDate(e)
+            displayDate: e.date
           }));
 
           if (this.eventSquadFilter && this.eventSquadFilter !== 'ALL') {
@@ -810,11 +780,11 @@
           }
 
           if (this.eventTimeScope === 'upcoming') {
-            list = list.filter(e => e.displayDate >= todayStr);
-            return list.sort((a, b) => (a.displayDate || '').localeCompare(b.displayDate || ''));
+            list = list.filter(e => (e.displayDate || e.date) >= todayStr);
+            return list.sort((a, b) => (a.displayDate || a.date || '').localeCompare(b.displayDate || b.date || ''));
           } else {
-            list = list.filter(e => e.displayDate < todayStr);
-            return list.sort((a, b) => (b.displayDate || '').localeCompare(a.displayDate || ''));
+            list = list.filter(e => (e.displayDate || e.date) < todayStr);
+            return list.sort((a, b) => (b.displayDate || b.date || '').localeCompare(a.displayDate || a.date || ''));
           }
         },
 
@@ -1038,6 +1008,10 @@
             this.triggerToast('Please provide an Event Title and Date', 'error');
             return;
           }
+          if (this.occurrenceType === 'recurring' && !this.newEvent.untilDate) {
+            this.triggerToast('Please select a Recurrence End Date (Until Date) for recurring events', 'error');
+            return;
+          }
 
           const created = {
             id: `EVT-${Date.now()}`,
@@ -1049,9 +1023,10 @@
             location: (this.newEvent.location || 'Main Pitch A').trim(),
             team: this.newEvent.selectedSquads.join(', ') || 'U15 Squad',
             ageGroup: this.newEvent.selectedSquads[0] || 'U15 Squad',
-            schoolId: 'OVK',
+            schoolId: '1',
             recurrenceRule: this.occurrenceType === 'recurring' ? (this.newEvent.repeatDays.length > 0 ? `Weekly on ${this.newEvent.repeatDays.join(', ')}` : 'Weekly') : 'Does Not Repeat',
             recurrenceEndDate: this.newEvent.untilDate || null,
+            untilDate: this.newEvent.untilDate || null,
             isImportant: this.selectedEventCategory === 'Match Session' || this.selectedEventCategory === 'Fitness Test' || this.selectedEventCategory === 'Test Day' ? 1 : 0
           };
 

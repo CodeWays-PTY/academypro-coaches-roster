@@ -1978,7 +1978,58 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
       console.warn(`[Observer Error] [R2 PURGE] Failed purging workout image for event #${r?.id}:`, err);
     }
   }
-}// Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
+}// Helper to calculate occurrence dates for recurring rules
+function generateOccurrenceDates(startDateStr: string, endDateStr: string | null | undefined, rule: string): string[] {
+  const dates: string[] = [];
+  if (!startDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) return dates;
+
+  const start = new Date(startDateStr + 'T00:00:00');
+  const ruleLower = (rule || '').toLowerCase().trim();
+
+  if (!ruleLower || ruleLower === 'does not repeat' || ruleLower === 'none' || ruleLower === 'once') {
+    return [startDateStr];
+  }
+
+  let end = endDateStr && /^\d{4}-\d{2}-\d{2}$/.test(endDateStr) ? new Date(endDateStr + 'T00:00:00') : new Date(start);
+
+  if (end < start) {
+    end = new Date(start);
+  }
+
+  const maxEnd = new Date(start);
+  maxEnd.setFullYear(maxEnd.getFullYear() + 1);
+  if (end > maxEnd) {
+    end = maxEnd;
+  }
+
+  const current = new Date(start);
+  let count = 0;
+  const MAX_OCCURRENCES = 100;
+
+  while (current <= end && count < MAX_OCCURRENCES) {
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    dates.push(`${yyyy}-${mm}-${dd}`);
+
+    count++;
+
+    if (ruleLower === 'daily' || ruleLower === 'every day' || ruleLower === 'everyday') {
+      current.setDate(current.getDate() + 1);
+    } else if (ruleLower.includes('bi-weekly') || ruleLower.includes('2 weeks') || ruleLower.includes('two weeks')) {
+      current.setDate(current.getDate() + 14);
+    } else if (ruleLower.includes('weekly') || ruleLower.includes('week')) {
+      current.setDate(current.getDate() + 7);
+    } else if (ruleLower.includes('monthly') || ruleLower.includes('month')) {
+      current.setMonth(current.getMonth() + 1);
+    } else {
+      current.setDate(current.getDate() + 7);
+    }
+  }
+
+  return dates.length > 0 ? dates : [startDateStr];
+}
+
 // Route: Get Coach Command Events (Restricted to Coach's Owned Squads)
 const handleGetEvents = async (c: any) => {
   const jwtPayload = await getJwtPayload(c);
@@ -2075,7 +2126,7 @@ const handleCreateEvent = async (c: any) => {
 
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body?.schoolId || body?.school_id || c.req.query('school_id') || c.req.query('schoolId');
 
-  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
+  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate, untilDate } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -2084,6 +2135,8 @@ const handleCreateEvent = async (c: any) => {
   const rawEventType = (eventType || '').trim();
   const targetAgeGroup = (ageGroup || '').trim();
   const assignedTeam = (team || '').trim();
+  const recRuleVal = (recurrenceRule || body.recurrence_rule || 'Does Not Repeat').trim();
+  const recEndDateVal = (recurrenceEndDate || body.recurrence_end_date || untilDate || body.untilDate || null);
 
   // Strict Fail-Fast Validation (NO DUMMY FALLBACKS)
   if (!eventTitle) {
@@ -2114,6 +2167,9 @@ const handleCreateEvent = async (c: any) => {
   if (!targetAgeGroup && !assignedTeam) {
     return c.json({ success: false, message: 'Target age group or assigned team is required.' }, 400);
   }
+  if (recRuleVal !== 'Does Not Repeat' && !recEndDateVal) {
+    return c.json({ success: false, message: 'Recurrence end date (untilDate) is required for recurring events.' }, 400);
+  }
 
   let evType = rawEventType;
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
@@ -2121,13 +2177,16 @@ const handleCreateEvent = async (c: any) => {
   if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
   if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
 
-  const eventId = id ? id.toString() : `EVT-${Date.now()}`;
+  const baseEventId = id ? id.toString() : `EVT-${Date.now()}`;
   const finalAgeGroup = targetAgeGroup || assignedTeam;
   const finalTeam = assignedTeam || targetAgeGroup;
-  const recRuleVal = (recurrenceRule || body.recurrence_rule || 'Does Not Repeat').trim();
-  const recEndDateVal = (recurrenceEndDate || body.recurrence_end_date || null);
 
-  const query = `
+  const occurrenceDates = generateOccurrenceDates(eventDt, recEndDateVal, recRuleVal);
+  const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
+  const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
+  const compCountVal = evType === 'Gym Session' ? 0 : null;
+
+  const insertQuery = `
     INSERT INTO events (
       id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, completion_count, age_group, team, workout_image_path, recurrence_rule, recurrence_end_date
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -2147,35 +2206,37 @@ const handleCreateEvent = async (c: any) => {
   `;
 
   try {
-    const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
-    const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
-    const compCountVal = evType === 'Gym Session' ? 0 : null;
+    const statements = occurrenceDates.map((occDate, idx) => {
+      const occId = occurrenceDates.length === 1 ? baseEventId : `${baseEventId}_occ${idx + 1}`;
+      return db.prepare(insertQuery).bind(
+        occId,
+        schoolId,
+        eventTitle,
+        evType,
+        eventTime,
+        occDate,
+        durMinsVal,
+        eventLoc,
+        isImpVal,
+        compCountVal,
+        finalAgeGroup,
+        finalTeam,
+        workoutImagePath || null,
+        recRuleVal,
+        recEndDateVal
+      );
+    });
 
-    await db.prepare(query).bind(
-      eventId,
-      schoolId,
-      eventTitle,
-      evType,
-      eventTime,
-      eventDt,
-      durMinsVal,
-      eventLoc,
-      isImpVal,
-      compCountVal,
-      finalAgeGroup,
-      finalTeam,
-      workoutImagePath || null,
-      recRuleVal,
-      recEndDateVal
-    ).run();
+    await db.batch(statements);
 
-    console.log(`[Observer Log] Event '${eventId}' successfully created in Cloudflare D1 for school '${schoolId}'.`);
+    console.log(`[Observer Log] Created ${occurrenceDates.length} event occurrence(s) for series '${baseEventId}' in school '${schoolId}'.`);
 
     return c.json({
       success: true,
-      message: 'Event created successfully',
+      message: `${occurrenceDates.length} event occurrence(s) created successfully`,
       data: {
-        id: eventId,
+        id: baseEventId,
+        occurrenceCount: occurrenceDates.length,
         schoolId,
         title: eventTitle,
         eventType: evType,
@@ -2193,8 +2254,8 @@ const handleCreateEvent = async (c: any) => {
       }
     }, 201);
   } catch (err: any) {
-    console.error(`[Observer Error] Failed to create event '${eventId}':`, err);
-    return c.json({ success: false, message: 'Failed to create event', error: err.message }, 500);
+    console.error(`[Observer Error] Failed creating recurring event series '${baseEventId}':`, err);
+    return c.json({ success: false, message: 'Failed to create event series', error: err.message }, 500);
   }
 };
 
