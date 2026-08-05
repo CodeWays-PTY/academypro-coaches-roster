@@ -2712,7 +2712,7 @@
               <h3 class="font-bold text-on-surface text-base" x-text="coach.name"></h3>
 
               <div class="text-xs text-on-surface-variant space-y-1 pt-2 mt-2 border-t border-outline-variant/60">
-                <div>Academy: <span class="font-bold text-on-surface" x-text="coach.schoolName || 'OVK Academy'"></span></div>
+                <div>Academy: <span class="font-bold text-on-surface" x-text="(coach.schoolName && coach.schoolName !== '1' ? coach.schoolName : 'Hoërskool Overkruin')"></span></div>
                 <div>Email: <span class="font-bold text-on-surface" x-text="coach.email"></span></div>
                 <div x-show="coach.phone">Phone: <span class="font-bold text-on-surface" x-text="coach.phone"></span></div>
               </div>

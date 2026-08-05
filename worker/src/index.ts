@@ -989,10 +989,23 @@ const handleGetCoaches = async (c: any) => {
       const allRes = await db.prepare("SELECT id, first_name, last_name, name, email, role, phone_number, school_id FROM users WHERE role NOT IN ('Student', 'Parent') AND (role LIKE '%Coach%' OR role LIKE '%Head%' OR role LIKE '%Admin%' OR role = 'Coach') ORDER BY first_name ASC").all();
       results = allRes.results || [];
     }
+
+    const schoolMap = new Map<string, string>();
+    try {
+      const { results: schoolRows } = await db.prepare("SELECT id, name FROM schools").all();
+      if (schoolRows) {
+        for (const s of schoolRows) {
+          schoolMap.set(String(s.id), s.name);
+        }
+      }
+    } catch (e) {}
+
     return c.json({
       success: true,
       data: (results || []).map((u: any) => {
         const computedName = (u.name && u.name.trim()) || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Coach';
+        const sIdStr = String(u.school_id || '1');
+        const resolvedSchoolName = schoolMap.get(sIdStr) || (sIdStr === '1' ? 'Hoërskool Overkruin' : sIdStr) || 'Hoërskool Overkruin';
         return {
           id: u.id || u.email,
           name: computedName,
@@ -1001,7 +1014,8 @@ const handleGetCoaches = async (c: any) => {
           email: u.email,
           role: u.role || 'Coach',
           phone: u.phone_number || '',
-          schoolName: u.school_id || null
+          schoolName: resolvedSchoolName,
+          schoolId: u.school_id || '1'
         };
       })
     });
