@@ -2789,8 +2789,8 @@
   </div>
 
   <!-- MODAL: ADD COACH -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddCoachModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddCoachModal" @click.self="showAddCoachModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <h3 class="font-headline-md font-bold text-lg text-on-surface">Register New Coach</h3>
       <form @submit.prevent="saveNewCoach()" class="space-y-md">
         <div>
@@ -2817,8 +2817,8 @@
   </div>
 
   <!-- MODAL: EDIT COACH DETAILS -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditCoachModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditCoachModal" @click.self="showEditCoachModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-3">
         <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Coach Profile</h3>
         <button type="button" @click="showEditCoachModal = false" class="text-outline hover:text-on-surface">
@@ -2854,8 +2854,8 @@
   </div>
 
   <!-- MODAL: ADD STUDENT ATHLETE -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddModal" @click.self="showAddModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <h3 class="font-headline-md font-bold text-lg text-on-surface">Register Student Athlete</h3>
       <form @submit.prevent="saveNewAthlete()" class="space-y-md">
         <div>
@@ -2894,8 +2894,8 @@
   </div>
 
   <!-- MODAL: EDIT STUDENT ATHLETE -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditModal" @click.self="showEditModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Athlete Profile</h3>
@@ -2991,8 +2991,8 @@
   </div>
 
   <!-- MODAL: MANAGE TEAM TEST METRICS -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" @click.self="showManageMetricsModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Manage Squad Test Metrics</h3>
@@ -3094,8 +3094,8 @@
   </div>
 
   <!-- MODAL: MANUALLY CHECK IN PLAYER FOR TEST EVENT -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManualCheckInModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManualCheckInModal" @click.self="showManualCheckInModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Manually Check-In Player</h3>
@@ -3135,8 +3135,8 @@
   </div>
 
   <!-- MODAL: CREATE SQUAD -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadModal" @click.self="showAddSquadModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Create New Squad</h3>
@@ -3163,8 +3163,8 @@
   </div>
 
   <!-- MODAL: ADD PLAYER TO SQUAD -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadPlayerModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadPlayerModal" @click.self="showAddSquadPlayerModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Add Player to Squad</h3>
@@ -3207,8 +3207,8 @@
   </div>
 
   <!-- MODAL: CONFIRM DELETE EVENT -->
-  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteEventConfirm" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteEventConfirm" @click.self="showDeleteEventConfirm = false; eventToDelete = null;" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" @click.stop>
       <div class="flex items-center gap-3 text-error">
         <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">warning</span>
@@ -3229,8 +3229,8 @@
   </div>
 
   <!-- MODAL: CONFIRM DELETE ATHLETE -->
-  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteAthleteConfirm" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteAthleteConfirm" @click.self="showDeleteAthleteConfirm = false; athleteToDelete = null;" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" @click.stop>
       <div class="flex items-center gap-3 text-error">
         <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">warning</span>
@@ -3251,8 +3251,8 @@
   </div>
 
   <!-- MODAL: CONFIRM DELETE COACH -->
-  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteCoachConfirm" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteCoachConfirm" @click.self="showDeleteCoachConfirm = false; coachToDelete = null;" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" @click.stop>
       <div class="flex items-center gap-3 text-error">
         <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">warning</span>
@@ -3273,8 +3273,8 @@
   </div>
 
   <!-- MODAL: EDIT EVENT -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditEventModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-lg p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditEventModal" @click.self="showEditEventModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-lg p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Event Parameters</h3>
