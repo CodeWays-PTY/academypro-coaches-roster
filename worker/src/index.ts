@@ -977,6 +977,49 @@ const handlePostCoach = async (c: any) => {
 app.post('/api/coaches', handlePostCoach);
 app.post('/api/dashboard/coaches', handlePostCoach);
 
+// Route: Update Coach Details
+const handlePutCoach = async (c: any) => {
+  const db = getDB(c);
+  const rawId = c.req.param('id');
+  const coachId = rawId ? decodeURIComponent(rawId).trim() : '';
+  try {
+    const body = await c.req.json();
+    const { name, firstName, lastName, email, role, phone, schoolName, schoolId } = body;
+    const coachEmail = (email || '').trim().toLowerCase();
+    const fullName = (name || `${firstName || ''} ${lastName || ''}`).trim();
+    const fullParts = fullName.split(' ');
+    const fName = firstName || fullParts[0] || 'Coach';
+    const lName = lastName || fullParts.slice(1).join(' ') || '';
+    const coachRole = role || 'Coach';
+    const targetSchool = schoolName || schoolId || '1';
+
+    await db.prepare(`
+      UPDATE users SET
+        first_name = COALESCE(?, first_name),
+        last_name = COALESCE(?, last_name),
+        name = COALESCE(?, name),
+        email = COALESCE(?, email),
+        role = COALESCE(?, role),
+        phone_number = COALESCE(?, phone_number),
+        school_id = COALESCE(?, school_id)
+      WHERE id = ? OR LOWER(email) = LOWER(?) OR CAST(id AS TEXT) = ?
+    `).bind(fName, lName, fullName, coachEmail || null, coachRole, phone || '', String(targetSchool), coachId, coachId, coachId).run();
+
+    return c.json({
+      success: true,
+      message: 'Coach details updated successfully',
+      data: { id: coachId, email: coachEmail, name: fullName, role: coachRole, phone: phone || '', schoolName: targetSchool }
+    });
+  } catch (e: any) {
+    return c.json({ success: false, message: e.message }, 500);
+  }
+};
+
+app.put('/api/coaches/:id', handlePutCoach);
+app.put('/api/dashboard/coaches/:id', handlePutCoach);
+app.post('/api/coaches/:id', handlePutCoach);
+app.post('/api/dashboard/coaches/:id', handlePutCoach);
+
 // Route: Delete Coach
 const handleDeleteCoach = async (c: any) => {
   const db = getDB(c);

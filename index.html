@@ -1435,6 +1435,63 @@
           }
         },
 
+        openEditCoach(coach) {
+          if (!coach) return;
+          this.editCoachItem = {
+            id: coach.id,
+            name: coach.name || '',
+            email: coach.email || '',
+            phone: coach.phone || '',
+            schoolName: coach.schoolName || 'Hoërskool Overkruin',
+            role: coach.role || 'Coach'
+          };
+          this.showEditCoachModal = true;
+        },
+
+        async saveEditCoach() {
+          if (!this.editCoachItem.name || !this.editCoachItem.email) {
+            this.triggerToast('Name and Email Address are required', 'error');
+            return;
+          }
+
+          const targetEmail = this.editCoachItem.email.toLowerCase().trim();
+          const idx = this.coaches.findIndex(c => c.id === this.editCoachItem.id || (c.email && c.email.toLowerCase() === targetEmail));
+          const updatedItem = {
+            id: this.editCoachItem.id,
+            name: this.editCoachItem.name.trim(),
+            email: targetEmail,
+            phone: (this.editCoachItem.phone || '').trim(),
+            schoolName: this.editCoachItem.schoolName || 'Hoërskool Overkruin',
+            role: this.editCoachItem.role || 'Coach'
+          };
+
+          if (idx !== -1) {
+            this.coaches[idx] = { ...this.coaches[idx], ...updatedItem };
+          }
+          this.saveCoachesToStorage();
+          this.showEditCoachModal = false;
+          this.triggerToast(`Coach '${updatedItem.name}' updated successfully!`, 'success');
+
+          if (this.loggedInCoach && (this.loggedInCoach.id === updatedItem.id || (this.loggedInCoach.email && this.loggedInCoach.email.toLowerCase() === targetEmail))) {
+            this.loggedInCoach = { ...this.loggedInCoach, ...updatedItem };
+            localStorage.setItem('academypro_logged_in_coach', JSON.stringify(this.loggedInCoach));
+          }
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/coaches/${encodeURIComponent(updatedItem.id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedItem)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.success === false) {
+              this.triggerToast(data.message || 'Server sync warning: could not save to cloud database', 'warning');
+            }
+          } catch (err) {
+            console.log('Coach PUT error:', err);
+          }
+        },
+
         // Students CRUD
         openAddAthlete() {
           this.newAthlete = { name: '', age: '', position: '', team: this.currentSquad || '', status: '', email: '', phone: '' };
@@ -2673,6 +2730,9 @@
                 <span class="material-symbols-outlined text-[16px]" x-text="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'verified_user' : 'badge'"></span>
                 <span x-text="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'Active Profile' : 'Staff Coach'"></span>
               </div>
+              <button type="button" @click="openEditCoach(coach)" class="p-2 text-primary hover:bg-primary-container/10 rounded-lg transition-colors" title="Edit Coach Details">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+              </button>
               <button type="button" @click="confirmDeleteCoach(coach)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Coach">
                 <span class="material-symbols-outlined text-[18px]">delete</span>
               </button>
@@ -2740,6 +2800,40 @@
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showAddCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
           <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Save Coach</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT COACH DETAILS -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditCoachModal" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+      <div class="flex justify-between items-center border-b border-outline-variant pb-3">
+        <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Coach Profile</h3>
+        <button type="button" @click="showEditCoachModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <form @submit.prevent="saveEditCoach()" class="space-y-md">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Full Name *</label>
+          <input x-model="editCoachItem.name" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Neels Venter"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Email Address *</label>
+          <input x-model="editCoachItem.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="email" placeholder="e.g. coach@academy.co.za"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Phone Number</label>
+          <input x-model="editCoachItem.phone" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="tel" placeholder="e.g. +27 82 123 4567"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy Name</label>
+          <input x-model="editCoachItem.schoolName" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Hoërskool Overkruin"/>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showEditCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg hover:bg-surface-container-high transition-colors">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Save Changes</button>
         </div>
       </form>
     </div>
