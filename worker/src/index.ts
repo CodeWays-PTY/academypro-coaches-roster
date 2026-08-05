@@ -807,6 +807,7 @@ app.get('/api/athletes', async (c) => {
         firstName: p.first_name,
         lastName: p.last_name,
         email: p.email || '',
+        phone: p.phone || '',
         ageGroup: p.age_group,
         position: p.position || 'Athlete',
         secondaryPosition: p.secondary_position || '',
@@ -829,7 +830,7 @@ app.post('/api/athletes', async (c) => {
   const db = getDB(c);
   try {
     const body = await c.req.json();
-    const { name, firstName, lastName, email, position, secondaryPosition, age, ageGroup, team, schoolId } = body;
+    const { name, firstName, lastName, email, phone, position, secondaryPosition, age, ageGroup, team, schoolId, status } = body;
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
@@ -848,19 +849,24 @@ app.post('/api/athletes', async (c) => {
 
     const playerId = body.id || (existingPlayer ? existingPlayer.id : generatePrimaryKey('plr'));
 
+    const playerStatus = status || 'Active';
+    const playerPhone = phone || '';
+
     await db.prepare(`
-      INSERT INTO players (id, school_id, first_name, last_name, email, age_group, position, secondary_position, age, team, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+      INSERT INTO players (id, school_id, first_name, last_name, email, phone, age_group, position, secondary_position, age, team, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         first_name = excluded.first_name,
         last_name = excluded.last_name,
         email = excluded.email,
+        phone = excluded.phone,
         position = excluded.position,
         secondary_position = excluded.secondary_position,
         age = excluded.age,
         team = excluded.team,
+        status = excluded.status,
         school_id = excluded.school_id
-    `).bind(playerId, targetSchool, fName, lName, email || '', ageGroup || team || 'U15', position || 'Athlete', secPos, playerAge, assignedTeam).run();
+    `).bind(playerId, targetSchool, fName, lName, email || '', playerPhone, ageGroup || team || 'U15', position || 'Athlete', secPos, playerAge, assignedTeam, playerStatus).run();
 
     return c.json({ success: true, message: 'Athlete saved successfully', data: { id: playerId, firstName: fName, lastName: lName, email, age: playerAge, team: assignedTeam } });
   } catch (e: any) {
@@ -874,20 +880,21 @@ app.put('/api/athletes/:id', async (c) => {
   const id = c.req.param('id');
   try {
     const body = await c.req.json();
-    const { name, firstName, lastName, email, position, secondaryPosition, age, status, team } = body;
+    const { name, firstName, lastName, email, phone, position, secondaryPosition, age, status, team } = body;
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const playerAge = age !== undefined && age !== null && age !== '' ? Number(age) : null;
     const secPos = secondaryPosition || body.secondary_position || '';
     const teamVal = body.team !== undefined && body.team !== null ? body.team : null;
+    const playerPhone = phone !== undefined ? (phone || '') : undefined;
 
     await db.prepare(`
       UPDATE players
-      SET first_name = ?, last_name = ?, email = ?, position = ?, secondary_position = ?, age = ?, status = ?,
+      SET first_name = ?, last_name = ?, email = ?, phone = CASE WHEN ? IS NOT NULL THEN ? ELSE phone END, position = ?, secondary_position = ?, age = ?, status = ?,
           team = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE team END
       WHERE id = ? OR (email = ? AND email != '')
-    `).bind(fName, lName, email || '', position || '', secPos, playerAge, status || 'Active', teamVal, teamVal, teamVal, id, id).run();
+    `).bind(fName, lName, email || '', playerPhone !== undefined ? playerPhone : null, playerPhone !== undefined ? playerPhone : null, position || '', secPos, playerAge, status || 'Active', teamVal, teamVal, teamVal, id, id).run();
 
     return c.json({ success: true, message: 'Athlete updated successfully' });
   } catch (e: any) {
@@ -1029,7 +1036,8 @@ const handlePutCoach = async (c: any) => {
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
     const rawSchool = schoolName || schoolId || '1';
-    const targetSchool = (rawSchool === '1' || rawSchool === 1) ? '1' : String(rawSchool);
+    const normalizedSchoolNames = ['hoërskool overkruin', 'hoerskool overkruin', 'ovk academy', 'ovk', 'overkruin'];
+    const targetSchool = (rawSchool === '1' || rawSchool === 1 || normalizedSchoolNames.includes(String(rawSchool).toLowerCase())) ? '1' : String(rawSchool);
     const displaySchool = (targetSchool === '1' || targetSchool === 'OVK Academy' || targetSchool === 'Hoërskool Overkruin') ? 'Hoërskool Overkruin' : targetSchool;
 
     await db.prepare(`
@@ -1156,7 +1164,9 @@ const handleSaveTestResult = async (c: any) => {
         score_value = excluded.score_value,
         test_date = excluded.test_date,
         athlete_name = excluded.athlete_name,
-        test_name = excluded.test_name
+        test_name = excluded.test_name,
+        category = excluded.category,
+        unit = excluded.unit
     `).bind(
       resultId,
       eventId || '',
@@ -1395,6 +1405,11 @@ const handlePostSquads = async (c: any) => {
     await db.prepare(`
       INSERT INTO squads (id, school_id, coach_id, name, code, description)
       VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        code = excluded.code,
+        description = excluded.description,
+        coach_id = excluded.coach_id
     `).bind(squadId, schoolId, coachId, squadName, squadCode, description || '').run();
 
     try {
@@ -2159,7 +2174,7 @@ const handleUpdateEvent = async (c: any) => {
   if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
   if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
 
-  const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
+  const isImpVal = isImportant !== undefined ? (isImportant === true || isImportant === 1 ? 1 : 0) : (existingEvt?.is_important ?? 0);
   const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : (existingEvt?.duration_mins || 90);
   const recRuleVal = (recurrenceRule || body.recurrence_rule || existingEvt?.recurrence_rule || 'Does Not Repeat').trim();
   const recEndDateVal = (recurrenceEndDate || body.recurrence_end_date || existingEvt?.recurrence_end_date || null);
