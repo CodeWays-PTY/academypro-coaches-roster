@@ -388,6 +388,24 @@
 
         newAthlete: { name: '', age: '', position: '', team: '', status: '', email: '', phone: '' },
         editAthleteData: { id: '', name: '', age: '', position: '', secondaryPosition: '', team: '', status: '', email: '' },
+        rugbyPositions: [
+          'Loosehead Prop',
+          'Hooker',
+          'Tighthead Prop',
+          'Lock',
+          'Blindside Flanker',
+          'Openside Flanker',
+          'Number 8',
+          'Scrumhalf',
+          'Flyhalf',
+          'Left Wing',
+          'Inside Center',
+          'Outside Center',
+          'Right Wing',
+          'Fullback',
+          'Utility Forward',
+          'Utility Back'
+        ],
 
         async init() {
           this.purgeLegacyDummyData();
@@ -2769,11 +2787,41 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-outline mb-1">Primary Position</label>
-            <input x-model="editAthleteData.position" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Fly-half"/>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span x-text="editAthleteData.position || 'Select Position'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                <template x-for="pos in rugbyPositions" :key="pos">
+                  <div @click="editAthleteData.position = pos; open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                       :class="editAthleteData.position === pos ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="pos"></span>
+                    <span x-show="editAthleteData.position === pos" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-outline mb-1">Secondary Position</label>
-            <input x-model="editAthleteData.secondaryPosition" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Fullback"/>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span x-text="editAthleteData.secondaryPosition || 'None / Optional'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                <template x-for="pos in ['None', ...rugbyPositions]" :key="pos">
+                  <div @click="editAthleteData.secondaryPosition = (pos === 'None' ? '' : pos); open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                       :class="(editAthleteData.secondaryPosition || 'None') === pos ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="pos"></span>
+                    <span x-show="(editAthleteData.secondaryPosition || 'None') === pos" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-outline mb-1">Age</label>
