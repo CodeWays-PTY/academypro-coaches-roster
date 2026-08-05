@@ -1,4 +1,4 @@
 cd c:\Development\academypro
 git add -A
-git commit -m "Remove resolveSchoolId helper - schoolId comes from JWT PK, keep it simple. Purge fake seed attendance data."
+git commit -m "Remove all hardcoded schoolId fallbacks - schoolId comes from JWT and DB, no magic defaults"
 git push

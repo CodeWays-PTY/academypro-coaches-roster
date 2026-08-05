@@ -485,7 +485,7 @@ app.post('/api/auth/quick-login', async (c) => {
     sub: user.id,
     email: user.email,
     role: user.role || 'Coach',
-    schoolId: user.school_id || '1',
+    schoolId: user.school_id || null,
     exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
   };
   const token = await sign(payload, secret);
@@ -499,7 +499,7 @@ app.post('/api/auth/quick-login', async (c) => {
         id: user.id,
         email: user.email,
         role: user.role || 'Coach',
-        schoolId: user.school_id || '1',
+        schoolId: user.school_id || null,
         schoolName: user.school_name || 'Hoërskool Overkruin',
         firstName: user.first_name,
         lastName: user.last_name,
@@ -565,8 +565,8 @@ app.get('/api/auth/profile', async (c) => {
             id: user.id,
             email: user.email,
             role: user.role || 'Coach',
-            schoolId: user.school_id || '1',
-            school_id: user.school_id || '1',
+            schoolId: user.school_id || null,
+            school_id: user.school_id || null,
             firstName: user.first_name || 'Coach',
             lastName: user.last_name || '',
             first_name: user.first_name || 'Coach',
@@ -779,7 +779,7 @@ app.use('/api/events', enforceJwtAuth);
 // Route: Get Athletes / Players
 app.get('/api/athletes', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const db = getDB(c);
   try {
     const sId = String(schoolId);
@@ -835,7 +835,7 @@ app.post('/api/athletes', async (c) => {
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
-    const targetSchool = String(schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || '1');
+    const targetSchool = String(schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || '');
     const assignedTeam = team || ageGroup || 'U15';
     const playerAge = age !== undefined && age !== null && age !== '' ? Number(age) : null;
     const secPos = secondaryPosition || body.secondary_position || '';
@@ -943,7 +943,7 @@ app.delete('/api/dashboard/athletes/:id', async (c) => {
 // Route: Get Coaches
 const handleGetCoaches = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const db = getDB(c);
   try {
     const sId = String(schoolId);
@@ -992,7 +992,7 @@ const handlePostCoach = async (c: any) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const rawSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id || '1';
+    const rawSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id;
     const targetSchool = (rawSchool === '1' || rawSchool === 1) ? '1' : String(rawSchool);
     const displaySchool = (targetSchool === '1' || targetSchool === 'OVK Academy' || targetSchool === 'Hoërskool Overkruin') ? 'Hoërskool Overkruin' : targetSchool;
     const userId = body.id || `cch_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -1036,7 +1036,7 @@ const handlePutCoach = async (c: any) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const rawSchool = schoolName || schoolId || '1';
+    const rawSchool = schoolName || schoolId;
     const normalizedSchoolNames = ['hoërskool overkruin', 'hoerskool overkruin', 'ovk academy', 'ovk', 'overkruin'];
     const targetSchool = (rawSchool === '1' || rawSchool === 1 || normalizedSchoolNames.includes(String(rawSchool).toLowerCase())) ? '1' : String(rawSchool);
     const displaySchool = (targetSchool === '1' || targetSchool === 'OVK Academy' || targetSchool === 'Hoërskool Overkruin') ? 'Hoërskool Overkruin' : targetSchool;
@@ -1225,7 +1225,7 @@ async function ensureSquadsTables(db: any) {
 async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string | number, role?: string, ageGroupFilter?: string): Promise<{ squadIds: string[]; playerIds: string[]; squadCodes: string[] }> {
   await ensureSquadsTables(db);
   // CRITICAL: D1 TEXT columns do NOT match numeric bind params. Always cast to string.
-  const safeSchoolId = String(schoolId || '1');
+  const safeSchoolId = String(schoolId || '');
 
   let squadRows: any[] = [];
   try {
@@ -1325,7 +1325,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 const handleGetSquads = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
   const db = getDB(c);
 
@@ -1402,7 +1402,7 @@ const handlePostSquads = async (c: any) => {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
 
-  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId || body?.schoolId;
 
   const { id, name, ageGroup, code, description } = body;
   if (!code && !ageGroup) {
@@ -1485,7 +1485,7 @@ app.delete('/api/dashboard/squads/:id', handleDeleteSquad);
 const handleGetRoster = async (c: any) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub || 'USR-COACH-001';
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
@@ -1717,7 +1717,7 @@ app.post('/api/players/:id/squads', async (c) => {
 // Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1807,7 +1807,7 @@ app.get('/api/dashboard/summary', async (c) => {
 // Route: Get Flagged Players (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1975,7 +1975,7 @@ const handleGetEvents = async (c: any) => {
 
     let events = (results || []).map((r: any) => ({
       id: r.id?.toString() || '',
-      schoolId: r.school_id || reqSchoolId || '1',
+      schoolId: r.school_id || reqSchoolId,
       title: r.title,
       eventType: r.event_type,
       startTime: r.start_time,
@@ -2019,7 +2019,7 @@ const handleCreateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId || body?.schoolId;
 
   const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
@@ -2180,7 +2180,7 @@ const handleUpdateEvent = async (c: any) => {
 
   const targetAgeGroup = (ageGroup || team || existingEvt?.age_group || existingEvt?.team || 'U15 Squad').trim();
   const assignedTeam = (team || ageGroup || existingEvt?.team || existingEvt?.age_group || 'U15 Squad').trim();
-  const schoolId = String(existingEvt?.school_id || body.schoolId || '1');
+  const schoolId = String(existingEvt?.school_id || body.schoolId || '');
 
   let evType = rawEventType;
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
@@ -2448,7 +2448,7 @@ app.post('/api/dashboard/actions/:id/delete', async (c) => {
 // Route: Get Rising Stars (Top performers by age group)
 app.get('/api/dashboard/rising-stars', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
@@ -3268,7 +3268,7 @@ app.post('/api/player/evaluation-baseline', async (c) => {
 // Route: Get Test Metric Definitions
 app.get('/api/test-metrics', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
   const db = getDB(c);
 
   try {
@@ -3306,7 +3306,7 @@ app.post('/api/test-metrics', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId || body?.schoolId;
 
   const { id, name, category, unit, goalDirection, targetBenchmark } = body || {};
   const metricName = (name || body?.metricName || body?.title || '').trim();
@@ -3546,7 +3546,7 @@ app.post('/api/test-logs/batch', async (c) => {
 app.get('/api/admin/all-players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
-  const schoolId = jwtPayload?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId;
 
   try {
     const sId = String(schoolId);
@@ -4012,7 +4012,7 @@ app.post('/api/players/:id/position', async (c) => {
 app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const body = await c.req.json();
-  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
+  const schoolId = jwtPayload?.schoolId || body?.schoolId;
 
   const { id, firstName, lastName, ageGroup, position, team, email, squadId } = body;
   const db = getDB(c);
