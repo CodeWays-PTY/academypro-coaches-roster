@@ -809,7 +809,10 @@ app.get('/api/athletes', async (c) => {
         email: p.email || '',
         ageGroup: p.age_group,
         position: p.position || 'Athlete',
+        secondaryPosition: p.secondary_position || '',
+        age: p.age !== null && p.age !== undefined && p.age !== '' ? Number(p.age) : null,
         team: p.team || p.age_group,
+        status: p.status || 'Active',
         schoolId: p.school_id,
         squadId: squadIdMap[p.id] || null,
         squadIds: squadPlayerMap[p.id] || []
@@ -826,12 +829,14 @@ app.post('/api/athletes', async (c) => {
   const db = getDB(c);
   try {
     const body = await c.req.json();
-    const { name, firstName, lastName, email, position, ageGroup, team, schoolId } = body;
+    const { name, firstName, lastName, email, position, secondaryPosition, age, ageGroup, team, schoolId } = body;
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const targetSchool = String(schoolId || jwtPayload?.schoolId || jwtPayload?.school_id || '1');
     const assignedTeam = team || ageGroup || 'U15';
+    const playerAge = age !== undefined && age !== null && age !== '' ? Number(age) : null;
+    const secPos = secondaryPosition || body.secondary_position || '';
 
     let existingPlayer: any = null;
     if (email && email.trim()) {
@@ -844,18 +849,20 @@ app.post('/api/athletes', async (c) => {
     const playerId = body.id || (existingPlayer ? existingPlayer.id : generatePrimaryKey('plr'));
 
     await db.prepare(`
-      INSERT INTO players (id, school_id, first_name, last_name, email, age_group, position, team, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+      INSERT INTO players (id, school_id, first_name, last_name, email, age_group, position, secondary_position, age, team, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
       ON CONFLICT(id) DO UPDATE SET
         first_name = excluded.first_name,
         last_name = excluded.last_name,
         email = excluded.email,
         position = excluded.position,
+        secondary_position = excluded.secondary_position,
+        age = excluded.age,
         team = excluded.team,
         school_id = excluded.school_id
-    `).bind(playerId, targetSchool, fName, lName, email || '', ageGroup || team || 'U15', position || 'Athlete', assignedTeam).run();
+    `).bind(playerId, targetSchool, fName, lName, email || '', ageGroup || team || 'U15', position || 'Athlete', secPos, playerAge, assignedTeam).run();
 
-    return c.json({ success: true, message: 'Athlete saved successfully', data: { id: playerId, firstName: fName, lastName: lName, email, team: assignedTeam } });
+    return c.json({ success: true, message: 'Athlete saved successfully', data: { id: playerId, firstName: fName, lastName: lName, email, age: playerAge, team: assignedTeam } });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
   }
@@ -867,19 +874,20 @@ app.put('/api/athletes/:id', async (c) => {
   const id = c.req.param('id');
   try {
     const body = await c.req.json();
-    const { name, firstName, lastName, email, position, status, team } = body;
+    const { name, firstName, lastName, email, position, secondaryPosition, age, status, team } = body;
     const fullParts = (name || `${firstName || ''} ${lastName || ''}`).trim().split(' ');
     const fName = firstName || fullParts[0] || '';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
-
+    const playerAge = age !== undefined && age !== null && age !== '' ? Number(age) : null;
+    const secPos = secondaryPosition || body.secondary_position || '';
     const teamVal = body.team !== undefined && body.team !== null ? body.team : null;
 
     await db.prepare(`
       UPDATE players
-      SET first_name = ?, last_name = ?, email = ?, position = ?, status = ?,
+      SET first_name = ?, last_name = ?, email = ?, position = ?, secondary_position = ?, age = ?, status = ?,
           team = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE team END
       WHERE id = ? OR (email = ? AND email != '')
-    `).bind(fName, lName, email || '', position || '', status || '', teamVal, teamVal, teamVal, id, id).run();
+    `).bind(fName, lName, email || '', position || '', secPos, playerAge, status || 'Active', teamVal, teamVal, teamVal, id, id).run();
 
     return c.json({ success: true, message: 'Athlete updated successfully' });
   } catch (e: any) {
