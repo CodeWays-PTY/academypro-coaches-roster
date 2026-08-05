@@ -1,4 +1,4 @@
 cd c:\Development\academypro
 git add -A
-git commit -m "Bulletproof schoolId handling - add resolveSchoolId helper, fix handleGetEvents crash, String cast all bind calls, remove outdated MD files"
+git commit -m "Remove resolveSchoolId helper - schoolId comes from JWT PK, keep it simple. Purge fake seed attendance data."
 git push

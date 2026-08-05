@@ -172,15 +172,6 @@ function generatePrimaryKey(prefix: string = 'id'): string {
   return `${prefix}_${Date.now()}_${uuid}`;
 }
 
-// Resolve schoolId from JWT, body, or query — ALWAYS returns a string.
-// D1 TEXT columns do NOT match numeric bind params, so this prevents silent 0-row queries.
-function resolveSchoolId(jwtPayload: any, body?: any, query?: any): string {
-  const raw = jwtPayload?.schoolId || jwtPayload?.school_id
-    || body?.schoolId || body?.school_id
-    || query?.school_id || query?.schoolId
-    || '1';
-  return String(raw);
-}
 
 // Helper for JWT Secret Key
 const getSecret = (c: any) => {
@@ -788,7 +779,7 @@ app.use('/api/events', enforceJwtAuth);
 // Route: Get Athletes / Players
 app.get('/api/athletes', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
+  const schoolId = jwtPayload?.schoolId || '1';
   const db = getDB(c);
   try {
     const sId = String(schoolId);
@@ -952,7 +943,7 @@ app.delete('/api/dashboard/athletes/:id', async (c) => {
 // Route: Get Coaches
 const handleGetCoaches = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
+  const schoolId = jwtPayload?.schoolId || '1';
   const db = getDB(c);
   try {
     const sId = String(schoolId);
@@ -1334,7 +1325,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 const handleGetSquads = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
+  const schoolId = jwtPayload?.schoolId || '1';
   const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
   const db = getDB(c);
 
@@ -1411,7 +1402,7 @@ const handlePostSquads = async (c: any) => {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
 
-  const schoolId = resolveSchoolId(jwtPayload, body);
+  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
 
   const { id, name, ageGroup, code, description } = body;
   if (!code && !ageGroup) {
@@ -1494,7 +1485,7 @@ app.delete('/api/dashboard/squads/:id', handleDeleteSquad);
 const handleGetRoster = async (c: any) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
+  const schoolId = jwtPayload?.schoolId || '1';
   const coachId = jwtPayload?.sub || 'USR-COACH-001';
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
@@ -1726,7 +1717,7 @@ app.post('/api/players/:id/squads', async (c) => {
 // Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload);
+  const schoolId = jwtPayload?.schoolId || '1';
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1816,7 +1807,7 @@ app.get('/api/dashboard/summary', async (c) => {
 // Route: Get Flagged Players (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload);
+  const schoolId = jwtPayload?.schoolId || '1';
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -2028,7 +2019,7 @@ const handleCreateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = resolveSchoolId(jwtPayload, body);
+  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
 
   const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
@@ -2457,7 +2448,7 @@ app.post('/api/dashboard/actions/:id/delete', async (c) => {
 // Route: Get Rising Stars (Top performers by age group)
 app.get('/api/dashboard/rising-stars', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload);
+  const schoolId = jwtPayload?.schoolId || '1';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
@@ -3277,7 +3268,7 @@ app.post('/api/player/evaluation-baseline', async (c) => {
 // Route: Get Test Metric Definitions
 app.get('/api/test-metrics', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
+  const schoolId = jwtPayload?.schoolId || '1';
   const db = getDB(c);
 
   try {
@@ -3315,7 +3306,7 @@ app.post('/api/test-metrics', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = resolveSchoolId(jwtPayload, body, c.req.query());
+  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
 
   const { id, name, category, unit, goalDirection, targetBenchmark } = body || {};
   const metricName = (name || body?.metricName || body?.title || '').trim();
@@ -3555,7 +3546,7 @@ app.post('/api/test-logs/batch', async (c) => {
 app.get('/api/admin/all-players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
-  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
+  const schoolId = jwtPayload?.schoolId || '1';
 
   try {
     const sId = String(schoolId);
@@ -4021,7 +4012,7 @@ app.post('/api/players/:id/position', async (c) => {
 app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const body = await c.req.json();
-  const schoolId = resolveSchoolId(jwtPayload, body, c.req.query());
+  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
 
   const { id, firstName, lastName, ageGroup, position, team, email, squadId } = body;
   const db = getDB(c);
