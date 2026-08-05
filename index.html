@@ -2202,7 +2202,7 @@
                 <template x-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day">
                   <button type="button" @click="toggleRepeatDay(day)"
                           class="px-md py-sm rounded-lg font-label-md text-xs font-bold transition-colors"
-                          :class="(newEvent.repeatDays && newEvent.repeatDays.includes(day)) ? 'bg-primary-container text-on-primary shadow-sm' : 'bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-container-highest'"
+                          :class="(newEvent.repeatDays && newEvent.repeatDays.includes(day)) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-container-highest'"
                           x-text="day"></button>
                 </template>
                 <div class="flex-1"></div>
