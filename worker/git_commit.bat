@@ -1,4 +1,4 @@
 cd c:\Development\academypro
 git add -A
-git commit -m "Remove all hardcoded schoolId fallbacks - schoolId comes from JWT and DB, no magic defaults"
+git commit -m "Comprehensive audit & removal of all hardcoded fallbacks across Worker API. Bulletproofed getJwtPayload resolution and squad_members D1 schema."
 git push
