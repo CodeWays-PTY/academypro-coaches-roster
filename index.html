@@ -295,7 +295,7 @@
           name: 'Jan-Albert Mentz',
           role: 'Coach',
           email: 'janmen777@gmail.com',
-          schoolName: 'OVK Rugby Academy'
+          schoolName: 'Hoërskool Overkruin'
         })),
 
         athletes: [],
@@ -378,8 +378,8 @@
         coachToDelete: null,
         coachSearchQuery: '',
 
-        newCoach: { name: '', email: '', phone: '', schoolName: 'OVK Academy' },
-        editCoachItem: { id: '', name: '', email: '', phone: '', schoolName: 'OVK Academy' },
+        newCoach: { name: '', email: '', phone: '', schoolName: 'Hoërskool Overkruin' },
+        editCoachItem: { id: '', name: '', email: '', phone: '', schoolName: 'Hoërskool Overkruin', role: 'Coach' },
 
         showAddModal: false,
         showEditModal: false,
@@ -405,6 +405,17 @@
           'Fullback',
           'Utility Forward',
           'Utility Back'
+        ],
+        schoolOptions: [
+          'Hoërskool Overkruin'
+        ],
+        coachRoles: [
+          'Head Coach',
+          'Coach',
+          'Assistant Coach',
+          'Conditioning Coach',
+          'Team Manager',
+          'Admin'
         ],
 
         async fetchUserProfileFromApi() {
@@ -2806,10 +2817,22 @@
           <input x-model="newCoach.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary" type="email" placeholder="e.g. coach@academy.co.za"/>
         </div>
         <div>
-          <label class="block text-xs font-bold text-outline mb-1">School / Academy (Locked)</label>
-          <div class="w-full bg-surface-container border border-outline-variant rounded-lg p-2.5 text-xs font-bold text-on-surface flex items-center justify-between">
-            <span x-text="loggedInCoach ? (loggedInCoach.schoolName || 'Hoërskool Overkruin') : 'Hoërskool Overkruin'"></span>
-            <span class="material-symbols-outlined text-[16px] text-outline" title="Inherited from Headmaster Account">lock</span>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy *</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="newCoach.schoolName || 'Select School'"></span>
+              <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+              <template x-for="school in schoolOptions" :key="school">
+                <div @click="newCoach.schoolName = school; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="newCoach.schoolName === school ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="school"></span>
+                  <span x-show="newCoach.schoolName === school" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
@@ -2843,10 +2866,41 @@
           <input x-model="editCoachItem.phone" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="tel" placeholder="e.g. +27 82 123 4567"/>
         </div>
         <div>
-          <label class="block text-xs font-bold text-outline mb-1">School / Academy (Locked)</label>
-          <div class="w-full bg-surface-container border border-outline-variant rounded-lg p-2.5 text-xs font-bold text-on-surface flex items-center justify-between">
-            <span x-text="loggedInCoach ? (loggedInCoach.schoolName || 'Hoërskool Overkruin') : 'Hoërskool Overkruin'"></span>
-            <span class="material-symbols-outlined text-[16px] text-outline" title="Inherited from Headmaster Account">lock</span>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy *</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="editCoachItem.schoolName || 'Select School'"></span>
+              <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+              <template x-for="school in schoolOptions" :key="school">
+                <div @click="editCoachItem.schoolName = school; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="editCoachItem.schoolName === school ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="school"></span>
+                  <span x-show="editCoachItem.schoolName === school" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Role</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="editCoachItem.role || 'Select Role'"></span>
+              <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+              <template x-for="r in coachRoles" :key="r">
+                <div @click="editCoachItem.role = r; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="editCoachItem.role === r ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="r"></span>
+                  <span x-show="editCoachItem.role === r" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
