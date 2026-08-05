@@ -1979,7 +1979,7 @@ async function purgeExpiredWorkoutImages(c: any, results: any[]) {
     }
   }
 }// Helper to calculate occurrence dates for recurring rules
-function generateOccurrenceDates(startDateStr: string, endDateStr: string | null | undefined, rule: string): string[] {
+function generateOccurrenceDates(startDateStr: string, endDateStr: string | null | undefined, rule: string, repeatDaysArr?: string[]): string[] {
   const dates: string[] = [];
   if (!startDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) return dates;
 
@@ -2002,28 +2002,69 @@ function generateOccurrenceDates(startDateStr: string, endDateStr: string | null
     end = maxEnd;
   }
 
+  // Target day indices (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
+  const targetDays = new Set<number>();
+  const dayMap: Record<string, number> = {
+    sun: 0, sunday: 0,
+    mon: 1, monday: 1,
+    tue: 2, tues: 2, tuesday: 2,
+    wed: 3, wednesday: 3,
+    thu: 4, thur: 4, thurs: 4, thursday: 4,
+    fri: 5, friday: 5,
+    sat: 6, saturday: 6
+  };
+
+  if (Array.isArray(repeatDaysArr) && repeatDaysArr.length > 0) {
+    for (const d of repeatDaysArr) {
+      const key = d.toLowerCase().trim();
+      if (dayMap[key] !== undefined) {
+        targetDays.add(dayMap[key]);
+      }
+    }
+  }
+
+  if (targetDays.size === 0) {
+    for (const [key, dayNum] of Object.entries(dayMap)) {
+      if (ruleLower.includes(key)) {
+        targetDays.add(dayNum);
+      }
+    }
+  }
+
   const current = new Date(start);
   let count = 0;
-  const MAX_OCCURRENCES = 100;
+  const MAX_OCCURRENCES = 365;
 
-  while (current <= end && count < MAX_OCCURRENCES) {
-    const yyyy = current.getFullYear();
-    const mm = String(current.getMonth() + 1).padStart(2, '0');
-    const dd = String(current.getDate()).padStart(2, '0');
-    dates.push(`${yyyy}-${mm}-${dd}`);
-
-    count++;
-
-    if (ruleLower === 'daily' || ruleLower === 'every day' || ruleLower === 'everyday') {
+  if (targetDays.size > 0) {
+    while (current <= end && count < MAX_OCCURRENCES) {
+      if (targetDays.has(current.getDay())) {
+        const yyyy = current.getFullYear();
+        const mm = String(current.getMonth() + 1).padStart(2, '0');
+        const dd = String(current.getDate()).padStart(2, '0');
+        dates.push(`${yyyy}-${mm}-${dd}`);
+        count++;
+      }
       current.setDate(current.getDate() + 1);
-    } else if (ruleLower.includes('bi-weekly') || ruleLower.includes('2 weeks') || ruleLower.includes('two weeks')) {
-      current.setDate(current.getDate() + 14);
-    } else if (ruleLower.includes('weekly') || ruleLower.includes('week')) {
-      current.setDate(current.getDate() + 7);
-    } else if (ruleLower.includes('monthly') || ruleLower.includes('month')) {
-      current.setMonth(current.getMonth() + 1);
-    } else {
-      current.setDate(current.getDate() + 7);
+    }
+  } else {
+    while (current <= end && count < MAX_OCCURRENCES) {
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, '0');
+      const dd = String(current.getDate()).padStart(2, '0');
+      dates.push(`${yyyy}-${mm}-${dd}`);
+      count++;
+
+      if (ruleLower === 'daily' || ruleLower === 'every day' || ruleLower === 'everyday') {
+        current.setDate(current.getDate() + 1);
+      } else if (ruleLower.includes('bi-weekly') || ruleLower.includes('2 weeks') || ruleLower.includes('two weeks')) {
+        current.setDate(current.getDate() + 14);
+      } else if (ruleLower.includes('weekly') || ruleLower.includes('week')) {
+        current.setDate(current.getDate() + 7);
+      } else if (ruleLower.includes('monthly') || ruleLower.includes('month')) {
+        current.setMonth(current.getMonth() + 1);
+      } else {
+        current.setDate(current.getDate() + 7);
+      }
     }
   }
 
@@ -2126,7 +2167,7 @@ const handleCreateEvent = async (c: any) => {
 
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body?.schoolId || body?.school_id || c.req.query('school_id') || c.req.query('schoolId');
 
-  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate, untilDate } = body;
+  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate, untilDate, repeatDays } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -2157,10 +2198,6 @@ const handleCreateEvent = async (c: any) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDt)) {
     return c.json({ success: false, message: 'Event date must be formatted as YYYY-MM-DD.' }, 400);
   }
-  const todayStr = new Date().toISOString().split('T')[0];
-  if (eventDt < todayStr) {
-    return c.json({ success: false, message: 'Events cannot be created in the past.' }, 400);
-  }
   if (!eventLoc) {
     return c.json({ success: false, message: 'Event location is required.' }, 400);
   }
@@ -2181,7 +2218,8 @@ const handleCreateEvent = async (c: any) => {
   const finalAgeGroup = targetAgeGroup || assignedTeam;
   const finalTeam = assignedTeam || targetAgeGroup;
 
-  const occurrenceDates = generateOccurrenceDates(eventDt, recEndDateVal, recRuleVal);
+  const repeatDaysList = Array.isArray(repeatDays) ? repeatDays : (body.repeat_days || []);
+  const occurrenceDates = generateOccurrenceDates(eventDt, recEndDateVal, recRuleVal, repeatDaysList);
   const isImpVal = isImportant === true || isImportant === 1 ? 1 : 0;
   const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : null;
   const compCountVal = evType === 'Gym Session' ? 0 : null;
