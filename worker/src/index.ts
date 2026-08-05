@@ -172,6 +172,16 @@ function generatePrimaryKey(prefix: string = 'id'): string {
   return `${prefix}_${Date.now()}_${uuid}`;
 }
 
+// Resolve schoolId from JWT, body, or query — ALWAYS returns a string.
+// D1 TEXT columns do NOT match numeric bind params, so this prevents silent 0-row queries.
+function resolveSchoolId(jwtPayload: any, body?: any, query?: any): string {
+  const raw = jwtPayload?.schoolId || jwtPayload?.school_id
+    || body?.schoolId || body?.school_id
+    || query?.school_id || query?.schoolId
+    || '1';
+  return String(raw);
+}
+
 // Helper for JWT Secret Key
 const getSecret = (c: any) => {
   const secret = c.env?.JWT_SECRET;
@@ -778,7 +788,7 @@ app.use('/api/events', enforceJwtAuth);
 // Route: Get Athletes / Players
 app.get('/api/athletes', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
   const db = getDB(c);
   try {
     const sId = String(schoolId);
@@ -942,7 +952,7 @@ app.delete('/api/dashboard/athletes/:id', async (c) => {
 // Route: Get Coaches
 const handleGetCoaches = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
   const db = getDB(c);
   try {
     const sId = String(schoolId);
@@ -1324,7 +1334,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
 // Route: Get Coach Squads
 const handleGetSquads = async (c: any) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
   const coachId = jwtPayload?.sub || c.req.query('coach_id') || c.req.query('coachId');
   const db = getDB(c);
 
@@ -1401,7 +1411,7 @@ const handlePostSquads = async (c: any) => {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
 
-  const schoolId = jwtPayload?.schoolId || body?.schoolId || '1';
+  const schoolId = resolveSchoolId(jwtPayload, body);
 
   const { id, name, ageGroup, code, description } = body;
   if (!code && !ageGroup) {
@@ -1423,12 +1433,12 @@ const handlePostSquads = async (c: any) => {
         code = excluded.code,
         description = excluded.description,
         coach_id = excluded.coach_id
-    `).bind(squadId, schoolId, coachId, squadName, squadCode, description || '').run();
+    `).bind(squadId, String(schoolId), coachId, squadName, squadCode, description || '').run();
 
     try {
       const { results: matchingPlayers } = await db.prepare(
         'SELECT id FROM players WHERE school_id = ? AND (age_group = ? OR team = ?)'
-      ).bind(schoolId, squadCode, squadName).all();
+      ).bind(String(schoolId), squadCode, squadName).all();
 
       if (matchingPlayers && matchingPlayers.length > 0) {
         for (const p of matchingPlayers) {
@@ -1484,7 +1494,7 @@ app.delete('/api/dashboard/squads/:id', handleDeleteSquad);
 const handleGetRoster = async (c: any) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
   const coachId = jwtPayload?.sub || 'USR-COACH-001';
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
@@ -1716,7 +1726,7 @@ app.post('/api/players/:id/squads', async (c) => {
 // Route: Get Coach Dashboard Summary KPIs (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/summary', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || '1';
+  const schoolId = resolveSchoolId(jwtPayload);
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1806,7 +1816,7 @@ app.get('/api/dashboard/summary', async (c) => {
 // Route: Get Flagged Players (Restricted to Coach's Owned Squads)
 app.get('/api/dashboard/flags', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || '1';
+  const schoolId = resolveSchoolId(jwtPayload);
   const coachId = jwtPayload?.sub;
   const role = jwtPayload?.role || 'Coach';
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
@@ -1974,7 +1984,7 @@ const handleGetEvents = async (c: any) => {
 
     let events = (results || []).map((r: any) => ({
       id: r.id?.toString() || '',
-      schoolId: r.school_id || schoolId,
+      schoolId: r.school_id || reqSchoolId || '1',
       title: r.title,
       eventType: r.event_type,
       startTime: r.start_time,
@@ -2018,7 +2028,7 @@ const handleCreateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = (jwtPayload?.schoolId || body?.schoolId || '1').trim();
+  const schoolId = resolveSchoolId(jwtPayload, body);
 
   const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
@@ -2179,7 +2189,7 @@ const handleUpdateEvent = async (c: any) => {
 
   const targetAgeGroup = (ageGroup || team || existingEvt?.age_group || existingEvt?.team || 'U15 Squad').trim();
   const assignedTeam = (team || ageGroup || existingEvt?.team || existingEvt?.age_group || 'U15 Squad').trim();
-  const schoolId = existingEvt?.school_id || body.schoolId || '1';
+  const schoolId = String(existingEvt?.school_id || body.schoolId || '1');
 
   let evType = rawEventType;
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
@@ -2447,7 +2457,7 @@ app.post('/api/dashboard/actions/:id/delete', async (c) => {
 // Route: Get Rising Stars (Top performers by age group)
 app.get('/api/dashboard/rising-stars', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || '1';
+  const schoolId = resolveSchoolId(jwtPayload);
   const ageGroup = c.req.query('age_group') || c.req.query('ageGroup');
   const db = getDB(c);
 
@@ -3267,11 +3277,11 @@ app.post('/api/player/evaluation-baseline', async (c) => {
 // Route: Get Test Metric Definitions
 app.get('/api/test-metrics', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
   const db = getDB(c);
 
   try {
-    let { results } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT) ORDER BY category, name ASC').bind(schoolId, schoolId).all();
+    let { results } = await db.prepare('SELECT * FROM test_metric_definitions WHERE school_id = ? OR CAST(school_id AS TEXT) = CAST(? AS TEXT) ORDER BY category, name ASC').bind(String(schoolId), String(schoolId)).all();
     if (!results || results.length === 0) {
       const fallback = await db.prepare('SELECT * FROM test_metric_definitions ORDER BY category, name ASC').all();
       results = fallback.results || [];
@@ -3305,7 +3315,7 @@ app.post('/api/test-metrics', async (c) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body?.schoolId || body?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, body, c.req.query());
 
   const { id, name, category, unit, goalDirection, targetBenchmark } = body || {};
   const metricName = (name || body?.metricName || body?.title || '').trim();
@@ -3545,7 +3555,7 @@ app.post('/api/test-logs/batch', async (c) => {
 app.get('/api/admin/all-players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const db = getDB(c);
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, null, c.req.query());
 
   try {
     const sId = String(schoolId);
@@ -4011,7 +4021,7 @@ app.post('/api/players/:id/position', async (c) => {
 app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const body = await c.req.json();
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body.schoolId || c.req.query('school_id') || c.req.query('schoolId') || '1';
+  const schoolId = resolveSchoolId(jwtPayload, body, c.req.query());
 
   const { id, firstName, lastName, ageGroup, position, team, email, squadId } = body;
   const db = getDB(c);
@@ -4039,7 +4049,7 @@ app.post('/api/players', async (c) => {
       await db.prepare(`
         INSERT INTO users (id, email, first_name, last_name, role, school_id, password_hash)
         VALUES (?, ?, ?, ?, 'Player', ?, 'PENDING_ACTIVATION')
-      `).bind(userId, playerEmail, firstName, lastName, schoolId).run();
+      `).bind(userId, playerEmail, firstName, lastName, String(schoolId)).run();
     }
 
     // Link player record to user_id
@@ -4071,7 +4081,7 @@ app.post('/api/players', async (c) => {
       try {
         const squad = await db.prepare(
           'SELECT id FROM squads WHERE coach_id = ? AND school_id = ? AND (code = ? OR name = ?)'
-        ).bind(jwtPayload.sub, schoolId, ageGroup, team || ageGroup).first();
+        ).bind(jwtPayload.sub, String(schoolId), ageGroup, team || ageGroup).first();
 
         if (squad) {
           await db.prepare(
