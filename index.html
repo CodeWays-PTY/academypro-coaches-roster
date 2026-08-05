@@ -1395,7 +1395,8 @@
 
         // Coaches CRUD
         openAddCoach() {
-          this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : 'Hoërskool Overkruin';
+          this.newCoach = { name: '', email: '', phone: '', schoolName: school };
           this.showAddCoachModal = true;
         },
 
@@ -1404,12 +1405,13 @@
             this.triggerToast('Please fill in Name and Email Address', 'error');
             return;
           }
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : 'Hoërskool Overkruin';
           const created = {
             id: `cch_${Date.now()}`,
             name: this.newCoach.name.trim(),
             email: this.newCoach.email.toLowerCase().trim(),
             phone: (this.newCoach.phone || '').trim(),
-            schoolName: this.newCoach.schoolName || 'OVK Academy'
+            schoolName: school
           };
 
           try {
@@ -1424,7 +1426,7 @@
               this.coaches.push(coachData);
               this.saveCoachesToStorage();
               this.showAddCoachModal = false;
-              this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
+              this.newCoach = { name: '', email: '', phone: '', schoolName: school };
               this.triggerToast(`Coach ${coachData.name} registered successfully!`, 'success');
             } else {
               this.triggerToast(data.message || data.error || 'Failed to register coach on server', 'error');
@@ -1437,12 +1439,13 @@
 
         openEditCoach(coach) {
           if (!coach) return;
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : (coach.schoolName || 'Hoërskool Overkruin');
           this.editCoachItem = {
             id: coach.id,
             name: coach.name || '',
             email: coach.email || '',
             phone: coach.phone || '',
-            schoolName: coach.schoolName || 'Hoërskool Overkruin',
+            schoolName: school,
             role: coach.role || 'Coach'
           };
           this.showEditCoachModal = true;
@@ -1455,13 +1458,14 @@
           }
 
           const targetEmail = this.editCoachItem.email.toLowerCase().trim();
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : 'Hoërskool Overkruin';
           const idx = this.coaches.findIndex(c => c.id === this.editCoachItem.id || (c.email && c.email.toLowerCase() === targetEmail));
           const updatedItem = {
             id: this.editCoachItem.id,
             name: this.editCoachItem.name.trim(),
             email: targetEmail,
             phone: (this.editCoachItem.phone || '').trim(),
-            schoolName: this.editCoachItem.schoolName || 'Hoërskool Overkruin',
+            schoolName: school,
             role: this.editCoachItem.role || 'Coach'
           };
 
@@ -2795,11 +2799,18 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-outline mb-1">Email Address *</label>
-          <input x-model="newCoach.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="email"/>
+          <input x-model="newCoach.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary" type="email" placeholder="e.g. coach@academy.co.za"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy (Locked)</label>
+          <div class="w-full bg-surface-container border border-outline-variant rounded-lg p-2.5 text-xs font-bold text-on-surface flex items-center justify-between">
+            <span x-text="loggedInCoach ? (loggedInCoach.schoolName || 'Hoërskool Overkruin') : 'Hoërskool Overkruin'"></span>
+            <span class="material-symbols-outlined text-[16px] text-outline" title="Inherited from Headmaster Account">lock</span>
+          </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" @click="showAddCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Save Coach</button>
+          <button type="button" @click="showAddCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg hover:bg-surface-container-high transition-colors">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Save Coach</button>
         </div>
       </form>
     </div>
@@ -2828,8 +2839,11 @@
           <input x-model="editCoachItem.phone" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="tel" placeholder="e.g. +27 82 123 4567"/>
         </div>
         <div>
-          <label class="block text-xs font-bold text-outline mb-1">School / Academy Name</label>
-          <input x-model="editCoachItem.schoolName" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Hoërskool Overkruin"/>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy (Locked)</label>
+          <div class="w-full bg-surface-container border border-outline-variant rounded-lg p-2.5 text-xs font-bold text-on-surface flex items-center justify-between">
+            <span x-text="loggedInCoach ? (loggedInCoach.schoolName || 'Hoërskool Overkruin') : 'Hoërskool Overkruin'"></span>
+            <span class="material-symbols-outlined text-[16px] text-outline" title="Inherited from Headmaster Account">lock</span>
+          </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showEditCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg hover:bg-surface-container-high transition-colors">Cancel</button>

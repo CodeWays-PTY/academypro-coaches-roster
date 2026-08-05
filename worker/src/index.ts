@@ -949,7 +949,9 @@ const handlePostCoach = async (c: any) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const targetSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id || '1';
+    const rawSchool = schoolId || body?.schoolName || body?.school_name || jwtPayload?.schoolId || jwtPayload?.school_id || '1';
+    const targetSchool = (rawSchool === '1' || rawSchool === 1) ? '1' : String(rawSchool);
+    const displaySchool = (targetSchool === '1' || targetSchool === 'OVK Academy' || targetSchool === 'Hoërskool Overkruin') ? 'Hoërskool Overkruin' : targetSchool;
     const userId = body.id || `cch_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     await db.prepare(`
@@ -962,12 +964,12 @@ const handlePostCoach = async (c: any) => {
         role = excluded.role,
         phone_number = excluded.phone_number,
         school_id = excluded.school_id
-    `).bind(userId, String(targetSchool), fName, lName, fullName, coachEmail, coachRole, phone || '').run();
+    `).bind(userId, targetSchool, fName, lName, fullName, coachEmail, coachRole, phone || '').run();
 
     return c.json({
       success: true,
       message: 'Coach saved successfully',
-      data: { id: userId, email: coachEmail, name: fullName, role: coachRole, phone: phone || '', schoolName: targetSchool }
+      data: { id: userId, email: coachEmail, name: fullName, role: coachRole, phone: phone || '', schoolName: displaySchool }
     });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
@@ -991,7 +993,9 @@ const handlePutCoach = async (c: any) => {
     const fName = firstName || fullParts[0] || 'Coach';
     const lName = lastName || fullParts.slice(1).join(' ') || '';
     const coachRole = role || 'Coach';
-    const targetSchool = schoolName || schoolId || '1';
+    const rawSchool = schoolName || schoolId || '1';
+    const targetSchool = (rawSchool === '1' || rawSchool === 1) ? '1' : String(rawSchool);
+    const displaySchool = (targetSchool === '1' || targetSchool === 'OVK Academy' || targetSchool === 'Hoërskool Overkruin') ? 'Hoërskool Overkruin' : targetSchool;
 
     await db.prepare(`
       UPDATE users SET
@@ -1003,12 +1007,12 @@ const handlePutCoach = async (c: any) => {
         phone_number = COALESCE(?, phone_number),
         school_id = COALESCE(?, school_id)
       WHERE id = ? OR LOWER(email) = LOWER(?) OR CAST(id AS TEXT) = ?
-    `).bind(fName, lName, fullName, coachEmail || null, coachRole, phone || '', String(targetSchool), coachId, coachId, coachId).run();
+    `).bind(fName, lName, fullName, coachEmail || null, coachRole, phone || '', targetSchool, coachId, coachId, coachId).run();
 
     return c.json({
       success: true,
       message: 'Coach details updated successfully',
-      data: { id: coachId, email: coachEmail, name: fullName, role: coachRole, phone: phone || '', schoolName: targetSchool }
+      data: { id: coachId, email: coachEmail, name: fullName, role: coachRole, phone: phone || '', schoolName: displaySchool }
     });
   } catch (e: any) {
     return c.json({ success: false, message: e.message }, 500);
