@@ -407,8 +407,32 @@
           'Utility Back'
         ],
 
+        async fetchUserProfileFromApi() {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/auth/profile`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.data) {
+                const u = data.data;
+                const name = `${u.firstName || u.first_name || ''} ${u.lastName || u.last_name || ''}`.trim() || u.email;
+                this.loggedInCoach = {
+                  id: u.id,
+                  name: name,
+                  email: u.email,
+                  role: u.role || 'Coach',
+                  schoolName: u.schoolName || 'Hoërskool Overkruin'
+                };
+                localStorage.setItem('academypro_logged_in_coach', JSON.stringify(this.loggedInCoach));
+              }
+            }
+          } catch (e) {
+            console.log('Error fetching user profile:', e);
+          }
+        },
+
         async init() {
           this.purgeLegacyDummyData();
+          await this.fetchUserProfileFromApi();
           await Promise.all([
             this.fetchAthletesFromApi(),
             this.fetchCoachesFromApi(),
@@ -1674,15 +1698,14 @@
     <div class="flex items-center gap-xl flex-1"></div>
 
     <div class="flex items-center gap-md">
-      <div class="flex items-center gap-sm cursor-pointer group" @click="showSwitchCoachModal = true">
-        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs border border-outline-variant group-hover:ring-2 ring-primary transition-all"
-             x-text="getInitials(loggedInCoach ? loggedInCoach.name : 'Jan-Albert Mentz')">
+      <div class="flex items-center gap-sm">
+        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs border border-outline-variant shadow-sm"
+             x-text="getInitials(loggedInCoach ? loggedInCoach.name : '')">
         </div>
         <div class="hidden sm:flex flex-col text-left">
-          <span class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : 'Jan-Albert Mentz'"></span>
-          <span class="text-[10px] text-outline" x-text="loggedInCoach ? loggedInCoach.email : 'janmen777@gmail.com'"></span>
+          <span class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : ''"></span>
+          <span class="text-[10px] text-outline" x-text="loggedInCoach ? loggedInCoach.email : ''"></span>
         </div>
-        <span class="material-symbols-outlined text-outline">expand_more</span>
       </div>
     </div>
   </header>
@@ -2645,12 +2668,11 @@
             </div>
 
             <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
-              <button type="button" @click="loginAsCoach(coach.email)" 
-                      class="flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1"
-                      :class="loggedInCoach && loggedInCoach.email === coach.email ? 'bg-surface-container text-outline cursor-default' : 'bg-primary-container text-on-primary-container hover:opacity-90'">
-                <span class="material-symbols-outlined text-[16px]">switch_account</span>
-                <span x-text="loggedInCoach && loggedInCoach.email === coach.email ? 'Current Profile' : 'Switch Profile'"></span>
-              </button>
+              <div class="flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
+                   :class="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'bg-primary-container/15 text-primary' : 'bg-surface-container text-on-surface-variant'">
+                <span class="material-symbols-outlined text-[16px]" x-text="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'verified_user' : 'badge'"></span>
+                <span x-text="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'Active Profile' : 'Staff Coach'"></span>
+              </div>
               <button type="button" @click="confirmDeleteCoach(coach)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Coach">
                 <span class="material-symbols-outlined text-[18px]">delete</span>
               </button>
@@ -2859,36 +2881,7 @@
       </form>
     </div>
   </div>
-  <!-- MODAL: SWITCH ACTIVE COACH ACCOUNT -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showSwitchCoachModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
-      <div class="flex justify-between items-center">
-        <h3 class="font-headline-md font-bold text-lg text-on-surface">Active Coach Identity</h3>
-        <button type="button" @click="showSwitchCoachModal = false" class="text-outline hover:text-on-surface">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      
-      <div class="p-md bg-primary-container/10 border border-primary/20 rounded-xl flex items-center gap-md">
-        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm" x-text="getInitials(loggedInCoach ? loggedInCoach.name : '')"></div>
-        <div>
-          <p class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : ''"></p>
-          <p class="text-[11px] text-primary font-semibold" x-text="loggedInCoach ? loggedInCoach.email : ''"></p>
-        </div>
-      </div>
 
-      <form @submit.prevent="loginAsCoach()" class="space-y-md pt-2">
-        <div>
-          <label class="block text-xs font-bold text-outline mb-1">Switch Coach Account by Email</label>
-          <input x-model="switchCoachEmail" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-primary" placeholder="e.g. janmen777@gmail.com" type="email"/>
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" @click="loginAsCoach('janmen777@gmail.com')" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg text-primary">Login as janmen777@gmail.com</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Switch Identity</button>
-        </div>
-      </form>
-    </div>
-  </div>
   <!-- MODAL: MANAGE TEAM TEST METRICS -->
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" x-cloak>
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md">

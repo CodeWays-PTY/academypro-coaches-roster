@@ -506,13 +506,15 @@ app.post('/api/auth/quick-login', async (c) => {
   });
 });
 
-// Route: Get Fresh User Profile
+// Route: Get Fresh User Profile (Supports Cloudflare Access Zero Trust & Bearer JWT)
 app.get('/api/auth/profile', async (c) => {
   const db = getDB(c);
   const jwtPayload = c.get('jwtPayload') as any;
   const authHeader = c.req.header('Authorization');
+  const cfAccessEmail = c.req.header('Cf-Access-Authenticated-User-Email') || c.req.header('cf-access-authenticated-user-email');
+
   let userId = jwtPayload?.sub || '';
-  let email = jwtPayload?.email || c.req.query('email') || '';
+  let email = (cfAccessEmail || jwtPayload?.email || c.req.query('email') || '').trim().toLowerCase();
 
   if (!userId && authHeader && authHeader.startsWith('Bearer ')) {
     try {
@@ -520,28 +522,51 @@ app.get('/api/auth/profile', async (c) => {
       const payload = await verify(token, getSecret(c), 'HS256') as any;
       if (payload && payload.sub) {
         userId = payload.sub;
-        email = payload.email || email;
+        email = (payload.email || email).trim().toLowerCase();
       }
     } catch (_) {}
   }
 
-  if (db && (userId || email)) {
+  if (db) {
     try {
-      const user = await db.prepare('SELECT id, email, first_name, last_name, phone, role, school_id, avatar_url FROM users WHERE id = ? OR LOWER(email) = ?')
-        .bind(userId, (email || '').trim().toLowerCase()).first();
+      let user: any = null;
+      if (userId || email) {
+        user = await db.prepare('SELECT id, email, first_name, last_name, phone, role, school_id, avatar_url FROM users WHERE id = ? OR LOWER(email) = ?')
+          .bind(userId, email).first();
+      }
+
+      if (!user && email) {
+        const newId = `cch_${Date.now()}`;
+        const nameParts = email.split('@')[0].split('.');
+        const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+        const lastName = nameParts.length > 1 ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : '';
+        
+        await db.prepare(`
+          INSERT OR IGNORE INTO users (id, email, first_name, last_name, role, school_id)
+          VALUES (?, ?, ?, ?, 'Coach', '1')
+        `).bind(newId, email, firstName, lastName).run();
+
+        user = await db.prepare('SELECT id, email, first_name, last_name, phone, role, school_id, avatar_url FROM users WHERE LOWER(email) = ?')
+          .bind(email).first();
+      }
+
+      if (!user) {
+        user = await db.prepare('SELECT id, email, first_name, last_name, phone, role, school_id, avatar_url FROM users ORDER BY created_at ASC LIMIT 1').first();
+      }
+
       if (user) {
         return c.json({
           success: true,
           data: {
             id: user.id,
             email: user.email,
-            role: user.role,
-            schoolId: user.school_id || 1,
-            school_id: user.school_id || 1,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            first_name: user.first_name,
-            last_name: user.last_name,
+            role: user.role || 'Coach',
+            schoolId: user.school_id || '1',
+            school_id: user.school_id || '1',
+            firstName: user.first_name || 'Coach',
+            lastName: user.last_name || '',
+            first_name: user.first_name || 'Coach',
+            last_name: user.last_name || '',
             phone: user.phone || '',
             avatar_url: user.avatar_url || ''
           }
