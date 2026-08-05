@@ -1221,26 +1221,25 @@ async function ensureSquadsTables(db: any) {
 
 // Helper to get player IDs and squad codes owned by a coach
 // Helper to get player IDs and squad codes owned by a coach or accessible by role
-async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string, role?: string, ageGroupFilter?: string): Promise<{ squadIds: string[]; playerIds: string[]; squadCodes: string[] }> {
+async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string | number, role?: string, ageGroupFilter?: string): Promise<{ squadIds: string[]; playerIds: string[]; squadCodes: string[] }> {
   await ensureSquadsTables(db);
-  console.log(`[DEBUG getCoachSquadPlayerIds] coachId=${coachId} schoolId=${schoolId} role=${role} ageGroupFilter=${ageGroupFilter}`);
+  // CRITICAL: D1 TEXT columns do NOT match numeric bind params. Always cast to string.
+  const safeSchoolId = String(schoolId || '1');
 
   let squadRows: any[] = [];
   try {
     let sQuery = 'SELECT id, code, name FROM squads WHERE school_id = ?';
-    let sParams: any[] = [schoolId];
+    let sParams: any[] = [safeSchoolId];
 
     if (ageGroupFilter && ageGroupFilter !== 'None' && ageGroupFilter !== 'All') {
       sQuery += ' AND (code = ? OR name = ? OR id = ?)';
       sParams.push(ageGroupFilter, ageGroupFilter, ageGroupFilter);
     }
 
-    console.log(`[DEBUG getCoachSquadPlayerIds] Squad query: ${sQuery} | params: ${JSON.stringify(sParams)}`);
     const { results } = await db.prepare(sQuery).bind(...sParams).all();
     squadRows = results || [];
-    console.log(`[DEBUG getCoachSquadPlayerIds] Squad rows found: ${squadRows.length} | ids: ${squadRows.map((s: any) => s.id).join(',')}`);
   } catch (err) {
-    console.error(`[DEBUG getCoachSquadPlayerIds] Squad query ERROR:`, err);
+    console.warn('[getCoachSquadPlayerIds] Squad query error:', err);
   }
 
   const squadIds = squadRows.map((s: any) => s.id);
@@ -1254,7 +1253,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     ...squadNames,
     ...(ageGroupFilter && ageGroupFilter !== 'All' && ageGroupFilter !== 'None' ? [ageGroupFilter] : [])
   ]));
-  console.log(`[DEBUG getCoachSquadPlayerIds] allSquadKeys: ${JSON.stringify(allSquadKeys)}`);
+
 
   const playerIdsSet = new Set<string>();
 
@@ -1264,39 +1263,34 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
       const { results: spResults } = await db.prepare(`
         SELECT DISTINCT player_id FROM squad_players WHERE squad_id IN (${spPlaceholders})
       `).bind(...allSquadKeys).all();
-      console.log(`[DEBUG getCoachSquadPlayerIds] squad_players results: ${(spResults || []).length}`);
       for (const r of (spResults || [])) {
         if (r.player_id) playerIdsSet.add(r.player_id);
       }
-    } catch (err) {
-      console.error(`[DEBUG getCoachSquadPlayerIds] squad_players query ERROR:`, err);
+    } catch (_) {
     }
 
     try {
       const { results: smResults } = await db.prepare(`
         SELECT DISTINCT athlete_id FROM squad_members WHERE squad_id IN (${spPlaceholders})
       `).bind(...allSquadKeys).all();
-      console.log(`[DEBUG getCoachSquadPlayerIds] squad_members results: ${(smResults || []).length}`);
       for (const r of (smResults || [])) {
         if (r.athlete_id) playerIdsSet.add(r.athlete_id);
       }
-    } catch (err) {
-      console.log(`[DEBUG getCoachSquadPlayerIds] squad_members query error (table may not exist): ${err}`);
+    } catch (_) {
     }
   }
 
-  console.log(`[DEBUG getCoachSquadPlayerIds] playerIdsSet size after squad queries: ${playerIdsSet.size}`);
+
 
   // Fallback: If squad_players contains no mapping for this squad/age group, query players directly
   if (playerIdsSet.size === 0) {
-    const targetSchool = schoolId || 1;
-    console.log(`[DEBUG getCoachSquadPlayerIds] FALLBACK: targetSchool=${targetSchool}`);
+    const targetSchool = safeSchoolId;
     try {
       if (ageGroupFilter && ageGroupFilter !== 'All' && ageGroupFilter !== 'None') {
         const { results: squadMatch } = await db.prepare(
           'SELECT id FROM players WHERE school_id = ? AND (LOWER(age_group) = LOWER(?) OR LOWER(team) = LOWER(?))'
         ).bind(targetSchool, ageGroupFilter, ageGroupFilter).all();
-        console.log(`[DEBUG getCoachSquadPlayerIds] FALLBACK age_group match: ${(squadMatch || []).length}`);
+
         for (const r of (squadMatch || [])) {
           if (r.id) playerIdsSet.add(r.id);
         }
@@ -1307,7 +1301,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
         const { results: allPlayers } = await db.prepare(
           'SELECT id FROM players WHERE school_id = ?'
         ).bind(targetSchool).all();
-        console.log(`[DEBUG getCoachSquadPlayerIds] FALLBACK all players for school: ${(allPlayers || []).length}`);
+
         for (const r of (allPlayers || [])) {
           if (r.id) playerIdsSet.add(r.id);
         }
@@ -1317,7 +1311,7 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     }
   }
 
-  console.log(`[DEBUG getCoachSquadPlayerIds] FINAL playerIds count: ${playerIdsSet.size}`);
+
 
   const playerIds = Array.from(playerIdsSet);
   return {
@@ -1326,62 +1320,6 @@ async function getCoachSquadPlayerIds(db: any, coachId: string, schoolId: string
     squadCodes: squadCodes.length > 0 ? squadCodes : (ageGroupFilter ? [ageGroupFilter] : [])
   };
 }
-
-// TEMPORARY DEBUG ENDPOINT - Returns raw diagnostic info about roster lookup
-app.get('/api/debug/roster/:age_group', async (c: any) => {
-  const ageGroup = c.req.param('age_group');
-  const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || '1';
-  const coachId = jwtPayload?.sub || 'USR-COACH-001';
-  const db = getDB(c);
-
-  const debug: any = { ageGroup, schoolId, coachId, jwtPayload: jwtPayload ? { sub: jwtPayload.sub, schoolId: jwtPayload.schoolId, role: jwtPayload.role } : null };
-
-  try {
-    // Step 1: Query squads
-    let sQuery = 'SELECT id, code, name, school_id FROM squads WHERE school_id = ?';
-    let sParams: any[] = [schoolId];
-    if (ageGroup && ageGroup !== 'None' && ageGroup !== 'All') {
-      sQuery += ' AND (code = ? OR name = ? OR id = ?)';
-      sParams.push(ageGroup, ageGroup, ageGroup);
-    }
-    const { results: squadRows } = await db.prepare(sQuery).bind(...sParams).all();
-    debug.step1_squads = { query: sQuery, params: sParams, results: squadRows || [] };
-
-    // Step 1b: Query ALL squads (no school filter) for comparison
-    const { results: allSquads } = await db.prepare('SELECT id, code, name, school_id, coach_id FROM squads').all();
-    debug.step1b_allSquads = allSquads || [];
-
-    // Step 2: Query squad_players
-    const squadIds = (squadRows || []).map((s: any) => s.id);
-    const squadCodes = (squadRows || []).map((s: any) => s.code);
-    const squadNames = (squadRows || []).map((s: any) => s.name);
-    const allSquadKeys = Array.from(new Set([...squadIds, ...squadCodes, ...squadNames, ...(ageGroup && ageGroup !== 'All' ? [ageGroup] : [])]));
-    debug.step2_allSquadKeys = allSquadKeys;
-
-    if (allSquadKeys.length > 0) {
-      const ph = allSquadKeys.map(() => '?').join(',');
-      const { results: spResults } = await db.prepare(`SELECT DISTINCT squad_id, player_id FROM squad_players WHERE squad_id IN (${ph}) LIMIT 5`).bind(...allSquadKeys).all();
-      debug.step2_squadPlayers = { count: (spResults || []).length, sample: spResults || [] };
-    }
-
-    // Step 2b: Query ALL squad_players for comparison
-    const { results: allSP } = await db.prepare('SELECT squad_id, COUNT(*) as cnt FROM squad_players GROUP BY squad_id').all();
-    debug.step2b_allSquadPlayers = allSP || [];
-
-    // Step 3: Query players directly
-    const { results: directPlayers } = await db.prepare('SELECT id, school_id, age_group, team FROM players WHERE school_id = ? LIMIT 5').bind(schoolId).all();
-    debug.step3_directPlayers = { count: (directPlayers || []).length, sample: directPlayers || [] };
-
-    // Step 3b: All players schools
-    const { results: playerSchools } = await db.prepare('SELECT DISTINCT school_id, COUNT(*) as cnt FROM players GROUP BY school_id').all();
-    debug.step3b_playerSchools = playerSchools || [];
-
-    return c.json({ success: true, debug });
-  } catch (err: any) {
-    return c.json({ success: false, error: err.message, debug });
-  }
-});
 
 // Route: Get Coach Squads
 const handleGetSquads = async (c: any) => {
@@ -1546,7 +1484,7 @@ app.delete('/api/dashboard/squads/:id', handleDeleteSquad);
 const handleGetRoster = async (c: any) => {
   const ageGroup = c.req.param('age_group');
   const jwtPayload = c.get('jwtPayload') as any;
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || c.req.query('school_id') || c.req.query('schoolId') || '1';
   const coachId = jwtPayload?.sub || 'USR-COACH-001';
   const role = jwtPayload?.role || 'Coach';
   const db = getDB(c);
@@ -4073,7 +4011,7 @@ app.post('/api/players/:id/position', async (c) => {
 app.post('/api/players', async (c) => {
   const jwtPayload = c.get('jwtPayload') as any;
   const body = await c.req.json();
-  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body.schoolId || c.req.query('school_id') || c.req.query('schoolId') || 1;
+  const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body.schoolId || c.req.query('school_id') || c.req.query('schoolId') || '1';
 
   const { id, firstName, lastName, ageGroup, position, team, email, squadId } = body;
   const db = getDB(c);
