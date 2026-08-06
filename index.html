@@ -1118,26 +1118,24 @@
             recurrenceRule: this.activeSeries.recurrenceRule || 'Weekly'
           };
 
-          // Add to local state immediately
-          this.activeSeries.occurrences.push(payload);
-          this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-          this.events.push(payload);
-          this.saveEventsToStorage();
-          const addedDate = this.newSeriesOccDate;
-          this.newSeriesOccDate = '';
-          this.triggerToast('Occurrence date added!', 'success');
-
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (!res.ok) {
-              console.warn('Server rejected addSeriesOccurrenceDate:', await res.text());
+            if (res.ok) {
+              this.activeSeries.occurrences.push(payload);
+              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+              this.events.push(payload);
+              this.saveEventsToStorage();
+              this.newSeriesOccDate = '';
+              this.triggerToast('Occurrence date added!', 'success');
+            } else {
+              this.triggerToast('Failed to add date — server error', 'error');
             }
           } catch (e) {
-            console.warn('Network error adding occurrence date (local state saved):', e);
+            this.triggerToast('Network error adding occurrence date', 'error');
           }
         },
 
@@ -1158,27 +1156,6 @@
             newDates.push(current.toISOString().split('T')[0]);
           }
 
-          // Add to local state immediately
-          newDates.forEach((dt, idx) => {
-            const item = {
-              id: `EVT-${Date.now()}_bulk${idx}`,
-              seriesId: this.activeSeries.seriesId,
-              title: this.activeSeries.title,
-              eventType: this.activeSeries.eventType,
-              startTime: this.activeSeries.startTime,
-              date: dt,
-              durationMins: this.activeSeries.durationMins,
-              location: this.activeSeries.location,
-              team: this.activeSeries.team,
-              recurrenceRule: 'Weekly'
-            };
-            this.activeSeries.occurrences.push(item);
-            this.events.push(item);
-          });
-          this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-          this.saveEventsToStorage();
-          this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
-
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/bulk-schedule`, {
               method: 'POST',
@@ -1195,11 +1172,31 @@
                 dates: newDates
               })
             });
-            if (!res.ok) {
-              console.warn('Server rejected bulkScheduleNextWeeks:', await res.text());
+            if (res.ok) {
+              newDates.forEach((dt, idx) => {
+                const item = {
+                  id: `EVT-${Date.now()}_bulk${idx}`,
+                  seriesId: this.activeSeries.seriesId,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  startTime: this.activeSeries.startTime,
+                  date: dt,
+                  durationMins: this.activeSeries.durationMins,
+                  location: this.activeSeries.location,
+                  team: this.activeSeries.team,
+                  recurrenceRule: 'Weekly'
+                };
+                this.activeSeries.occurrences.push(item);
+                this.events.push(item);
+              });
+              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+              this.saveEventsToStorage();
+              this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
+            } else {
+              this.triggerToast('Failed to bulk schedule — server error', 'error');
             }
           } catch (e) {
-            console.warn('Network error during bulk schedule (local state saved):', e);
+            this.triggerToast('Network error during bulk schedule', 'error');
           }
         },
 
