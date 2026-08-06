@@ -2404,7 +2404,7 @@ app.post('/api/events/:id', handleUpdateEvent);
 app.put('/api/events/:id', handleUpdateEvent);
 
 // Route: Batch Update / Bulk Add / Delete Series Occurrences
-app.post('/api/dashboard/events/series/bulk-schedule', async (c: any) => {
+const handleBulkScheduleSeries = async (c: any) => {
   const db = getDB(c);
   if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
 
@@ -2434,9 +2434,11 @@ app.post('/api/dashboard/events/series/bulk-schedule', async (c: any) => {
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to bulk schedule', error: err.message }, 500);
   }
-});
+};
+app.post('/api/dashboard/events/series/bulk-schedule', handleBulkScheduleSeries);
+app.post('/api/events/series/bulk-schedule', handleBulkScheduleSeries);
 
-app.delete('/api/dashboard/events/series/:seriesId', async (c: any) => {
+const handleDeleteSeries = async (c: any) => {
   const seriesId = c.req.param('seriesId');
   const db = getDB(c);
   if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
@@ -2446,18 +2448,11 @@ app.delete('/api/dashboard/events/series/:seriesId', async (c: any) => {
   } catch (err: any) {
     return c.json({ success: false, message: 'Failed to delete event series', error: err.message }, 500);
   }
-});
-app.post('/api/dashboard/events/series/:seriesId/delete', async (c: any) => {
-  const seriesId = c.req.param('seriesId');
-  const db = getDB(c);
-  if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
-  try {
-    await db.prepare('DELETE FROM events WHERE series_id = ? OR CAST(id AS TEXT) = ?').bind(seriesId, seriesId).run();
-    return c.json({ success: true, message: 'Event series deleted' });
-  } catch (err: any) {
-    return c.json({ success: false, message: 'Failed to delete event series', error: err.message }, 500);
-  }
-});
+};
+app.delete('/api/dashboard/events/series/:seriesId', handleDeleteSeries);
+app.post('/api/dashboard/events/series/:seriesId/delete', handleDeleteSeries);
+app.delete('/api/events/series/:seriesId', handleDeleteSeries);
+app.post('/api/events/series/:seriesId/delete', handleDeleteSeries);
 
 // Route: Delete Coach Command Event
 const handleDeleteEvent = async (c: any) => {
