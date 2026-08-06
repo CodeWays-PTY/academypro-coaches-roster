@@ -144,15 +144,15 @@
             const spaceAbove = rect.top - 12;
 
             let top;
-            if (spaceBelow >= popoverHeight || spaceBelow >= spaceAbove) {
-              top = rect.bottom + 6;
-              if (top + popoverHeight > window.innerHeight - 12) {
-                top = Math.max(12, window.innerHeight - popoverHeight - 12);
-              }
-            } else {
+            if (spaceAbove >= popoverHeight || spaceAbove >= spaceBelow) {
               top = rect.top - popoverHeight - 6;
               if (top < 12) {
                 top = 12;
+              }
+            } else {
+              top = rect.bottom + 6;
+              if (top + popoverHeight > window.innerHeight - 12) {
+                top = Math.max(12, window.innerHeight - popoverHeight - 12);
               }
             }
 
@@ -297,15 +297,15 @@
             const spaceAbove = rect.top - 12;
 
             let top;
-            if (spaceBelow >= popoverHeight || spaceBelow >= spaceAbove) {
-              top = rect.bottom + 6;
-              if (top + popoverHeight > window.innerHeight - 12) {
-                top = Math.max(12, window.innerHeight - popoverHeight - 12);
-              }
-            } else {
+            if (spaceAbove >= popoverHeight || spaceAbove >= spaceBelow) {
               top = rect.top - popoverHeight - 6;
               if (top < 12) {
                 top = 12;
+              }
+            } else {
+              top = rect.bottom + 6;
+              if (top + popoverHeight > window.innerHeight - 12) {
+                top = Math.max(12, window.innerHeight - popoverHeight - 12);
               }
             }
 
