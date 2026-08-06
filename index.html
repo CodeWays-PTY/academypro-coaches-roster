@@ -333,6 +333,24 @@
           team: ''
         },
 
+        // Recurring Event Series Modal State
+        showRecurringSeriesModal: false,
+        recurringSeriesTab: 'occurrences', // 'details' vs 'occurrences'
+        activeSeries: {
+          seriesId: '',
+          title: '',
+          eventType: 'Gym Session',
+          location: 'Gym Facility',
+          startTime: '15:30',
+          durationMins: 60,
+          team: 'U15',
+          recurrenceRule: 'Weekly',
+          occurrences: []
+        },
+        newSeriesOccDate: '',
+        newSeriesOccTime: '15:30',
+        bulkWeeksToAdd: 4,
+
         // Event Creation Form State (Aligned with Flutter app: Field, Match, Test Day, Gym)
         selectedEventCategory: 'Match',
         newEvent: {
@@ -761,14 +779,11 @@
         getFilteredUpcomingEvents() {
           if (!this.events || this.events.length === 0) return [];
           const todayStr = new Date().toISOString().split('T')[0];
-          let list = this.events.map(e => ({
-            ...e,
-            displayDate: e.date
-          }));
+          let rawList = [...this.events];
 
           if (this.eventSquadFilter && this.eventSquadFilter !== 'ALL') {
             const sqTarget = this.eventSquadFilter.trim().toLowerCase();
-            list = list.filter(e => {
+            rawList = rawList.filter(e => {
               const team = (e.team || e.ageGroup || '').trim().toLowerCase();
               return team === sqTarget || team.includes(sqTarget) || sqTarget.includes(team);
             });
@@ -776,15 +791,292 @@
 
           if (this.eventTypeFilter && this.eventTypeFilter !== 'ALL') {
             const typeTarget = this.eventTypeFilter.trim().toLowerCase();
-            list = list.filter(e => (e.eventType || '').trim().toLowerCase() === typeTarget);
+            rawList = rawList.filter(e => (e.eventType || '').trim().toLowerCase() === typeTarget);
           }
 
+          // Group recurring events vs standalone events
+          const groupedMap = new Map();
+          const standaloneList = [];
+
+          rawList.forEach(evt => {
+            const isRecurring = (evt.recurrenceRule && evt.recurrenceRule !== 'Does Not Repeat') || !!evt.seriesId;
+            if (isRecurring) {
+              const key = evt.seriesId || `${(evt.title||'').trim().toLowerCase()}_${(evt.team||evt.ageGroup||'').trim().toLowerCase()}_${(evt.eventType||'').trim().toLowerCase()}`;
+              if (!groupedMap.has(key)) {
+                groupedMap.set(key, []);
+              }
+              groupedMap.get(key).push(evt);
+            } else {
+              standaloneList.push({
+                ...evt,
+                isSeries: false,
+                displayDate: evt.date
+              });
+            }
+          });
+
+          const result = [];
+
+          groupedMap.forEach((groupOccurrences, key) => {
+            groupOccurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+            const firstOcc = groupOccurrences[0];
+            const nextUpcoming = groupOccurrences.find(o => o.date >= todayStr) || groupOccurrences[groupOccurrences.length - 1];
+
+            const seriesObj = {
+              isSeries: true,
+              seriesId: firstOcc.seriesId || key,
+              title: firstOcc.title,
+              eventType: firstOcc.eventType,
+              location: firstOcc.location,
+              team: firstOcc.team || firstOcc.ageGroup,
+              startTime: firstOcc.startTime,
+              durationMins: firstOcc.durationMins,
+              recurrenceRule: firstOcc.recurrenceRule || 'Weekly',
+              recurrenceEndDate: firstOcc.recurrenceEndDate || null,
+              totalOccurrences: groupOccurrences.length,
+              occurrences: groupOccurrences,
+              nextOccurrence: nextUpcoming,
+              date: nextUpcoming.date,
+              displayDate: nextUpcoming.date,
+              dateRange: groupOccurrences.length > 1 
+                ? `${groupOccurrences[0].date} — ${groupOccurrences[groupOccurrences.length - 1].date}`
+                : groupOccurrences[0].date
+            };
+
+            result.push(seriesObj);
+          });
+
+          result.push(...standaloneList);
+
           if (this.eventTimeScope === 'upcoming') {
-            list = list.filter(e => (e.displayDate || e.date) >= todayStr);
-            return list.sort((a, b) => (a.displayDate || a.date || '').localeCompare(b.displayDate || b.date || ''));
+            const filtered = result.filter(item => {
+              if (item.isSeries) {
+                return item.occurrences.some(o => o.date >= todayStr);
+              }
+              return item.date >= todayStr;
+            });
+            return filtered.sort((a, b) => (a.displayDate || '').localeCompare(b.displayDate || ''));
           } else {
-            list = list.filter(e => (e.displayDate || e.date) < todayStr);
-            return list.sort((a, b) => (b.displayDate || b.date || '').localeCompare(a.displayDate || a.date || ''));
+            const filtered = result.filter(item => {
+              if (item.isSeries) {
+                return item.occurrences.every(o => o.date < todayStr);
+              }
+              return item.date < todayStr;
+            });
+            return filtered.sort((a, b) => (b.displayDate || '').localeCompare(a.displayDate || ''));
+          }
+        },
+
+        openRecurringSeriesModal(seriesObj) {
+          if (!seriesObj) return;
+          const occs = (seriesObj.occurrences || []).map(o => ({ ...o })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+          this.activeSeries = {
+            seriesId: seriesObj.seriesId || `SERIES-${Date.now()}`,
+            title: seriesObj.title || '',
+            eventType: seriesObj.eventType || 'Gym Session',
+            location: seriesObj.location || 'Gym Facility',
+            startTime: seriesObj.startTime || '15:30',
+            durationMins: seriesObj.durationMins || 60,
+            team: seriesObj.team || 'U15',
+            recurrenceRule: seriesObj.recurrenceRule || 'Weekly',
+            occurrences: occs
+          };
+          this.recurringSeriesTab = 'occurrences';
+          this.newSeriesOccDate = '';
+          this.newSeriesOccTime = seriesObj.startTime || '15:30';
+          this.showRecurringSeriesModal = true;
+        },
+
+        async saveSeriesDetails() {
+          if (!this.activeSeries.title) {
+            this.triggerToast('Series title is required', 'error');
+            return;
+          }
+          try {
+            const statements = this.activeSeries.occurrences.map(occ => {
+              return fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...occ,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  location: this.activeSeries.location,
+                  startTime: this.activeSeries.startTime,
+                  durationMins: this.activeSeries.durationMins,
+                  team: this.activeSeries.team,
+                  seriesId: this.activeSeries.seriesId
+                })
+              });
+            });
+            await Promise.all(statements);
+
+            this.events = this.events.map(e => {
+              const inSeries = this.activeSeries.occurrences.some(o => o.id === e.id) || e.seriesId === this.activeSeries.seriesId;
+              if (inSeries) {
+                return {
+                  ...e,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  location: this.activeSeries.location,
+                  startTime: this.activeSeries.startTime,
+                  durationMins: this.activeSeries.durationMins,
+                  team: this.activeSeries.team,
+                  seriesId: this.activeSeries.seriesId
+                };
+              }
+              return e;
+            });
+            this.saveEventsToStorage();
+            this.triggerToast('Series details updated successfully!', 'success');
+          } catch (e) {
+            console.error('Failed saving series details:', e);
+            this.triggerToast('Error saving series details', 'error');
+          }
+        },
+
+        async addSeriesOccurrenceDate() {
+          if (!this.newSeriesOccDate) {
+            this.triggerToast('Please select a date to add', 'error');
+            return;
+          }
+          const payload = {
+            id: `EVT-${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            seriesId: this.activeSeries.seriesId,
+            title: this.activeSeries.title,
+            eventType: this.activeSeries.eventType,
+            location: this.activeSeries.location,
+            startTime: this.newSeriesOccTime || this.activeSeries.startTime || '15:30',
+            date: this.newSeriesOccDate,
+            durationMins: parseInt(this.activeSeries.durationMins) || 60,
+            team: this.activeSeries.team,
+            ageGroup: this.activeSeries.team,
+            recurrenceRule: this.activeSeries.recurrenceRule || 'Weekly'
+          };
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              this.activeSeries.occurrences.unshift(payload);
+              this.events.push(payload);
+              this.saveEventsToStorage();
+              this.newSeriesOccDate = '';
+              this.triggerToast('Occurrence date added successfully!', 'success');
+            } else {
+              this.triggerToast('Failed to add date', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error adding occurrence date', 'error');
+          }
+        },
+
+        async bulkScheduleNextWeeks() {
+          const count = parseInt(this.bulkWeeksToAdd) || 4;
+          if (count <= 0) return;
+
+          let lastDateStr = new Date().toISOString().split('T')[0];
+          if (this.activeSeries.occurrences.length > 0) {
+            const sorted = [...this.activeSeries.occurrences].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+            lastDateStr = sorted[sorted.length - 1].date;
+          }
+
+          const newDates = [];
+          let current = new Date(lastDateStr + 'T00:00:00');
+          for (let i = 0; i < count; i++) {
+            current.setDate(current.getDate() + 7);
+            newDates.push(current.toISOString().split('T')[0]);
+          }
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/bulk-schedule`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                seriesId: this.activeSeries.seriesId,
+                title: this.activeSeries.title,
+                eventType: this.activeSeries.eventType,
+                startTime: this.activeSeries.startTime,
+                durationMins: this.activeSeries.durationMins,
+                location: this.activeSeries.location,
+                team: this.activeSeries.team,
+                ageGroup: this.activeSeries.team,
+                dates: newDates
+              })
+            });
+            if (res.ok) {
+              newDates.forEach((dt, idx) => {
+                const item = {
+                  id: `EVT-${Date.now()}_bulk${idx}`,
+                  seriesId: this.activeSeries.seriesId,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  startTime: this.activeSeries.startTime,
+                  date: dt,
+                  durationMins: this.activeSeries.durationMins,
+                  location: this.activeSeries.location,
+                  team: this.activeSeries.team,
+                  recurrenceRule: 'Weekly'
+                };
+                this.activeSeries.occurrences.unshift(item);
+                this.events.push(item);
+              });
+              this.saveEventsToStorage();
+              this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
+            } else {
+              this.triggerToast('Failed to bulk schedule runs', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error during bulk schedule', 'error');
+          }
+        },
+
+        async deleteSeriesOccurrence(occ) {
+          if (!occ || !occ.id) return;
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
+              method: 'DELETE'
+            });
+            if (res.ok) {
+              this.activeSeries.occurrences = this.activeSeries.occurrences.filter(o => o.id !== occ.id);
+              this.events = this.events.filter(e => e.id !== occ.id);
+              this.saveEventsToStorage();
+              this.triggerToast('Occurrence deleted', 'info');
+              if (this.activeSeries.occurrences.length === 0) {
+                this.showRecurringSeriesModal = false;
+              }
+            } else {
+              this.triggerToast('Failed to delete occurrence', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error deleting occurrence', 'error');
+          }
+        },
+
+        async deleteEntireSeries(seriesObj) {
+          const sid = seriesObj.seriesId || seriesObj.id;
+          if (!sid) return;
+          if (!confirm(`Delete entire recurring series '${seriesObj.title}' with ${seriesObj.totalOccurrences || seriesObj.occurrences?.length || 1} occurrences?`)) return;
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/${encodeURIComponent(sid)}`, {
+              method: 'DELETE'
+            });
+            if (res.ok) {
+              const occIds = new Set((seriesObj.occurrences || []).map(o => o.id));
+              this.events = this.events.filter(e => e.seriesId !== sid && !occIds.has(e.id));
+              this.saveEventsToStorage();
+              this.showRecurringSeriesModal = false;
+              this.triggerToast(`Entire recurring series '${seriesObj.title}' deleted!`, 'info');
+            } else {
+              this.triggerToast('Failed to delete recurring series', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error deleting series', 'error');
           }
         },
 
@@ -1872,47 +2164,92 @@
 
         <!-- Scheduled Events Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
-          <template x-for="evt in getFilteredUpcomingEvents()" :key="evt.id">
-            <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start mb-sm">
-                  <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1"
-                        :class="{
-                          'bg-red-500/10 text-red-600': evt.eventType === 'Match',
-                          'bg-blue-500/10 text-blue-600': evt.eventType === 'Field',
-                          'bg-amber-500/10 text-amber-600': evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day',
-                          'bg-purple-500/10 text-purple-600': evt.eventType === 'Gym'
-                        }">
-                    <span class="material-symbols-outlined text-[14px]"
-                          x-text="evt.eventType === 'Match' ? 'sports_rugby' : (evt.eventType === 'Field' ? 'fitness_center' : ((evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day') ? 'speed' : 'directions_run'))"></span>
-                    <span x-text="evt.eventType || 'Match'"></span>
-                  </span>
-                  <span class="text-[11px] font-bold text-outline" x-text="evt.date"></span>
+          <template x-for="evt in getFilteredUpcomingEvents()" :key="evt.isSeries ? (evt.seriesId || evt.title) : evt.id">
+            <div>
+              <!-- RECURRING SERIES CARD -->
+              <template x-if="evt.isSeries">
+                <div class="bg-surface-container-lowest border-2 border-primary/20 hover:border-primary rounded-2xl p-lg shadow-sm space-y-md transition-all flex flex-col justify-between cursor-pointer group h-full" @click="openRecurringSeriesModal(evt)">
+                  <div>
+                    <div class="flex justify-between items-start mb-sm gap-2">
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[13px]">repeat</span> Recurring Series
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-on-surface-variant" x-text="evt.totalOccurrences + ' Occurrences'"></span>
+                      </div>
+                      <span class="text-[11px] font-bold text-outline truncate" x-text="evt.dateRange || evt.displayDate"></span>
+                    </div>
+
+                    <h3 class="font-extrabold text-on-surface text-base group-hover:text-primary transition-colors" x-text="evt.title"></h3>
+                    <p class="text-xs text-outline mt-1 flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[15px]">location_on</span>
+                      <span x-text="evt.location || 'Grounds'"></span>
+                    </p>
+
+                    <div class="flex items-center justify-between gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
+                      <span class="flex items-center gap-1 font-semibold">
+                        <span class="material-symbols-outlined text-[15px]">schedule</span>
+                        <span x-text="(evt.startTime || '15:30') + ' (' + (evt.durationMins || 60) + 'm)'"></span>
+                      </span>
+                      <span class="font-bold text-primary px-2 py-0.5 bg-primary/5 rounded-md" x-text="evt.team || 'U15 Squad'"></span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 pt-md border-t border-outline-variant" @click.stop>
+                    <button type="button" @click="openRecurringSeriesModal(evt)" class="flex-1 py-2 bg-primary text-on-primary text-xs font-bold rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-1 shadow-sm">
+                      <span class="material-symbols-outlined text-[16px]">edit_calendar</span> Manage Series
+                    </button>
+                    <button type="button" @click="deleteEntireSeries(evt)" class="p-2 text-error hover:bg-error-container rounded-xl transition-colors" title="Delete Series">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
+              </template>
 
-                <h3 class="font-bold text-on-surface text-base" x-text="evt.title"></h3>
-                <p class="text-xs text-outline mt-1 flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[15px]">location_on</span>
-                  <span x-text="evt.location || 'Main Pitch A'"></span>
-                </p>
+              <!-- STANDALONE (ONE-OFF) EVENT CARD -->
+              <template x-if="!evt.isSeries">
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between h-full">
+                  <div>
+                    <div class="flex justify-between items-start mb-sm">
+                      <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1"
+                            :class="{
+                              'bg-red-500/10 text-red-600': evt.eventType === 'Match',
+                              'bg-blue-500/10 text-blue-600': evt.eventType === 'Field',
+                              'bg-amber-500/10 text-amber-600': evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day',
+                              'bg-purple-500/10 text-purple-600': evt.eventType === 'Gym' || evt.eventType === 'Gym Session'
+                            }">
+                        <span class="material-symbols-outlined text-[14px]"
+                              x-text="evt.eventType === 'Match' ? 'sports_rugby' : (evt.eventType === 'Field' ? 'fitness_center' : ((evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day') ? 'speed' : 'directions_run'))"></span>
+                        <span x-text="evt.eventType || 'Match'"></span>
+                      </span>
+                      <span class="text-[11px] font-bold text-outline" x-text="evt.date"></span>
+                    </div>
 
-                <div class="flex items-center gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
-                  <span class="flex items-center gap-1 font-semibold">
-                    <span class="material-symbols-outlined text-[15px]">schedule</span>
-                    <span x-text="(evt.startTime || '14:00') + ' (' + (evt.durationMins || 90) + 'm)'"></span>
-                  </span>
-                  <span class="font-bold text-primary" x-text="evt.team || evt.ageGroup || 'U18 Squad'"></span>
+                    <h3 class="font-bold text-on-surface text-base" x-text="evt.title"></h3>
+                    <p class="text-xs text-outline mt-1 flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[15px]">location_on</span>
+                      <span x-text="evt.location || 'Main Pitch A'"></span>
+                    </p>
+
+                    <div class="flex items-center gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
+                      <span class="flex items-center gap-1 font-semibold">
+                        <span class="material-symbols-outlined text-[15px]">schedule</span>
+                        <span x-text="(evt.startTime || '14:00') + ' (' + (evt.durationMins || 90) + 'm)'"></span>
+                      </span>
+                      <span class="font-bold text-primary" x-text="evt.team || evt.ageGroup || 'U18 Squad'"></span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
+                    <button type="button" @click="openEditEvent(evt)" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
+                      <span class="material-symbols-outlined text-[16px]">edit</span> Edit Event
+                    </button>
+                    <button type="button" @click="confirmDeleteEvent(evt)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
-                <button type="button" @click="openEditEvent(evt)" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
-                  <span class="material-symbols-outlined text-[16px]">edit</span> Edit Event
-                </button>
-                <button type="button" @click="confirmDeleteEvent(evt)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
-                  <span class="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-              </div>
+              </template>
             </div>
           </template>
 
@@ -3460,5 +3797,152 @@
     </div>
   </div>
 
+  <!-- MODAL: EDIT RECURRING EVENT SERIES (Styled after uRun) -->
+  <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showRecurringSeriesModal" @click.self="showRecurringSeriesModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center px-6 py-4 border-b border-outline-variant/70 bg-surface-container-low/50">
+        <div>
+          <h3 class="font-headline-md font-extrabold text-xl text-on-surface flex items-center gap-2">
+            <span>Edit Recurring Event Series</span>
+          </h3>
+        </div>
+        <button type="button" @click="showRecurringSeriesModal = false" class="p-1 rounded-full text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Tab Navigation Header -->
+      <div class="flex border-b border-outline-variant/70 px-6 pt-2 bg-surface">
+        <button type="button" @click="recurringSeriesTab = 'details'"
+                class="px-4 py-2.5 font-label-md text-xs font-bold transition-all border-b-2 flex items-center gap-1.5"
+                :class="recurringSeriesTab === 'details' ? 'border-primary text-primary' : 'border-transparent text-outline hover:text-on-surface'">
+          Event Details
+        </button>
+        <button type="button" @click="recurringSeriesTab = 'occurrences'"
+                class="px-4 py-2.5 font-label-md text-xs font-bold transition-all border-b-2 flex items-center gap-2"
+                :class="recurringSeriesTab === 'occurrences' ? 'border-primary text-primary' : 'border-transparent text-outline hover:text-on-surface'">
+          <span>Occurrences</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary" x-text="activeSeries.occurrences.length"></span>
+        </button>
+      </div>
+
+      <!-- Modal Body Content -->
+      <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6">
+        <!-- TAB 1: EVENT DETAILS -->
+        <div x-show="recurringSeriesTab === 'details'" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-on-surface-variant mb-1">Series Title *</label>
+            <input x-model="activeSeries.title" required class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" type="text" placeholder="e.g. U15 Gym Training"/>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Event Category / Type</label>
+              <select x-model="activeSeries.eventType" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold outline-none">
+                <option value="Gym Session">Gym Session</option>
+                <option value="Field Session">Field Session</option>
+                <option value="Match Day">Match Day</option>
+                <option value="Fitness Test">Fitness Test</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Assigned Squad</label>
+              <select x-model="activeSeries.team" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold outline-none">
+                <template x-for="sq in squads" :key="sq">
+                  <option :value="sq" x-text="sq"></option>
+                </template>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Default Start Time</label>
+              <input x-model="activeSeries.startTime" type="text" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" placeholder="15:30"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Duration (Minutes)</label>
+              <input x-model="activeSeries.durationMins" type="number" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none"/>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-on-surface-variant mb-1">Venue / Location</label>
+            <input x-model="activeSeries.location" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" type="text" placeholder="Gym Facility / Ground A"/>
+          </div>
+        </div>
+
+        <!-- TAB 2: OCCURRENCES (Matches uRun UI) -->
+        <div x-show="recurringSeriesTab === 'occurrences'" class="space-y-4">
+          <!-- Occurrences Numbered Rows List -->
+          <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+            <template x-for="(occ, idx) in activeSeries.occurrences" :key="occ.id || idx">
+              <div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/80 rounded-2xl text-xs hover:border-primary transition-all">
+                <div class="flex items-center gap-3">
+                  <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (activeSeries.occurrences.length - idx)"></span>
+                  <input type="date" x-model="occ.date" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs outline-none focus:border-primary"/>
+                  <span class="text-outline font-bold">@</span>
+                  <input type="text" x-model="occ.startTime" class="w-20 bg-surface border border-outline-variant/60 rounded-xl px-2.5 py-1.5 font-bold text-xs text-center outline-none focus:border-primary"/>
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-primary/10 text-primary">Scheduled</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button type="button" @click="deleteSeriesOccurrence(occ)" class="p-1.5 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete occurrence">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Bulk Schedule Weekly Runs Box (uRun styled) -->
+          <div class="p-4 bg-surface-container border border-outline-variant rounded-2xl space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="p-2 bg-primary/10 text-primary rounded-xl">
+                <span class="material-symbols-outlined text-xl">event_repeat</span>
+              </div>
+              <div>
+                <h4 class="font-extrabold text-xs text-on-surface">Bulk Schedule Weekly Runs</h4>
+                <p class="text-[11px] text-outline">Quickly append consecutive weekly runs starting from the last occurrence date.</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-1 border-t border-outline-variant/50">
+              <span class="text-xs font-bold text-outline uppercase tracking-wider">ADD NEXT</span>
+              <input type="number" min="1" max="52" x-model="bulkWeeksToAdd" class="w-16 bg-surface border border-outline-variant rounded-xl px-2.5 py-1.5 text-xs font-extrabold text-center outline-none focus:ring-2 focus:ring-primary"/>
+              <span class="text-xs font-bold text-outline uppercase tracking-wider">WEEKS</span>
+              <button type="button" @click="bulkScheduleNextWeeks()" class="px-4 py-2 bg-on-surface text-surface text-xs font-extrabold rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">add</span> Schedule
+              </button>
+            </div>
+          </div>
+
+          <!-- Add Next Date Section (uRun styled) -->
+          <div class="p-4 border border-outline-variant rounded-2xl space-y-2">
+            <span class="text-[11px] font-extrabold text-outline uppercase tracking-wider block">ADD NEXT DATE</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <input type="date" x-model="newSeriesOccDate" class="flex-1 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary"/>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-outline uppercase">TIME</span>
+                <input type="text" x-model="newSeriesOccTime" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold text-center outline-none focus:ring-2 focus:ring-primary"/>
+              </div>
+              <button type="button" @click="addSeriesOccurrenceDate()" class="px-4 py-2 bg-primary text-on-primary text-xs font-extrabold rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">add</span> Add Date
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-outline-variant/70 bg-surface-container-low/50 flex justify-end gap-3">
+        <button type="button" @click="showRecurringSeriesModal = false" class="px-5 py-2.5 bg-surface-container border border-outline-variant text-on-surface text-xs font-bold rounded-xl hover:bg-surface-container-high transition-colors">Cancel</button>
+        <button type="button" @click="saveSeriesDetails(); showRecurringSeriesModal = false;" class="px-5 py-2.5 bg-primary text-on-primary text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">check</span> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
+

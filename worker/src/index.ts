@@ -2135,6 +2135,7 @@ const handleGetEvents = async (c: any) => {
 
     let events = (results || []).map((r: any) => ({
       id: r.id?.toString() || '',
+      seriesId: r.series_id || null,
       schoolId: r.school_id || reqSchoolId,
       title: r.title,
       eventType: r.event_type,
@@ -2181,7 +2182,7 @@ const handleCreateEvent = async (c: any) => {
 
   const schoolId = jwtPayload?.schoolId || jwtPayload?.school_id || body?.schoolId || body?.school_id || c.req.query('school_id') || c.req.query('schoolId');
 
-  const { id, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate, untilDate, repeatDays } = body;
+  const { id, seriesId, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate, untilDate, repeatDays } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -2218,9 +2219,6 @@ const handleCreateEvent = async (c: any) => {
   if (!targetAgeGroup && !assignedTeam) {
     return c.json({ success: false, message: 'Target age group or assigned team is required.' }, 400);
   }
-  if (recRuleVal !== 'Does Not Repeat' && !recEndDateVal) {
-    return c.json({ success: false, message: 'Recurrence end date (untilDate) is required for recurring events.' }, 400);
-  }
 
   let evType = rawEventType;
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
@@ -2229,6 +2227,7 @@ const handleCreateEvent = async (c: any) => {
   if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
 
   const baseEventId = id ? id.toString() : `EVT-${Date.now()}`;
+  const seriesIdVal = seriesId || body.series_id || (recRuleVal !== 'Does Not Repeat' ? baseEventId : null);
   const finalAgeGroup = targetAgeGroup || assignedTeam;
   const finalTeam = assignedTeam || targetAgeGroup;
 
@@ -2240,9 +2239,10 @@ const handleCreateEvent = async (c: any) => {
 
   const insertQuery = `
     INSERT INTO events (
-      id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, completion_count, age_group, team, workout_image_path, recurrence_rule, recurrence_end_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, series_id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, completion_count, age_group, team, workout_image_path, recurrence_rule, recurrence_end_date
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
+      series_id = excluded.series_id,
       title = excluded.title,
       event_type = excluded.event_type,
       start_time = excluded.start_time,
@@ -2262,6 +2262,7 @@ const handleCreateEvent = async (c: any) => {
       const occId = occurrenceDates.length === 1 ? baseEventId : `${baseEventId}_occ${idx + 1}`;
       return db.prepare(insertQuery).bind(
         occId,
+        seriesIdVal,
         schoolId,
         eventTitle,
         evType,
@@ -2281,13 +2282,14 @@ const handleCreateEvent = async (c: any) => {
 
     await db.batch(statements);
 
-    console.log(`[Observer Log] Created ${occurrenceDates.length} event occurrence(s) for series '${baseEventId}' in school '${schoolId}'.`);
+    console.log(`[Observer Log] Created ${occurrenceDates.length} event occurrence(s) for series '${seriesIdVal || baseEventId}' in school '${schoolId}'.`);
 
     return c.json({
       success: true,
       message: `${occurrenceDates.length} event occurrence(s) created successfully`,
       data: {
         id: baseEventId,
+        seriesId: seriesIdVal,
         occurrenceCount: occurrenceDates.length,
         schoolId,
         title: eventTitle,
@@ -2329,7 +2331,7 @@ const handleUpdateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
-  const { title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
+  const { seriesId, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
   const eventTitle = (title || '').trim();
   const eventLoc = (location || '').trim();
@@ -2348,6 +2350,7 @@ const handleUpdateEvent = async (c: any) => {
   const targetAgeGroup = (ageGroup || team || existingEvt?.age_group || existingEvt?.team || '').trim();
   const assignedTeam = (team || ageGroup || existingEvt?.team || existingEvt?.age_group || '').trim();
   const schoolId = String(existingEvt?.school_id || body.schoolId || '');
+  const finalSeriesId = seriesId || body.series_id || existingEvt?.series_id || null;
 
   let evType = rawEventType;
   if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
@@ -2365,24 +2368,24 @@ const handleUpdateEvent = async (c: any) => {
     if (existingEvt) {
       const query = `
         UPDATE events SET 
-          title = ?, event_type = ?, start_time = ?, date = ?, duration_mins = ?, 
+          series_id = ?, title = ?, event_type = ?, start_time = ?, date = ?, duration_mins = ?, 
           location = ?, is_important = ?, age_group = ?, team = ?, workout_image_path = ?,
           recurrence_rule = ?, recurrence_end_date = ?
         WHERE CAST(id AS TEXT) = ? OR id = ?
       `;
       await db.prepare(query).bind(
-        eventTitle, evType, eventTime, eventDt, durMinsVal,
+        finalSeriesId, eventTitle, evType, eventTime, eventDt, durMinsVal,
         eventLoc, isImpVal, targetAgeGroup,
         assignedTeam, imgPath, recRuleVal, recEndDateVal, id.toString(), id.toString()
       ).run();
     } else {
       // Upsert/Insert if event ID was generated client-side or newly saved
       const insertQuery = `
-        INSERT OR REPLACE INTO events (id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, age_group, team, workout_image_path, recurrence_rule, recurrence_end_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO events (id, series_id, school_id, title, event_type, start_time, date, duration_mins, location, is_important, age_group, team, workout_image_path, recurrence_rule, recurrence_end_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       await db.prepare(insertQuery).bind(
-        id.toString(), schoolId, eventTitle, evType, eventTime, eventDt, durMinsVal,
+        id.toString(), finalSeriesId, schoolId, eventTitle, evType, eventTime, eventDt, durMinsVal,
         eventLoc, isImpVal, targetAgeGroup, assignedTeam, imgPath, recRuleVal, recEndDateVal
       ).run();
     }
@@ -2399,6 +2402,62 @@ app.post('/api/dashboard/events/:id', handleUpdateEvent);
 app.put('/api/dashboard/events/:id', handleUpdateEvent);
 app.post('/api/events/:id', handleUpdateEvent);
 app.put('/api/events/:id', handleUpdateEvent);
+
+// Route: Batch Update / Bulk Add / Delete Series Occurrences
+app.post('/api/dashboard/events/series/bulk-schedule', async (c: any) => {
+  const db = getDB(c);
+  if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+
+  let body: any;
+  try { body = await c.req.json(); } catch (e) { return c.json({ success: false, message: 'Invalid JSON' }, 400); }
+
+  const { seriesId, title, eventType, startTime, durationMins, location, ageGroup, team, dates } = body;
+  if (!seriesId || !Array.isArray(dates) || dates.length === 0) {
+    return c.json({ success: false, message: 'seriesId and dates array are required' }, 400);
+  }
+
+  try {
+    const insertQuery = `
+      INSERT INTO events (id, series_id, school_id, title, event_type, start_time, date, duration_mins, location, age_group, team, recurrence_rule)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const statements = dates.map((dt: string, idx: number) => {
+      const newId = `EVT-${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`;
+      return db.prepare(insertQuery).bind(
+        newId, seriesId, 'OVK', title || 'Academy Event', eventType || 'Field Session',
+        startTime || '15:30', dt, durationMins || 60, location || 'Grounds', ageGroup || 'U15', team || 'U15', 'Weekly'
+      );
+    });
+
+    await db.batch(statements);
+    return c.json({ success: true, message: `Added ${dates.length} occurrences to series` });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to bulk schedule', error: err.message }, 500);
+  }
+});
+
+app.delete('/api/dashboard/events/series/:seriesId', async (c: any) => {
+  const seriesId = c.req.param('seriesId');
+  const db = getDB(c);
+  if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  try {
+    await db.prepare('DELETE FROM events WHERE series_id = ? OR CAST(id AS TEXT) = ?').bind(seriesId, seriesId).run();
+    return c.json({ success: true, message: 'Event series deleted' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to delete event series', error: err.message }, 500);
+  }
+});
+app.post('/api/dashboard/events/series/:seriesId/delete', async (c: any) => {
+  const seriesId = c.req.param('seriesId');
+  const db = getDB(c);
+  if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+  try {
+    await db.prepare('DELETE FROM events WHERE series_id = ? OR CAST(id AS TEXT) = ?').bind(seriesId, seriesId).run();
+    return c.json({ success: true, message: 'Event series deleted' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to delete event series', error: err.message }, 500);
+  }
+});
 
 // Route: Delete Coach Command Event
 const handleDeleteEvent = async (c: any) => {
