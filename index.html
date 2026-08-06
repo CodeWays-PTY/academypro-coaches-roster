@@ -1118,24 +1118,26 @@
             recurrenceRule: this.activeSeries.recurrenceRule || 'Weekly'
           };
 
+          // Add to local state immediately
+          this.activeSeries.occurrences.push(payload);
+          this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          this.events.push(payload);
+          this.saveEventsToStorage();
+          const addedDate = this.newSeriesOccDate;
+          this.newSeriesOccDate = '';
+          this.triggerToast('Occurrence date added!', 'success');
+
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (res.ok) {
-              this.activeSeries.occurrences.push(payload);
-              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-              this.events.push(payload);
-              this.saveEventsToStorage();
-              this.newSeriesOccDate = '';
-              this.triggerToast('Occurrence date added successfully!', 'success');
-            } else {
-              this.triggerToast('Failed to add date', 'error');
+            if (!res.ok) {
+              console.warn('Server rejected addSeriesOccurrenceDate:', await res.text());
             }
           } catch (e) {
-            this.triggerToast('Network error adding occurrence date', 'error');
+            console.warn('Network error adding occurrence date (local state saved):', e);
           }
         },
 
@@ -1156,6 +1158,27 @@
             newDates.push(current.toISOString().split('T')[0]);
           }
 
+          // Add to local state immediately
+          newDates.forEach((dt, idx) => {
+            const item = {
+              id: `EVT-${Date.now()}_bulk${idx}`,
+              seriesId: this.activeSeries.seriesId,
+              title: this.activeSeries.title,
+              eventType: this.activeSeries.eventType,
+              startTime: this.activeSeries.startTime,
+              date: dt,
+              durationMins: this.activeSeries.durationMins,
+              location: this.activeSeries.location,
+              team: this.activeSeries.team,
+              recurrenceRule: 'Weekly'
+            };
+            this.activeSeries.occurrences.push(item);
+            this.events.push(item);
+          });
+          this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          this.saveEventsToStorage();
+          this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
+
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/bulk-schedule`, {
               method: 'POST',
@@ -1172,31 +1195,11 @@
                 dates: newDates
               })
             });
-            if (res.ok) {
-              newDates.forEach((dt, idx) => {
-                const item = {
-                  id: `EVT-${Date.now()}_bulk${idx}`,
-                  seriesId: this.activeSeries.seriesId,
-                  title: this.activeSeries.title,
-                  eventType: this.activeSeries.eventType,
-                  startTime: this.activeSeries.startTime,
-                  date: dt,
-                  durationMins: this.activeSeries.durationMins,
-                  location: this.activeSeries.location,
-                  team: this.activeSeries.team,
-                  recurrenceRule: 'Weekly'
-                };
-                this.activeSeries.occurrences.push(item);
-                this.events.push(item);
-              });
-              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-              this.saveEventsToStorage();
-              this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
-            } else {
-              this.triggerToast('Failed to bulk schedule runs', 'error');
+            if (!res.ok) {
+              console.warn('Server rejected bulkScheduleNextWeeks:', await res.text());
             }
           } catch (e) {
-            this.triggerToast('Network error during bulk schedule', 'error');
+            console.warn('Network error during bulk schedule (local state saved):', e);
           }
         },
 
@@ -2621,19 +2624,28 @@
                 </div>
               </div>
 
-              <!-- Custom Duration Dropdown Component -->
+              <!-- Custom Duration Component -->
               <div class="col-span-3 md:col-span-1">
                 <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Duration (Mins)</label>
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
-                    <span class="font-bold" x-text="newEvent.durationMins + ' Minutes'"></span>
-                    <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
-                  </button>
+                  <div class="flex items-center bg-background border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                    <button type="button" @click="newEvent.durationMins = Math.max(5, (parseInt(newEvent.durationMins) || 60) - 15)" class="px-2.5 py-2.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-r border-outline-variant/60 shrink-0 cursor-pointer" title="Decrease duration (-15m)">
+                      <span class="material-symbols-outlined text-[18px]">remove</span>
+                    </button>
+                    <div class="flex-1 flex items-center justify-center px-2 py-1 cursor-pointer" @click="open = !open">
+                      <input type="number" min="5" step="5" x-model.number="newEvent.durationMins" class="w-14 bg-transparent border-none text-xs font-extrabold text-on-surface text-center outline-none focus:outline-none focus:ring-0 p-0" @click.stop/>
+                      <span class="text-[11px] font-bold text-outline shrink-0 ml-1">mins</span>
+                      <span class="material-symbols-outlined text-[16px] text-outline ml-1 transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                    </div>
+                    <button type="button" @click="newEvent.durationMins = (parseInt(newEvent.durationMins) || 60) + 15" class="px-2.5 py-2.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-l border-outline-variant/60 shrink-0 cursor-pointer" title="Increase duration (+15m)">
+                      <span class="material-symbols-outlined text-[18px]">add</span>
+                    </button>
+                  </div>
                   <div x-show="open" 
                        x-transition:enter="transition ease-out duration-150"
                        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                       class="absolute left-0 top-full mt-1.5 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-56 overflow-y-auto custom-scrollbar">
+                       class="absolute left-0 top-full mt-1.5 w-full bg-surface border border-outline-variant/80 rounded-xl shadow-2xl z-50 py-1 max-h-56 overflow-y-auto custom-scrollbar">
                     <template x-for="dur in durationOptions" :key="dur">
                       <div @click="newEvent.durationMins = dur; open = false" 
                            class="px-3 py-2 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
@@ -3887,14 +3899,30 @@
           <div class="col-span-1">
             <label class="block text-xs font-bold text-outline mb-1">Duration (Mins)</label>
             <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
-                <span class="font-bold" x-text="editingEvent.durationMins + 'm'"></span>
-                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
-              </button>
-              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
-                <template x-for="dur in [30, 45, 60, 90, 120]" :key="dur">
-                  <div @click="editingEvent.durationMins = dur; open = false" class="px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="editingEvent.durationMins === dur ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+              <div class="flex items-center bg-background border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <button type="button" @click="editingEvent.durationMins = Math.max(5, (parseInt(editingEvent.durationMins) || 60) - 15)" class="px-2 py-2 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-r border-outline-variant/60 shrink-0 cursor-pointer" title="Decrease duration (-15m)">
+                  <span class="material-symbols-outlined text-[16px]">remove</span>
+                </button>
+                <div class="flex-1 flex items-center justify-center px-1 py-1 cursor-pointer" @click="open = !open">
+                  <input type="number" min="5" step="5" x-model.number="editingEvent.durationMins" class="w-12 bg-transparent border-none text-xs font-extrabold text-on-surface text-center outline-none focus:outline-none focus:ring-0 p-0" @click.stop/>
+                  <span class="text-[10px] font-bold text-outline shrink-0 ml-0.5">m</span>
+                  <span class="material-symbols-outlined text-[14px] text-outline ml-0.5 transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                </div>
+                <button type="button" @click="editingEvent.durationMins = (parseInt(editingEvent.durationMins) || 60) + 15" class="px-2 py-2 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-l border-outline-variant/60 shrink-0 cursor-pointer" title="Increase duration (+15m)">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                   x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                   class="absolute left-0 top-full mt-1.5 w-full bg-surface border border-outline-variant/80 rounded-xl shadow-2xl z-50 py-1 max-h-56 overflow-y-auto custom-scrollbar">
+                <template x-for="dur in [15, 30, 45, 60, 75, 90, 105, 120, 150, 180]" :key="dur">
+                  <div @click="editingEvent.durationMins = dur; open = false" 
+                       class="px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                       :class="editingEvent.durationMins === dur ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
                     <span x-text="dur + ' Minutes'"></span>
+                    <span x-show="editingEvent.durationMins === dur" class="material-symbols-outlined text-[16px] text-primary">check</span>
                   </div>
                 </template>
               </div>
@@ -3943,7 +3971,7 @@
                 class="px-4 py-2.5 font-label-md text-xs font-bold transition-all border-b-2 flex items-center gap-2"
                 :class="recurringSeriesTab === 'occurrences' ? 'border-primary text-primary' : 'border-transparent text-outline hover:text-on-surface'">
           <span>Occurrences</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary" x-text="activeSeries.occurrences.length"></span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary" x-text="activeSeries.occurrences.filter(o => o.date >= new Date().toISOString().split('T')[0]).length"></span>
         </button>
       </div>
 
@@ -4046,7 +4074,35 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Duration (Minutes)</label>
-              <input x-model="activeSeries.durationMins" type="number" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none"/>
+              <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                <div class="flex items-center bg-background border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                  <button type="button" @click="activeSeries.durationMins = Math.max(5, (parseInt(activeSeries.durationMins) || 60) - 15)" class="px-3 py-2.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-r border-outline-variant/60 shrink-0 cursor-pointer" title="Decrease duration (-15m)">
+                    <span class="material-symbols-outlined text-[18px]">remove</span>
+                  </button>
+                  <div class="flex-1 flex items-center justify-center px-2 py-1 cursor-pointer" @click="open = !open">
+                    <input type="number" min="5" step="5" x-model.number="activeSeries.durationMins" class="w-14 bg-transparent border-none text-xs font-extrabold text-on-surface text-center outline-none focus:outline-none focus:ring-0 p-0" @click.stop/>
+                    <span class="text-[11px] font-bold text-outline shrink-0 ml-1">mins</span>
+                    <span class="material-symbols-outlined text-[16px] text-outline ml-1 transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                  </div>
+                  <button type="button" @click="activeSeries.durationMins = (parseInt(activeSeries.durationMins) || 60) + 15" class="px-3 py-2.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-l border-outline-variant/60 shrink-0 cursor-pointer" title="Increase duration (+15m)">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                  </button>
+                </div>
+                <div x-show="open" 
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     class="absolute left-0 top-full mt-1.5 w-full bg-surface border border-outline-variant/80 rounded-xl shadow-2xl z-50 py-1 max-h-56 overflow-y-auto custom-scrollbar">
+                  <template x-for="dur in [15, 30, 45, 60, 75, 90, 105, 120, 150, 180]" :key="dur">
+                    <div @click="activeSeries.durationMins = dur; open = false" 
+                         class="px-3 py-2 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                         :class="activeSeries.durationMins === dur ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
+                      <span x-text="dur + ' Minutes'"></span>
+                      <span x-show="activeSeries.durationMins === dur" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -4058,9 +4114,9 @@
 
         <!-- TAB 2: OCCURRENCES (Matches uRun UI) -->
         <div x-show="recurringSeriesTab === 'occurrences'" class="space-y-4">
-          <!-- Occurrences Numbered Rows List -->
+          <!-- Occurrences Numbered Rows List (future/today only) -->
           <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
-            <template x-for="(occ, idx) in activeSeries.occurrences" :key="occ.id || idx">
+            <template x-for="(occ, idx) in activeSeries.occurrences.filter(o => o.date >= new Date().toISOString().split('T')[0])" :key="occ.id || idx">
               <div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/80 rounded-2xl text-xs hover:border-primary transition-all">
                 <div class="flex items-center gap-3">
                   <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (idx + 1)"></span>
@@ -4162,7 +4218,15 @@
             </div>
             <div class="flex items-center justify-end gap-3 pt-1 border-t border-outline-variant/50">
               <span class="text-xs font-bold text-outline uppercase tracking-wider">ADD NEXT</span>
-              <input type="number" min="1" max="52" x-model="bulkWeeksToAdd" class="w-16 bg-surface border border-outline-variant rounded-xl px-2.5 py-1.5 text-xs font-extrabold text-center outline-none focus:ring-2 focus:ring-primary"/>
+              <div class="flex items-center bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <button type="button" @click="bulkWeeksToAdd = Math.max(1, (parseInt(bulkWeeksToAdd) || 4) - 1)" class="px-2 py-1.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-r border-outline-variant/60 cursor-pointer" title="Decrease weeks">
+                  <span class="material-symbols-outlined text-[16px]">remove</span>
+                </button>
+                <input type="number" min="1" max="52" x-model.number="bulkWeeksToAdd" class="w-10 bg-transparent border-none text-xs font-extrabold text-on-surface text-center outline-none focus:outline-none focus:ring-0 p-0"/>
+                <button type="button" @click="bulkWeeksToAdd = Math.min(52, (parseInt(bulkWeeksToAdd) || 4) + 1)" class="px-2 py-1.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-l border-outline-variant/60 cursor-pointer" title="Increase weeks">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
               <span class="text-xs font-bold text-outline uppercase tracking-wider">WEEKS</span>
               <button type="button" @click="bulkScheduleNextWeeks()" class="px-4 py-2 bg-on-surface text-surface text-xs font-extrabold rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">add</span> Schedule
