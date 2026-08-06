@@ -122,7 +122,10 @@
         viewYear: new Date().getFullYear(),
         viewMonth: new Date().getMonth(),
 
-        toggleOpen(triggerEl) {
+        toggleOpen(triggerEl, evt) {
+          if (evt && typeof evt.stopPropagation === 'function') {
+            evt.stopPropagation();
+          }
           if (!this.open) {
             window.dispatchEvent(new CustomEvent('close-all-pickers', { detail: { id: this.pickerId } }));
           }
@@ -150,6 +153,11 @@
 
         init() {
           this.pickerId = 'dp_' + Math.random().toString(36).substring(2, 9);
+          window.addEventListener('click', (e) => {
+            if (this.open && this.$el && !this.$el.contains(e.target)) {
+              this.open = false;
+            }
+          });
           window.addEventListener('close-all-pickers', (e) => {
             if (e.detail && e.detail.id !== this.pickerId) {
               this.open = false;
@@ -255,7 +263,10 @@
 
         presets: ['07:00', '08:00', '14:00', '15:30', '16:30', '17:30', '18:00'],
 
-        toggleOpen(triggerEl) {
+        toggleOpen(triggerEl, evt) {
+          if (evt && typeof evt.stopPropagation === 'function') {
+            evt.stopPropagation();
+          }
           if (!this.open) {
             window.dispatchEvent(new CustomEvent('close-all-pickers', { detail: { id: this.pickerId } }));
           }
@@ -283,6 +294,11 @@
 
         init() {
           this.pickerId = 'tp_' + Math.random().toString(36).substring(2, 9);
+          window.addEventListener('click', (e) => {
+            if (this.open && this.$el && !this.$el.contains(e.target)) {
+              this.open = false;
+            }
+          });
           window.addEventListener('close-all-pickers', (e) => {
             if (e.detail && e.detail.id !== this.pickerId) {
               this.open = false;
@@ -3923,8 +3939,8 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Event Category / Type</label>
-              <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+              <div class="relative" x-data="{ open: false, init() { window.addEventListener('click', (e) => { if (this.open && this.$el && !this.$el.contains(e.target)) this.open = false; }); } }">
+                <button type="button" @click.stop="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
                   <span x-text="activeSeries.eventType"></span>
                   <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
                 </button>
@@ -3940,8 +3956,8 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Assigned Squad</label>
-              <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+              <div class="relative" x-data="{ open: false, init() { window.addEventListener('click', (e) => { if (this.open && this.$el && !this.$el.contains(e.target)) this.open = false; }); } }">
+                <button type="button" @click.stop="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
                   <span x-text="activeSeries.team || 'U15'"></span>
                   <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
                 </button>
@@ -3961,7 +3977,7 @@
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Default Start Time</label>
               <div class="relative" x-data="customTimePicker(activeSeries.startTime, (t) => { activeSeries.startTime = t; })" x-effect="if (activeSeries.startTime && activeSeries.startTime.includes(':')) { selectedHour = String(activeSeries.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(activeSeries.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
-                <button type="button" @click="toggleOpen($el)" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
+                <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
                   <span class="font-bold" x-text="timeStr || activeSeries.startTime || '15:30'"></span>
                   <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
                 </button>
@@ -4028,7 +4044,7 @@
                   
                   <!-- CUSTOM DATE PICKER FOR OCCURRENCE ROW -->
                   <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; updateSingleOccurrence(occ); })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
-                    <button type="button" @click="toggleOpen($el)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
+                    <button type="button" @click="toggleOpen($el, $event)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
                       <span x-text="formattedDate || occ.date || 'Select Date'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
                     </button>
@@ -4052,7 +4068,7 @@
                   <!-- CUSTOM TIME PICKER FOR OCCURRENCE ROW -->
                   <div class="relative" x-data="customTimePicker(occ.startTime, (t) => { occ.startTime = t; updateSingleOccurrence(occ); })" x-effect="if (occ.startTime && occ.startTime.includes(':')) { selectedHour = String(occ.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(occ.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
 
-                    <button type="button" @click="toggleOpen($el)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
+                    <button type="button" @click="toggleOpen($el, $event)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
                       <span x-text="timeStr || occ.startTime || '15:30'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
                     </button>
@@ -4134,7 +4150,7 @@
             <div class="flex flex-wrap items-center gap-3">
               <!-- CUSTOM DATE PICKER FOR ADD NEXT DATE -->
               <div class="flex-1 min-w-[180px] relative" x-data="customDatePicker(newSeriesOccDate, (d) => { newSeriesOccDate = d; })" x-effect="if (newSeriesOccDate) { selectedDateStr = newSeriesOccDate; }" @click.outside="open = false">
-                <button type="button" @click="toggleOpen($el)" class="w-full bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
                   <span x-text="formattedDate || newSeriesOccDate || 'Select Date...'"></span>
                   <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
                 </button>
@@ -4157,7 +4173,7 @@
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-outline uppercase">TIME</span>
                 <div class="relative" x-data="customTimePicker(newSeriesOccTime, (t) => { newSeriesOccTime = t; })" x-effect="if (newSeriesOccTime && newSeriesOccTime.includes(':')) { selectedHour = String(newSeriesOccTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(newSeriesOccTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
-                  <button type="button" @click="toggleOpen($el)" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <button type="button" @click="toggleOpen($el, $event)" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
                     <span x-text="timeStr || newSeriesOccTime || '15:30'"></span>
                     <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
                   </button>
