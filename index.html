@@ -133,7 +133,7 @@
           if (this.open && triggerEl) {
             const rect = triggerEl.getBoundingClientRect();
             const popoverWidth = 288;
-            const popoverHeight = 310;
+            const popoverHeight = 330;
             let left = rect.left;
             if (left + popoverWidth > window.innerWidth - 12) {
               left = window.innerWidth - popoverWidth - 12;
@@ -144,20 +144,23 @@
             const spaceAbove = rect.top - 12;
 
             let top;
-            if (spaceBelow >= popoverHeight) {
-              top = rect.bottom + 6;
-            } else if (spaceAbove >= popoverHeight) {
+            let maxHeight;
+
+            if (spaceAbove >= popoverHeight) {
               top = rect.top - popoverHeight - 6;
-            } else if (spaceBelow >= spaceAbove) {
+              maxHeight = spaceAbove;
+            } else if (spaceBelow >= popoverHeight) {
               top = rect.bottom + 6;
-              if (top + popoverHeight > window.innerHeight - 12) {
-                top = Math.max(12, window.innerHeight - popoverHeight - 12);
-              }
-            } else {
+              maxHeight = spaceBelow;
+            } else if (spaceAbove >= spaceBelow) {
               top = Math.max(12, rect.top - popoverHeight - 6);
+              maxHeight = rect.top - top - 6;
+            } else {
+              top = rect.bottom + 6;
+              maxHeight = window.innerHeight - top - 12;
             }
 
-            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: calc(100vh - 24px); overflow-y: auto;`;
+            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: ${Math.max(150, Math.floor(maxHeight))}px; overflow-y: auto;`;
           }
         },
 
@@ -295,7 +298,7 @@
           if (this.open && triggerEl) {
             const rect = triggerEl.getBoundingClientRect();
             const popoverWidth = 290;
-            const popoverHeight = 355;
+            const popoverHeight = 405;
 
             let left = rect.left;
             if (left + popoverWidth > window.innerWidth - 12) {
@@ -307,20 +310,23 @@
             const spaceAbove = rect.top - 12;
 
             let top;
-            if (spaceBelow >= popoverHeight) {
-              top = rect.bottom + 6;
-            } else if (spaceAbove >= popoverHeight) {
+            let maxHeight;
+
+            if (spaceAbove >= popoverHeight) {
               top = rect.top - popoverHeight - 6;
-            } else if (spaceBelow >= spaceAbove) {
+              maxHeight = spaceAbove;
+            } else if (spaceBelow >= popoverHeight) {
               top = rect.bottom + 6;
-              if (top + popoverHeight > window.innerHeight - 12) {
-                top = Math.max(12, window.innerHeight - popoverHeight - 12);
-              }
-            } else {
+              maxHeight = spaceBelow;
+            } else if (spaceAbove >= spaceBelow) {
               top = Math.max(12, rect.top - popoverHeight - 6);
+              maxHeight = rect.top - top - 6;
+            } else {
+              top = rect.bottom + 6;
+              maxHeight = window.innerHeight - top - 12;
             }
 
-            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: calc(100vh - 24px); overflow-y: auto;`;
+            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: ${Math.max(150, Math.floor(maxHeight))}px; overflow-y: auto;`;
           }
         },
 
