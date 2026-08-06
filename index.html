@@ -3839,27 +3839,80 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Event Category / Type</label>
-              <select x-model="activeSeries.eventType" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold outline-none">
-                <option value="Gym Session">Gym Session</option>
-                <option value="Field Session">Field Session</option>
-                <option value="Match Day">Match Day</option>
-                <option value="Fitness Test">Fitness Test</option>
-              </select>
+              <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span x-text="activeSeries.eventType"></span>
+                  <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                </button>
+                <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
+                  <template x-for="cat in ['Gym Session', 'Field Session', 'Match Day', 'Fitness Test']" :key="cat">
+                    <div @click="activeSeries.eventType = cat; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="activeSeries.eventType === cat ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                      <span x-text="cat"></span>
+                      <span x-show="activeSeries.eventType === cat" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Assigned Squad</label>
-              <select x-model="activeSeries.team" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold outline-none">
-                <template x-for="sq in squads" :key="sq">
-                  <option :value="sq" x-text="sq"></option>
-                </template>
-              </select>
+              <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span x-text="activeSeries.team || 'U15'"></span>
+                  <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                </button>
+                <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                  <template x-for="sq in squads" :key="sq">
+                    <div @click="activeSeries.team = sq; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="activeSeries.team === sq ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                      <span x-text="sq"></span>
+                      <span x-show="activeSeries.team === sq" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Default Start Time</label>
-              <input x-model="activeSeries.startTime" type="text" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" placeholder="15:30"/>
+              <div class="relative" x-data="customTimePicker(activeSeries.startTime, (t) => { activeSeries.startTime = t; })" x-effect="if (activeSeries.startTime && activeSeries.startTime.includes(':')) { selectedHour = String(activeSeries.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(activeSeries.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+                <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span class="font-bold" x-text="timeStr || activeSeries.startTime || '15:30'"></span>
+                  <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
+                </button>
+                <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[270px] space-y-3">
+                  <div class="flex items-center justify-center gap-2">
+                    <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                    <span class="font-bold text-xl">:</span>
+                    <button type="button" @click="pickerMode = 'minute'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                  </div>
+                  <div class="relative w-[200px] h-[200px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center border border-outline-variant/50">
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
+                      <circle cx="115" cy="115" r="4" fill="#003EC7" />
+                      <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" />
+                      <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+                    </svg>
+                    <template x-if="pickerMode === 'hour'">
+                      <div class="absolute inset-0">
+                        <template x-for="(h, hidx) in outerHours" :key="'hdr_'+h">
+                          <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(hidx, 80).x}px; top: ${getPos(hidx, 80).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface'"><span x-text="h"></span></button>
+                        </template>
+                      </div>
+                    </template>
+                    <template x-if="pickerMode === 'minute'">
+                      <div class="absolute inset-0">
+                        <template x-for="(m, midx) in minutes" :key="'minr_'+m">
+                          <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(midx, 80).x}px; top: ${getPos(midx, 80).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface'"><span x-text="m"></span></button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="flex justify-end pt-1 border-t border-outline-variant">
+                    <button type="button" @click="confirmTime()" class="px-3 py-1 text-xs font-bold text-primary">OK</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Duration (Minutes)</label>
@@ -3881,9 +3934,69 @@
               <div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/80 rounded-2xl text-xs hover:border-primary transition-all">
                 <div class="flex items-center gap-3">
                   <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (activeSeries.occurrences.length - idx)"></span>
-                  <input type="date" x-model="occ.date" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs outline-none focus:border-primary"/>
+                  
+                  <!-- CUSTOM DATE PICKER FOR OCCURRENCE ROW -->
+                  <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
+                    <button type="button" @click="open = !open" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
+                      <span x-text="formattedDate || occ.date || 'Select Date'"></span>
+                      <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
+                    </button>
+                    <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                      <div class="flex items-center justify-between">
+                        <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                        <span class="font-bold text-xs" x-text="monthYearTitle"></span>
+                        <button type="button" @click="nextMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                      </div>
+                      <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                      <div class="grid grid-cols-7 gap-1 text-center">
+                        <template x-for="cell in calendarGrid" :key="cell.key">
+                          <button type="button" @click="cell.inMonth && selectDate(cell.dateStr)" :disabled="!cell.inMonth" class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs" :class="cell.isSelected ? 'bg-primary text-on-primary font-bold' : 'text-on-surface'"><span x-text="cell.dayNum"></span></button>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+
                   <span class="text-outline font-bold">@</span>
-                  <input type="text" x-model="occ.startTime" class="w-20 bg-surface border border-outline-variant/60 rounded-xl px-2.5 py-1.5 font-bold text-xs text-center outline-none focus:border-primary"/>
+
+                  <!-- CUSTOM TIME PICKER FOR OCCURRENCE ROW -->
+                  <div class="relative" x-data="customTimePicker(occ.startTime, (t) => { occ.startTime = t; })" x-effect="if (occ.startTime && occ.startTime.includes(':')) { selectedHour = String(occ.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(occ.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+                    <button type="button" @click="open = !open" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
+                      <span x-text="timeStr || occ.startTime || '15:30'"></span>
+                      <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
+                    </button>
+                    <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[260px] space-y-3">
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1 rounded-xl font-bold text-xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                        <span class="font-bold text-lg">:</span>
+                        <button type="button" @click="pickerMode = 'minute'" class="px-3 py-1 rounded-xl font-bold text-xl" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                      </div>
+                      <div class="relative w-[190px] h-[190px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center border border-outline-variant/50">
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
+                          <circle cx="115" cy="115" r="4" fill="#003EC7" />
+                          <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" />
+                          <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+                        </svg>
+                        <template x-if="pickerMode === 'hour'">
+                          <div class="absolute inset-0">
+                            <template x-for="(h, hidx) in outerHours" :key="'occh_'+h">
+                              <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(hidx, 76).x}px; top: ${getPos(hidx, 76).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface'"><span x-text="h"></span></button>
+                            </template>
+                          </div>
+                        </template>
+                        <template x-if="pickerMode === 'minute'">
+                          <div class="absolute inset-0">
+                            <template x-for="(m, midx) in minutes" :key="'occm_'+m">
+                              <button type="button" @click="selectMinute(m)" class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(midx, 76).x}px; top: ${getPos(midx, 76).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface'"><span x-text="m"></span></button>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                      <div class="flex justify-end pt-1 border-t border-outline-variant">
+                        <button type="button" @click="confirmTime()" class="px-3 py-1 text-xs font-bold text-primary">OK</button>
+                      </div>
+                    </div>
+                  </div>
+
                   <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-primary/10 text-primary">Scheduled</span>
                 </div>
                 <div class="flex items-center gap-1">
@@ -3920,11 +4033,69 @@
           <div class="p-4 border border-outline-variant rounded-2xl space-y-2">
             <span class="text-[11px] font-extrabold text-outline uppercase tracking-wider block">ADD NEXT DATE</span>
             <div class="flex flex-wrap items-center gap-3">
-              <input type="date" x-model="newSeriesOccDate" class="flex-1 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary"/>
+              <!-- CUSTOM DATE PICKER FOR ADD NEXT DATE -->
+              <div class="flex-1 min-w-[180px] relative" x-data="customDatePicker(newSeriesOccDate, (d) => { newSeriesOccDate = d; })" x-effect="if (newSeriesOccDate) { selectedDateStr = newSeriesOccDate; }" @click.outside="open = false">
+                <button type="button" @click="open = !open" class="w-full bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span x-text="formattedDate || newSeriesOccDate || 'Select Date...'"></span>
+                  <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+                </button>
+                <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                    <span class="font-bold text-xs" x-text="monthYearTitle"></span>
+                    <button type="button" @click="nextMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                  </div>
+                  <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                  <div class="grid grid-cols-7 gap-1 text-center">
+                    <template x-for="cell in calendarGrid" :key="cell.key">
+                      <button type="button" @click="cell.inMonth && selectDate(cell.dateStr)" :disabled="!cell.inMonth" class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs" :class="cell.isSelected ? 'bg-primary text-on-primary font-bold' : 'text-on-surface'"><span x-text="cell.dayNum"></span></button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CUSTOM TIME PICKER FOR ADD NEXT DATE -->
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-outline uppercase">TIME</span>
-                <input type="text" x-model="newSeriesOccTime" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold text-center outline-none focus:ring-2 focus:ring-primary"/>
+                <div class="relative" x-data="customTimePicker(newSeriesOccTime, (t) => { newSeriesOccTime = t; })" x-effect="if (newSeriesOccTime && newSeriesOccTime.includes(':')) { selectedHour = String(newSeriesOccTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(newSeriesOccTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+                  <button type="button" @click="open = !open" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                    <span x-text="timeStr || newSeriesOccTime || '15:30'"></span>
+                    <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
+                  </button>
+                  <div x-show="open" class="absolute right-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[260px] space-y-3">
+                    <div class="flex items-center justify-center gap-2">
+                      <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1 rounded-xl font-bold text-xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                      <span class="font-bold text-lg">:</span>
+                      <button type="button" @click="pickerMode = 'minute'" class="px-3 py-1 rounded-xl font-bold text-xl" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                    </div>
+                    <div class="relative w-[190px] h-[190px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center border border-outline-variant/50">
+                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
+                        <circle cx="115" cy="115" r="4" fill="#003EC7" />
+                        <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+                      </svg>
+                      <template x-if="pickerMode === 'hour'">
+                        <div class="absolute inset-0">
+                          <template x-for="(h, hidx) in outerHours" :key="'addh_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(hidx, 76).x}px; top: ${getPos(hidx, 76).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface'"><span x-text="h"></span></button>
+                          </template>
+                        </div>
+                      </template>
+                      <template x-if="pickerMode === 'minute'">
+                        <div class="absolute inset-0">
+                          <template x-for="(m, midx) in minutes" :key="'addm_'+m">
+                            <button type="button" @click="selectMinute(m)" class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(midx, 76).x}px; top: ${getPos(midx, 76).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface'"><span x-text="m"></span></button>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                    <div class="flex justify-end pt-1 border-t border-outline-variant">
+                      <button type="button" @click="confirmTime()" class="px-3 py-1 text-xs font-bold text-primary">OK</button>
+                    </div>
+                  </div>
+                </div>
               </div>
+
               <button type="button" @click="addSeriesOccurrenceDate()" class="px-4 py-2 bg-primary text-on-primary text-xs font-extrabold rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">add</span> Add Date
               </button>
