@@ -261,7 +261,9 @@
         selectedHour: (initialValue || '14:00').split(':')[0] || '14',
         selectedMinute: (initialValue || '14:00').split(':')[1] || '00',
 
-        presets: ['07:00', '08:00', '14:00', '15:30', '16:30', '17:30', '18:00'],
+        outerHours: ['00', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'],
+        innerHours: ['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'],
+        minutes: ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
 
         toggleOpen(triggerEl, evt) {
           if (evt && typeof evt.stopPropagation === 'function') {
@@ -273,8 +275,8 @@
           this.open = !this.open;
           if (this.open && triggerEl) {
             const rect = triggerEl.getBoundingClientRect();
-            const popoverWidth = 270;
-            const popoverHeight = 310;
+            const popoverWidth = 290;
+            const popoverHeight = 355;
             let left = rect.left;
             if (left + popoverWidth > window.innerWidth - 12) {
               left = window.innerWidth - popoverWidth - 12;
@@ -310,21 +312,41 @@
           return `${String(this.selectedHour).padStart(2, '0')}:${String(this.selectedMinute).padStart(2, '0')}`;
         },
 
-        hoursList: ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21'],
-        minutesList: ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
+        getPos(index, radius, total = 12) {
+          const angle = (index * (360 / total) - 90) * (Math.PI / 180);
+          const cx = 120;
+          const cy = 120;
+          const x = Math.round(cx + radius * Math.cos(angle));
+          const y = Math.round(cy + radius * Math.sin(angle));
+          return { x, y };
+        },
 
-        selectPreset(preset) {
-          const parts = preset.split(':');
-          if (parts.length === 2) {
-            this.selectedHour = parts[0];
-            this.selectedMinute = parts[1];
-            this.confirmTime();
+        get handTarget() {
+          if (this.pickerMode === 'hour') {
+            const hNum = parseInt(this.selectedHour, 10);
+            const isOuter = hNum === 0 || (hNum >= 13 && hNum <= 23);
+            const list = isOuter ? this.outerHours : this.innerHours;
+            let idx = list.indexOf(String(hNum).padStart(2, '0'));
+            if (idx === -1) idx = 0;
+            const r = isOuter ? 90 : 58;
+            return this.getPos(idx, r);
+          } else {
+            const mNum = parseInt(this.selectedMinute, 10);
+            let idx = this.minutes.indexOf(String(mNum).padStart(2, '0'));
+            if (idx === -1) {
+              const approx = Math.round(mNum / 5) * 5;
+              idx = this.minutes.indexOf(String(approx === 60 ? 0 : approx).padStart(2, '0'));
+            }
+            if (idx === -1) idx = 0;
+            return this.getPos(idx, 90);
           }
         },
 
         selectHour(h) {
           this.selectedHour = String(h).padStart(2, '0');
-          this.pickerMode = 'minute';
+          setTimeout(() => {
+            this.pickerMode = 'minute';
+          }, 200);
         },
 
         selectMinute(m) {
@@ -2511,41 +2533,44 @@
                     <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
                   </button>
 
-                  <div x-show="open" :style="popoverStyle" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[280px] space-y-3 z-[999999]">
+                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
                     <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
-                      <button type="button" @click="pickerMode = 'hour'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                      <span class="font-extrabold text-lg text-primary">:</span>
-                      <button type="button" @click="pickerMode = 'minute'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                      <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                      <span class="font-black text-xl text-primary animate-pulse">:</span>
+                      <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                     </div>
 
-                    <div class="space-y-1">
-                      <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1">Quick Presets</span>
-                      <div class="flex flex-wrap gap-1.5">
-                        <template x-for="p in presets" :key="p">
-                          <button type="button" @click="selectPreset(p)" class="px-2 py-0.5 rounded-lg text-[11px] font-bold border border-outline-variant/60 hover:border-primary hover:text-primary transition-all" :class="timeStr === p ? 'bg-primary/15 text-primary border-primary font-black' : 'bg-surface text-on-surface'"><span x-text="p"></span></button>
-                        </template>
-                      </div>
-                    </div>
+                    <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                        <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                        <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                      </svg>
 
-                    <div class="space-y-1 pt-1 border-t border-outline-variant/40">
-                      <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1" x-text="pickerMode === 'hour' ? 'Select Hour' : 'Select Minute'"></span>
-                      <div class="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
-                        <template x-if="pickerMode === 'hour'">
-                          <template x-for="h in hoursList" :key="'hl6_'+h">
-                            <button type="button" @click="selectHour(h)" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedHour).padStart(2, '0') === h ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="h + ':00'"></span></button>
+                      <template x-if="pickerMode === 'hour'">
+                        <div class="absolute inset-0">
+                          <template x-for="(h, idx) in outerHours" :key="'out1_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
                           </template>
-                        </template>
-                        <template x-if="pickerMode === 'minute'">
-                          <template x-for="m in minutesList" :key="'ml6_'+m">
-                            <button type="button" @click="selectMinute(m); confirmTime();" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedMinute).padStart(2, '0') === m ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="String(selectedHour).padStart(2, '0') + ':' + m"></span></button>
+                          <template x-for="(h, idx) in innerHours" :key="'in1_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                           </template>
-                        </template>
-                      </div>
+                        </div>
+                      </template>
+
+                      <template x-if="pickerMode === 'minute'">
+                        <div class="absolute inset-0">
+                          <template x-for="(m, idx) in minutes" :key="'min1_'+m">
+                            <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                          </template>
+                        </div>
+                      </template>
                     </div>
 
                     <div class="flex justify-end pt-1 border-t border-outline-variant/40">
-                      <button type="button" @click="confirmTime()" class="w-full py-1.5 bg-primary text-on-primary text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-[15px]">check</span> Set Time
+                      <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">check</span> OK
                       </button>
                     </div>
                   </div>
@@ -3776,41 +3801,44 @@
                 <span class="font-bold" x-text="timeStr"></span>
                 <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
               </button>
-              <div x-show="open" :style="popoverStyle" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[280px] space-y-3 z-[999999]">
+              <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
                 <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
-                  <button type="button" @click="pickerMode = 'hour'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                  <span class="font-extrabold text-lg text-primary">:</span>
-                  <button type="button" @click="pickerMode = 'minute'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                  <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                  <span class="font-black text-xl text-primary animate-pulse">:</span>
+                  <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                 </div>
 
-                <div class="space-y-1">
-                  <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1">Quick Presets</span>
-                  <div class="flex flex-wrap gap-1.5">
-                    <template x-for="p in presets" :key="p">
-                      <button type="button" @click="selectPreset(p)" class="px-2 py-0.5 rounded-lg text-[11px] font-bold border border-outline-variant/60 hover:border-primary hover:text-primary transition-all" :class="timeStr === p ? 'bg-primary/15 text-primary border-primary font-black' : 'bg-surface text-on-surface'"><span x-text="p"></span></button>
-                    </template>
-                  </div>
-                </div>
+                <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                  <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                    <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                    <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                    <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                    <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                  </svg>
 
-                <div class="space-y-1 pt-1 border-t border-outline-variant/40">
-                  <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1" x-text="pickerMode === 'hour' ? 'Select Hour' : 'Select Minute'"></span>
-                  <div class="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
-                    <template x-if="pickerMode === 'hour'">
-                      <template x-for="h in hoursList" :key="'hl5_'+h">
-                        <button type="button" @click="selectHour(h)" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedHour).padStart(2, '0') === h ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="h + ':00'"></span></button>
+                  <template x-if="pickerMode === 'hour'">
+                    <div class="absolute inset-0">
+                      <template x-for="(h, idx) in outerHours" :key="'out2_'+h">
+                        <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
                       </template>
-                    </template>
-                    <template x-if="pickerMode === 'minute'">
-                      <template x-for="m in minutesList" :key="'ml5_'+m">
-                        <button type="button" @click="selectMinute(m); confirmTime();" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedMinute).padStart(2, '0') === m ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="String(selectedHour).padStart(2, '0') + ':' + m"></span></button>
+                      <template x-for="(h, idx) in innerHours" :key="'in2_'+h">
+                        <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                       </template>
-                    </template>
-                  </div>
+                    </div>
+                  </template>
+
+                  <template x-if="pickerMode === 'minute'">
+                    <div class="absolute inset-0">
+                      <template x-for="(m, idx) in minutes" :key="'min2_'+m">
+                        <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                      </template>
+                    </div>
+                  </template>
                 </div>
 
                 <div class="flex justify-end pt-1 border-t border-outline-variant/40">
-                  <button type="button" @click="confirmTime()" class="w-full py-1.5 bg-primary text-on-primary text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
-                    <span class="material-symbols-outlined text-[15px]">check</span> Set Time
+                  <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">check</span> OK
                   </button>
                 </div>
               </div>
@@ -3934,41 +3962,44 @@
                   <span class="font-bold" x-text="timeStr || activeSeries.startTime || '15:30'"></span>
                   <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
                 </button>
-                <div x-show="open" :style="popoverStyle" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[280px] space-y-3 z-[999999]">
+                <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
                   <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
-                    <button type="button" @click="pickerMode = 'hour'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                    <span class="font-extrabold text-lg text-primary">:</span>
-                    <button type="button" @click="pickerMode = 'minute'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                    <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                    <span class="font-black text-xl text-primary animate-pulse">:</span>
+                    <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                   </div>
 
-                  <div class="space-y-1">
-                    <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1">Quick Presets</span>
-                    <div class="flex flex-wrap gap-1.5">
-                      <template x-for="p in presets" :key="p">
-                        <button type="button" @click="selectPreset(p)" class="px-2 py-0.5 rounded-lg text-[11px] font-bold border border-outline-variant/60 hover:border-primary hover:text-primary transition-all" :class="timeStr === p ? 'bg-primary/15 text-primary border-primary font-black' : 'bg-surface text-on-surface'"><span x-text="p"></span></button>
-                      </template>
-                    </div>
-                  </div>
+                  <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                      <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                      <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                      <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                      <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                    </svg>
 
-                  <div class="space-y-1 pt-1 border-t border-outline-variant/40">
-                    <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1" x-text="pickerMode === 'hour' ? 'Select Hour' : 'Select Minute'"></span>
-                    <div class="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
-                      <template x-if="pickerMode === 'hour'">
-                        <template x-for="h in hoursList" :key="'hl1_'+h">
-                          <button type="button" @click="selectHour(h)" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedHour).padStart(2, '0') === h ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="h + ':00'"></span></button>
+                    <template x-if="pickerMode === 'hour'">
+                      <div class="absolute inset-0">
+                        <template x-for="(h, idx) in outerHours" :key="'out3_'+h">
+                          <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
                         </template>
-                      </template>
-                      <template x-if="pickerMode === 'minute'">
-                        <template x-for="m in minutesList" :key="'ml1_'+m">
-                          <button type="button" @click="selectMinute(m); confirmTime();" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedMinute).padStart(2, '0') === m ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="String(selectedHour).padStart(2, '0') + ':' + m"></span></button>
+                        <template x-for="(h, idx) in innerHours" :key="'in3_'+h">
+                          <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                         </template>
-                      </template>
-                    </div>
+                      </div>
+                    </template>
+
+                    <template x-if="pickerMode === 'minute'">
+                      <div class="absolute inset-0">
+                        <template x-for="(m, idx) in minutes" :key="'min3_'+m">
+                          <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                        </template>
+                      </div>
+                    </template>
                   </div>
 
                   <div class="flex justify-end pt-1 border-t border-outline-variant/40">
-                    <button type="button" @click="confirmTime()" class="w-full py-1.5 bg-primary text-on-primary text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
-                      <span class="material-symbols-outlined text-[15px]">check</span> Set Time
+                    <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                      <span class="material-symbols-outlined text-[16px]">check</span> OK
                     </button>
                   </div>
                 </div>
@@ -4025,41 +4056,44 @@
                       <span x-text="timeStr || occ.startTime || '15:30'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
                     </button>
-                    <div x-show="open" :style="popoverStyle" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[280px] space-y-3 z-[999999]">
+                    <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
                       <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
-                        <button type="button" @click="pickerMode = 'hour'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                        <span class="font-extrabold text-lg text-primary">:</span>
-                        <button type="button" @click="pickerMode = 'minute'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                        <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                        <span class="font-black text-xl text-primary animate-pulse">:</span>
+                        <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                       </div>
 
-                      <div class="space-y-1">
-                        <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1">Quick Presets</span>
-                        <div class="flex flex-wrap gap-1.5">
-                          <template x-for="p in presets" :key="p">
-                            <button type="button" @click="selectPreset(p)" class="px-2 py-0.5 rounded-lg text-[11px] font-bold border border-outline-variant/60 hover:border-primary hover:text-primary transition-all" :class="timeStr === p ? 'bg-primary/15 text-primary border-primary font-black' : 'bg-surface text-on-surface'"><span x-text="p"></span></button>
-                          </template>
-                        </div>
-                      </div>
+                      <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                          <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                          <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                          <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                          <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                        </svg>
 
-                      <div class="space-y-1 pt-1 border-t border-outline-variant/40">
-                        <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1" x-text="pickerMode === 'hour' ? 'Select Hour' : 'Select Minute'"></span>
-                        <div class="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
-                          <template x-if="pickerMode === 'hour'">
-                            <template x-for="h in hoursList" :key="'hl2_'+h">
-                              <button type="button" @click="selectHour(h)" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedHour).padStart(2, '0') === h ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="h + ':00'"></span></button>
+                        <template x-if="pickerMode === 'hour'">
+                          <div class="absolute inset-0">
+                            <template x-for="(h, idx) in outerHours" :key="'out4_'+h">
+                              <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
                             </template>
-                          </template>
-                          <template x-if="pickerMode === 'minute'">
-                            <template x-for="m in minutesList" :key="'ml2_'+m">
-                              <button type="button" @click="selectMinute(m); confirmTime();" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedMinute).padStart(2, '0') === m ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="String(selectedHour).padStart(2, '0') + ':' + m"></span></button>
+                            <template x-for="(h, idx) in innerHours" :key="'in4_'+h">
+                              <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                             </template>
-                          </template>
-                        </div>
+                          </div>
+                        </template>
+
+                        <template x-if="pickerMode === 'minute'">
+                          <div class="absolute inset-0">
+                            <template x-for="(m, idx) in minutes" :key="'min4_'+m">
+                              <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                            </template>
+                          </div>
+                        </template>
                       </div>
 
                       <div class="flex justify-end pt-1 border-t border-outline-variant/40">
-                        <button type="button" @click="confirmTime()" class="w-full py-1.5 bg-primary text-on-primary text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
-                          <span class="material-symbols-outlined text-[15px]">check</span> Set Time
+                        <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-[16px]">check</span> OK
                         </button>
                       </div>
                     </div>
@@ -4130,41 +4164,44 @@
                     <span x-text="timeStr || newSeriesOccTime || '15:30'"></span>
                     <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
                   </button>
-                  <div x-show="open" :style="popoverStyle" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[280px] space-y-3 z-[999999]">
+                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
                     <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
-                      <button type="button" @click="pickerMode = 'hour'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                      <span class="font-extrabold text-lg text-primary">:</span>
-                      <button type="button" @click="pickerMode = 'minute'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                      <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                      <span class="font-black text-xl text-primary animate-pulse">:</span>
+                      <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                     </div>
 
-                    <div class="space-y-1">
-                      <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1">Quick Presets</span>
-                      <div class="flex flex-wrap gap-1.5">
-                        <template x-for="p in presets" :key="p">
-                          <button type="button" @click="selectPreset(p)" class="px-2 py-0.5 rounded-lg text-[11px] font-bold border border-outline-variant/60 hover:border-primary hover:text-primary transition-all" :class="timeStr === p ? 'bg-primary/15 text-primary border-primary font-black' : 'bg-surface text-on-surface'"><span x-text="p"></span></button>
-                        </template>
-                      </div>
-                    </div>
+                    <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                        <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                        <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                      </svg>
 
-                    <div class="space-y-1 pt-1 border-t border-outline-variant/40">
-                      <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1" x-text="pickerMode === 'hour' ? 'Select Hour' : 'Select Minute'"></span>
-                      <div class="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
-                        <template x-if="pickerMode === 'hour'">
-                          <template x-for="h in hoursList" :key="'hl3_'+h">
-                            <button type="button" @click="selectHour(h)" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedHour).padStart(2, '0') === h ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="h + ':00'"></span></button>
+                      <template x-if="pickerMode === 'hour'">
+                        <div class="absolute inset-0">
+                          <template x-for="(h, idx) in outerHours" :key="'out5_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
                           </template>
-                        </template>
-                        <template x-if="pickerMode === 'minute'">
-                          <template x-for="m in minutesList" :key="'ml3_'+m">
-                            <button type="button" @click="selectMinute(m); confirmTime();" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedMinute).padStart(2, '0') === m ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="String(selectedHour).padStart(2, '0') + ':' + m"></span></button>
+                          <template x-for="(h, idx) in innerHours" :key="'in5_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                           </template>
-                        </template>
-                      </div>
+                        </div>
+                      </template>
+
+                      <template x-if="pickerMode === 'minute'">
+                        <div class="absolute inset-0">
+                          <template x-for="(m, idx) in minutes" :key="'min5_'+m">
+                            <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                          </template>
+                        </div>
+                      </template>
                     </div>
 
                     <div class="flex justify-end pt-1 border-t border-outline-variant/40">
-                      <button type="button" @click="confirmTime()" class="w-full py-1.5 bg-primary text-on-primary text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-[15px]">check</span> Set Time
+                      <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">check</span> OK
                       </button>
                     </div>
                   </div>
