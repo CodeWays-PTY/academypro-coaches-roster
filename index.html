@@ -116,9 +116,33 @@
     document.addEventListener('alpine:init', () => {
       Alpine.data('customDatePicker', (initialValue = '', onSelectCallback = null) => ({
         open: false,
+        popoverStyle: '',
         selectedDateStr: initialValue || new Date().toISOString().split('T')[0],
         viewYear: new Date().getFullYear(),
         viewMonth: new Date().getMonth(),
+
+        toggleOpen(triggerEl) {
+          this.open = !this.open;
+          if (this.open && triggerEl) {
+            const rect = triggerEl.getBoundingClientRect();
+            const popoverWidth = 288;
+            const popoverHeight = 310;
+            let left = rect.left;
+            if (left + popoverWidth > window.innerWidth - 12) {
+              left = window.innerWidth - popoverWidth - 12;
+            }
+            if (left < 12) left = 12;
+
+            const spaceBelow = window.innerHeight - rect.bottom;
+            if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
+              const bottom = window.innerHeight - rect.top + 6;
+              this.popoverStyle = `position: fixed; left: ${left}px; bottom: ${bottom}px; z-index: 999999; margin: 0;`;
+            } else {
+              const top = rect.bottom + 6;
+              this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0;`;
+            }
+          }
+        },
 
         init() {
           if (this.selectedDateStr) {
@@ -213,10 +237,34 @@
 
       Alpine.data('customTimePicker', (initialValue = '14:00', onChangeCallback = null) => ({
         open: false,
+        popoverStyle: '',
         pickerMode: 'hour', // 'hour' vs 'minute'
         isKeyboardInput: false,
         selectedHour: (initialValue || '14:00').split(':')[0] || '14',
         selectedMinute: (initialValue || '14:00').split(':')[1] || '00',
+
+        toggleOpen(triggerEl) {
+          this.open = !this.open;
+          if (this.open && triggerEl) {
+            const rect = triggerEl.getBoundingClientRect();
+            const popoverWidth = 270;
+            const popoverHeight = 310;
+            let left = rect.left;
+            if (left + popoverWidth > window.innerWidth - 12) {
+              left = window.innerWidth - popoverWidth - 12;
+            }
+            if (left < 12) left = 12;
+
+            const spaceBelow = window.innerHeight - rect.bottom;
+            if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
+              const bottom = window.innerHeight - rect.top + 6;
+              this.popoverStyle = `position: fixed; left: ${left}px; bottom: ${bottom}px; z-index: 999999; margin: 0;`;
+            } else {
+              const top = rect.bottom + 6;
+              this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0;`;
+            }
+          }
+        },
 
         init() {},
 
@@ -3915,11 +3963,11 @@
             <div>
               <label class="block text-xs font-bold text-on-surface-variant mb-1">Default Start Time</label>
               <div class="relative" x-data="customTimePicker(activeSeries.startTime, (t) => { activeSeries.startTime = t; })" x-effect="if (activeSeries.startTime && activeSeries.startTime.includes(':')) { selectedHour = String(activeSeries.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(activeSeries.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
-                <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
+                <button type="button" @click="toggleOpen($el)" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
                   <span class="font-bold" x-text="timeStr || activeSeries.startTime || '15:30'"></span>
                   <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
                 </button>
-                <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[270px] space-y-3">
+                <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-3xl shadow-2xl p-4 w-[270px] space-y-3">
                   <div class="flex items-center justify-center gap-2">
                     <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                     <span class="font-bold text-xl">:</span>
@@ -3975,11 +4023,11 @@
                   
                   <!-- CUSTOM DATE PICKER FOR OCCURRENCE ROW -->
                   <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; updateSingleOccurrence(occ); })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
-                    <button type="button" @click="open = !open" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
+                    <button type="button" @click="toggleOpen($el)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
                       <span x-text="formattedDate || occ.date || 'Select Date'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
                     </button>
-                    <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                    <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-2xl shadow-2xl p-4 w-72 space-y-3">
                       <div class="flex items-center justify-between">
                         <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
                         <span class="font-bold text-xs" x-text="monthYearTitle"></span>
@@ -3999,11 +4047,11 @@
                   <!-- CUSTOM TIME PICKER FOR OCCURRENCE ROW -->
                   <div class="relative" x-data="customTimePicker(occ.startTime, (t) => { occ.startTime = t; updateSingleOccurrence(occ); })" x-effect="if (occ.startTime && occ.startTime.includes(':')) { selectedHour = String(occ.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(occ.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
 
-                    <button type="button" @click="open = !open" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
+                    <button type="button" @click="toggleOpen($el)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
                       <span x-text="timeStr || occ.startTime || '15:30'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
                     </button>
-                    <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[260px] space-y-3">
+                    <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-3xl shadow-2xl p-4 w-[260px] space-y-3">
                       <div class="flex items-center justify-center gap-2">
                         <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1 rounded-xl font-bold text-xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                         <span class="font-bold text-lg">:</span>
@@ -4074,11 +4122,11 @@
             <div class="flex flex-wrap items-center gap-3">
               <!-- CUSTOM DATE PICKER FOR ADD NEXT DATE -->
               <div class="flex-1 min-w-[180px] relative" x-data="customDatePicker(newSeriesOccDate, (d) => { newSeriesOccDate = d; })" x-effect="if (newSeriesOccDate) { selectedDateStr = newSeriesOccDate; }" @click.outside="open = false">
-                <button type="button" @click="open = !open" class="w-full bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                <button type="button" @click="toggleOpen($el)" class="w-full bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
                   <span x-text="formattedDate || newSeriesOccDate || 'Select Date...'"></span>
                   <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
                 </button>
-                <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-2xl shadow-2xl p-4 w-72 space-y-3">
                   <div class="flex items-center justify-between">
                     <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
                     <span class="font-bold text-xs" x-text="monthYearTitle"></span>
@@ -4097,11 +4145,11 @@
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-outline uppercase">TIME</span>
                 <div class="relative" x-data="customTimePicker(newSeriesOccTime, (t) => { newSeriesOccTime = t; })" x-effect="if (newSeriesOccTime && newSeriesOccTime.includes(':')) { selectedHour = String(newSeriesOccTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(newSeriesOccTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
-                  <button type="button" @click="open = !open" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <button type="button" @click="toggleOpen($el)" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
                     <span x-text="timeStr || newSeriesOccTime || '15:30'"></span>
                     <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
                   </button>
-                  <div x-show="open" class="absolute right-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[260px] space-y-3">
+                  <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-3xl shadow-2xl p-4 w-[260px] space-y-3">
                     <div class="flex items-center justify-center gap-2">
                       <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1 rounded-xl font-bold text-xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                       <span class="font-bold text-lg">:</span>
