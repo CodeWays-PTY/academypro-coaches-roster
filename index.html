@@ -995,7 +995,7 @@
 
         openRecurringSeriesModal(seriesObj) {
           if (!seriesObj) return;
-          const occs = (seriesObj.occurrences || []).map(o => ({ ...o })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+          const occs = (seriesObj.occurrences || []).map(o => ({ ...o })).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
           this.activeSeries = {
             seriesId: seriesObj.seriesId || `SERIES-${Date.now()}`,
             title: seriesObj.title || '',
@@ -1125,7 +1125,8 @@
               body: JSON.stringify(payload)
             });
             if (res.ok) {
-              this.activeSeries.occurrences.unshift(payload);
+              this.activeSeries.occurrences.push(payload);
+              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
               this.events.push(payload);
               this.saveEventsToStorage();
               this.newSeriesOccDate = '';
@@ -1185,9 +1186,10 @@
                   team: this.activeSeries.team,
                   recurrenceRule: 'Weekly'
                 };
-                this.activeSeries.occurrences.unshift(item);
+                this.activeSeries.occurrences.push(item);
                 this.events.push(item);
               });
+              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
               this.saveEventsToStorage();
               this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
             } else {
@@ -4061,7 +4063,7 @@
             <template x-for="(occ, idx) in activeSeries.occurrences" :key="occ.id || idx">
               <div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/80 rounded-2xl text-xs hover:border-primary transition-all">
                 <div class="flex items-center gap-3">
-                  <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (activeSeries.occurrences.length - idx)"></span>
+                  <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (idx + 1)"></span>
                   
                   <!-- CUSTOM DATE PICKER FOR OCCURRENCE ROW -->
                   <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; updateSingleOccurrence(occ); })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
