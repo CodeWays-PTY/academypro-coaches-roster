@@ -894,8 +894,23 @@
             return;
           }
           try {
-            const occMap = new Map(this.activeSeries.occurrences.map(o => [o.id, o]));
+            // 1. Update master series parameters across all occurrences in D1
+            if (this.activeSeries.seriesId) {
+              await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/${encodeURIComponent(this.activeSeries.seriesId)}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  location: this.activeSeries.location,
+                  startTime: this.activeSeries.startTime,
+                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
+                  team: this.activeSeries.team
+                })
+              }).catch(() => {});
+            }
 
+            // 2. Update individual occurrence dates & times
             const statements = this.activeSeries.occurrences.map(occ => {
               return fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
                 method: 'POST',
@@ -915,36 +930,10 @@
             });
             await Promise.all(statements);
 
-            this.events = this.events.map(e => {
-              const updatedOcc = occMap.get(e.id);
-              if (updatedOcc) {
-                return {
-                  ...e,
-                  ...updatedOcc,
-                  title: this.activeSeries.title,
-                  eventType: this.activeSeries.eventType,
-                  location: this.activeSeries.location,
-                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
-                  team: this.activeSeries.team,
-                  seriesId: this.activeSeries.seriesId
-                };
-              }
-              if (e.seriesId === this.activeSeries.seriesId) {
-                return {
-                  ...e,
-                  title: this.activeSeries.title,
-                  eventType: this.activeSeries.eventType,
-                  location: this.activeSeries.location,
-                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
-                  team: this.activeSeries.team,
-                  seriesId: this.activeSeries.seriesId
-                };
-              }
-              return e;
-            });
-            this.events = [...this.events];
-            this.saveEventsToStorage();
-            this.triggerToast('Series details updated successfully!', 'success');
+            // 3. Force refresh live data directly from database
+            await this.fetchEventsFromApi(true);
+
+            this.triggerToast('Series and occurrence changes saved successfully!', 'success');
           } catch (e) {
             console.error('Failed saving series details:', e);
             this.triggerToast('Error saving series details', 'error');

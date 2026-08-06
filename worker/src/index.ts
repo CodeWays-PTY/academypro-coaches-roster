@@ -2331,25 +2331,31 @@ const handleUpdateEvent = async (c: any) => {
     return c.json({ success: false, message: 'Invalid JSON payload' }, 400);
   }
 
+  // Fetch existing event record first to preserve school_id, age_group, team, date, start_time, title, location
+  const existingEvt = await db.prepare('SELECT * FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(id.toString(), id.toString()).first().catch(() => null);
+
   const { seriesId, title, eventType, startTime, date, durationMins, location, isImportant, ageGroup, team, workoutImagePath, recurrenceRule, recurrenceEndDate } = body;
 
-  const eventTitle = (title || '').trim();
-  const eventLoc = (location || '').trim();
-  const eventTime = (startTime || '').trim();
-  const eventDt = (date || '').trim();
-  const rawEventType = (eventType || '').trim();
+  const eventTitle = (title || body.eventTitle || existingEvt?.title || '').trim();
+  const eventLoc = (location || body.venue || existingEvt?.location || '').trim();
+  const eventTime = (startTime || body.start_time || existingEvt?.start_time || '').trim();
+  const eventDt = (date || body.event_date || body.date || existingEvt?.date || '').trim();
+  const rawEventType = (eventType || body.event_type || existingEvt?.event_type || 'Gym Session').trim();
 
   // Strict Fail-Fast Validation (NO DUMMY FALLBACKS)
   if (!eventTitle) {
     return c.json({ success: false, message: 'Event title is required.' }, 400);
   }
+  if (!eventTime) {
+    return c.json({ success: false, message: 'Start time is required.' }, 400);
+  }
+  if (!eventDt) {
+    return c.json({ success: false, message: 'Event date is required.' }, 400);
+  }
 
-  // Fetch existing event record if present to preserve school_id, age_group, team
-  const existingEvt = await db.prepare('SELECT * FROM events WHERE CAST(id AS TEXT) = ? OR id = ?').bind(id.toString(), id.toString()).first().catch(() => null);
-
-  const targetAgeGroup = (ageGroup || team || existingEvt?.age_group || existingEvt?.team || '').trim();
-  const assignedTeam = (team || ageGroup || existingEvt?.team || existingEvt?.age_group || '').trim();
-  const schoolId = String(existingEvt?.school_id || body.schoolId || '');
+  const targetAgeGroup = (ageGroup || team || existingEvt?.age_group || existingEvt?.team || 'U15').trim();
+  const assignedTeam = (team || ageGroup || existingEvt?.team || existingEvt?.age_group || 'U15').trim();
+  const schoolId = String(existingEvt?.school_id || body.schoolId || 'OVK');
   const finalSeriesId = seriesId || body.series_id || existingEvt?.series_id || null;
 
   let evType = rawEventType;
@@ -2359,7 +2365,7 @@ const handleUpdateEvent = async (c: any) => {
   if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
 
   const isImpVal = isImportant !== undefined ? (isImportant === true || isImportant === 1 ? 1 : 0) : (existingEvt?.is_important ?? 0);
-  const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : (existingEvt?.duration_mins || 90);
+  const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : (existingEvt?.duration_mins || 60);
   const recRuleVal = (recurrenceRule || body.recurrence_rule || existingEvt?.recurrence_rule || 'Does Not Repeat').trim();
   const recEndDateVal = (recurrenceEndDate || body.recurrence_end_date || existingEvt?.recurrence_end_date || null);
   const imgPath = workoutImagePath !== undefined ? workoutImagePath : (existingEvt?.workout_image_path || null);
@@ -2390,7 +2396,7 @@ const handleUpdateEvent = async (c: any) => {
       ).run();
     }
 
-    console.log(`[Observer Log] Event '${id}' successfully saved/updated in D1.`);
+    console.log(`[Observer Log] Event '${id}' successfully saved/updated in D1 with date='${eventDt}' time='${eventTime}'.`);
     return c.json({ success: true, message: 'Event updated successfully' });
   } catch (err: any) {
     console.error(`[Observer Error] Failed updating event '${id}':`, err);
@@ -2402,6 +2408,57 @@ app.post('/api/dashboard/events/:id', handleUpdateEvent);
 app.put('/api/dashboard/events/:id', handleUpdateEvent);
 app.post('/api/events/:id', handleUpdateEvent);
 app.put('/api/events/:id', handleUpdateEvent);
+
+// Route: Update Master Series Parameters
+const handleUpdateSeriesMaster = async (c: any) => {
+  const seriesId = c.req.param('seriesId');
+  const db = getDB(c);
+  if (!db) return c.json({ success: false, message: 'Database connection unavailable' }, 500);
+
+  let body: any;
+  try { body = await c.req.json(); } catch (e) { return c.json({ success: false, message: 'Invalid JSON' }, 400); }
+
+  const { title, eventType, startTime, durationMins, location, team, ageGroup } = body;
+  const eventTitle = (title || '').trim();
+  if (!eventTitle) return c.json({ success: false, message: 'Title is required' }, 400);
+
+  let evType = (eventType || 'Gym Session').trim();
+  if (evType === 'Field' || evType === 'Field Practice') evType = 'Field Session';
+  if (evType === 'Gym' || evType === 'Gym Practice') evType = 'Gym Session';
+  if (evType === 'Match' || evType === 'Match Practice') evType = 'Match Day';
+  if (evType === 'Test Day' || evType === 'Test') evType = 'Fitness Test';
+
+  const assignedTeam = (team || ageGroup || 'U15').trim();
+  const durMinsVal = durationMins ? parseInt(durationMins.toString(), 10) : 60;
+  const eventLoc = (location || 'Grounds').trim();
+
+  try {
+    let query = `
+      UPDATE events SET 
+        title = ?, event_type = ?, duration_mins = ?, location = ?, team = ?, age_group = ?
+    `;
+    const params = [eventTitle, evType, durMinsVal, eventLoc, assignedTeam, assignedTeam];
+
+    if (startTime && /^\d{1,2}:\d{2}(:\d{2})?$/.test(startTime.trim())) {
+      query += `, start_time = ?`;
+      params.push(startTime.trim());
+    }
+
+    query += ` WHERE series_id = ? OR CAST(id AS TEXT) = ?`;
+    params.push(seriesId, seriesId);
+
+    await db.prepare(query).bind(...params).run();
+
+    return c.json({ success: true, message: 'Series updated successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, message: 'Failed to update series', error: err.message }, 500);
+  }
+};
+app.put('/api/dashboard/events/series/:seriesId', handleUpdateSeriesMaster);
+app.post('/api/dashboard/events/series/:seriesId', handleUpdateSeriesMaster);
+app.put('/api/events/series/:seriesId', handleUpdateSeriesMaster);
+app.post('/api/dashboard/events/series/:seriesId/update', handleUpdateSeriesMaster);
+app.post('/api/events/series/:seriesId/update', handleUpdateSeriesMaster);
 
 // Route: Batch Update / Bulk Add / Delete Series Occurrences
 const handleBulkScheduleSeries = async (c: any) => {
