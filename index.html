@@ -831,7 +831,7 @@
 
           const managedSquadNames = (this.squads || []).map(s => s.trim().toLowerCase().replace(/\s+squad$/i, ''));
           return this.athletes.filter(a => {
-            if (!a.team || a.team === 'Unassigned') return true;
+            if (!a.team || a.team === 'Unassigned') return false;
             const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
             return managedSquadNames.includes(t);
           });
@@ -841,7 +841,7 @@
           if (!sq || !this.athletes || this.athletes.length === 0) return [];
           const target = sq.trim().toLowerCase().replace(/\s+squad$/i, '');
           return this.athletes.filter(a => {
-            if (!a.team) return false;
+            if (!a.team || a.team === 'Unassigned') return false;
             const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
             return t === target;
           });
