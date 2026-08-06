@@ -894,6 +894,8 @@
             return;
           }
           try {
+            const occMap = new Map(this.activeSeries.occurrences.map(o => [o.id, o]));
+
             const statements = this.activeSeries.occurrences.map(occ => {
               return fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
                 method: 'POST',
@@ -903,8 +905,9 @@
                   title: this.activeSeries.title,
                   eventType: this.activeSeries.eventType,
                   location: this.activeSeries.location,
-                  startTime: this.activeSeries.startTime,
-                  durationMins: this.activeSeries.durationMins,
+                  startTime: occ.startTime || this.activeSeries.startTime,
+                  date: occ.date,
+                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
                   team: this.activeSeries.team,
                   seriesId: this.activeSeries.seriesId
                 })
@@ -913,26 +916,72 @@
             await Promise.all(statements);
 
             this.events = this.events.map(e => {
-              const inSeries = this.activeSeries.occurrences.some(o => o.id === e.id) || e.seriesId === this.activeSeries.seriesId;
-              if (inSeries) {
+              const updatedOcc = occMap.get(e.id);
+              if (updatedOcc) {
+                return {
+                  ...e,
+                  ...updatedOcc,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  location: this.activeSeries.location,
+                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
+                  team: this.activeSeries.team,
+                  seriesId: this.activeSeries.seriesId
+                };
+              }
+              if (e.seriesId === this.activeSeries.seriesId) {
                 return {
                   ...e,
                   title: this.activeSeries.title,
                   eventType: this.activeSeries.eventType,
                   location: this.activeSeries.location,
-                  startTime: this.activeSeries.startTime,
-                  durationMins: this.activeSeries.durationMins,
+                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
                   team: this.activeSeries.team,
                   seriesId: this.activeSeries.seriesId
                 };
               }
               return e;
             });
+            this.events = [...this.events];
             this.saveEventsToStorage();
             this.triggerToast('Series details updated successfully!', 'success');
           } catch (e) {
             console.error('Failed saving series details:', e);
             this.triggerToast('Error saving series details', 'error');
+          }
+        },
+
+        async updateSingleOccurrence(occ) {
+          if (!occ || !occ.id) return;
+          try {
+            const payload = {
+              ...occ,
+              title: this.activeSeries.title,
+              eventType: this.activeSeries.eventType,
+              location: this.activeSeries.location,
+              startTime: occ.startTime || this.activeSeries.startTime,
+              date: occ.date,
+              durationMins: parseInt(this.activeSeries.durationMins) || 60,
+              team: this.activeSeries.team,
+              seriesId: this.activeSeries.seriesId
+            };
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              const idx = this.events.findIndex(e => e.id === occ.id);
+              if (idx !== -1) {
+                this.events[idx] = { ...this.events[idx], ...payload };
+              } else {
+                this.events.push({ ...payload });
+              }
+              this.events = [...this.events];
+              this.saveEventsToStorage();
+            }
+          } catch (e) {
+            console.error('Failed to update single occurrence:', e);
           }
         },
 
@@ -3936,7 +3985,7 @@
                   <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (activeSeries.occurrences.length - idx)"></span>
                   
                   <!-- CUSTOM DATE PICKER FOR OCCURRENCE ROW -->
-                  <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
+                  <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; updateSingleOccurrence(occ); })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
                     <button type="button" @click="open = !open" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
                       <span x-text="formattedDate || occ.date || 'Select Date'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
@@ -3959,7 +4008,8 @@
                   <span class="text-outline font-bold">@</span>
 
                   <!-- CUSTOM TIME PICKER FOR OCCURRENCE ROW -->
-                  <div class="relative" x-data="customTimePicker(occ.startTime, (t) => { occ.startTime = t; })" x-effect="if (occ.startTime && occ.startTime.includes(':')) { selectedHour = String(occ.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(occ.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+                  <div class="relative" x-data="customTimePicker(occ.startTime, (t) => { occ.startTime = t; updateSingleOccurrence(occ); })" x-effect="if (occ.startTime && occ.startTime.includes(':')) { selectedHour = String(occ.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(occ.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+
                     <button type="button" @click="open = !open" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
                       <span x-text="timeStr || occ.startTime || '15:30'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
