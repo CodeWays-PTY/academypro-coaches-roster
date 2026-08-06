@@ -2518,53 +2518,6 @@
                        x-transition:leave="transition ease-in duration-100"
                        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                        x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
-                       class="absolute left-0 top-full mt-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[280px] space-y-3">
-                    
-                    <!-- Header Section: Label & Digital HH : MM Selector -->
-                    <div>
-                      <span class="text-[11px] font-semibold text-outline block mb-1">Select time</span>
-                      <div class="flex items-center justify-center gap-2">
-                        <button type="button" @click="pickerMode = 'hour'"
-                                class="px-4 py-2 rounded-2xl font-display font-extrabold text-3xl transition-all shadow-xs"
-                                :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface hover:bg-surface-container-highest'">
-                          <span x-text="String(selectedHour).padStart(2, '0')"></span>
-                        </button>
-                        <span class="font-display font-bold text-2xl text-on-surface">:</span>
-                        <button type="button" @click="pickerMode = 'minute'"
-                                class="px-4 py-2 rounded-2xl font-display font-extrabold text-3xl transition-all shadow-xs"
-                                :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface hover:bg-surface-container-highest'">
-                          <span x-text="String(selectedMinute).padStart(2, '0')"></span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Clock Dial Face (230px x 230px) -->
-                    <div class="relative w-[230px] h-[230px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
-                      <!-- Center Pivot & SVG Hand -->
-                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
-                        <circle cx="115" cy="115" r="4" fill="#003EC7" />
-                        <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
-                        <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
-                        <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
-                      </svg>
-
-                      <!-- HOUR DIAL (24-Hour Dual Ring Layout matching Flutter) -->
-                      <template x-if="pickerMode === 'hour'">
-                        <div class="absolute inset-0">
-                          <!-- Outer Ring (00, 13-23) -->
-                          <template x-for="(h, idx) in outerHours" :key="'out_'+h">
-                            <button type="button" @click="selectHour(h)"
-                                    class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-extrabold text-xs transition-all z-20 cursor-pointer"
-                                    :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`"
-                                    :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary font-black' : 'text-on-surface hover:bg-primary-container/20'">
-                              <span x-text="h"></span>
-                            </button>
-                          </template>
-                          <!-- Inner Ring (12, 01-11) -->
-                          <template x-for="(h, idx) in innerHours" :key="'in_'+h">
-                            <button type="button" @click="selectHour(h)"
-                                    class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer"
-                                    :style="`left: ${getPos(idx, 54).x}px; top: ${getPos(idx, 54).y}px;`"
                                     :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary font-black' : 'text-outline hover:bg-primary-container/20'">
                               <span x-text="h"></span>
                             </button>
@@ -3826,39 +3779,46 @@
           <div class="col-span-1">
             <label class="block text-xs font-bold text-outline mb-1">Start Time</label>
             <div class="relative" x-data="customTimePicker(editingEvent.startTime, (t) => { editingEvent.startTime = t; })" x-effect="if (editingEvent.startTime && editingEvent.startTime.includes(':')) { selectedHour = String(editingEvent.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(editingEvent.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
-              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
                 <span class="font-bold" x-text="timeStr"></span>
                 <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
               </button>
-              <div x-show="open" class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[280px] space-y-3">
-                <div class="flex items-center justify-center gap-2">
-                  <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                  <span class="font-bold text-xl">:</span>
-                  <button type="button" @click="pickerMode = 'minute'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+              <div x-show="open" :style="popoverStyle" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[280px] space-y-3 z-[999999]">
+                <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+                  <button type="button" @click="pickerMode = 'hour'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                  <span class="font-extrabold text-lg text-primary">:</span>
+                  <button type="button" @click="pickerMode = 'minute'" class="px-3.5 py-1 rounded-xl font-extrabold text-xl transition-all" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                 </div>
-                <div class="relative w-[210px] h-[210px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center border border-outline-variant/50">
-                  <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
-                    <circle cx="115" cy="115" r="4" fill="#003EC7" />
-                    <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" />
-                    <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
-                  </svg>
-                  <template x-if="pickerMode === 'hour'">
-                    <div class="absolute inset-0">
-                      <template x-for="(h, idx) in outerHours" :key="'eout_'+h">
-                        <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface'"><span x-text="h"></span></button>
-                      </template>
-                    </div>
-                  </template>
-                  <template x-if="pickerMode === 'minute'">
-                    <div class="absolute inset-0">
-                      <template x-for="(m, idx) in minutes" :key="'emin_'+m">
-                        <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface'"><span x-text="m"></span></button>
-                      </template>
-                    </div>
-                  </template>
+
+                <div class="space-y-1">
+                  <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1">Quick Presets</span>
+                  <div class="flex flex-wrap gap-1.5">
+                    <template x-for="p in presets" :key="p">
+                      <button type="button" @click="selectPreset(p)" class="px-2 py-0.5 rounded-lg text-[11px] font-bold border border-outline-variant/60 hover:border-primary hover:text-primary transition-all" :class="timeStr === p ? 'bg-primary/15 text-primary border-primary font-black' : 'bg-surface text-on-surface'"><span x-text="p"></span></button>
+                    </template>
+                  </div>
                 </div>
-                <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant">
-                  <button type="button" @click="confirmTime()" class="px-3 py-1 text-xs font-bold text-primary">OK</button>
+
+                <div class="space-y-1 pt-1 border-t border-outline-variant/40">
+                  <span class="text-[10px] font-extrabold text-outline uppercase tracking-wider block px-1" x-text="pickerMode === 'hour' ? 'Select Hour' : 'Select Minute'"></span>
+                  <div class="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto custom-scrollbar p-0.5">
+                    <template x-if="pickerMode === 'hour'">
+                      <template x-for="h in hoursList" :key="'hl5_'+h">
+                        <button type="button" @click="selectHour(h)" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedHour).padStart(2, '0') === h ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="h + ':00'"></span></button>
+                      </template>
+                    </template>
+                    <template x-if="pickerMode === 'minute'">
+                      <template x-for="m in minutesList" :key="'ml5_'+m">
+                        <button type="button" @click="selectMinute(m); confirmTime();" class="py-1 rounded-lg text-xs font-bold text-center transition-all" :class="String(selectedMinute).padStart(2, '0') === m ? 'bg-primary text-on-primary font-black shadow-sm' : 'hover:bg-primary/10 text-on-surface'"><span x-text="String(selectedHour).padStart(2, '0') + ':' + m"></span></button>
+                      </template>
+                    </template>
+                  </div>
+                </div>
+
+                <div class="flex justify-end pt-1 border-t border-outline-variant/40">
+                  <button type="button" @click="confirmTime()" class="w-full py-1.5 bg-primary text-on-primary text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">check</span> Set Time
+                  </button>
                 </div>
               </div>
             </div>
