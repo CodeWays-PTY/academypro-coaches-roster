@@ -576,11 +576,21 @@ app.get('/api/auth/profile', async (c) => {
           }
         });
       }
-    } catch (_) {}
+    } catch (err: any) {
+      console.error('[API Error] Profile fetch failed:', err);
+    }
   }
 
   return c.json({ success: false, message: 'User not found' }, 404);
 });
+
+// Route Aliases: /api/dashboard/auth/profile
+app.get('/api/dashboard/auth/profile', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/auth/profile';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+
 
 app.post('/api/auth/profile', async (c) => {
   const db = getDB(c);
@@ -634,6 +644,13 @@ app.post('/api/auth/profile', async (c) => {
     message: 'Profile updated successfully'
   });
 });
+
+app.post('/api/dashboard/auth/profile', async (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = '/api/auth/profile';
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+});
+
 
 // Route: Request Email Change (Dispatches 6-digit OTP to NEW email)
 app.post('/api/auth/send-email-change-otp', async (c) => {
