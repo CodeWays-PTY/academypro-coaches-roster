@@ -144,16 +144,17 @@
             const spaceAbove = rect.top - 12;
 
             let top;
-            if (spaceAbove >= popoverHeight || spaceAbove >= spaceBelow) {
+            if (spaceBelow >= popoverHeight) {
+              top = rect.bottom + 6;
+            } else if (spaceAbove >= popoverHeight) {
               top = rect.top - popoverHeight - 6;
-              if (top < 12) {
-                top = 12;
-              }
-            } else {
+            } else if (spaceBelow >= spaceAbove) {
               top = rect.bottom + 6;
               if (top + popoverHeight > window.innerHeight - 12) {
                 top = Math.max(12, window.innerHeight - popoverHeight - 12);
               }
+            } else {
+              top = Math.max(12, rect.top - popoverHeight - 6);
             }
 
             this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: calc(100vh - 24px); overflow-y: auto;`;
@@ -162,11 +163,20 @@
 
         init() {
           this.pickerId = 'dp_' + Math.random().toString(36).substring(2, 9);
-          window.addEventListener('click', (e) => {
+          const handleOutsideClick = (e) => {
             if (this.open && this.$el && !this.$el.contains(e.target)) {
               this.open = false;
             }
-          });
+          };
+          const handleScrollClose = () => {
+            if (this.open) {
+              this.open = false;
+            }
+          };
+          window.addEventListener('pointerdown', handleOutsideClick, true);
+          window.addEventListener('click', handleOutsideClick, true);
+          window.addEventListener('scroll', handleScrollClose, { capture: true, passive: true });
+
           window.addEventListener('close-all-pickers', (e) => {
             if (e.detail && e.detail.id !== this.pickerId) {
               this.open = false;
@@ -297,16 +307,17 @@
             const spaceAbove = rect.top - 12;
 
             let top;
-            if (spaceAbove >= popoverHeight || spaceAbove >= spaceBelow) {
+            if (spaceBelow >= popoverHeight) {
+              top = rect.bottom + 6;
+            } else if (spaceAbove >= popoverHeight) {
               top = rect.top - popoverHeight - 6;
-              if (top < 12) {
-                top = 12;
-              }
-            } else {
+            } else if (spaceBelow >= spaceAbove) {
               top = rect.bottom + 6;
               if (top + popoverHeight > window.innerHeight - 12) {
                 top = Math.max(12, window.innerHeight - popoverHeight - 12);
               }
+            } else {
+              top = Math.max(12, rect.top - popoverHeight - 6);
             }
 
             this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: calc(100vh - 24px); overflow-y: auto;`;
@@ -315,11 +326,20 @@
 
         init() {
           this.pickerId = 'tp_' + Math.random().toString(36).substring(2, 9);
-          window.addEventListener('click', (e) => {
+          const handleOutsideClick = (e) => {
             if (this.open && this.$el && !this.$el.contains(e.target)) {
               this.open = false;
             }
-          });
+          };
+          const handleScrollClose = () => {
+            if (this.open) {
+              this.open = false;
+            }
+          };
+          window.addEventListener('pointerdown', handleOutsideClick, true);
+          window.addEventListener('click', handleOutsideClick, true);
+          window.addEventListener('scroll', handleScrollClose, { capture: true, passive: true });
+
           window.addEventListener('close-all-pickers', (e) => {
             if (e.detail && e.detail.id !== this.pickerId) {
               this.open = false;
@@ -2485,7 +2505,7 @@
               <div class="col-span-3 md:col-span-1">
                 <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold" x-text="occurrenceType === 'recurring' ? 'Start Date (First Session) *' : 'Event Date (Past / Present) *'"></label>
                 <div class="relative" x-data="customDatePicker(newEvent.date, (d) => { newEvent.date = d; })" @click.outside="open = false">
-                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                  <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
                       <span class="font-bold" x-text="formattedDate"></span>
@@ -2494,13 +2514,14 @@
                   </button>
 
                   <div x-show="open" 
+                       :style="popoverStyle"
                        x-transition:enter="transition ease-out duration-150"
                        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
                        x-transition:leave="transition ease-in duration-100"
                        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                        x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
-                       class="absolute left-0 top-full mt-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                       class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                     <div class="flex items-center justify-between">
                       <button type="button" @click="prevMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
                         <span class="material-symbols-outlined text-[18px]">chevron_left</span>
@@ -2548,7 +2569,7 @@
                     <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
                   </button>
 
-                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
+                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
                     <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
                       <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                       <span class="font-black text-xl text-primary animate-pulse">:</span>
@@ -2633,16 +2654,17 @@
                   <span class="font-label-md text-outline text-xs font-bold">Until <span class="font-normal text-[11px] text-outline/80">(Optional)</span></span>
                   <!-- Custom Until Datepicker Component -->
                   <div class="relative" x-data="customDatePicker(newEvent.untilDate, (d) => { newEvent.untilDate = d; })" @click.outside="open = false">
-                    <button type="button" @click="open = !open" class="bg-background border border-outline-variant rounded-lg px-sm py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:border-primary transition-all">
+                    <button type="button" @click="toggleOpen($el, $event)" class="bg-background border border-outline-variant rounded-lg px-sm py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:border-primary transition-all">
                       <span class="material-symbols-outlined text-primary text-[16px]">calendar_today</span>
                       <span x-text="formattedDate"></span>
                       <span x-show="selectedDateStr" @click.stop="selectedDateStr = ''; newEvent.untilDate = '';" class="ml-1 text-outline hover:text-error text-xs font-bold" title="Clear end date">✕</span>
                     </button>
                     <div x-show="open" 
+                         :style="popoverStyle"
                          x-transition:enter="transition ease-out duration-150"
                          x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                         class="absolute right-0 top-full mt-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                         class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                       <div class="flex items-center justify-between">
                         <button type="button" @click="prevMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
                           <span class="material-symbols-outlined text-[18px]">chevron_left</span>
@@ -3783,11 +3805,11 @@
           <div class="col-span-1">
             <label class="block text-xs font-bold text-outline mb-1">Date *</label>
             <div class="relative" x-data="customDatePicker(editingEvent.date, (d) => { editingEvent.date = d; })" x-effect="if (editingEvent.date) { selectedDateStr = editingEvent.date; }" @click.outside="open = false">
-              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary transition-all">
                 <span class="font-bold truncate" x-text="formattedDate"></span>
                 <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
               </button>
-              <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+              <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                 <div class="flex items-center justify-between">
                   <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
                   <span class="font-bold text-xs" x-text="monthYearTitle"></span>
@@ -3810,7 +3832,7 @@
                 <span class="font-bold" x-text="timeStr"></span>
                 <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
               </button>
-              <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
+              <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
                 <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
                   <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                   <span class="font-black text-xl text-primary animate-pulse">:</span>
@@ -3971,7 +3993,7 @@
                   <span class="font-bold" x-text="timeStr || activeSeries.startTime || '15:30'"></span>
                   <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
                 </button>
-                <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
+                <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
                   <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
                     <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                     <span class="font-black text-xl text-primary animate-pulse">:</span>
@@ -4041,7 +4063,7 @@
                       <span x-text="formattedDate || occ.date || 'Select Date'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
                     </button>
-                    <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-2xl shadow-2xl p-4 w-72 space-y-3">
+                    <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                       <div class="flex items-center justify-between">
                         <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
                         <span class="font-bold text-xs" x-text="monthYearTitle"></span>
@@ -4065,7 +4087,7 @@
                       <span x-text="timeStr || occ.startTime || '15:30'"></span>
                       <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
                     </button>
-                    <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
+                    <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
                       <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
                         <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                         <span class="font-black text-xl text-primary animate-pulse">:</span>
@@ -4150,7 +4172,7 @@
                   <span x-text="formattedDate || newSeriesOccDate || 'Select Date...'"></span>
                   <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
                 </button>
-                <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant rounded-2xl shadow-2xl p-4 w-72 space-y-3">
+                <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                   <div class="flex items-center justify-between">
                     <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
                     <span class="font-bold text-xs" x-text="monthYearTitle"></span>
@@ -4173,7 +4195,7 @@
                     <span x-text="timeStr || newSeriesOccTime || '15:30'"></span>
                     <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
                   </button>
-                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface/98 backdrop-blur-xl border border-outline-variant/60 rounded-3xl shadow-2xl p-4 w-[290px] space-y-3 z-[999999]">
+                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
                     <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
                       <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
                       <span class="font-black text-xl text-primary animate-pulse">:</span>
