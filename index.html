@@ -140,14 +140,23 @@
             }
             if (left < 12) left = 12;
 
-            const spaceBelow = window.innerHeight - rect.bottom;
-            if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
-              const bottom = window.innerHeight - rect.top + 6;
-              this.popoverStyle = `position: fixed; left: ${left}px; bottom: ${bottom}px; z-index: 999999; margin: 0;`;
+            const spaceBelow = window.innerHeight - rect.bottom - 12;
+            const spaceAbove = rect.top - 12;
+
+            let top;
+            if (spaceBelow >= popoverHeight || spaceBelow >= spaceAbove) {
+              top = rect.bottom + 6;
+              if (top + popoverHeight > window.innerHeight - 12) {
+                top = Math.max(12, window.innerHeight - popoverHeight - 12);
+              }
             } else {
-              const top = rect.bottom + 6;
-              this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0;`;
+              top = rect.top - popoverHeight - 6;
+              if (top < 12) {
+                top = 12;
+              }
             }
+
+            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: calc(100vh - 24px); overflow-y: auto;`;
           }
         },
 
@@ -277,20 +286,30 @@
             const rect = triggerEl.getBoundingClientRect();
             const popoverWidth = 290;
             const popoverHeight = 355;
+
             let left = rect.left;
             if (left + popoverWidth > window.innerWidth - 12) {
               left = window.innerWidth - popoverWidth - 12;
             }
             if (left < 12) left = 12;
 
-            const spaceBelow = window.innerHeight - rect.bottom;
-            if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
-              const bottom = window.innerHeight - rect.top + 6;
-              this.popoverStyle = `position: fixed; left: ${left}px; bottom: ${bottom}px; z-index: 999999; margin: 0;`;
+            const spaceBelow = window.innerHeight - rect.bottom - 12;
+            const spaceAbove = rect.top - 12;
+
+            let top;
+            if (spaceBelow >= popoverHeight || spaceBelow >= spaceAbove) {
+              top = rect.bottom + 6;
+              if (top + popoverHeight > window.innerHeight - 12) {
+                top = Math.max(12, window.innerHeight - popoverHeight - 12);
+              }
             } else {
-              const top = rect.bottom + 6;
-              this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0;`;
+              top = rect.top - popoverHeight - 6;
+              if (top < 12) {
+                top = 12;
+              }
             }
+
+            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: calc(100vh - 24px); overflow-y: auto;`;
           }
         },
 
