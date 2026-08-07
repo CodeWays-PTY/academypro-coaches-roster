@@ -9,9 +9,10 @@
   Link: </assets/css/styles.css>; rel=preload; as=style
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: <https://blobs.codeways.co>; rel=preconnect; crossorigin
 
 # ---- Homepage ----
 /
-  Link: </assets/images/academypro-hero-mockup.jpg>; rel=preload; as=image
+  Link: <https://blobs.codeways.co/cdn-cgi/image/width=600,fit=scale-down,format=auto,metadata=keep,sharpen=0.5/academypro-hero-mockup.jpg>; rel=preload; as=image
 /index.html
-  Link: </assets/images/academypro-hero-mockup.jpg>; rel=preload; as=image
+  Link: <https://blobs.codeways.co/cdn-cgi/image/width=600,fit=scale-down,format=auto,metadata=keep,sharpen=0.5/academypro-hero-mockup.jpg>; rel=preload; as=image
