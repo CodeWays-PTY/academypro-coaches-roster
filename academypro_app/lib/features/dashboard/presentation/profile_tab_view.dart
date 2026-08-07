@@ -22,7 +22,6 @@ class ProfileTabView extends ConsumerStatefulWidget {
 
 class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
   late bool _pushNotifications;
-  String _appVersion = '1.0.0';
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -31,18 +30,6 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
     // Load push notification setting from local storage
     final savedPush = LocalStorage.getCachedData('push_notifications_enabled');
     _pushNotifications = savedPush is bool ? savedPush : true;
-    _loadAppVersion();
-  }
-
-  Future<void> _loadAppVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      if (mounted && info.version.isNotEmpty) {
-        setState(() {
-          _appVersion = info.version;
-        });
-      }
-    } catch (_) {}
   }
 
   Future<void> _handlePushToggle(bool enabled) async {
