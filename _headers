@@ -1,0 +1,17 @@
+# =============================================
+# EARLY HINTS (103) HEADERS
+# =============================================
+# IMPORTANT: If a hero/banner image changes on any page,
+# update the corresponding Link header below to match.
+
+# ---- Global (all pages) ----
+/*
+  Link: </assets/css/styles.css>; rel=preload; as=style
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+
+# ---- Homepage ----
+/
+  Link: </assets/images/hero_mockup.jpg>; rel=preload; as=image
+/index.html
+  Link: </assets/images/hero_mockup.jpg>; rel=preload; as=image
