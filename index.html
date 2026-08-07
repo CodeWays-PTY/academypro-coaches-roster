@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://blobs.codeways.co" crossorigin>
 
   <!-- LCP HERO IMAGE PRELOAD — If this image changes, also update the /_headers file -->
-  <link rel="preload" as="image" href="https://blobs.codeways.co/cdn-cgi/image/width=600,fit=scale-down,format=auto,metadata=keep,sharpen=0.5/academypro-hero-mockup.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://blobs.codeways.co/cdn-cgi/image/width=600,fit=scale-down,format=auto,metadata=keep,sharpen=0.5/academypro-hero-mockup.jpg" crossorigin="anonymous" fetchpriority="high">
 
   <!-- Meta Tags & SEO -->
   <title>Academy Pro | High School Rugby & Athletic Performance Management</title>
@@ -32,38 +32,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
-  <!-- Custom Stylesheet -->
+  <!-- Custom Stylesheet (Compiled Production Tailwind CSS) -->
   <link rel="stylesheet" href="/assets/css/styles.css">
-
-  <!-- Tailwind CSS v3 CDN -->
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#2563eb',
-              600: '#1d4ed8',
-              700: '#1e40af',
-              900: '#0f172a'
-            },
-            accent: {
-              gold: '#eab308',
-              slate: '#64748b'
-            }
-          },
-          fontFamily: {
-            heading: ['Outfit', 'sans-serif'],
-            body: ['Inter', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
 
   <!-- Structured Data JSON-LD (Schema.org) -->
   <script type="application/ld+json">
@@ -374,6 +344,7 @@
                alt="Academy Pro Dual Coaching Suite — Flutter Mobile App & Web Admin Portal" 
                width="1200" 
                height="675" 
+               crossorigin="anonymous"
                style="height: auto;"
                class="w-full object-cover rounded-2xl">
         </div>
