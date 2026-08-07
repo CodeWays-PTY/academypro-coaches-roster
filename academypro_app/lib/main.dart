@@ -12,8 +12,7 @@ import 'features/parent/presentation/parent_dashboard_screen.dart';
 
 import 'package:flutter/services.dart';
 
-import 'core/services/network_service.dart';
-import 'core/presentation/network_error_screen.dart';
+
 import 'core/services/notification_service.dart';
 
 void main() async {
@@ -54,13 +53,12 @@ class MyApp extends ConsumerStatefulWidget {
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+class _MyAppState extends ConsumerState<MyApp> {
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) {
         setState(() {
@@ -68,22 +66,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         });
       }
     });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
-    if (lifecycleState == AppLifecycleState.resumed) {
-      // App came back to foreground — reset network state optimistically.
-      // connectivity_plus fires unreliable "none" events during background,
-      // so always assume online when the user returns.
-      ref.read(networkStatusProvider.notifier).onAppResumed();
-    }
   }
 
   @override
@@ -97,8 +79,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         home: const SplashScreenBody(),
       );
     }
-
-    final isOnline = ref.watch(networkStatusProvider);
 
     final authState = ref.watch(authProvider);
     final token = LocalStorage.getToken();
@@ -161,18 +141,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       title: 'AcademyPro Athlete Command',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      builder: (context, child) {
-        return Stack(
-          children: [
-            child ?? homeScreen,
-            // Full-screen overlay when offline — keeps the app tree alive underneath
-            if (!isOnline)
-              const Positioned.fill(
-                child: NetworkErrorScreen(),
-              ),
-          ],
-        );
-      },
       home: homeScreen,
     );
   }
