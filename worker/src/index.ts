@@ -246,21 +246,26 @@ async function sendTransactionalEmail(c: any, options: {
   let emailSent = false;
   const env = c.env;
 
-  // 1. Try Cloudflare Native Email binding
+  // Block fake/dummy recipient addresses to prevent Cloudflare hard bounces & domain reputation damage
+  const blockedDomains = ['example.com', 'test.com', 'invalid', 'localhost'];
+  const recipientDomain = options.to.split('@')[1]?.toLowerCase();
+  if (!recipientDomain || blockedDomains.includes(recipientDomain)) {
+    console.warn(`[EMAIL] Blocked dispatch to dummy/invalid recipient: ${options.to}`);
+    return;
+  }
+
+  // Use verified Cloudflare sender domain (web.codeways.co) as fallback if project domain is not verified
+  const senderEmail = options.fromEmail || 'noreply@web.codeways.co';
+
+  // 1. Try Cloudflare Native Email binding (Edge-native, 0% SSL failure rate)
   if (env && env.EMAIL) {
     try {
       // @ts-ignore
       const { EmailMessage } = await import("cloudflare:email");
-      const mimeMessage = `From: ${options.fromName} <${options.fromEmail}>
-To: ${options.to}
-Subject: ${options.subject}
-Mime-Version: 1.0
-Content-Type: text/html; charset=utf-8
-
-${options.htmlContent}`;
+      const mimeMessage = `From: ${options.fromName} <${senderEmail}>\r\nTo: ${options.to}\r\nSubject: ${options.subject}\r\nMime-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${options.htmlContent}`;
 
       const emailMessage = new EmailMessage(
-        options.fromEmail,
+        senderEmail,
         options.to,
         mimeMessage
       );
@@ -273,16 +278,19 @@ ${options.htmlContent}`;
     }
   }
 
-  // 2. Fallback to CodeWays Shared API Gateway
+  // 2. Fallback to Cloudflare Edge Worker API Gateway (NEVER web.codeways.co origin — SSL 526 risk)
   if (!emailSent) {
     try {
-      const response = await fetch("https://web.codeways.co/api/send-email", {
+      const response = await fetch("https://api.academypro.co.za/api/internal/send-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Internal-API-Key": env?.INTERNAL_API_KEY || "",
         },
         body: JSON.stringify({
           to: options.to,
+          fromName: options.fromName,
+          fromEmail: senderEmail,
           subject: options.subject,
           text: options.textContent,
           html: options.htmlContent,
@@ -292,20 +300,61 @@ ${options.htmlContent}`;
 
       if (response.ok) {
         emailSent = true;
-        console.log(`[EMAIL] Sent via CodeWays API gateway to ${options.to}`);
+        console.log(`[EMAIL] Sent via Edge Worker gateway to ${options.to}`);
       } else {
         const text = await response.text();
-        console.error(`[EMAIL] CodeWays gateway failed: ${text}`);
+        console.error(`[EMAIL] Edge Worker gateway failed: ${text}`);
       }
     } catch (err) {
-      console.error("[EMAIL] CodeWays gateway fetch failed:", err);
+      console.error("[EMAIL] Edge Worker gateway fetch failed:", err);
     }
   }
 
   if (!emailSent) {
-    console.warn(`[EMAIL WARNING] Failed to deliver email to ${options.to} via all gateways. Fallback printed to console.`);
+    console.warn(`[EMAIL WARNING] Failed to deliver email to ${options.to} via all channels.`);
   }
 }
+
+// ==========================================
+// INTERNAL EMAIL GATEWAY (Edge Worker self-route for fallback delivery)
+// ==========================================
+app.post('/api/internal/send-email', async (c) => {
+  const env = c.env;
+
+  // Validate internal API key
+  const apiKey = c.req.header('X-Internal-API-Key');
+  if (!apiKey || apiKey !== env?.INTERNAL_API_KEY) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401);
+  }
+
+  const body = await c.req.json();
+  const { to, fromName, fromEmail, subject, html, text } = body;
+
+  if (!to || !subject || !html) {
+    return c.json({ success: false, message: 'Missing required fields: to, subject, html' }, 400);
+  }
+
+  if (!env?.EMAIL) {
+    return c.json({ success: false, message: 'Email binding not available' }, 503);
+  }
+
+  try {
+    // @ts-ignore
+    const { EmailMessage } = await import("cloudflare:email");
+    const senderEmail = fromEmail || 'noreply@web.codeways.co';
+    const senderName = fromName || 'AcademyPro';
+    const mimeMessage = `From: ${senderName} <${senderEmail}>\r\nTo: ${to}\r\nSubject: ${subject}\r\nMime-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${html}`;
+
+    const emailMessage = new EmailMessage(senderEmail, to, mimeMessage);
+    await env.EMAIL.send(emailMessage);
+
+    console.log(`[EMAIL INTERNAL] Dispatched to ${to} via internal gateway`);
+    return c.json({ success: true, message: 'Email sent' });
+  } catch (err: any) {
+    console.error(`[EMAIL INTERNAL] Failed to send to ${to}:`, err);
+    return c.json({ success: false, message: 'Email dispatch failed', error: err.message }, 500);
+  }
+});
 
 // ==========================================
 // AUTHENTICATION ROUTES
@@ -385,7 +434,7 @@ app.post('/api/auth/send-otp', async (c) => {
   await sendTransactionalEmail(c, {
     to: cleanEmail,
     fromName: 'AcademyPro App',
-    fromEmail: 'noreply@academypro.co.za', // Custom domain sender address
+    fromEmail: 'noreply@web.codeways.co', // Custom domain sender address
     subject: 'AcademyPro Login OTP',
     htmlContent: emailHtml,
     textContent: emailText,
@@ -761,7 +810,7 @@ app.post('/api/auth/send-email-change-otp', async (c) => {
   await sendTransactionalEmail(c, {
     to: cleanNewEmail,
     fromName: 'AcademyPro Support',
-    fromEmail: 'noreply@academypro.co.za',
+    fromEmail: 'noreply@web.codeways.co',
     subject: 'Verify Your New AcademyPro Email Address',
     htmlContent: `<div style="font-family: Arial, sans-serif; padding: 20px; color: #1E293B;">
       <h2 style="color: #003EC7;">Email Change Verification</h2>
@@ -4517,7 +4566,7 @@ app.post('/api/players', async (c) => {
     await sendTransactionalEmail(c, {
       to: playerEmail,
       fromName: 'AcademyPro Sports',
-      fromEmail: 'noreply@academypro.co.za',
+      fromEmail: 'noreply@web.codeways.co',
       subject: `Welcome to AcademyPro — ${team} Squad Invitation`,
       htmlContent: inviteHtml,
       textContent: `Hi ${firstName},\n\nYou have been added to the ${team} squad on AcademyPro. Log in with ${playerEmail} to view your training schedule and stats.`
