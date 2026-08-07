@@ -1851,17 +1851,42 @@ app.get('/api/dashboard/summary', async (c) => {
     acads = res.results || [];
   } catch (_) {}
 
+  const playerDetailsQuery = `SELECT id, status FROM players WHERE id IN (${placeholders})`;
+  let playerDetails: any[] = [];
+  try {
+    const res = await db.prepare(playerDetailsQuery).bind(...playerIds).all();
+    playerDetails = res.results || [];
+  } catch (_) {}
+
+  const acadMap = new Map<string, number>();
+  acads.forEach((row: any) => {
+    if (row.player_id && row.avg_grade != null) {
+      acadMap.set(row.player_id, row.avg_grade);
+    }
+  });
+
   let uniReadyCount = 0;
   let onTrackCount = 0;
   let atRiskCount = 0;
   let dangerCount = 0;
 
-  acads.forEach((row: any) => {
-    const score = row.avg_grade;
-    if (score >= 65) uniReadyCount++;
-    else if (score >= 60) onTrackCount++;
-    else if (score >= 50) atRiskCount++;
-    else dangerCount++;
+  playerIds.forEach((pid: string) => {
+    const pDetail = playerDetails.find((pd: any) => pd.id === pid);
+    if (pDetail && pDetail.status === 'Injured') {
+      dangerCount++;
+      return;
+    }
+
+    if (acadMap.has(pid)) {
+      const score = acadMap.get(pid)!;
+      if (score >= 65) uniReadyCount++;
+      else if (score >= 60) onTrackCount++;
+      else if (score >= 50) atRiskCount++;
+      else dangerCount++;
+    } else {
+      // Active player with no negative warnings or injuries is fit to play
+      onTrackCount++;
+    }
   });
 
   const attendanceQuery = `

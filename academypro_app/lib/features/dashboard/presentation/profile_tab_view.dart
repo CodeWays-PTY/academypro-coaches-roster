@@ -1102,28 +1102,7 @@ class _ProfileTabViewState extends ConsumerState<ProfileTabView> {
                 onChanged: (val) => _handlePushToggle(val),
               ),
             ]),
-            const SizedBox(height: 24.0),
-
-            // Section 3: App Info
-            _buildSectionTitle('SYSTEM INFO'),
-            const SizedBox(height: 10.0),
-            _buildCardGroup([
-              _buildSettingTile(
-                icon: Icons.info_outline,
-                title: 'About AcademyPro',
-                subtitle: 'High-Performance Sports & Academic Management System',
-                trailing: Text(
-                  'v$_appVersion',
-                  style: const TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF737688),
-                  ),
-                ),
-                onTap: () {},
-              ),
-            ]),
-            const SizedBox(height: 32.0),
+            const SizedBox(height: 16.0),
 
             // Logout Button
             SizedBox(
