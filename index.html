@@ -95,6 +95,24 @@
         toastVisible: false,
         toastMessage: '',
         
+        init() {
+          this.$watch('mobileMenuOpen', value => {
+            if (value) {
+              document.body.classList.add('overflow-hidden', 'touch-none');
+            } else if (!this.demoModalOpen) {
+              document.body.classList.remove('overflow-hidden', 'touch-none');
+            }
+          });
+
+          this.$watch('demoModalOpen', value => {
+            if (value) {
+              document.body.classList.add('overflow-hidden', 'touch-none');
+            } else if (!this.mobileMenuOpen) {
+              document.body.classList.remove('overflow-hidden', 'touch-none');
+            }
+          });
+        },
+
         // Custom Dropdown State
         selectedSquadSize: '15-30 Athletes',
         squadDropdownOpen: false,
@@ -230,6 +248,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          @click="mobileMenuOpen = false" 
+         @touchmove.prevent
          class="fixed inset-0 bg-slate-900/40 backdrop-blur-md"></div>
 
     <!-- 80% Right Drawer -->
