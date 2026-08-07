@@ -14,3 +14,4 @@ wrangler.json
 .idea/
 .vscode/
 .DS_Store
+dist/
