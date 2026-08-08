@@ -32,49 +32,49 @@
             "on-secondary-fixed-variant": "#38485d",
             "tertiary-fixed": "#ffdbd2",
             "primary-fixed-dim": "#b7c4ff",
-            "on-surface": "#131b2e",
+            "on-surface": "#0f172a",
             "on-primary-fixed-variant": "#0038b6",
             "on-secondary-fixed": "#0b1c30",
             "on-secondary": "#ffffff",
-            "on-primary-container": "#dfe3ff",
-            "primary-fixed": "#dde1ff",
-            "primary": "#003ec7",
-            "secondary": "#505f76",
-            "surface-container-low": "#f2f3ff",
-            "inverse-surface": "#283044",
-            "background": "#faf8ff",
+            "on-primary-container": "#1e40af",
+            "primary-fixed": "#dbeafe",
+            "primary": "#2563eb",
+            "secondary": "#475569",
+            "surface-container-low": "#f8fafc",
+            "inverse-surface": "#0f172a",
+            "background": "#f8fafc",
             "on-tertiary-fixed-variant": "#891e00",
-            "error-container": "#ffdad6",
-            "surface-container-high": "#e2e7ff",
-            "secondary-container": "#d0e1fb",
+            "error-container": "#fee2e2",
+            "surface-container-high": "#f1f5f9",
+            "secondary-container": "#e2e8f0",
             "surface-container-lowest": "#ffffff",
             "on-error": "#ffffff",
-            "on-background": "#131b2e",
-            "error": "#ba1a1a",
+            "on-background": "#0f172a",
+            "error": "#dc2626",
             "tertiary-fixed-dim": "#ffb4a1",
-            "inverse-on-surface": "#eef0ff",
+            "inverse-on-surface": "#f8fafc",
             "secondary-fixed-dim": "#b7c8e1",
-            "inverse-primary": "#b7c4ff",
-            "surface-variant": "#dae2fd",
+            "inverse-primary": "#93c5fd",
+            "surface-variant": "#f1f5f9",
             "on-tertiary-fixed": "#3c0800",
-            "surface-bright": "#faf8ff",
-            "outline-variant": "#c3c5d9",
-            "surface-tint": "#004ced",
+            "surface-bright": "#ffffff",
+            "outline-variant": "#e2e8f0",
+            "surface-tint": "#2563eb",
             "on-primary": "#ffffff",
-            "surface-container": "#eaedff",
-            "surface": "#faf8ff",
-            "on-secondary-container": "#54647a",
-            "primary-container": "#0052ff",
-            "on-error-container": "#93000a",
+            "surface-container": "#f8fafc",
+            "surface": "#ffffff",
+            "on-secondary-container": "#334155",
+            "primary-container": "#eff6ff",
+            "on-error-container": "#991b1b",
             "on-tertiary-container": "#ffddd5",
-            "surface-dim": "#d2d9f4",
-            "surface-container-highest": "#dae2fd",
-            "outline": "#737688",
+            "surface-dim": "#e2e8f0",
+            "surface-container-highest": "#e2e8f0",
+            "outline": "#64748b",
             "on-tertiary": "#ffffff",
             "tertiary": "#952200",
             "secondary-fixed": "#d3e4fe",
-            "on-surface-variant": "#434656",
-            "on-primary-fixed": "#001452"
+            "on-surface-variant": "#475569",
+            "on-primary-fixed": "#1e3a8a"
           },
           spacing: {
             "xl": "32px",
@@ -103,12 +103,12 @@
 
   <style>
     [x-cloak] { display: none !important; }
-    body { font-family: 'Inter', sans-serif; background-color: #faf8ff; }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .sidebar-active { background-color: #dae2fd; border-left: 4px solid #003ec7; font-weight: 700; color: #131b2e; }
+    .sidebar-active { background-color: #eff6ff; border-left: 4px solid #2563eb; font-weight: 700; color: #1d4ed8; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #c3c5d9; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   </style>
 
   <!-- Alpine.js Protocol (Define Logic First in head) -->
@@ -116,11 +116,75 @@
     document.addEventListener('alpine:init', () => {
       Alpine.data('customDatePicker', (initialValue = '', onSelectCallback = null) => ({
         open: false,
+        popoverStyle: '',
+        pickerId: '',
         selectedDateStr: initialValue || new Date().toISOString().split('T')[0],
         viewYear: new Date().getFullYear(),
         viewMonth: new Date().getMonth(),
 
+        toggleOpen(triggerEl, evt) {
+          if (evt && typeof evt.stopPropagation === 'function') {
+            evt.stopPropagation();
+          }
+          if (!this.open) {
+            window.dispatchEvent(new CustomEvent('close-all-pickers', { detail: { id: this.pickerId } }));
+          }
+          this.open = !this.open;
+          if (this.open && triggerEl) {
+            const rect = triggerEl.getBoundingClientRect();
+            const popoverWidth = 288;
+            const popoverHeight = 330;
+            let left = rect.left;
+            if (left + popoverWidth > window.innerWidth - 12) {
+              left = window.innerWidth - popoverWidth - 12;
+            }
+            if (left < 12) left = 12;
+
+            const spaceBelow = window.innerHeight - rect.bottom - 12;
+            const spaceAbove = rect.top - 12;
+
+            let top;
+            let maxHeight;
+
+            if (spaceAbove >= popoverHeight) {
+              top = rect.top - popoverHeight - 6;
+              maxHeight = spaceAbove;
+            } else if (spaceBelow >= popoverHeight) {
+              top = rect.bottom + 6;
+              maxHeight = spaceBelow;
+            } else if (spaceAbove >= spaceBelow) {
+              top = Math.max(12, rect.top - popoverHeight - 6);
+              maxHeight = rect.top - top - 6;
+            } else {
+              top = rect.bottom + 6;
+              maxHeight = window.innerHeight - top - 12;
+            }
+
+            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: ${Math.max(150, Math.floor(maxHeight))}px; overflow-y: auto;`;
+          }
+        },
+
         init() {
+          this.pickerId = 'dp_' + Math.random().toString(36).substring(2, 9);
+          const handleOutsideClick = (e) => {
+            if (this.open && this.$el && !this.$el.contains(e.target)) {
+              this.open = false;
+            }
+          };
+          const handleScrollClose = () => {
+            if (this.open) {
+              this.open = false;
+            }
+          };
+          window.addEventListener('pointerdown', handleOutsideClick, true);
+          window.addEventListener('click', handleOutsideClick, true);
+          window.addEventListener('scroll', handleScrollClose, { capture: true, passive: true });
+
+          window.addEventListener('close-all-pickers', (e) => {
+            if (e.detail && e.detail.id !== this.pickerId) {
+              this.open = false;
+            }
+          });
           if (this.selectedDateStr) {
             const parts = this.selectedDateStr.split('-');
             if (parts.length === 3) {
@@ -213,25 +277,90 @@
 
       Alpine.data('customTimePicker', (initialValue = '14:00', onChangeCallback = null) => ({
         open: false,
+        popoverStyle: '',
+        pickerId: '',
         pickerMode: 'hour', // 'hour' vs 'minute'
-        isKeyboardInput: false,
         selectedHour: (initialValue || '14:00').split(':')[0] || '14',
         selectedMinute: (initialValue || '14:00').split(':')[1] || '00',
-
-        init() {},
-
-        get timeStr() {
-          return `${String(this.selectedHour).padStart(2, '0')}:${String(this.selectedMinute).padStart(2, '0')}`;
-        },
 
         outerHours: ['00', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'],
         innerHours: ['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'],
         minutes: ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
 
+        toggleOpen(triggerEl, evt) {
+          if (evt && typeof evt.stopPropagation === 'function') {
+            evt.stopPropagation();
+          }
+          if (!this.open) {
+            window.dispatchEvent(new CustomEvent('close-all-pickers', { detail: { id: this.pickerId } }));
+          }
+          this.open = !this.open;
+          if (this.open && triggerEl) {
+            const rect = triggerEl.getBoundingClientRect();
+            const popoverWidth = 290;
+            const popoverHeight = 405;
+
+            let left = rect.left;
+            if (left + popoverWidth > window.innerWidth - 12) {
+              left = window.innerWidth - popoverWidth - 12;
+            }
+            if (left < 12) left = 12;
+
+            const spaceBelow = window.innerHeight - rect.bottom - 12;
+            const spaceAbove = rect.top - 12;
+
+            let top;
+            let maxHeight;
+
+            if (spaceAbove >= popoverHeight) {
+              top = rect.top - popoverHeight - 6;
+              maxHeight = spaceAbove;
+            } else if (spaceBelow >= popoverHeight) {
+              top = rect.bottom + 6;
+              maxHeight = spaceBelow;
+            } else if (spaceAbove >= spaceBelow) {
+              top = Math.max(12, rect.top - popoverHeight - 6);
+              maxHeight = rect.top - top - 6;
+            } else {
+              top = rect.bottom + 6;
+              maxHeight = window.innerHeight - top - 12;
+            }
+
+            this.popoverStyle = `position: fixed; left: ${left}px; top: ${top}px; z-index: 999999; margin: 0; max-height: ${Math.max(150, Math.floor(maxHeight))}px; overflow-y: auto;`;
+          }
+        },
+
+        init() {
+          this.pickerId = 'tp_' + Math.random().toString(36).substring(2, 9);
+          const handleOutsideClick = (e) => {
+            if (this.open && this.$el && !this.$el.contains(e.target)) {
+              this.open = false;
+            }
+          };
+          const handleScrollClose = () => {
+            if (this.open) {
+              this.open = false;
+            }
+          };
+          window.addEventListener('pointerdown', handleOutsideClick, true);
+          window.addEventListener('click', handleOutsideClick, true);
+          window.addEventListener('scroll', handleScrollClose, { capture: true, passive: true });
+
+          window.addEventListener('close-all-pickers', (e) => {
+            if (e.detail && e.detail.id !== this.pickerId) {
+              this.open = false;
+            }
+          });
+        },
+
+        get timeStr() {
+          return `${String(this.selectedHour).padStart(2, '0')}:${String(this.selectedMinute).padStart(2, '0')}`;
+        },
+
         getPos(index, radius, total = 12) {
-          const angle = ((index - 3) * (360 / total)) * (Math.PI / 180);
-          const cx = 115;
-          const cy = 115;
+          const angle = (index * (360 / total) - 90) * (Math.PI / 180);
+          const cx = 120;
+          const cy = 120;
           const x = Math.round(cx + radius * Math.cos(angle));
           const y = Math.round(cy + radius * Math.sin(angle));
           return { x, y };
@@ -244,7 +373,7 @@
             const list = isOuter ? this.outerHours : this.innerHours;
             let idx = list.indexOf(String(hNum).padStart(2, '0'));
             if (idx === -1) idx = 0;
-            const r = isOuter ? 84 : 54;
+            const r = isOuter ? 90 : 58;
             return this.getPos(idx, r);
           } else {
             const mNum = parseInt(this.selectedMinute, 10);
@@ -254,7 +383,7 @@
               idx = this.minutes.indexOf(String(approx === 60 ? 0 : approx).padStart(2, '0'));
             }
             if (idx === -1) idx = 0;
-            return this.getPos(idx, 84);
+            return this.getPos(idx, 90);
           }
         },
 
@@ -262,7 +391,7 @@
           this.selectedHour = String(h).padStart(2, '0');
           setTimeout(() => {
             this.pickerMode = 'minute';
-          }, 220);
+          }, 200);
         },
 
         selectMinute(m) {
@@ -295,7 +424,7 @@
           name: 'Jan-Albert Mentz',
           role: 'Coach',
           email: 'janmen777@gmail.com',
-          schoolName: 'OVK Rugby Academy'
+          schoolName: 'Hoërskool Overkruin'
         })),
 
         athletes: [],
@@ -307,7 +436,7 @@
 
         squads: [],
         currentSquad: localStorage.getItem('academypro_current_squad') || '',
-        directorySquadFilter: 'ALL',
+        directorySquadFilter: 'U15',
         selectedSquadManagement: '',
         showAddSquadModal: false,
         newSquadName: '',
@@ -332,6 +461,24 @@
           location: 'Main Pitch A',
           team: ''
         },
+
+        // Recurring Event Series Modal State
+        showRecurringSeriesModal: false,
+        recurringSeriesTab: 'occurrences', // 'details' vs 'occurrences'
+        activeSeries: {
+          seriesId: '',
+          title: '',
+          eventType: 'Gym Session',
+          location: 'Gym Facility',
+          startTime: '15:30',
+          durationMins: 60,
+          team: 'U15',
+          recurrenceRule: 'Weekly',
+          occurrences: []
+        },
+        newSeriesOccDate: '',
+        newSeriesOccTime: '15:30',
+        bulkWeeksToAdd: 4,
 
         // Event Creation Form State (Aligned with Flutter app: Field, Match, Test Day, Gym)
         selectedEventCategory: 'Match',
@@ -378,8 +525,8 @@
         coachToDelete: null,
         coachSearchQuery: '',
 
-        newCoach: { name: '', email: '', phone: '', schoolName: 'OVK Academy' },
-        editCoachItem: { id: '', name: '', email: '', phone: '', schoolName: 'OVK Academy' },
+        newCoach: { name: '', email: '', phone: '', schoolName: 'Hoërskool Overkruin' },
+        editCoachItem: { id: '', name: '', email: '', phone: '', schoolName: 'Hoërskool Overkruin', role: 'Coach' },
 
         showAddModal: false,
         showEditModal: false,
@@ -388,9 +535,58 @@
 
         newAthlete: { name: '', age: '', position: '', team: '', status: '', email: '', phone: '' },
         editAthleteData: { id: '', name: '', age: '', position: '', secondaryPosition: '', team: '', status: '', email: '' },
+        rugbyPositions: [
+          'Loosehead Prop',
+          'Hooker',
+          'Tighthead Prop',
+          'Lock',
+          'Blindside Flanker',
+          'Openside Flanker',
+          'Number 8',
+          'Scrumhalf',
+          'Flyhalf',
+          'Left Wing',
+          'Inside Center',
+          'Outside Center',
+          'Right Wing',
+          'Fullback',
+          'Utility Forward',
+          'Utility Back'
+        ],
+        schoolOptions: [
+          'Hoërskool Overkruin'
+        ],
+        coachRoles: [
+          'Headmaster',
+          'Coach'
+        ],
+
+        async fetchUserProfileFromApi() {
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/auth/profile`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.data) {
+                const u = data.data;
+                const name = `${u.firstName || u.first_name || ''} ${u.lastName || u.last_name || ''}`.trim() || u.email;
+                this.loggedInCoach = {
+                  id: u.id,
+                  name: name,
+                  email: u.email,
+                  role: u.role || 'Coach',
+                  schoolName: u.schoolName || 'Hoërskool Overkruin'
+                };
+                localStorage.setItem('academypro_logged_in_coach', JSON.stringify(this.loggedInCoach));
+              }
+            }
+          } catch (e) {
+            console.log('Error fetching user profile:', e);
+          }
+        },
 
         async init() {
           this.purgeLegacyDummyData();
+          await this.fetchUserProfileFromApi();
           await Promise.all([
             this.fetchAthletesFromApi(),
             this.fetchCoachesFromApi(),
@@ -657,7 +853,7 @@
 
           const managedSquadNames = (this.squads || []).map(s => s.trim().toLowerCase().replace(/\s+squad$/i, ''));
           return this.athletes.filter(a => {
-            if (!a.team || a.team === 'Unassigned') return true;
+            if (!a.team || a.team === 'Unassigned') return false;
             const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
             return managedSquadNames.includes(t);
           });
@@ -667,7 +863,7 @@
           if (!sq || !this.athletes || this.athletes.length === 0) return [];
           const target = sq.trim().toLowerCase().replace(/\s+squad$/i, '');
           return this.athletes.filter(a => {
-            if (!a.team) return false;
+            if (!a.team || a.team === 'Unassigned') return false;
             const t = a.team.trim().toLowerCase().replace(/\s+squad$/i, '');
             return t === target;
           });
@@ -705,47 +901,14 @@
           return Math.min(100, Math.round((completedCount / totalMetrics) * 100));
         },
 
-        getCalculatedNextOccurrenceDate(evt) {
-          if (!evt || !evt.date) return '';
-          const todayStr = new Date().toISOString().split('T')[0];
-          
-          if (!evt.recurrenceRule || evt.recurrenceRule === 'Does Not Repeat') {
-            return evt.date;
-          }
-
-          if (evt.date >= todayStr) {
-            return evt.date;
-          }
-
-          const evtDate = new Date(evt.date + 'T00:00:00');
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-
-          let diffDays = Math.ceil((today - evtDate) / (1000 * 60 * 60 * 24));
-          let weeks = Math.ceil(diffDays / 7);
-          if (weeks <= 0) weeks = 1;
-
-          const nextDate = new Date(evtDate);
-          nextDate.setDate(nextDate.getDate() + (weeks * 7));
-
-          if (nextDate < today) {
-            nextDate.setDate(nextDate.getDate() + 7);
-          }
-
-          return nextDate.toISOString().split('T')[0];
-        },
-
         getFilteredUpcomingEvents() {
           if (!this.events || this.events.length === 0) return [];
           const todayStr = new Date().toISOString().split('T')[0];
-          let list = this.events.map(e => ({
-            ...e,
-            displayDate: this.getCalculatedNextOccurrenceDate(e)
-          }));
+          let rawList = [...this.events];
 
           if (this.eventSquadFilter && this.eventSquadFilter !== 'ALL') {
             const sqTarget = this.eventSquadFilter.trim().toLowerCase();
-            list = list.filter(e => {
+            rawList = rawList.filter(e => {
               const team = (e.team || e.ageGroup || '').trim().toLowerCase();
               return team === sqTarget || team.includes(sqTarget) || sqTarget.includes(team);
             });
@@ -753,15 +916,332 @@
 
           if (this.eventTypeFilter && this.eventTypeFilter !== 'ALL') {
             const typeTarget = this.eventTypeFilter.trim().toLowerCase();
-            list = list.filter(e => (e.eventType || '').trim().toLowerCase() === typeTarget);
+            rawList = rawList.filter(e => (e.eventType || '').trim().toLowerCase() === typeTarget);
           }
 
+          // Group recurring events vs standalone events
+          const groupedMap = new Map();
+          const standaloneList = [];
+
+          rawList.forEach(evt => {
+            const isRecurring = (evt.recurrenceRule && evt.recurrenceRule !== 'Does Not Repeat') || !!evt.seriesId;
+            if (isRecurring) {
+              const key = evt.seriesId || `${(evt.title||'').trim().toLowerCase()}_${(evt.team||evt.ageGroup||'').trim().toLowerCase()}_${(evt.eventType||'').trim().toLowerCase()}`;
+              if (!groupedMap.has(key)) {
+                groupedMap.set(key, []);
+              }
+              groupedMap.get(key).push(evt);
+            } else {
+              standaloneList.push({
+                ...evt,
+                isSeries: false,
+                displayDate: evt.date
+              });
+            }
+          });
+
+          const result = [];
+
+          groupedMap.forEach((groupOccurrences, key) => {
+            groupOccurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+            const firstOcc = groupOccurrences[0];
+            const nextUpcoming = groupOccurrences.find(o => o.date >= todayStr) || groupOccurrences[groupOccurrences.length - 1];
+
+            const seriesObj = {
+              isSeries: true,
+              seriesId: firstOcc.seriesId || key,
+              title: firstOcc.title,
+              eventType: firstOcc.eventType,
+              location: firstOcc.location,
+              team: firstOcc.team || firstOcc.ageGroup,
+              startTime: firstOcc.startTime,
+              durationMins: firstOcc.durationMins,
+              recurrenceRule: firstOcc.recurrenceRule || 'Weekly',
+              recurrenceEndDate: firstOcc.recurrenceEndDate || null,
+              totalOccurrences: groupOccurrences.length,
+              occurrences: groupOccurrences,
+              nextOccurrence: nextUpcoming,
+              date: nextUpcoming.date,
+              displayDate: nextUpcoming.date,
+              dateRange: groupOccurrences.length > 1 
+                ? `${groupOccurrences[0].date} — ${groupOccurrences[groupOccurrences.length - 1].date}`
+                : groupOccurrences[0].date
+            };
+
+            result.push(seriesObj);
+          });
+
+          result.push(...standaloneList);
+
           if (this.eventTimeScope === 'upcoming') {
-            list = list.filter(e => e.displayDate >= todayStr);
-            return list.sort((a, b) => (a.displayDate || '').localeCompare(b.displayDate || ''));
+            const filtered = result.filter(item => {
+              if (item.isSeries) {
+                return item.occurrences.some(o => o.date >= todayStr);
+              }
+              return item.date >= todayStr;
+            });
+            return filtered.sort((a, b) => (a.displayDate || '').localeCompare(b.displayDate || ''));
           } else {
-            list = list.filter(e => e.displayDate < todayStr);
-            return list.sort((a, b) => (b.displayDate || '').localeCompare(a.displayDate || ''));
+            const filtered = result.filter(item => {
+              if (item.isSeries) {
+                return item.occurrences.every(o => o.date < todayStr);
+              }
+              return item.date < todayStr;
+            });
+            return filtered.sort((a, b) => (b.displayDate || '').localeCompare(a.displayDate || ''));
+          }
+        },
+
+        openRecurringSeriesModal(seriesObj) {
+          if (!seriesObj) return;
+          const occs = (seriesObj.occurrences || []).map(o => ({ ...o })).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          this.activeSeries = {
+            seriesId: seriesObj.seriesId || `SERIES-${Date.now()}`,
+            title: seriesObj.title || '',
+            eventType: seriesObj.eventType || 'Gym Session',
+            location: seriesObj.location || 'Gym Facility',
+            startTime: seriesObj.startTime || '15:30',
+            durationMins: seriesObj.durationMins || 60,
+            team: seriesObj.team || 'U15',
+            recurrenceRule: seriesObj.recurrenceRule || 'Weekly',
+            occurrences: occs
+          };
+          this.recurringSeriesTab = 'occurrences';
+          this.newSeriesOccDate = '';
+          this.newSeriesOccTime = seriesObj.startTime || '15:30';
+          this.showRecurringSeriesModal = true;
+        },
+
+        async saveSeriesDetails() {
+          if (!this.activeSeries.title) {
+            this.triggerToast('Series title is required', 'error');
+            return;
+          }
+          try {
+            // 1. Update master series parameters across all occurrences in D1
+            if (this.activeSeries.seriesId) {
+              await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/${encodeURIComponent(this.activeSeries.seriesId)}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  location: this.activeSeries.location,
+                  startTime: this.activeSeries.startTime,
+                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
+                  team: this.activeSeries.team
+                })
+              }).catch(() => {});
+            }
+
+            // 2. Update individual occurrence dates & times
+            const statements = this.activeSeries.occurrences.map(occ => {
+              return fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...occ,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  location: this.activeSeries.location,
+                  startTime: occ.startTime || this.activeSeries.startTime,
+                  date: occ.date,
+                  durationMins: parseInt(this.activeSeries.durationMins) || 60,
+                  team: this.activeSeries.team,
+                  seriesId: this.activeSeries.seriesId
+                })
+              });
+            });
+            await Promise.all(statements);
+
+            // 3. Force refresh live data directly from database
+            await this.fetchEventsFromApi(true);
+
+            this.triggerToast('Series and occurrence changes saved successfully!', 'success');
+          } catch (e) {
+            console.error('Failed saving series details:', e);
+            this.triggerToast('Error saving series details', 'error');
+          }
+        },
+
+        async updateSingleOccurrence(occ) {
+          if (!occ || !occ.id) return;
+          try {
+            const payload = {
+              ...occ,
+              title: this.activeSeries.title,
+              eventType: this.activeSeries.eventType,
+              location: this.activeSeries.location,
+              startTime: occ.startTime || this.activeSeries.startTime,
+              date: occ.date,
+              durationMins: parseInt(this.activeSeries.durationMins) || 60,
+              team: this.activeSeries.team,
+              seriesId: this.activeSeries.seriesId
+            };
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              const idx = this.events.findIndex(e => e.id === occ.id);
+              if (idx !== -1) {
+                this.events[idx] = { ...this.events[idx], ...payload };
+              } else {
+                this.events.push({ ...payload });
+              }
+              this.events = [...this.events];
+              this.saveEventsToStorage();
+            }
+          } catch (e) {
+            console.error('Failed to update single occurrence:', e);
+          }
+        },
+
+        async addSeriesOccurrenceDate() {
+          if (!this.newSeriesOccDate) {
+            this.triggerToast('Please select a date to add', 'error');
+            return;
+          }
+          const payload = {
+            id: `EVT-${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            seriesId: this.activeSeries.seriesId,
+            title: this.activeSeries.title,
+            eventType: this.activeSeries.eventType,
+            location: this.activeSeries.location,
+            startTime: this.newSeriesOccTime || this.activeSeries.startTime || '15:30',
+            date: this.newSeriesOccDate,
+            durationMins: parseInt(this.activeSeries.durationMins) || 60,
+            team: this.activeSeries.team,
+            ageGroup: this.activeSeries.team,
+            recurrenceRule: this.activeSeries.recurrenceRule || 'Weekly'
+          };
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              this.activeSeries.occurrences.push(payload);
+              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+              this.events.push(payload);
+              this.saveEventsToStorage();
+              this.newSeriesOccDate = '';
+              this.triggerToast('Occurrence date added!', 'success');
+            } else {
+              this.triggerToast('Failed to add date — server error', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error adding occurrence date', 'error');
+          }
+        },
+
+        async bulkScheduleNextWeeks() {
+          const count = parseInt(this.bulkWeeksToAdd) || 4;
+          if (count <= 0) return;
+
+          let lastDateStr = new Date().toISOString().split('T')[0];
+          if (this.activeSeries.occurrences.length > 0) {
+            const sorted = [...this.activeSeries.occurrences].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+            lastDateStr = sorted[sorted.length - 1].date;
+          }
+
+          const newDates = [];
+          let current = new Date(lastDateStr + 'T00:00:00');
+          for (let i = 0; i < count; i++) {
+            current.setDate(current.getDate() + 7);
+            newDates.push(current.toISOString().split('T')[0]);
+          }
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/bulk-schedule`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                seriesId: this.activeSeries.seriesId,
+                title: this.activeSeries.title,
+                eventType: this.activeSeries.eventType,
+                startTime: this.activeSeries.startTime,
+                durationMins: this.activeSeries.durationMins,
+                location: this.activeSeries.location,
+                team: this.activeSeries.team,
+                ageGroup: this.activeSeries.team,
+                dates: newDates
+              })
+            });
+            if (res.ok) {
+              newDates.forEach((dt, idx) => {
+                const item = {
+                  id: `EVT-${Date.now()}_bulk${idx}`,
+                  seriesId: this.activeSeries.seriesId,
+                  title: this.activeSeries.title,
+                  eventType: this.activeSeries.eventType,
+                  startTime: this.activeSeries.startTime,
+                  date: dt,
+                  durationMins: this.activeSeries.durationMins,
+                  location: this.activeSeries.location,
+                  team: this.activeSeries.team,
+                  recurrenceRule: 'Weekly'
+                };
+                this.activeSeries.occurrences.push(item);
+                this.events.push(item);
+              });
+              this.activeSeries.occurrences.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+              this.saveEventsToStorage();
+              this.triggerToast(`Scheduled ${count} consecutive weekly runs!`, 'success');
+            } else {
+              this.triggerToast('Failed to bulk schedule — server error', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error during bulk schedule', 'error');
+          }
+        },
+
+        async deleteSeriesOccurrence(occ) {
+          if (!occ || !occ.id) return;
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/${encodeURIComponent(occ.id)}`, {
+              method: 'DELETE'
+            });
+            if (res.ok) {
+              this.activeSeries.occurrences = this.activeSeries.occurrences.filter(o => o.id !== occ.id);
+              this.events = this.events.filter(e => e.id !== occ.id);
+              this.saveEventsToStorage();
+              this.triggerToast('Occurrence deleted', 'info');
+              if (this.activeSeries.occurrences.length === 0) {
+                this.showRecurringSeriesModal = false;
+              }
+            } else {
+              this.triggerToast('Failed to delete occurrence', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error deleting occurrence', 'error');
+          }
+        },
+
+        async deleteEntireSeries(seriesObj) {
+          const sid = seriesObj.seriesId || seriesObj.id;
+          if (!sid) return;
+          if (!confirm(`Delete entire recurring series '${seriesObj.title}' with ${seriesObj.totalOccurrences || seriesObj.occurrences?.length || 1} occurrences?`)) return;
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/dashboard/events/series/${encodeURIComponent(sid)}`, {
+              method: 'DELETE'
+            });
+            if (res.ok) {
+              const occIds = new Set((seriesObj.occurrences || []).map(o => o.id));
+              this.events = this.events.filter(e => e.seriesId !== sid && !occIds.has(e.id));
+              this.saveEventsToStorage();
+              this.showRecurringSeriesModal = false;
+              this.triggerToast(`Entire recurring series '${seriesObj.title}' deleted!`, 'info');
+            } else {
+              this.triggerToast('Failed to delete recurring series', 'error');
+            }
+          } catch (e) {
+            this.triggerToast('Network error deleting series', 'error');
           }
         },
 
@@ -985,6 +1465,10 @@
             this.triggerToast('Please provide an Event Title and Date', 'error');
             return;
           }
+          if (this.occurrenceType === 'recurring' && !this.newEvent.untilDate) {
+            this.triggerToast('Please select a Recurrence End Date (Until Date) for recurring events', 'error');
+            return;
+          }
 
           const created = {
             id: `EVT-${Date.now()}`,
@@ -996,9 +1480,10 @@
             location: (this.newEvent.location || 'Main Pitch A').trim(),
             team: this.newEvent.selectedSquads.join(', ') || 'U15 Squad',
             ageGroup: this.newEvent.selectedSquads[0] || 'U15 Squad',
-            schoolId: 'OVK',
+            schoolId: '1',
             recurrenceRule: this.occurrenceType === 'recurring' ? (this.newEvent.repeatDays.length > 0 ? `Weekly on ${this.newEvent.repeatDays.join(', ')}` : 'Weekly') : 'Does Not Repeat',
             recurrenceEndDate: this.newEvent.untilDate || null,
+            untilDate: this.newEvent.untilDate || null,
             isImportant: this.selectedEventCategory === 'Match Session' || this.selectedEventCategory === 'Fitness Test' || this.selectedEventCategory === 'Test Day' ? 1 : 0
           };
 
@@ -1353,7 +1838,8 @@
 
         // Coaches CRUD
         openAddCoach() {
-          this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : 'Hoërskool Overkruin';
+          this.newCoach = { name: '', email: '', phone: '', schoolName: school };
           this.showAddCoachModal = true;
         },
 
@@ -1362,12 +1848,13 @@
             this.triggerToast('Please fill in Name and Email Address', 'error');
             return;
           }
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : 'Hoërskool Overkruin';
           const created = {
             id: `cch_${Date.now()}`,
             name: this.newCoach.name.trim(),
             email: this.newCoach.email.toLowerCase().trim(),
             phone: (this.newCoach.phone || '').trim(),
-            schoolName: this.newCoach.schoolName || 'OVK Academy'
+            schoolName: school
           };
 
           try {
@@ -1382,7 +1869,7 @@
               this.coaches.push(coachData);
               this.saveCoachesToStorage();
               this.showAddCoachModal = false;
-              this.newCoach = { name: '', email: '', phone: '', schoolName: 'OVK Academy' };
+              this.newCoach = { name: '', email: '', phone: '', schoolName: school };
               this.triggerToast(`Coach ${coachData.name} registered successfully!`, 'success');
             } else {
               this.triggerToast(data.message || data.error || 'Failed to register coach on server', 'error');
@@ -1390,6 +1877,66 @@
           } catch (err) {
             console.log('Coach API note:', err);
             this.triggerToast('Network error while registering coach', 'error');
+          }
+        },
+
+        openEditCoach(coach) {
+          if (!coach) return;
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : (coach.schoolName || 'Hoërskool Overkruin');
+          this.editCoachItem = {
+            id: coach.id,
+            name: coach.name || '',
+            email: coach.email || '',
+            phone: coach.phone || '',
+            schoolName: school,
+            role: coach.role || 'Coach'
+          };
+          this.showEditCoachModal = true;
+        },
+
+        async saveEditCoach() {
+          if (!this.editCoachItem.name || !this.editCoachItem.email) {
+            this.triggerToast('Name and Email Address are required', 'error');
+            return;
+          }
+
+          const targetEmail = this.editCoachItem.email.toLowerCase().trim();
+          const school = (this.loggedInCoach && this.loggedInCoach.schoolName) ? this.loggedInCoach.schoolName : 'Hoërskool Overkruin';
+          const idx = this.coaches.findIndex(c => c.id === this.editCoachItem.id || (c.email && c.email.toLowerCase() === targetEmail));
+          const updatedItem = {
+            id: this.editCoachItem.id,
+            name: this.editCoachItem.name.trim(),
+            email: targetEmail,
+            phone: (this.editCoachItem.phone || '').trim(),
+            schoolName: school,
+            role: this.editCoachItem.role || 'Coach'
+          };
+
+          try {
+            const res = await fetch(`${this.apiBaseUrl}/api/coaches/${encodeURIComponent(updatedItem.id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedItem)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success !== false) {
+              if (idx !== -1) {
+                this.coaches[idx] = { ...this.coaches[idx], ...updatedItem };
+              }
+              this.saveCoachesToStorage();
+              this.showEditCoachModal = false;
+              this.triggerToast(`Coach '${updatedItem.name}' updated successfully!`, 'success');
+
+              if (this.loggedInCoach && (this.loggedInCoach.id === updatedItem.id || (this.loggedInCoach.email && this.loggedInCoach.email.toLowerCase() === targetEmail))) {
+                this.loggedInCoach = { ...this.loggedInCoach, ...updatedItem };
+                localStorage.setItem('academypro_logged_in_coach', JSON.stringify(this.loggedInCoach));
+              }
+            } else {
+              this.triggerToast(data.message || data.error || 'Failed to update coach on server', 'error');
+            }
+          } catch (err) {
+            console.log('Coach PUT error:', err);
+            this.triggerToast('Network error: could not save coach changes', 'error');
           }
         },
 
@@ -1474,11 +2021,6 @@
             email: (this.editAthleteData.email || '').toLowerCase().trim()
           };
 
-          this.athletes[idx] = updatedItem;
-          this.saveAthletesToStorage();
-          this.showEditModal = false;
-          this.triggerToast('Athlete updated successfully!', 'success');
-
           try {
             const res = await fetch(`${this.apiBaseUrl}/api/athletes/${encodeURIComponent(updatedItem.id)}`, {
               method: 'PUT',
@@ -1494,10 +2036,18 @@
               })
             });
             const data = await res.json().catch(() => ({}));
-            if (!data.success) {
-              this.triggerToast(data.error || 'Failed to update athlete on server', 'error');
+            if (res.ok && data.success !== false) {
+              this.athletes[idx] = updatedItem;
+              this.saveAthletesToStorage();
+              this.showEditModal = false;
+              this.triggerToast('Athlete updated successfully!', 'success');
+            } else {
+              this.triggerToast(data.error || data.message || 'Failed to update athlete on server', 'error');
             }
-          } catch (err) { console.log('Athlete PUT error:', err); }
+          } catch (err) {
+            console.log('Athlete PUT error:', err);
+            this.triggerToast('Network error: could not save athlete changes', 'error');
+          }
         },
 
         confirmDeleteAthlete(athlete) {
@@ -1656,15 +2206,14 @@
     <div class="flex items-center gap-xl flex-1"></div>
 
     <div class="flex items-center gap-md">
-      <div class="flex items-center gap-sm cursor-pointer group" @click="showSwitchCoachModal = true">
-        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs border border-outline-variant group-hover:ring-2 ring-primary transition-all"
-             x-text="getInitials(loggedInCoach ? loggedInCoach.name : 'Jan-Albert Mentz')">
+      <div class="flex items-center gap-sm">
+        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs border border-outline-variant shadow-sm"
+             x-text="getInitials(loggedInCoach ? loggedInCoach.name : '')">
         </div>
         <div class="hidden sm:flex flex-col text-left">
-          <span class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : 'Jan-Albert Mentz'"></span>
-          <span class="text-[10px] text-outline" x-text="loggedInCoach ? loggedInCoach.email : 'janmen777@gmail.com'"></span>
+          <span class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : ''"></span>
+          <span class="text-[10px] text-outline" x-text="loggedInCoach ? loggedInCoach.email : ''"></span>
         </div>
-        <span class="material-symbols-outlined text-outline">expand_more</span>
       </div>
     </div>
   </header>
@@ -1780,47 +2329,92 @@
 
         <!-- Scheduled Events Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
-          <template x-for="evt in getFilteredUpcomingEvents()" :key="evt.id">
-            <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start mb-sm">
-                  <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1"
-                        :class="{
-                          'bg-red-500/10 text-red-600': evt.eventType === 'Match',
-                          'bg-blue-500/10 text-blue-600': evt.eventType === 'Field',
-                          'bg-amber-500/10 text-amber-600': evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day',
-                          'bg-purple-500/10 text-purple-600': evt.eventType === 'Gym'
-                        }">
-                    <span class="material-symbols-outlined text-[14px]"
-                          x-text="evt.eventType === 'Match' ? 'sports_rugby' : (evt.eventType === 'Field' ? 'fitness_center' : ((evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day') ? 'speed' : 'directions_run'))"></span>
-                    <span x-text="evt.eventType || 'Match'"></span>
-                  </span>
-                  <span class="text-[11px] font-bold text-outline" x-text="evt.date"></span>
+          <template x-for="evt in getFilteredUpcomingEvents()" :key="evt.isSeries ? (evt.seriesId || evt.title) : evt.id">
+            <div>
+              <!-- RECURRING SERIES CARD -->
+              <template x-if="evt.isSeries">
+                <div class="bg-surface-container-lowest border-2 border-primary/20 hover:border-primary rounded-2xl p-lg shadow-sm space-y-md transition-all flex flex-col justify-between cursor-pointer group h-full" @click="openRecurringSeriesModal(evt)">
+                  <div>
+                    <div class="flex justify-between items-start mb-sm gap-2">
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[13px]">repeat</span> Recurring Series
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-on-surface-variant" x-text="evt.totalOccurrences + ' Occurrences'"></span>
+                      </div>
+                      <span class="text-[11px] font-bold text-outline truncate" x-text="evt.dateRange || evt.displayDate"></span>
+                    </div>
+
+                    <h3 class="font-extrabold text-on-surface text-base group-hover:text-primary transition-colors" x-text="evt.title"></h3>
+                    <p class="text-xs text-outline mt-1 flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[15px]">location_on</span>
+                      <span x-text="evt.location || 'Grounds'"></span>
+                    </p>
+
+                    <div class="flex items-center justify-between gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
+                      <span class="flex items-center gap-1 font-semibold">
+                        <span class="material-symbols-outlined text-[15px]">schedule</span>
+                        <span x-text="(evt.startTime || '15:30') + ' (' + (evt.durationMins || 60) + 'm)'"></span>
+                      </span>
+                      <span class="font-bold text-primary px-2 py-0.5 bg-primary/5 rounded-md" x-text="evt.team || 'U15 Squad'"></span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 pt-md border-t border-outline-variant" @click.stop>
+                    <button type="button" @click="openRecurringSeriesModal(evt)" class="flex-1 py-2 bg-primary text-on-primary text-xs font-bold rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-1 shadow-sm">
+                      <span class="material-symbols-outlined text-[16px]">edit_calendar</span> Manage Series
+                    </button>
+                    <button type="button" @click="deleteEntireSeries(evt)" class="p-2 text-error hover:bg-error-container rounded-xl transition-colors" title="Delete Series">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
+              </template>
 
-                <h3 class="font-bold text-on-surface text-base" x-text="evt.title"></h3>
-                <p class="text-xs text-outline mt-1 flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[15px]">location_on</span>
-                  <span x-text="evt.location || 'Main Pitch A'"></span>
-                </p>
+              <!-- STANDALONE (ONE-OFF) EVENT CARD -->
+              <template x-if="!evt.isSeries">
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-lg shadow-sm space-y-md hover:border-primary transition-all flex flex-col justify-between h-full">
+                  <div>
+                    <div class="flex justify-between items-start mb-sm">
+                      <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1"
+                            :class="{
+                              'bg-red-500/10 text-red-600': evt.eventType === 'Match',
+                              'bg-blue-500/10 text-blue-600': evt.eventType === 'Field',
+                              'bg-amber-500/10 text-amber-600': evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day',
+                              'bg-purple-500/10 text-purple-600': evt.eventType === 'Gym' || evt.eventType === 'Gym Session'
+                            }">
+                        <span class="material-symbols-outlined text-[14px]"
+                              x-text="evt.eventType === 'Match' ? 'sports_rugby' : (evt.eventType === 'Field' ? 'fitness_center' : ((evt.eventType === 'Fitness Test' || evt.eventType === 'Test Day') ? 'speed' : 'directions_run'))"></span>
+                        <span x-text="evt.eventType || 'Match'"></span>
+                      </span>
+                      <span class="text-[11px] font-bold text-outline" x-text="evt.date"></span>
+                    </div>
 
-                <div class="flex items-center gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
-                  <span class="flex items-center gap-1 font-semibold">
-                    <span class="material-symbols-outlined text-[15px]">schedule</span>
-                    <span x-text="(evt.startTime || '14:00') + ' (' + (evt.durationMins || 90) + 'm)'"></span>
-                  </span>
-                  <span class="font-bold text-primary" x-text="evt.team || evt.ageGroup || 'U18 Squad'"></span>
+                    <h3 class="font-bold text-on-surface text-base" x-text="evt.title"></h3>
+                    <p class="text-xs text-outline mt-1 flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[15px]">location_on</span>
+                      <span x-text="evt.location || 'Main Pitch A'"></span>
+                    </p>
+
+                    <div class="flex items-center gap-md text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/60">
+                      <span class="flex items-center gap-1 font-semibold">
+                        <span class="material-symbols-outlined text-[15px]">schedule</span>
+                        <span x-text="(evt.startTime || '14:00') + ' (' + (evt.durationMins || 90) + 'm)'"></span>
+                      </span>
+                      <span class="font-bold text-primary" x-text="evt.team || evt.ageGroup || 'U18 Squad'"></span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
+                    <button type="button" @click="openEditEvent(evt)" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
+                      <span class="material-symbols-outlined text-[16px]">edit</span> Edit Event
+                    </button>
+                    <button type="button" @click="confirmDeleteEvent(evt)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
-                <button type="button" @click="openEditEvent(evt)" class="flex-1 py-2 bg-primary-container text-on-primary-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
-                  <span class="material-symbols-outlined text-[16px]">edit</span> Edit Event
-                </button>
-                <button type="button" @click="confirmDeleteEvent(evt)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Event">
-                  <span class="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-              </div>
+              </template>
             </div>
           </template>
 
@@ -1919,7 +2513,7 @@
               <div class="col-span-3 md:col-span-1">
                 <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold" x-text="occurrenceType === 'recurring' ? 'Start Date (First Session) *' : 'Event Date (Past / Present) *'"></label>
                 <div class="relative" x-data="customDatePicker(newEvent.date, (d) => { newEvent.date = d; })" @click.outside="open = false">
-                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                  <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
                       <span class="font-bold" x-text="formattedDate"></span>
@@ -1928,13 +2522,14 @@
                   </button>
 
                   <div x-show="open" 
+                       :style="popoverStyle"
                        x-transition:enter="transition ease-out duration-150"
                        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
                        x-transition:leave="transition ease-in duration-100"
                        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                        x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
-                       class="absolute left-0 top-full mt-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                       class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                     <div class="flex items-center justify-between">
                       <button type="button" @click="prevMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
                         <span class="material-symbols-outlined text-[18px]">chevron_left</span>
@@ -1974,7 +2569,7 @@
               <div class="col-span-3 md:col-span-1">
                 <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Start Time</label>
                 <div class="relative" x-data="customTimePicker(newEvent.startTime, (t) => { newEvent.startTime = t; })" @click.outside="open = false">
-                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                  <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
                       <span class="font-bold" x-text="timeStr"></span>
@@ -1982,114 +2577,63 @@
                     <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
                   </button>
 
-                  <div x-show="open" 
-                       x-transition:enter="transition ease-out duration-150"
-                       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
-                       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                       x-transition:leave="transition ease-in duration-100"
-                       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                       x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
-                       class="absolute left-0 top-full mt-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[280px] space-y-3">
-                    
-                    <!-- Header Section: Label & Digital HH : MM Selector -->
-                    <div>
-                      <span class="text-[11px] font-semibold text-outline block mb-1">Select time</span>
-                      <div class="flex items-center justify-center gap-2">
-                        <button type="button" @click="pickerMode = 'hour'"
-                                class="px-4 py-2 rounded-2xl font-display font-extrabold text-3xl transition-all shadow-xs"
-                                :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface hover:bg-surface-container-highest'">
-                          <span x-text="String(selectedHour).padStart(2, '0')"></span>
-                        </button>
-                        <span class="font-display font-bold text-2xl text-on-surface">:</span>
-                        <button type="button" @click="pickerMode = 'minute'"
-                                class="px-4 py-2 rounded-2xl font-display font-extrabold text-3xl transition-all shadow-xs"
-                                :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface hover:bg-surface-container-highest'">
-                          <span x-text="String(selectedMinute).padStart(2, '0')"></span>
-                        </button>
-                      </div>
+                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
+                    <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+                      <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                      <span class="font-black text-xl text-primary animate-pulse">:</span>
+                      <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                     </div>
 
-                    <!-- Clock Dial Face (230px x 230px) -->
-                    <div class="relative w-[230px] h-[230px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
-                      <!-- Center Pivot & SVG Hand -->
-                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
-                        <circle cx="115" cy="115" r="4" fill="#003EC7" />
-                        <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
-                        <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+                    <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                        <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                        <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
                         <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
                       </svg>
 
-                      <!-- HOUR DIAL (24-Hour Dual Ring Layout matching Flutter) -->
                       <template x-if="pickerMode === 'hour'">
                         <div class="absolute inset-0">
-                          <!-- Outer Ring (00, 13-23) -->
-                          <template x-for="(h, idx) in outerHours" :key="'out_'+h">
-                            <button type="button" @click="selectHour(h)"
-                                    class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-extrabold text-xs transition-all z-20 cursor-pointer"
-                                    :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`"
-                                    :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary font-black' : 'text-on-surface hover:bg-primary-container/20'">
-                              <span x-text="h"></span>
-                            </button>
+                          <template x-for="(h, idx) in outerHours" :key="'out1_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
                           </template>
-                          <!-- Inner Ring (12, 01-11) -->
-                          <template x-for="(h, idx) in innerHours" :key="'in_'+h">
-                            <button type="button" @click="selectHour(h)"
-                                    class="absolute w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer"
-                                    :style="`left: ${getPos(idx, 54).x}px; top: ${getPos(idx, 54).y}px;`"
-                                    :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary font-black' : 'text-outline hover:bg-primary-container/20'">
-                              <span x-text="h"></span>
-                            </button>
+                          <template x-for="(h, idx) in innerHours" :key="'in1_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                           </template>
                         </div>
                       </template>
 
-                      <!-- MINUTE DIAL (00, 05, 10, ... 55) -->
                       <template x-if="pickerMode === 'minute'">
                         <div class="absolute inset-0">
-                          <template x-for="(m, idx) in minutes" :key="'min_'+m">
-                            <button type="button" @click="selectMinute(m)"
-                                    class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-extrabold text-xs transition-all z-20 cursor-pointer"
-                                    :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`"
-                                    :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary font-black' : 'text-on-surface hover:bg-primary-container/20'">
-                              <span x-text="m"></span>
-                            </button>
+                          <template x-for="(m, idx) in minutes" :key="'min1_'+m">
+                            <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
                           </template>
                         </div>
                       </template>
                     </div>
 
-                    <!-- Footer Actions: Cancel & OK -->
-                    <div class="flex items-center justify-between pt-2 border-t border-outline-variant">
-                      <button type="button" @click="isKeyboardInput = !isKeyboardInput" class="p-1.5 text-outline hover:text-primary rounded-lg transition-colors" title="Toggle Input Format">
-                        <span class="material-symbols-outlined text-[18px]">keyboard</span>
+                    <div class="flex justify-end pt-1 border-t border-outline-variant/40">
+                      <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">check</span> OK
                       </button>
-                      <div class="flex items-center gap-2">
-                        <button type="button" @click="open = false" class="px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary-container/20 rounded-lg transition-colors">
-                          Cancel
-                        </button>
-                        <button type="button" @click="confirmTime()" class="px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary-container/20 rounded-lg transition-colors">
-                          OK
-                        </button>
-                      </div>
                     </div>
-
                   </div>
                 </div>
               </div>
 
-              <!-- Custom Duration Dropdown Component -->
+              <!-- Custom Duration Dropdown -->
               <div class="col-span-3 md:col-span-1">
                 <label class="block font-label-md text-on-surface-variant mb-sm text-xs font-bold">Duration (Mins)</label>
-                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                  <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-md py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                <div x-data="{ open: false, dropStyle: '' }" @click.outside="open = false">
+                  <button type="button" x-ref="durTrigger1" @click="const r = $refs.durTrigger1.getBoundingClientRect(); dropStyle = `position:fixed; left:${r.left}px; top:${r.top - 4}px; width:${r.width}px; transform:translateY(-100%);`; open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
                     <span class="font-bold" x-text="newEvent.durationMins + ' Minutes'"></span>
                     <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
                   </button>
-                  <div x-show="open" 
+                  <div x-show="open" :style="dropStyle"
                        x-transition:enter="transition ease-out duration-150"
-                       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
-                       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                       class="absolute left-0 top-full mt-1.5 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-56 overflow-y-auto custom-scrollbar">
+                       x-transition:enter-start="opacity-0 scale-95"
+                       x-transition:enter-end="opacity-100 scale-100"
+                       class="bg-surface border border-outline-variant/80 rounded-xl shadow-2xl z-[999999] py-1 max-h-64 overflow-y-auto custom-scrollbar">
                     <template x-for="dur in durationOptions" :key="dur">
                       <div @click="newEvent.durationMins = dur; open = false" 
                            class="px-3 py-2 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
@@ -2110,7 +2654,7 @@
                 <template x-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day">
                   <button type="button" @click="toggleRepeatDay(day)"
                           class="px-md py-sm rounded-lg font-label-md text-xs font-bold transition-colors"
-                          :class="(newEvent.repeatDays && newEvent.repeatDays.includes(day)) ? 'bg-primary-container text-on-primary shadow-sm' : 'bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-container-highest'"
+                          :class="(newEvent.repeatDays && newEvent.repeatDays.includes(day)) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-container-highest'"
                           x-text="day"></button>
                 </template>
                 <div class="flex-1"></div>
@@ -2118,16 +2662,17 @@
                   <span class="font-label-md text-outline text-xs font-bold">Until <span class="font-normal text-[11px] text-outline/80">(Optional)</span></span>
                   <!-- Custom Until Datepicker Component -->
                   <div class="relative" x-data="customDatePicker(newEvent.untilDate, (d) => { newEvent.untilDate = d; })" @click.outside="open = false">
-                    <button type="button" @click="open = !open" class="bg-background border border-outline-variant rounded-lg px-sm py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:border-primary transition-all">
+                    <button type="button" @click="toggleOpen($el, $event)" class="bg-background border border-outline-variant rounded-lg px-sm py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:border-primary transition-all">
                       <span class="material-symbols-outlined text-primary text-[16px]">calendar_today</span>
                       <span x-text="formattedDate"></span>
                       <span x-show="selectedDateStr" @click.stop="selectedDateStr = ''; newEvent.untilDate = '';" class="ml-1 text-outline hover:text-error text-xs font-bold" title="Clear end date">✕</span>
                     </button>
                     <div x-show="open" 
+                         :style="popoverStyle"
                          x-transition:enter="transition ease-out duration-150"
                          x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                         class="absolute right-0 top-full mt-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+                         class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                       <div class="flex items-center justify-between">
                         <button type="button" @click="prevMonth()" class="p-1.5 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface">
                           <span class="material-symbols-outlined text-[18px]">chevron_left</span>
@@ -2450,7 +2995,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
         <div>
           <h2 class="font-headline-lg font-extrabold text-2xl text-on-surface">Student Athletes Directory</h2>
-          <p class="font-body-md text-xs text-on-surface-variant mt-0.5" x-text="'Showing registered players for ' + (directorySquadFilter === 'ALL' ? 'All Managed Squads' : directorySquadFilter)"></p>
+          <p class="font-body-md text-xs text-on-surface-variant mt-0.5" x-text="'Showing registered players for ' + (directorySquadFilter || 'U15')"></p>
         </div>
 
         <div class="flex items-center gap-md">
@@ -2459,7 +3004,7 @@
             <button type="button" @click="open = !open" class="bg-surface border border-outline-variant rounded-xl font-body-md py-2 px-3 focus:ring-2 focus:ring-primary text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all min-w-[180px]">
               <div class="flex items-center gap-1.5 truncate">
                 <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
-                <span class="truncate font-bold" x-text="directorySquadFilter === 'ALL' ? 'All Managed Squads' : directorySquadFilter"></span>
+                <span class="truncate font-bold" x-text="directorySquadFilter || 'U15'"></span>
               </div>
               <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
             </button>
@@ -2468,12 +3013,6 @@
                  x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
                  class="absolute right-0 top-full mt-1.5 w-full min-w-[200px] bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto custom-scrollbar">
-              <div @click="directorySquadFilter = 'ALL'; open = false" 
-                   class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center transition-colors"
-                   :class="directorySquadFilter === 'ALL' ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
-                <span>All Managed Squads</span>
-                <span x-show="directorySquadFilter === 'ALL'" class="material-symbols-outlined text-[16px] text-primary">check</span>
-              </div>
               <template x-for="sq in squads" :key="sq">
                 <div @click="directorySquadFilter = sq; open = false" 
                      class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center transition-colors"
@@ -2620,18 +3159,20 @@
               <h3 class="font-bold text-on-surface text-base" x-text="coach.name"></h3>
 
               <div class="text-xs text-on-surface-variant space-y-1 pt-2 mt-2 border-t border-outline-variant/60">
-                <div>Academy: <span class="font-bold text-on-surface" x-text="coach.schoolName || 'OVK Academy'"></span></div>
+                <div>Academy: <span class="font-bold text-on-surface" x-text="(coach.schoolName && coach.schoolName !== '1' ? coach.schoolName : 'Hoërskool Overkruin')"></span></div>
                 <div>Email: <span class="font-bold text-on-surface" x-text="coach.email"></span></div>
                 <div x-show="coach.phone">Phone: <span class="font-bold text-on-surface" x-text="coach.phone"></span></div>
               </div>
             </div>
 
             <div class="flex items-center gap-2 pt-md border-t border-outline-variant">
-              <button type="button" @click="loginAsCoach(coach.email)" 
-                      class="flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1"
-                      :class="loggedInCoach && loggedInCoach.email === coach.email ? 'bg-surface-container text-outline cursor-default' : 'bg-primary-container text-on-primary-container hover:opacity-90'">
-                <span class="material-symbols-outlined text-[16px]">switch_account</span>
-                <span x-text="loggedInCoach && loggedInCoach.email === coach.email ? 'Current Profile' : 'Switch Profile'"></span>
+              <div class="flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
+                   :class="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'bg-primary-container/15 text-primary' : 'bg-surface-container text-on-surface-variant'">
+                <span class="material-symbols-outlined text-[16px]" x-text="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'verified_user' : 'badge'"></span>
+                <span x-text="loggedInCoach && loggedInCoach.email.toLowerCase() === coach.email.toLowerCase() ? 'Active Profile' : 'Staff Coach'"></span>
+              </div>
+              <button type="button" @click="openEditCoach(coach)" class="p-2 text-primary hover:bg-primary-container/10 rounded-lg transition-colors" title="Edit Coach Details">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
               </button>
               <button type="button" @click="confirmDeleteCoach(coach)" class="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Coach">
                 <span class="material-symbols-outlined text-[18px]">delete</span>
@@ -2685,8 +3226,8 @@
   </div>
 
   <!-- MODAL: ADD COACH -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddCoachModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddCoachModal" @click.self="showAddCoachModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <h3 class="font-headline-md font-bold text-lg text-on-surface">Register New Coach</h3>
       <form @submit.prevent="saveNewCoach()" class="space-y-md">
         <div>
@@ -2695,19 +3236,106 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-outline mb-1">Email Address *</label>
-          <input x-model="newCoach.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2 text-xs" type="email"/>
+          <input x-model="newCoach.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary" type="email" placeholder="e.g. coach@academy.co.za"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy *</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="newCoach.schoolName || 'Select School'"></span>
+              <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+              <template x-for="school in schoolOptions" :key="school">
+                <div @click="newCoach.schoolName = school; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="newCoach.schoolName === school ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="school"></span>
+                  <span x-show="newCoach.schoolName === school" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
+          </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" @click="showAddCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Save Coach</button>
+          <button type="button" @click="showAddCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg hover:bg-surface-container-high transition-colors">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Save Coach</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT COACH DETAILS -->
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditCoachModal" @click.self="showEditCoachModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
+      <div class="flex justify-between items-center border-b border-outline-variant pb-3">
+        <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Coach Profile</h3>
+        <button type="button" @click="showEditCoachModal = false" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <form @submit.prevent="saveEditCoach()" class="space-y-md">
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Full Name *</label>
+          <input x-model="editCoachItem.name" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Neels Venter"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Email Address *</label>
+          <input x-model="editCoachItem.email" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="email" placeholder="e.g. coach@academy.co.za"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Phone Number</label>
+          <input x-model="editCoachItem.phone" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="tel" placeholder="e.g. +27 82 123 4567"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">School / Academy *</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="editCoachItem.schoolName || 'Select School'"></span>
+              <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+              <template x-for="school in schoolOptions" :key="school">
+                <div @click="editCoachItem.schoolName = school; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="editCoachItem.schoolName === school ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="school"></span>
+                  <span x-show="editCoachItem.schoolName === school" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-outline mb-1">Role</label>
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <span x-text="editCoachItem.role || 'Select Role'"></span>
+              <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            </button>
+            <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1">
+              <template x-for="r in coachRoles" :key="r">
+                <div @click="editCoachItem.role = r; open = false" 
+                     class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                     :class="editCoachItem.role === r ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                  <span x-text="r"></span>
+                  <span x-show="editCoachItem.role === r" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showEditCoachModal = false" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg hover:bg-surface-container-high transition-colors">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Save Changes</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- MODAL: ADD STUDENT ATHLETE -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddModal" @click.self="showAddModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <h3 class="font-headline-md font-bold text-lg text-on-surface">Register Student Athlete</h3>
       <form @submit.prevent="saveNewAthlete()" class="space-y-md">
         <div>
@@ -2746,8 +3374,8 @@
   </div>
 
   <!-- MODAL: EDIT STUDENT ATHLETE -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditModal" @click.self="showEditModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Athlete Profile</h3>
@@ -2769,11 +3397,41 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-outline mb-1">Primary Position</label>
-            <input x-model="editAthleteData.position" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Fly-half"/>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span x-text="editAthleteData.position || 'Select Position'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                <template x-for="pos in rugbyPositions" :key="pos">
+                  <div @click="editAthleteData.position = pos; open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                       :class="editAthleteData.position === pos ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="pos"></span>
+                    <span x-show="editAthleteData.position === pos" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-outline mb-1">Secondary Position</label>
-            <input x-model="editAthleteData.secondaryPosition" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary transition-colors" type="text" placeholder="e.g. Fullback"/>
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <span x-text="editAthleteData.secondaryPosition || 'None / Optional'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+              </button>
+              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                <template x-for="pos in ['None', ...rugbyPositions]" :key="pos">
+                  <div @click="editAthleteData.secondaryPosition = (pos === 'None' ? '' : pos); open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center"
+                       :class="(editAthleteData.secondaryPosition || 'None') === pos ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                    <span x-text="pos"></span>
+                    <span x-show="(editAthleteData.secondaryPosition || 'None') === pos" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-outline mb-1">Age</label>
@@ -2811,39 +3469,10 @@
       </form>
     </div>
   </div>
-  <!-- MODAL: SWITCH ACTIVE COACH ACCOUNT -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showSwitchCoachModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
-      <div class="flex justify-between items-center">
-        <h3 class="font-headline-md font-bold text-lg text-on-surface">Active Coach Identity</h3>
-        <button type="button" @click="showSwitchCoachModal = false" class="text-outline hover:text-on-surface">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      
-      <div class="p-md bg-primary-container/10 border border-primary/20 rounded-xl flex items-center gap-md">
-        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm" x-text="getInitials(loggedInCoach ? loggedInCoach.name : '')"></div>
-        <div>
-          <p class="font-bold text-xs text-on-surface" x-text="loggedInCoach ? loggedInCoach.name : ''"></p>
-          <p class="text-[11px] text-primary font-semibold" x-text="loggedInCoach ? loggedInCoach.email : ''"></p>
-        </div>
-      </div>
 
-      <form @submit.prevent="loginAsCoach()" class="space-y-md pt-2">
-        <div>
-          <label class="block text-xs font-bold text-outline mb-1">Switch Coach Account by Email</label>
-          <input x-model="switchCoachEmail" required class="w-full bg-background border border-outline-variant rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-primary" placeholder="e.g. janmen777@gmail.com" type="email"/>
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" @click="loginAsCoach('janmen777@gmail.com')" class="px-4 py-2 bg-surface-container text-xs font-bold rounded-lg text-primary">Login as janmen777@gmail.com</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg">Switch Identity</button>
-        </div>
-      </form>
-    </div>
-  </div>
   <!-- MODAL: MANAGE TEAM TEST METRICS -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManageMetricsModal" @click.self="showManageMetricsModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-lg p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Manage Squad Test Metrics</h3>
@@ -2945,8 +3574,8 @@
   </div>
 
   <!-- MODAL: MANUALLY CHECK IN PLAYER FOR TEST EVENT -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManualCheckInModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showManualCheckInModal" @click.self="showManualCheckInModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Manually Check-In Player</h3>
@@ -2986,8 +3615,8 @@
   </div>
 
   <!-- MODAL: CREATE SQUAD -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadModal" @click.self="showAddSquadModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Create New Squad</h3>
@@ -3014,8 +3643,8 @@
   </div>
 
   <!-- MODAL: ADD PLAYER TO SQUAD -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadPlayerModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showAddSquadPlayerModal" @click.self="showAddSquadPlayerModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl w-full max-w-md p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Add Player to Squad</h3>
@@ -3058,8 +3687,8 @@
   </div>
 
   <!-- MODAL: CONFIRM DELETE EVENT -->
-  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteEventConfirm" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteEventConfirm" @click.self="showDeleteEventConfirm = false; eventToDelete = null;" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" @click.stop>
       <div class="flex items-center gap-3 text-error">
         <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">warning</span>
@@ -3080,8 +3709,8 @@
   </div>
 
   <!-- MODAL: CONFIRM DELETE ATHLETE -->
-  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteAthleteConfirm" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteAthleteConfirm" @click.self="showDeleteAthleteConfirm = false; athleteToDelete = null;" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" @click.stop>
       <div class="flex items-center gap-3 text-error">
         <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">warning</span>
@@ -3102,8 +3731,8 @@
   </div>
 
   <!-- MODAL: CONFIRM DELETE COACH -->
-  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteCoachConfirm" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+  <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showDeleteCoachConfirm" @click.self="showDeleteCoachConfirm = false; coachToDelete = null;" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" @click.stop>
       <div class="flex items-center gap-3 text-error">
         <div class="p-2.5 bg-error-container/20 rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">warning</span>
@@ -3124,8 +3753,8 @@
   </div>
 
   <!-- MODAL: EDIT EVENT -->
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditEventModal" x-cloak>
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-lg p-lg space-y-md">
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showEditEventModal" @click.self="showEditEventModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-lg p-lg space-y-md" @click.stop>
       <div class="flex justify-between items-center border-b border-outline-variant pb-md">
         <div>
           <h3 class="font-headline-md font-bold text-lg text-on-surface">Edit Event Parameters</h3>
@@ -3184,11 +3813,11 @@
           <div class="col-span-1">
             <label class="block text-xs font-bold text-outline mb-1">Date *</label>
             <div class="relative" x-data="customDatePicker(editingEvent.date, (d) => { editingEvent.date = d; })" x-effect="if (editingEvent.date) { selectedDateStr = editingEvent.date; }" @click.outside="open = false">
-              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary transition-all">
                 <span class="font-bold truncate" x-text="formattedDate"></span>
                 <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
               </button>
-              <div x-show="open" class="absolute left-0 bottom-full mb-2 bg-surface border border-outline-variant rounded-2xl shadow-2xl z-50 p-4 w-72 space-y-3">
+              <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
                 <div class="flex items-center justify-between">
                   <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
                   <span class="font-bold text-xs" x-text="monthYearTitle"></span>
@@ -3207,39 +3836,49 @@
           <div class="col-span-1">
             <label class="block text-xs font-bold text-outline mb-1">Start Time</label>
             <div class="relative" x-data="customTimePicker(editingEvent.startTime, (t) => { editingEvent.startTime = t; })" x-effect="if (editingEvent.startTime && editingEvent.startTime.includes(':')) { selectedHour = String(editingEvent.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(editingEvent.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
-              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+              <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
                 <span class="font-bold" x-text="timeStr"></span>
                 <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
               </button>
-              <div x-show="open" class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-surface border border-outline-variant rounded-3xl shadow-2xl z-50 p-4 w-[280px] space-y-3">
-                <div class="flex items-center justify-center gap-2">
-                  <button type="button" @click="pickerMode = 'hour'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
-                  <span class="font-bold text-xl">:</span>
-                  <button type="button" @click="pickerMode = 'minute'" class="px-3 py-1.5 rounded-xl font-bold text-2xl" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary' : 'bg-surface-container'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+              <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
+                <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+                  <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                  <span class="font-black text-xl text-primary animate-pulse">:</span>
+                  <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
                 </div>
-                <div class="relative w-[210px] h-[210px] mx-auto bg-surface-container-low rounded-full flex items-center justify-center border border-outline-variant/50">
-                  <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 230 230">
-                    <circle cx="115" cy="115" r="4" fill="#003EC7" />
-                    <line x1="115" y1="115" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" />
-                    <circle :cx="handTarget.x" :cy="handTarget.y" r="18" fill="#003EC7" />
+
+                <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                  <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                    <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                    <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                    <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                    <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
                   </svg>
+
                   <template x-if="pickerMode === 'hour'">
                     <div class="absolute inset-0">
-                      <template x-for="(h, idx) in outerHours" :key="'eout_'+h">
-                        <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface'"><span x-text="h"></span></button>
+                      <template x-for="(h, idx) in outerHours" :key="'out2_'+h">
+                        <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
+                      </template>
+                      <template x-for="(h, idx) in innerHours" :key="'in2_'+h">
+                        <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
                       </template>
                     </div>
                   </template>
+
                   <template x-if="pickerMode === 'minute'">
                     <div class="absolute inset-0">
-                      <template x-for="(m, idx) in minutes" :key="'emin_'+m">
-                        <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center font-bold text-xs z-20" :style="`left: ${getPos(idx, 84).x}px; top: ${getPos(idx, 84).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface'"><span x-text="m"></span></button>
+                      <template x-for="(m, idx) in minutes" :key="'min2_'+m">
+                        <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
                       </template>
                     </div>
                   </template>
                 </div>
-                <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant">
-                  <button type="button" @click="confirmTime()" class="px-3 py-1 text-xs font-bold text-primary">OK</button>
+
+                <div class="flex justify-end pt-1 border-t border-outline-variant/40">
+                  <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">check</span> OK
+                  </button>
                 </div>
               </div>
             </div>
@@ -3247,15 +3886,22 @@
 
           <div class="col-span-1">
             <label class="block text-xs font-bold text-outline mb-1">Duration (Mins)</label>
-            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-              <button type="button" @click="open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
-                <span class="font-bold" x-text="editingEvent.durationMins + 'm'"></span>
-                <span class="material-symbols-outlined text-[16px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+            <div x-data="{ open: false, dropStyle: '' }" @click.outside="open = false">
+              <button type="button" x-ref="durTrigger2" @click="const r = $refs.durTrigger2.getBoundingClientRect(); dropStyle = `position:fixed; left:${r.left}px; top:${r.top - 4}px; width:${r.width}px; transform:translateY(-100%);`; open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-2.5 py-2 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary transition-all">
+                <span class="font-bold" x-text="editingEvent.durationMins + ' Minutes'"></span>
+                <span class="material-symbols-outlined text-[16px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
               </button>
-              <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
-                <template x-for="dur in [30, 45, 60, 90, 120]" :key="dur">
-                  <div @click="editingEvent.durationMins = dur; open = false" class="px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="editingEvent.durationMins === dur ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+              <div x-show="open" :style="dropStyle"
+                   x-transition:enter="transition ease-out duration-150"
+                   x-transition:enter-start="opacity-0 scale-95"
+                   x-transition:enter-end="opacity-100 scale-100"
+                   class="bg-surface border border-outline-variant/80 rounded-xl shadow-2xl z-[999999] py-1 max-h-64 overflow-y-auto custom-scrollbar">
+                <template x-for="dur in [15, 30, 45, 60, 75, 90, 105, 120, 150, 180]" :key="dur">
+                  <div @click="editingEvent.durationMins = dur; open = false" 
+                       class="px-3 py-2 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                       :class="editingEvent.durationMins === dur ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
                     <span x-text="dur + ' Minutes'"></span>
+                    <span x-show="editingEvent.durationMins === dur" class="material-symbols-outlined text-[16px] text-primary">check</span>
                   </div>
                 </template>
               </div>
@@ -3278,5 +3924,381 @@
     </div>
   </div>
 
+  <!-- MODAL: EDIT RECURRING EVENT SERIES (Styled after uRun) -->
+  <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-on-surface/50 backdrop-blur-sm" x-show="showRecurringSeriesModal" @click.self="showRecurringSeriesModal = false" x-cloak>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center px-6 py-4 border-b border-outline-variant/70 bg-surface-container-low/50">
+        <div>
+          <h3 class="font-headline-md font-extrabold text-xl text-on-surface flex items-center gap-2">
+            <span>Edit Recurring Event Series</span>
+          </h3>
+        </div>
+        <button type="button" @click="showRecurringSeriesModal = false" class="p-1 rounded-full text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Tab Navigation Header -->
+      <div class="flex border-b border-outline-variant/70 px-6 pt-2 bg-surface">
+        <button type="button" @click="recurringSeriesTab = 'details'"
+                class="px-4 py-2.5 font-label-md text-xs font-bold transition-all border-b-2 flex items-center gap-1.5"
+                :class="recurringSeriesTab === 'details' ? 'border-primary text-primary' : 'border-transparent text-outline hover:text-on-surface'">
+          Event Details
+        </button>
+        <button type="button" @click="recurringSeriesTab = 'occurrences'"
+                class="px-4 py-2.5 font-label-md text-xs font-bold transition-all border-b-2 flex items-center gap-2"
+                :class="recurringSeriesTab === 'occurrences' ? 'border-primary text-primary' : 'border-transparent text-outline hover:text-on-surface'">
+          <span>Occurrences</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary" x-text="activeSeries.occurrences.filter(o => o.date >= new Date().toISOString().split('T')[0]).length"></span>
+        </button>
+      </div>
+
+      <!-- Modal Body Content -->
+      <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6">
+        <!-- TAB 1: EVENT DETAILS -->
+        <div x-show="recurringSeriesTab === 'details'" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-on-surface-variant mb-1">Series Title *</label>
+            <input x-model="activeSeries.title" required class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" type="text" placeholder="e.g. U15 Gym Training"/>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Event Category / Type</label>
+              <div class="relative" x-data="{ open: false, init() { window.addEventListener('click', (e) => { if (this.open && this.$el && !this.$el.contains(e.target)) this.open = false; }); } }">
+                <button type="button" @click.stop="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span x-text="activeSeries.eventType"></span>
+                  <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                </button>
+                <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1">
+                  <template x-for="cat in ['Gym Session', 'Field Session', 'Match Day', 'Fitness Test']" :key="cat">
+                    <div @click="activeSeries.eventType = cat; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="activeSeries.eventType === cat ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                      <span x-text="cat"></span>
+                      <span x-show="activeSeries.eventType === cat" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Assigned Squad</label>
+              <div class="relative" x-data="{ open: false, init() { window.addEventListener('click', (e) => { if (this.open && this.$el && !this.$el.contains(e.target)) this.open = false; }); } }">
+                <button type="button" @click.stop="open = !open" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span x-text="activeSeries.team || 'U15'"></span>
+                  <span class="material-symbols-outlined text-[18px] text-outline" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                </button>
+                <div x-show="open" class="absolute left-0 top-full mt-1 w-full bg-surface border border-outline-variant rounded-xl shadow-2xl z-50 py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                  <template x-for="sq in squads" :key="sq">
+                    <div @click="activeSeries.team = sq; open = false" class="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-primary-container/10 flex justify-between items-center" :class="activeSeries.team === sq ? 'text-primary font-bold bg-primary-container/15' : 'text-on-surface'">
+                      <span x-text="sq"></span>
+                      <span x-show="activeSeries.team === sq" class="material-symbols-outlined text-[14px] text-primary">check</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Default Start Time</label>
+              <div class="relative" x-data="customTimePicker(activeSeries.startTime, (t) => { activeSeries.startTime = t; })" x-effect="if (activeSeries.startTime && activeSeries.startTime.includes(':')) { selectedHour = String(activeSeries.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(activeSeries.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+                <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span class="font-bold" x-text="timeStr || activeSeries.startTime || '15:30'"></span>
+                  <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
+                </button>
+                <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
+                  <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+                    <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                    <span class="font-black text-xl text-primary animate-pulse">:</span>
+                    <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                  </div>
+
+                  <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                      <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                      <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                      <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                      <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                    </svg>
+
+                    <template x-if="pickerMode === 'hour'">
+                      <div class="absolute inset-0">
+                        <template x-for="(h, idx) in outerHours" :key="'out3_'+h">
+                          <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
+                        </template>
+                        <template x-for="(h, idx) in innerHours" :key="'in3_'+h">
+                          <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="pickerMode === 'minute'">
+                      <div class="absolute inset-0">
+                        <template x-for="(m, idx) in minutes" :key="'min3_'+m">
+                          <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+
+                  <div class="flex justify-end pt-1 border-t border-outline-variant/40">
+                    <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                      <span class="material-symbols-outlined text-[16px]">check</span> OK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1">Duration (Minutes)</label>
+              <div x-data="{ open: false, dropStyle: '' }" @click.outside="open = false">
+                <button type="button" x-ref="durTrigger3" @click="const r = $refs.durTrigger3.getBoundingClientRect(); dropStyle = `position:fixed; left:${r.left}px; top:${r.top - 4}px; width:${r.width}px; transform:translateY(-100%);`; open = !open" class="w-full bg-background border border-outline-variant rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center justify-between gap-2 shadow-sm hover:border-primary transition-all">
+                  <span class="font-bold" x-text="activeSeries.durationMins + ' Minutes'"></span>
+                  <span class="material-symbols-outlined text-[18px] text-outline transition-transform" :class="open ? 'rotate-180 text-primary' : ''">expand_more</span>
+                </button>
+                <div x-show="open" :style="dropStyle"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     class="bg-surface border border-outline-variant/80 rounded-xl shadow-2xl z-[999999] py-1 max-h-64 overflow-y-auto custom-scrollbar">
+                  <template x-for="dur in [15, 30, 45, 60, 75, 90, 105, 120, 150, 180]" :key="dur">
+                    <div @click="activeSeries.durationMins = dur; open = false" 
+                         class="px-3 py-2 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-between hover:bg-primary-container/10 hover:text-primary"
+                         :class="activeSeries.durationMins === dur ? 'bg-primary-container/15 text-primary font-bold' : 'text-on-surface'">
+                      <span x-text="dur + ' Minutes'"></span>
+                      <span x-show="activeSeries.durationMins === dur" class="material-symbols-outlined text-[16px] text-primary">check</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-on-surface-variant mb-1">Venue / Location</label>
+            <input x-model="activeSeries.location" class="w-full bg-background border border-outline-variant rounded-xl p-3 text-xs font-semibold focus:ring-2 focus:ring-primary outline-none" type="text" placeholder="Gym Facility / Ground A"/>
+          </div>
+        </div>
+
+        <!-- TAB 2: OCCURRENCES (Matches uRun UI) -->
+        <div x-show="recurringSeriesTab === 'occurrences'" class="space-y-4">
+          <!-- Occurrences Numbered Rows List (future/today only) -->
+          <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+            <template x-for="(occ, idx) in activeSeries.occurrences.filter(o => o.date >= new Date().toISOString().split('T')[0])" :key="occ.id || idx">
+              <div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/80 rounded-2xl text-xs hover:border-primary transition-all">
+                <div class="flex items-center gap-3">
+                  <span class="font-black text-outline text-xs min-w-[28px]" x-text="'#' + (idx + 1)"></span>
+                  
+                  <!-- CUSTOM DATE PICKER FOR OCCURRENCE ROW -->
+                  <div class="relative" x-data="customDatePicker(occ.date, (d) => { occ.date = d; updateSingleOccurrence(occ); })" x-effect="if (occ.date) { selectedDateStr = occ.date; }" @click.outside="open = false">
+                    <button type="button" @click="toggleOpen($el, $event)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 shadow-sm hover:border-primary">
+                      <span x-text="formattedDate || occ.date || 'Select Date'"></span>
+                      <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
+                    </button>
+                    <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
+                      <div class="flex items-center justify-between">
+                        <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                        <span class="font-bold text-xs" x-text="monthYearTitle"></span>
+                        <button type="button" @click="nextMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                      </div>
+                      <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                      <div class="grid grid-cols-7 gap-1 text-center">
+                        <template x-for="cell in calendarGrid" :key="cell.key">
+                          <button type="button" @click="cell.inMonth && selectDate(cell.dateStr)" :disabled="!cell.inMonth" class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs" :class="cell.isSelected ? 'bg-primary text-on-primary font-bold' : 'text-on-surface'"><span x-text="cell.dayNum"></span></button>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span class="text-outline font-bold">@</span>
+
+                  <!-- CUSTOM TIME PICKER FOR OCCURRENCE ROW -->
+                  <div class="relative" x-data="customTimePicker(occ.startTime, (t) => { occ.startTime = t; updateSingleOccurrence(occ); })" x-effect="if (occ.startTime && occ.startTime.includes(':')) { selectedHour = String(occ.startTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(occ.startTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+
+                    <button type="button" @click="toggleOpen($el, $event)" class="bg-surface border border-outline-variant/60 rounded-xl px-3 py-1.5 font-bold text-xs flex items-center gap-1 shadow-sm hover:border-primary">
+                      <span x-text="timeStr || occ.startTime || '15:30'"></span>
+                      <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
+                    </button>
+                    <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
+                      <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+                        <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                        <span class="font-black text-xl text-primary animate-pulse">:</span>
+                        <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                      </div>
+
+                      <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                          <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                          <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                          <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                          <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                        </svg>
+
+                        <template x-if="pickerMode === 'hour'">
+                          <div class="absolute inset-0">
+                            <template x-for="(h, idx) in outerHours" :key="'out4_'+h">
+                              <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
+                            </template>
+                            <template x-for="(h, idx) in innerHours" :key="'in4_'+h">
+                              <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
+                            </template>
+                          </div>
+                        </template>
+
+                        <template x-if="pickerMode === 'minute'">
+                          <div class="absolute inset-0">
+                            <template x-for="(m, idx) in minutes" :key="'min4_'+m">
+                              <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+
+                      <div class="flex justify-end pt-1 border-t border-outline-variant/40">
+                        <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-[16px]">check</span> OK
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-primary/10 text-primary">Scheduled</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button type="button" @click="deleteSeriesOccurrence(occ)" class="p-1.5 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete occurrence">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Bulk Schedule Weekly Runs Box (uRun styled) -->
+          <div class="p-4 bg-surface-container border border-outline-variant rounded-2xl space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="p-2 bg-primary/10 text-primary rounded-xl">
+                <span class="material-symbols-outlined text-xl">event_repeat</span>
+              </div>
+              <div>
+                <h4 class="font-extrabold text-xs text-on-surface">Bulk Schedule Weekly Runs</h4>
+                <p class="text-[11px] text-outline">Quickly append consecutive weekly runs starting from the last occurrence date.</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-1 border-t border-outline-variant/50">
+              <span class="text-xs font-bold text-outline uppercase tracking-wider">ADD NEXT</span>
+              <div class="flex items-center bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <button type="button" @click="bulkWeeksToAdd = Math.max(1, (parseInt(bulkWeeksToAdd) || 4) - 1)" class="px-2 py-1.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-r border-outline-variant/60 cursor-pointer" title="Decrease weeks">
+                  <span class="material-symbols-outlined text-[16px]">remove</span>
+                </button>
+                <input type="number" min="1" max="52" x-model.number="bulkWeeksToAdd" class="w-10 bg-transparent border-none text-xs font-extrabold text-on-surface text-center outline-none focus:outline-none focus:ring-0 p-0"/>
+                <button type="button" @click="bulkWeeksToAdd = Math.min(52, (parseInt(bulkWeeksToAdd) || 4) + 1)" class="px-2 py-1.5 bg-surface-container-low hover:bg-primary/10 text-primary font-bold transition-colors flex items-center justify-center border-l border-outline-variant/60 cursor-pointer" title="Increase weeks">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+              <span class="text-xs font-bold text-outline uppercase tracking-wider">WEEKS</span>
+              <button type="button" @click="bulkScheduleNextWeeks()" class="px-4 py-2 bg-on-surface text-surface text-xs font-extrabold rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">add</span> Schedule
+              </button>
+            </div>
+          </div>
+
+          <!-- Add Next Date Section (uRun styled) -->
+          <div class="p-4 border border-outline-variant rounded-2xl space-y-2">
+            <span class="text-[11px] font-extrabold text-outline uppercase tracking-wider block">ADD NEXT DATE</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <!-- CUSTOM DATE PICKER FOR ADD NEXT DATE -->
+              <div class="flex-1 min-w-[180px] relative" x-data="customDatePicker(newSeriesOccDate, (d) => { newSeriesOccDate = d; })" x-effect="if (newSeriesOccDate) { selectedDateStr = newSeriesOccDate; }" @click.outside="open = false">
+                <button type="button" @click="toggleOpen($el, $event)" class="w-full bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                  <span x-text="formattedDate || newSeriesOccDate || 'Select Date...'"></span>
+                  <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+                </button>
+                <div x-show="open" :style="popoverStyle" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-72 space-y-3 z-[999999]">
+                  <div class="flex items-center justify-between">
+                    <button type="button" @click="prevMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                    <span class="font-bold text-xs" x-text="monthYearTitle"></span>
+                    <button type="button" @click="nextMonth()" class="p-1 hover:bg-surface-container rounded-lg"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                  </div>
+                  <div class="grid grid-cols-7 text-center font-bold text-[10px] text-outline uppercase"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                  <div class="grid grid-cols-7 gap-1 text-center">
+                    <template x-for="cell in calendarGrid" :key="cell.key">
+                      <button type="button" @click="cell.inMonth && selectDate(cell.dateStr)" :disabled="!cell.inMonth" class="h-8 w-8 rounded-lg flex items-center justify-center font-semibold text-xs" :class="cell.isSelected ? 'bg-primary text-on-primary font-bold' : 'text-on-surface'"><span x-text="cell.dayNum"></span></button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CUSTOM TIME PICKER FOR ADD NEXT DATE -->
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-outline uppercase">TIME</span>
+                <div class="relative" x-data="customTimePicker(newSeriesOccTime, (t) => { newSeriesOccTime = t; })" x-effect="if (newSeriesOccTime && newSeriesOccTime.includes(':')) { selectedHour = String(newSeriesOccTime.split(':')[0]).padStart(2, '0'); selectedMinute = String(newSeriesOccTime.split(':')[1]).padStart(2, '0'); }" @click.outside="open = false">
+                  <button type="button" @click="toggleOpen($el, $event)" class="w-24 bg-surface border border-outline-variant rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-between shadow-sm hover:border-primary">
+                    <span x-text="timeStr || newSeriesOccTime || '15:30'"></span>
+                    <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
+                  </button>
+                  <div x-show="open" :style="popoverStyle" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl ring-1 ring-black/5 p-4 w-[290px] space-y-3 z-[999999]">
+                    <div class="flex items-center justify-center gap-2 p-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+                      <button type="button" @click="pickerMode = 'hour'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'hour' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedHour).padStart(2, '0')"></span></button>
+                      <span class="font-black text-xl text-primary animate-pulse">:</span>
+                      <button type="button" @click="pickerMode = 'minute'" class="px-4 py-1.5 rounded-xl font-black text-2xl transition-all shadow-xs" :class="pickerMode === 'minute' ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface hover:bg-primary/10'"><span x-text="String(selectedMinute).padStart(2, '0')"></span></button>
+                    </div>
+
+                    <div class="relative w-[240px] h-[240px] mx-auto bg-surface-container-low/80 rounded-full flex items-center justify-center select-none shadow-inner border border-outline-variant/50">
+                      <svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 240 240">
+                        <circle cx="120" cy="120" r="4" fill="#003EC7" />
+                        <line x1="120" y1="120" :x2="handTarget.x" :y2="handTarget.y" stroke="#003EC7" stroke-width="2.5" stroke-linecap="round" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="16" fill="#003EC7" />
+                        <circle :cx="handTarget.x" :cy="handTarget.y" r="2.5" fill="#FFFFFF" />
+                      </svg>
+
+                      <template x-if="pickerMode === 'hour'">
+                        <div class="absolute inset-0">
+                          <template x-for="(h, idx) in outerHours" :key="'out5_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="h"></span></button>
+                          </template>
+                          <template x-for="(h, idx) in innerHours" :key="'in5_'+h">
+                            <button type="button" @click="selectHour(h)" class="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold text-[11px] transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 58).x}px; top: ${getPos(idx, 58).y}px;`" :class="String(selectedHour).padStart(2, '0') === h ? 'text-on-primary' : 'text-outline hover:bg-primary/20'"><span x-text="h"></span></button>
+                          </template>
+                        </div>
+                      </template>
+
+                      <template x-if="pickerMode === 'minute'">
+                        <div class="absolute inset-0">
+                          <template x-for="(m, idx) in minutes" :key="'min5_'+m">
+                            <button type="button" @click="selectMinute(m)" class="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-black text-xs transition-all z-20 cursor-pointer" :style="`left: ${getPos(idx, 90).x}px; top: ${getPos(idx, 90).y}px;`" :class="String(selectedMinute).padStart(2, '0') === m ? 'text-on-primary' : 'text-on-surface hover:bg-primary/20'"><span x-text="m"></span></button>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+
+                    <div class="flex justify-end pt-1 border-t border-outline-variant/40">
+                      <button type="button" @click="confirmTime()" class="w-full py-2 bg-primary text-on-primary text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">check</span> OK
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" @click="addSeriesOccurrenceDate()" class="px-4 py-2 bg-primary text-on-primary text-xs font-extrabold rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">add</span> Add Date
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-outline-variant/70 bg-surface-container-low/50 flex justify-end gap-3">
+        <button type="button" @click="showRecurringSeriesModal = false" class="px-5 py-2.5 bg-surface-container border border-outline-variant text-on-surface text-xs font-bold rounded-xl hover:bg-surface-container-high transition-colors">Cancel</button>
+        <button type="button" @click="saveSeriesDetails(); showRecurringSeriesModal = false;" class="px-5 py-2.5 bg-primary text-on-primary text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">check</span> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
+
